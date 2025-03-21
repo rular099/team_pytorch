@@ -1,0 +1,8 @@
+{
+  "data_path": "/run/media/zhangb/My Passport/TEAM_DATA/chile/chile_filtered.hdf5",
+  "output_path": "mag_baselines/chile",
+  "magnitude_key": "M_A",
+  "data_keys": ["coords", "waveforms"],
+  "methods": ["KuyukAllen"],
+  "method_args": [{"min_window": 2, "length_weight": true, "pd_length": 6, "velocity": true}]
+}
