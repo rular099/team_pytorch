@@ -68,7 +68,7 @@
         "epochs_full_model": 100,
         "filter_single_station_by_pick": true,
         "data_path": [
-            "italy.hdf5"
+            "../TEAM/data/italy/italy.hdf5"
         ],
         "workers": 10,
         "weight_path": "weights_transformer_italy_plain_ensemble",
