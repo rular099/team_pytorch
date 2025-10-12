@@ -1,11 +1,16 @@
 import numpy as np
 import h5py
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 import os
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import pickle
 import argparse
 import json
 import time
+import torch
+import torch.optim as optim
+import torch.nn.utils as nn_utils
+import torch.distributed as dist
+from torch.utils.data import DataLoader, TensorDataset, DistributedSampler
 
 import util
 import loader
@@ -13,9 +18,13 @@ import models
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, device):
-    model.train()
+def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None):
+    try:
+        device = model.device
+    except:
+        device = 'cpu'
     for epoch in range(num_epochs):
+        model.train()
         running_loss = 0.0
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
@@ -23,101 +32,135 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             outputs = model(inputs)
             loss = models.mixture_density_loss(outputs, labels)
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.clipnorm)
+            if clipnorm is not None:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
             optimizer.step()
             running_loss += loss.item()
 
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}')
 
         # Validation step
-        model.eval()
-        val_running_loss = 0.0
-        with torch.no_grad():
-            for inputs, labels in val_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model(inputs)
-                loss = models.mixture_density_loss(outputs, labels)
-                val_running_loss += loss.item()
+        if (not is_dist) or (is_dist and (rank == 0)):
+            model.eval()
+            val_running_loss = 0.0
+            with torch.no_grad():
+                for inputs, labels in val_loader:
+                    inputs, labels = inputs.to(device), labels.to(device)
+                    outputs = model(inputs)
+                    loss = models.mixture_density_loss(outputs, labels)
+                    val_running_loss += loss.item()
 
-        val_loss = val_running_loss / len(val_loader)
-        print(f'Validation Loss: {val_loss:.4f}')
-        scheduler.step(val_loss)
+            val_loss = val_running_loss / len(val_loader)
+            print(f'Validation Loss: {val_loss:.4f}')
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(val_loss)
+            else:
+                scheduler.step()
 
-        # Save checkpoint
-        filepath = os.path.join(training_params['weight_path'], f'single-station-{epoch+1}.pth')
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': val_loss,
-        }, filepath)
+            # Save checkpoint
+            filepath = os.path.join(training_params['weight_path'], f'{save_name}_{epoch+1}.pth')
+            if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+                state_dict = model.module.state_dict()
+            else:
+                state_dict = model.state_dict()
 
-def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=False, ens_id=None, sleeptime=600):
-    td = None
-    conv1d = None
-    td_name = None
-    conv1d_name = None
-    for layer in model.layers:
-        if layer.name.find('time_distributed') != -1:
-            td = layer.layer
-            td_name = layer.name
-            break
-    for layer in td.layers:
-        if layer.name.find('conv1d') != -1:
-            conv1d = layer
-            conv1d_name = layer.name
-            break
-    model_borehole = conv1d.get_weights()[0].shape[1] == 64
+            torch.save({
+                'epoch': epoch+1,
+                'model_state_dict': state_dict,
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'loss': val_loss,
+            }, filepath)
 
+def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dist=False, rank=0):
+    checkpoint = None
+
+    if rank == 0:
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+
+    if is_dist:
+        # 让 rank 0 把 state_dict 广播给所有进程
+        dist.barrier()
+        checkpoint = dist.broadcast_object_list([checkpoint], src=0)[0]
+
+    # 兼容 module. 前缀
+    state_dict = checkpoint['model_state_dict']
+    if list(state_dict.keys())[0].startswith("module.") and not isinstance(model, torch.nn.parallel.DistributedDataParallel):
+        from collections import OrderedDict
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            new_state_dict[k.replace("module.", "", 1)] = v
+        state_dict = new_state_dict
+
+    model.load_state_dict(state_dict)
+
+    if optimizer and 'optimizer_state_dict' in checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+    if scheduler and 'scheduler_state_dict' in checkpoint:
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+
+    start_epoch = checkpoint.get('epoch', 0)
+    val_loss = checkpoint.get('val_loss', None)
+
+    return model, optimizer, scheduler, start_epoch, val_loss
+
+def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=False,
+                     ens_id=None, sleeptime=600, device="cpu"):
+    """
+    PyTorch 版本的权重迁移函数
+    """
     if ensemble_load:
-        weights_path = os.path.join(weights_path, f'{ens_id}')
+        weights_path = os.path.join(weights_path, f"{ens_id}")
 
-    # If weight file does not exists, wait until it exists. Intended for ensembles. Warning: Can deadlock program.
+    # 如果文件还没生成，循环等待
     if wait_for_load:
-        if os.path.isfile(weights_path):
-            target_object = weights_path
-        else:
-            target_object = os.path.join(weights_path, 'hist.pkl')
-
+        target_object = weights_path if os.path.isfile(weights_path) else os.path.join(weights_path, "hist.pkl")
         while not os.path.exists(target_object):
-            print(f'File {target_object} for weight transfer missing. Sleeping for {sleeptime} seconds.')
+            print(f"File {target_object} for weight transfer missing. Sleeping {sleeptime}s")
             time.sleep(sleeptime)
 
+    # 如果是目录，取最新 event- 文件
     if os.path.isdir(weights_path):
-        last_weight = sorted([x for x in os.listdir(weights_path) if x[:6] == 'event-'])[-1]
+        last_weight = sorted([x for x in os.listdir(weights_path) if x.startswith("event-")])[-1]
         weights_path = os.path.join(weights_path, last_weight)
 
-    with h5py.File(weights_path, 'r') as weights:
-        weights_borehole = weights[td_name][conv1d_name]['kernel:0'].shape[1] == 64
-        weights_dict = generate_weights_dict(weights)
-    del_list = []
-    for weight in weights_dict:
-        if weight[:9] == 'embedding':
-            del_list += [weight]
-    for del_element in del_list:
-        del weights_dict[del_element]
-    if model_borehole and not weights_borehole:
-        # Take same weights for borehole as for top sensor and rescale
-        combine_weights = np.concatenate([weights_dict[f'{conv1d_name}/kernel:0'], weights_dict[f'{conv1d_name}/kernel:0']], axis=1)
-        combine_weights /= 2
-        weights_dict[f'{conv1d_name}/kernel:0'] = combine_weights
-    if not model_borehole and weights_borehole:
-        # Only take weights for the surface sensor and rescale
-        combine_weights = weights_dict[f'{conv1d_name}/kernel:0'][:, :32, :]
-        combine_weights *= 2
-        weights_dict[f'{conv1d_name}/kernel:0'] = combine_weights
-    new_weights = []
-    transferred = 0
-    for i, weight in enumerate(model.weights):
-        name = weight.name
-        if name in weights_dict:
-            new_weights += [weights_dict[name]]
-            transferred += 1
-        else:
-            new_weights += [model.get_weights()[i]]
-    print(f'Transferred {transferred} of {len(model.weights)} weights')
-    model.set_weights(new_weights)
+    # 加载 checkpoint
+    state_dict = torch.load(weights_path, map_location=device)
 
+    # 判断目标模型是不是 borehole (Conv1d 输入通道是否 64)
+    conv1d_layer = None
+    conv1d_name = None
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Conv1d):
+            conv1d_layer = module
+            conv1d_name = name + ".weight"
+            break
+
+    model_borehole = conv1d_layer.in_channels == 64
+    weights_borehole = state_dict[conv1d_name].shape[1] == 64
+
+    # 删除 embedding 层权重（如果存在）
+    for key in list(state_dict.keys()):
+        if key.startswith("embedding"):
+            del state_dict[key]
+
+    # 处理输入通道不一致的情况
+    if model_borehole and not weights_borehole:
+        # surface -> borehole: 复制 + 平均
+        kernel = state_dict[conv1d_name]
+        combine_weights = torch.cat([kernel, kernel], dim=1) / 2.0
+        state_dict[conv1d_name] = combine_weights
+    elif not model_borehole and weights_borehole:
+        # borehole -> surface: 截取前 32 通道 + 缩放
+        kernel = state_dict[conv1d_name][:, :32, :]
+        state_dict[conv1d_name] = kernel * 2.0
+
+    # 加载参数
+    missing, unexpected = model.load_state_dict(state_dict, strict=False)
+    print(f"Transferred {len(state_dict) - len(missing)} weights, "
+          f"Missing: {missing}, Unexpected: {unexpected}")
+    return model
 
 def generate_weights_dict(weights, name=None):
     weights_dict = {}
@@ -142,6 +185,7 @@ def set_seed(seed=42):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
+    parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--test_run', action='store_true')  # Test run with less data
     parser.add_argument('--no_multiprocessing', action='store_true')  # Prevents certain deadlocks
     parser.add_argument('--continue_ensemble', action='store_true')  # Continues a stopped ensemble training
@@ -149,6 +193,9 @@ if __name__ == '__main__':
     config = json.load(open(args.config, 'r'))
 
     set_seed(config.get('seed', 42))
+
+    is_dist, rank, world_size, local_rank = util.setup_distributed()
+    device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
 
     training_params = config['training_params']
     generator_params = training_params.get('generator_params', [training_params.copy()])
@@ -248,12 +295,17 @@ if __name__ == '__main__':
         print('Building model')
         single_station_model, full_model = models.build_transformer_model(**config['model_params'],
                                                                           trace_length=data_train[0]['waveforms'][0].shape[1])
-        single_station_model.to(device)
-        full_model.to(device)
+        if is_dist:
+            single_station_model = DDP(single_station_model, device_ids=[local_rank],output_device=local_rank)
+            full_model = DDP(full_model, device_ids=[local_rank],output_device=local_rank)
+        else:
+            single_station_model.to(device)
+            full_model.to(device)
 
         if 'single_station_model_path' in training_params:
+            print('Loading single station model')
             checkpoint = torch.load(training_params['single_station_model_path'])
-            single_station_model.load_state_dict(checkpoint["model_state_dict"])
+            single_station_model.load_state_dict(checkpoint["model_state_dict"]) # need modify with save state dict.
         elif 'transfer_model_path' not in training_params:
             optimizer = nn.optimizers.Adam(single_station_model.parameters(),lr=training_params['lr'])
             key = generator_params[0]['key']
@@ -284,25 +336,18 @@ if __name__ == '__main__':
 
             sliding_window = generator_params[0].get('sliding_window', False)
 
-            train_dataset = EventDataset(
-                x_train[train_mask],
-                np.expand_dims(np.expand_dims(y_train[train_mask], axis=1), axis=2),
-                cutout=cutout,
-                label_smoothing=True,
-                sliding_window=sliding_window
-            )
-            val_dataset = EventDataset(
-                x_dev[dev_mask],
-                np.expand_dims(np.expand_dims(y_dev[dev_mask], axis=1), axis=2),
-                cutout=cutout,
-                oversample=3,
-                sliding_window=sliding_window
-            )
+            train_dataset = util.EventDataset(x_train, np.expand_dims(np.expand_dims(y_train, axis=1), axis=2),
+                                                 cutout=cutout, label_smoothing=True, sliding_window=sliding_window)
+            val_dataset = util.EventDataset(x_dev, np.expand_dims(np.expand_dims(y_dev, axis=1), axis=2),
+                                                 cutout=cutout, label_smoothing=True, sliding_window=sliding_window)
+            if dist:
+                train_sampler = DistributedSampler(train_dataset)
+                train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], sampler=train_sampler, shuffle=(train_sampler is None))
+            else:
+                train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
+            val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
             # Only save weights due to open issue:
             # https://github.com/matterport/Mask_RCNN/issues/308
-
-            train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
-            val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], shuffle=False)
 
             scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=4, verbose=1)
 
@@ -334,7 +379,7 @@ if __name__ == '__main__':
             return models.mixture_density_loss(y_true, y_pred, eps=1e-5, d=3)
 
         no_event_token = config['model_params'].get('no_event_token', False)
-        optimizer = nn.optimizers.Adam(lr=training_params['lr'], clipnorm=training_params['clipnorm'])
+        optimizer = optim.Adam(full_model.parameters(), lr=training_params['lr'])
         if not no_event_token:
             losses = {'magnitude': models.mixture_density_loss, 'location': location_loss}
         else:
@@ -350,7 +395,6 @@ if __name__ == '__main__':
 
             losses['pga'] = pga_loss
 
-        full_model.compile(loss=losses, loss_weights=training_params['loss_weights'], optimizer=optimizer)
 
         train_generators = []
         validation_generators = []
@@ -397,26 +441,28 @@ if __name__ == '__main__':
             validation_generator = util.JointGenerator(validation_generators, shuffle=True, dataset_id=dataset_bias)
 
         filepath = os.path.join(training_params['weight_path'], 'event-{epoch:02d}.hdf5')
-        checkpoint = ModelCheckpoint(filepath, monitor='val_loss', save_weights_only=True, verbose=1, save_best_only=True,
-                                     mode='min')
         patience = training_params.get('lr_decay_patience', 6)
-        lr_decay = ReduceLROnPlateau(monitor='val_loss', mode='min', patience=patience, factor=0.3, verbose=1)
+#        lr_decay = ReduceLROnPlateau(monitor='val_loss', mode='min', patience=patience, factor=0.3, verbose=1) # need modify
+        lr_decay = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=patience, verbose=1)
         logdir = os.path.join('logs/scalars/', training_params['weight_path'])
 
-        workers = training_params.get('workers', 10)
-        use_multiprocessing = workers > 1
+        train_model(
+            full_model,
+            train_loader,
+            val_loader,
+            optimizer,
+            scheduler,
+            num_epochs=training_params['epochs_full_model'],
+            device=device
+        )
 
-        callbacks = [checkpoint, lr_decay]
-
-        if args.test_run or args.no_multiprocessing:
-            use_multiprocessing = False
-            workers = 1
-
-        hist = full_model.fit_generator(generator=train_generator,
-                                        validation_data=validation_generator,
-                                        epochs=training_params['epochs_full_model'],
-                                        use_multiprocessing=use_multiprocessing,
-                                        workers=workers,
-                                        callbacks=callbacks)
+#        hist = full_model.fit_generator(generator=train_generator,
+#                                        validation_data=validation_generator,
+#                                        epochs=training_params['epochs_full_model'],
+#                                        use_multiprocessing=use_multiprocessing,
+#                                        workers=workers,
+#                                        callbacks=callbacks)
 
         pickle.dump(hist.history, open(os.path.join(training_params['weight_path'], 'hist.pkl'), 'wb'))
+    if is_dist:
+        dist.destroy_process_group()

@@ -9,6 +9,7 @@ import warnings
 import time
 from tqdm import tqdm
 from scipy.stats import norm
+import torch.distributed as dist
 try:
     import keras
 except ImportError:
@@ -19,6 +20,52 @@ except ImportError:
 
 D2KM = 111.19492664455874
 
+def setup_distributed(backend='nccl', init_method='env://'):
+    if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
+        rank = int(os.environ["RANK"])
+        world_size = int(os.environ["WORLD_SIZE"])
+        local_rank = int(os.environ["LOCAL_RANK"])
+        torch.cuda.set_device(local_rank)
+        dist.init_process_group(backend=backend, init_method=init_method)
+        return True, rank, world_size, local_rank
+    else:
+        return False, 0, 1, 0
+
+def cleanup():
+    dist.destroy_process_group()
+
+def distributed_info():
+    if dist.is_available() and dist.is_initialized():
+        rank = dist.get_rank()
+        world_size = dist.get_world_size()
+        local_rank = int(os.environ.get("LOCAL_RANK", 0))
+        return True, rank, world_size, local_rank
+    else:
+        return False, 0, 1, 0
+
+def load_checkpoint(model, optimizer, scheduler, device, is_ddp, checkpoint_path):
+    """加载 checkpoint 并返回下一个 epoch"""
+    if not os.path.exists(checkpoint_path):
+        return 0  # 从 epoch 0 开始
+
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+
+    # 模型参数
+    if is_ddp:
+        model.module.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        model.load_state_dict(checkpoint["model_state_dict"])
+
+    # 优化器
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+    # scheduler
+    if scheduler is not None:
+        scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+    start_epoch = checkpoint["epoch"] + 1
+    print(f"Resuming from checkpoint '{checkpoint_path}', starting at epoch {start_epoch}")
+    return start_epoch
 
 def resample_trace(trace, sampling_rate):
     if trace.stats.sampling_rate == sampling_rate:
