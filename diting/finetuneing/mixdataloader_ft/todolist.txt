@@ -1,0 +1,5 @@
+1. 数据集比例 & 字段比例
+    数据集比例：通过csv_list + sample_num控制
+    字段比例：通过代码中过滤确定 / 离线获取已过滤的csv文件
+2. augmentation
+    mixLoader相对于PT有修改(使用seisT原始的数据增强)

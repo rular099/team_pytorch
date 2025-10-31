@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 #from diting.finetuneing.utils import create_model
-import finetuneing.utils.help_builder as help_builder
-import LSD.models.backbone_ablation as backbone_ablation
+import diting.finetuneing.utils.help_builder as help_builder
+import diting.LSD.models.backbone_ablation as backbone_ablation
 
 from mup import set_base_shapes
 
@@ -37,7 +37,7 @@ class MLP(nn.Module):
 
 
 class MixtureOutput(nn.Module):
-    def __init__(self, input_shape, n, d=1, activation=F.relu, eps=1e-4, bias_mu=1.8, bias_sigma=0.2, name=None):
+    def __init__(self, input_shape, n=5, d=1, activation=F.relu, eps=1e-4, bias_mu=1.8, bias_sigma=0.2, name=None):
         super().__init__()
         self.n = n
         self.d = d
@@ -114,7 +114,7 @@ class Transformer(nn.Module):
     def __init__(self, max_stations=32, emb_dim=500, layers=6, att_masking=False, hidden_dropout=0.0,
                  mad_params={}, ffn_params={}, norm_params={}):
         super().__init__()
-        self.blocks = nn.ModuleList([TransformerBlock(**mad_params, **ffn_params, **norm_params) for _ in range(layers)])
+        self.blocks = nn.ModuleList([TransformerBlock(emb_dim=emb_dim, **mad_params, **ffn_params, **norm_params) for _ in range(layers)])
         self.att_masking = att_masking
         self.hidden_dropout = hidden_dropout
 
@@ -126,20 +126,29 @@ class Transformer(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, n_heads, hidden_dim, att_dropout=0.0, kernel_initializer_range=0.02, eps=1e-5):
+    def __init__(self, n_heads, emb_dim, hidden_dim, att_dropout=0.0, initializer_range=0.02, eps=1e-5):
         super().__init__()
-        self.attention = MultiHeadSelfAttention(n_heads=n_heads, att_dropout=att_dropout, kernel_initializer_range=kernel_initializer_range)
-        self.ffn = PointwiseFeedForward(hidden_dim=hidden_dim)
-        self.norm1 = LayerNormalization(eps=eps)
-        self.norm2 = LayerNormalization(eps=eps)
-        self.dropout = nn.Dropout(0.0) #Fixed dropout
+        self.attention = MultiHeadSelfAttention(n_heads=n_heads, emb_dim=emb_dim, att_dropout=att_dropout, initializer_range=initializer_range)
+#        self.ffn = PointwiseFeedForward(hidden_dim=hidden_dim)
+#        self.attention = nn.MultiheadAttention(embed_dim=emb_dim, num_heads=n_heads, batch_first=True)
+        self.ffn = nn.Sequential(
+                      nn.Linear(emb_dim, hidden_dim),
+                      nn.ReLU(),
+                      nn.Linear(hidden_dim, emb_dim),
+        )
+#        self.norm1 = LayerNormalization(eps=eps)
+#        self.norm2 = LayerNormalization(eps=eps)
+        self.norm1 =nn.LayerNorm(emb_dim) 
+        self.norm2 =nn.LayerNorm(emb_dim) 
+        self.dropout1 = nn.Dropout(0.0) #Fixed dropout
+        self.dropout2 = nn.Dropout(0.0) #Fixed dropout
 
-    def forward(self, x, att_mask=None):
-        modified_x = self.attention(x, att_mask)
-        modified_x = self.dropout(modified_x)
+    def forward(self, x, att_mask=None, src_key_padding_mask=None):
+        modified_x, _ = self.attention(x, attn_mask=att_mask)#, key_padding_mask=src_key_padding_mask)
+        modified_x = self.dropout1(modified_x)
         x = self.norm1(x + modified_x)
         modified_x = self.ffn(x)
-        modified_x = self.dropout(modified_x)
+        modified_x = self.dropout2(modified_x)
         x = self.norm2(x + modified_x)
         return x
 
@@ -162,7 +171,8 @@ class PositionEmbedding(nn.Module):
         if rotation is not None:
             # print(f'Rotating by {np.rad2deg(rotation)} degrees')
             c, s = np.cos(rotation), np.sin(rotation)
-            self.rotation_matrix = torch.tensor(((c, -s), (s, c)), dtype=torch.float32) #K.variable replaced with tensor
+#            self.rotation_matrix = torch.tensor(((c, -s), (s, c)), dtype=torch.float32) #K.variable replaced with tensor
+            self.register_buffer('rotation_matrix', torch.tensor(((c, -s), (s, c)), dtype=torch.float32)) #K.variable replaced with tensor
         else:
             self.rotation_matrix = None
 
@@ -189,6 +199,7 @@ class PositionEmbedding(nn.Module):
         depth_sin_mask = np.arange(emb_dim) % 10 == 4
         depth_cos_mask = np.arange(emb_dim) % 10 == 9
         self.mask = np.zeros(emb_dim)
+        #self.register_buffer('mask', np.zeros(emb_dim))
         self.mask[lat_sin_mask] = np.arange(lat_dim)
         self.mask[lat_cos_mask] = lat_dim + np.arange(lat_dim)
         self.mask[lon_sin_mask] = 2 * lat_dim + np.arange(lon_dim)
@@ -208,7 +219,7 @@ class PositionEmbedding(nn.Module):
             lon_base *= torch.cos(lat_base * np.pi / 180)
 
             lat_base -= self.rotation_anchor[0]
-            lon_base -= self.rotation_anchor[1] * torch.cos(self.rotation_anchor[0] * np.pi / 180)
+            lon_base -= self.rotation_anchor[1] * np.cos(self.rotation_anchor[0] * np.pi / 180)
 
             latlon = torch.stack([lat_base, lon_base], dim=-1)
             rotated = latlon @ self.rotation_matrix
@@ -248,37 +259,20 @@ class PositionEmbedding(nn.Module):
 
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, n_heads, kernel_initializer_range=0.02, att_dropout=0.0, infinity=1e6):
+    def __init__(self, n_heads, emb_dim, initializer_range=0.02, att_dropout=0.0, infinity=1e6):
         super().__init__()
         self.n_heads = n_heads
+        self.d_key = int(emb_dim // n_heads)
         self.infinity = infinity
         self.att_dropout = att_dropout
-        self.kernel_initializer_range = kernel_initializer_range #Added
-        self.WQ = None
-        self.WK = None
-        self.WV = None
-        self.WO = None
+        self.initializer_range = initializer_range #Added
+        self.WQ = nn.Linear(emb_dim, emb_dim)
+        self.WK = nn.Linear(emb_dim, emb_dim)
+        self.WV = nn.Linear(emb_dim, emb_dim)
+        self.WO = nn.Linear(emb_dim, emb_dim)
 
-    def build(self, d_model, stations):
-        # This is called separately to have access to d_model and stations
-        self.d_model = d_model
-        self.stations = stations
-        self.d_key = d_model // self.n_heads
-
-        self.WQ = nn.Linear(d_model, self.d_key * self.n_heads)
-        self.WK = nn.Linear(d_model, self.d_key * self.n_heads)
-        self.WV = nn.Linear(d_model, self.d_key * self.n_heads)
-        self.WO = nn.Linear(self.d_key * self.n_heads, d_model)
-
-        # Initialize weights using a uniform distribution
-        nn.init.uniform_(self.WQ.weight, -self.kernel_initializer_range, self.kernel_initializer_range)
-        nn.init.uniform_(self.WK.weight, -self.kernel_initializer_range, self.kernel_initializer_range)
-        nn.init.uniform_(self.WV.weight, -self.kernel_initializer_range, self.kernel_initializer_range)
-        nn.init.uniform_(self.WO.weight, -self.kernel_initializer_range, self.kernel_initializer_range)
-
-    def forward(self, x, att_mask=None):
-        if self.WQ is None:
-             self.build(x.shape[-1], x.shape[1])
+    def forward(self, x, attn_mask=None):
+        self.stations = x.shape[1]
 
         d_key = self.d_key
         n_heads = self.n_heads
@@ -294,8 +288,8 @@ class MultiHeadSelfAttention(nn.Module):
 
         score = torch.matmul(q, k) / np.sqrt(d_key)  # (batch, n_heads, stations, stations)
 
-        if att_mask is not None:
-            inv_mask = (~att_mask).float()[:, None, None, :]  # (batch, 1, 1, stations)
+        if attn_mask is not None:
+            inv_mask = (~attn_mask).float()[:, None, None, :]  # (batch, 1, 1, stations)
 
             score = score - inv_mask * self.infinity
 
@@ -312,11 +306,11 @@ class MultiHeadSelfAttention(nn.Module):
         o = o.reshape(-1, stations, n_heads * d_key)
         o = self.WO(o)
 
-        return o
+        return o, None
 
 
 class PointwiseFeedForward(nn.Module):
-    def __init__(self, hidden_dim, kernel_initializer='glorot_uniform', bias_initializer='zeros'):
+    def __init__(self, hidden_dim, initializer='glorot_uniform', bias_initializer='zeros'):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.kernel1 = None
@@ -359,6 +353,8 @@ class LayerNormalization(nn.Module):
     def forward(self, x):
         if self.beta is None:
              self.build(x.shape)
+             self.beta.to(x.device)
+             self.gamma.to(x.device)
 
         m = torch.mean(x, dim=-1, keepdim=True)
         s = torch.mean((x - m)**2, dim=-1, keepdim=True)
@@ -451,7 +447,10 @@ class GlobalMaxPooling1DMasked(nn.Module):
         return torch.max(x, dim=1)[0]
 
 
-def mixture_density_loss(y_true, y_pred, eps=1e-6, d=1, mean=True, print_shapes=True):
+def mixture_density_loss(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=False):
+    if isinstance(y_pred, list):
+        y_pred = y_pred[0]
+        y_true = y_true[0]
     if print_shapes:
         print(f'True: {y_true.shape}')
         print(f'Pred: {y_pred.shape}')
@@ -507,7 +506,7 @@ class SingleStationModel(nn.Module):
         return out
 
 class FullModel(nn.Module):
-    def __init__(self, waveform_model, position_embedding, transformer, mlp_mag, output_model, mlp_loc,
+    def __init__(self, waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                  metadata_shape, emb_dim, no_event_token, AddEventToken, n_pga_targets, dataset_bias,
                  AddConstantToMixture, n_datasets):
@@ -516,7 +515,7 @@ class FullModel(nn.Module):
         self.position_embedding = position_embedding
         self.transformer = transformer
         self.mlp_mag = mlp_mag
-        self.output_model = output_model
+        self.output_model_mag = output_model_mag
         self.mlp_loc = mlp_loc
         self.output_model_loc = output_model_loc
         self.mlp_pga = mlp_pga
@@ -526,7 +525,7 @@ class FullModel(nn.Module):
         self.metadata_shape = metadata_shape
         self.emb_dim = emb_dim
         self.no_event_token = no_event_token
-        self.event_token = AddEventToken
+        self.add_event_token = AddEventToken
         self.n_pga_targets = n_pga_targets
         self.dataset_bias = dataset_bias
         self.add_constant_to_mixture = AddConstantToMixture
@@ -538,18 +537,27 @@ class FullModel(nn.Module):
             self.att_masking = False
 
         if not no_event_token:
-             self.event_token = AddEventToken(fixed=False, init_range=event_token_init_range)
+             self.add_event_token = AddEventToken(fixed=False, init_range=event_token_init_range)
 
         if dataset_bias:
             self.dataset_embedding = nn.Embedding(n_datasets, 1)
+        self.Masking_nd_0_23 = Masking_nd(0, (2, 3))
+        self.Masking_nd_0_2 = Masking_nd(0, axis=2, nodim=True)
+#        self.layernorm = LayerNormalization()
+        self.layernorm = nn.LayerNorm(emb_dim)
+        if self.skip_transformer:
+            mlp_input_length = self.emb_dim
+            if self.alternative_coords_embedding:
+                mlp_input_length += self.metadata_shape[0]
+            self.mlp_layer = MLP((mlp_input_length,), [self.emb_dim, self.emb_dim], activation='relu')
+            self.maxpool = GlobalMaxPooling1DMasked()
 
     def forward(self, waveform_inp, metadata_inp, pga_targets_inp=None, dataset=None, att_mask = None):
-        waveforms_masked = Masking_nd(0, (2, 3))(waveform_inp)
-        coords_masked = Masking_nd(0, axis=2, nodim=True)(metadata_inp)
+        waveforms_masked = self.Masking_nd_0_23(waveform_inp)
+        coords_masked = self.Masking_nd_0_2(metadata_inp)
 
-        waveforms_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[
-, dim=1)
-        waveforms_emb = LayerNormalization()(waveforms_emb)
+        waveforms_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
+        waveforms_emb = self.layernorm(waveforms_emb)
 
         if not self.alternative_coords_embedding:
             coords_emb = self.position_embedding(coords_masked)
@@ -558,10 +566,10 @@ class FullModel(nn.Module):
             emb = torch.cat([waveforms_emb, coords_masked], dim=-1)
 
         if not (self.skip_transformer or self.no_event_token):
-            emb = self.event_token(emb)
+            emb = self.add_event_token(emb)
 
         if self.n_pga_targets:
-            pga_targets_masked = Masking_nd(0, axis=2, nodim=True)(pga_targets_inp)
+            pga_targets_masked = self.Masking_nd_0_2(pga_targets_inp)
             pga_emb = self.position_embedding(pga_targets_masked)
             emb = torch.cat([emb, pga_emb], dim=1)
 
@@ -569,17 +577,13 @@ class FullModel(nn.Module):
                 # Create an attention mask based on the shape of emb
                 att_mask = torch.cat([torch.ones_like(emb[:, :emb.shape[1] - pga_emb.shape[1], 0], dtype=torch.bool),
                                        torch.zeros_like(emb[:, emb.shape[1] - pga_emb.shape[1]:, 0], dtype=torch.bool)], dim=1)
-            emb = self.transformer(emb, att_mask) # Modified line
+            emb = self.transformer(emb.float(), att_mask) # Modified line
         else:
             if self.skip_transformer:
-                mlp_input_length = self.emb_dim
-                if self.alternative_coords_embedding:
-                    mlp_input_length += self.metadata_shape[0]
-
-                emb = torch.stack([MLP((mlp_input_length,), [self.emb_dim, self.emb_dim], activation=activation)(emb[:, i, :]) for i in range(emb.shape[1])], dim=1)
-                emb = GlobalMaxPooling1DMasked()(emb, mask=coords_masked[:,:,0] != 0)
+                emb = torch.stack([self.mlp_layer(emb[:, i, :]) for i in range(emb.shape[1])], dim=1)
+                emb = self.maxpool(emb, mask=coords_masked[:,:,0] != 0)
             else:
-                emb = self.transformer(emb)
+                emb = self.transformer(emb.float())
 
         outputs = []
         if not self.no_event_token:
@@ -589,12 +593,12 @@ class FullModel(nn.Module):
                 event_emb = emb[:, 0, :]  # Select event embedding
 
             mag_embedding = self.mlp_mag(event_emb)
-            out = self.output_model(mag_embedding)
+            out_mag = self.output_model_mag(mag_embedding)
 
             loc_embedding = self.mlp_loc(event_emb)
             out_loc = self.output_model_loc(loc_embedding)
 
-            outputs.append(out)
+            outputs.append(out_mag)
             outputs.append(out_loc)
 
         if self.n_pga_targets:
@@ -694,7 +698,7 @@ def get_diting_model(args):
             print("=> no checkpoint found at '{}'".format(args.pretrained))
             assert os.path.isfile(args.pretrained),"no checkpoint found at '{}'".format(args.pretrained)
 
-    model = model.to(device)
+    model = model.to(args.device)
     return model
 
 def build_transformer_model(max_stations,
@@ -733,8 +737,8 @@ def build_transformer_model(max_stations,
     if kwargs:
         print(f'Warning: Unused model parameters: {", ".join(kwargs.keys())}')
 
-#    emb_dim = waveform_model_dims[-1]
-    emb_dim = diting_args.target_width
+    emb_dim = waveform_model_dims[-1]
+#    emb_dim = diting_args.target_width
     mad_params = mad_params.copy()  # Avoid modifying the input dicts
     ffn_params = ffn_params.copy()
 
@@ -750,8 +754,10 @@ def build_transformer_model(max_stations,
 #                                              mlp_dims=waveform_model_dims)
 #    mlp_mag_single_station = MLP((waveform_model.mlp.mlp[-1].out_features,), output_mlp_dims, activation=activation) #Modified line
     waveform_model = get_diting_model(diting_args)
-    mlp_mag_single_station = MLP((diting_args.target_width,), output_mlp_dims, activation=activation) #Modified line
-    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), 5, name='magnitude',
+    dt2team = MLP((diting_args.out_channels,), waveform_model_dims[-1:], activation=activation)
+    waveform_model.add_module('dt2team', dt2team)
+    mlp_mag_single_station = MLP((waveform_model_dims[-1],), output_mlp_dims, activation=activation) #Modified line
+    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), n=5, name='magnitude',
                                                 bias_mu=bias_mag_mu, bias_sigma=bias_mag_sigma)
 
     single_station_model = SingleStationModel(waveform_model, mlp_mag_single_station, output_model_single_station)
@@ -774,26 +780,18 @@ def build_transformer_model(max_stations,
                                   ffn_params=ffn_params)
 
     mlp_mag = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model = MixtureOutput((output_mlp_dims[-1],), magnitude_mixture, bias_mu=bias_mag_mu,
+    output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu,
                                  bias_sigma=bias_mag_sigma)
 
     mlp_loc = MLP((emb_dim,), output_location_dims, activation=activation)
-    output_model_loc = MixtureOutput((output_location_dims[-1],), location_mixture, d=3, bias_mu=bias_loc_mu,
-                                     bias_sigma=bias_loc_sigma, activation='linear')
+    output_model_loc = MixtureOutput((output_location_dims[-1],), n=location_mixture, d=3, bias_mu=bias_loc_mu,
+                                     bias_sigma=bias_loc_sigma, activation=F.relu)
 
     mlp_pga = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model_pga = MixtureOutput((output_mlp_dims[-1],), pga_mixture, activation='linear', bias_mu=-5, bias_sigma=1)
-
+    output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_mixture, activation=F.relu, bias_mu=-5, bias_sigma=1)
 
     # Module instantiation
     position_embedding = PositionEmbedding(wavelengths=wavelength, emb_dim=emb_dim, borehole=borehole, rotation=rotation, rotation_anchor=rotation_anchor)
-
-    if not skip_transformer:
-       transformer = Transformer(max_stations=transformer_max_stations, emb_dim=emb_dim, att_masking=att_masking,
-                                  layers=transformer_layers, hidden_dropout=hidden_dropout, mad_params=mad_params,
-                                  ffn_params=ffn_params)
-    else:
-        transformer = None
 
     if not no_event_token:
         add_event_token = AddEventToken(fixed=False, init_range=event_token_init_range)
@@ -805,7 +803,7 @@ def build_transformer_model(max_stations,
     else:
         add_constant_to_mixture = None
 
-    full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model, mlp_loc,
+    full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                              add_constant_to_mixture, n_datasets)

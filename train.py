@@ -1,4 +1,8 @@
 import numpy as np
+import sys
+sys.path.append('./diting')
+import yaml
+import random
 import h5py
 import os
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -8,28 +12,37 @@ import json
 import time
 import torch
 import torch.optim as optim
+import torch.nn as nn
 import torch.nn.utils as nn_utils
 import torch.distributed as dist
 from torch.utils.data import DataLoader, TensorDataset, DistributedSampler
 
-import util
+import gemini_util as util
 import loader
-import models
+import gemini_models as models
+
+from diting.downstream.gemini_utils import get_args as get_args_diting
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None):
     try:
-        device = model.device
+        device = next(model.parameters()).device
     except:
         device = 'cpu'
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
         for inputs, labels in train_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
+            if isinstance(inputs, list): 
+                inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
+            else:
+                inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
-            outputs = model(inputs)
+            if isinstance(inputs, list): 
+                outputs = model(*inputs)
+            else:
+                outputs = model(inputs)
             loss = models.mixture_density_loss(outputs, labels)
             loss.backward()
             if clipnorm is not None:
@@ -45,8 +58,14 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             val_running_loss = 0.0
             with torch.no_grad():
                 for inputs, labels in val_loader:
-                    inputs, labels = inputs.to(device), labels.to(device)
-                    outputs = model(inputs)
+                    if isinstance(inputs, list): 
+                        inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
+                    else:
+                        inputs, labels = inputs.to(device), labels.to(device)
+                    if isinstance(inputs, list): 
+                        outputs = model(*inputs)
+                    else:
+                        outputs = model(inputs)
                     loss = models.mixture_density_loss(outputs, labels)
                     val_running_loss += loss.item()
 
@@ -173,7 +192,7 @@ def generate_weights_dict(weights, name=None):
 
 
 def set_seed(seed=42):
-    os.environ['PYTHONHASHSEED'] = seed
+    os.environ['PYTHONHASHSEED'] = f'{seed}'
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -185,17 +204,34 @@ def set_seed(seed=42):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
+    parser.add_argument('--diting_config', type=str, required=True)
     parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--test_run', action='store_true')  # Test run with less data
     parser.add_argument('--no_multiprocessing', action='store_true')  # Prevents certain deadlocks
     parser.add_argument('--continue_ensemble', action='store_true')  # Continues a stopped ensemble training
     args = parser.parse_args()
     config = json.load(open(args.config, 'r'))
-
     set_seed(config.get('seed', 42))
 
     is_dist, rank, world_size, local_rank = util.setup_distributed()
     device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
+# args for diting model
+    diting_args, ds_init = get_args_diting()
+    with open(diting_args.conf_file, 'r') as f:
+        diting_conf_data = yaml.safe_load(f)
+    vars(diting_args).update(diting_conf_data)
+    depth = 24
+    if depth % diting_args.num_interactions != 0:
+        diting_args.num_interactions -= 1
+    n = (depth - 1)//diting_args.num_interactions
+    diting_args.interaction_indexes = [[i*n, (i+1)*n] for i in range(diting_args.num_interactions)]
+    if diting_args.num_interactions * n != depth:
+        diting_args.interaction_indexes.append([diting_args.num_interactions*n, depth])
+
+    diting_args.distributed = is_dist
+    if diting_args.distributed:
+        diting_args.device = device
+ # end diting args
 
     training_params = config['training_params']
     generator_params = training_params.get('generator_params', [training_params.copy()])
@@ -294,7 +330,9 @@ if __name__ == '__main__':
 
         print('Building model')
         single_station_model, full_model = models.build_transformer_model(**config['model_params'],
-                                                                          trace_length=data_train[0]['waveforms'][0].shape[1])
+                                                                          trace_length=data_train[0]['waveforms'][0].shape[1],
+                                                                          diting_args=diting_args
+)
         if is_dist:
             single_station_model = DDP(single_station_model, device_ids=[local_rank],output_device=local_rank)
             full_model = DDP(full_model, device_ids=[local_rank],output_device=local_rank)
@@ -307,7 +345,7 @@ if __name__ == '__main__':
             checkpoint = torch.load(training_params['single_station_model_path'])
             single_station_model.load_state_dict(checkpoint["model_state_dict"]) # need modify with save state dict.
         elif 'transfer_model_path' not in training_params:
-            optimizer = nn.optimizers.Adam(single_station_model.parameters(),lr=training_params['lr'])
+            optimizer = optim.Adam(single_station_model.parameters(),lr=training_params['lr'])
             key = generator_params[0]['key']
             filter_single_station_by_pick = training_params.get('filter_single_station_by_pick', False)
 
@@ -336,11 +374,11 @@ if __name__ == '__main__':
 
             sliding_window = generator_params[0].get('sliding_window', False)
 
-            train_dataset = util.EventDataset(x_train, np.expand_dims(np.expand_dims(y_train, axis=1), axis=2),
+            train_dataset = util.DataGenerator(x_train, np.expand_dims(np.expand_dims(y_train, axis=1), axis=2),
                                                  cutout=cutout, label_smoothing=True, sliding_window=sliding_window)
-            val_dataset = util.EventDataset(x_dev, np.expand_dims(np.expand_dims(y_dev, axis=1), axis=2),
+            val_dataset = util.DataGenerator(x_dev, np.expand_dims(np.expand_dims(y_dev, axis=1), axis=2),
                                                  cutout=cutout, label_smoothing=True, sliding_window=sliding_window)
-            if dist:
+            if is_dist:
                 train_sampler = DistributedSampler(train_dataset)
                 train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], sampler=train_sampler, shuffle=(train_sampler is None))
             else:
@@ -358,7 +396,6 @@ if __name__ == '__main__':
                 optimizer,
                 scheduler,
                 num_epochs=training_params['epochs_single_station'],
-                device=device
             )
             # Free memory
             del x_train
@@ -433,12 +470,12 @@ if __name__ == '__main__':
             generator_param_set['oversample'] = old_oversample
 
         if len(train_generators) == 0:
-            train_generator = train_generators[0]
-            validation_generator = validation_generators[0]
+            train_dataset = train_generators[0]
+            val_dataset = validation_generators[0]
         else:
             dataset_bias = config['model_params'].get('dataset_bias', False)
-            train_generator = util.JointGenerator(train_generators, shuffle=True, dataset_id=dataset_bias)
-            validation_generator = util.JointGenerator(validation_generators, shuffle=True, dataset_id=dataset_bias)
+            train_dataset = util.JointGenerator(train_generators, shuffle=True, dataset_id=dataset_bias)
+            val_dataset = util.JointGenerator(validation_generators, shuffle=True, dataset_id=dataset_bias)
 
         filepath = os.path.join(training_params['weight_path'], 'event-{epoch:02d}.hdf5')
         patience = training_params.get('lr_decay_patience', 6)
@@ -446,6 +483,12 @@ if __name__ == '__main__':
         lr_decay = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=patience, verbose=1)
         logdir = os.path.join('logs/scalars/', training_params['weight_path'])
 
+        if is_dist:
+            train_sampler = DistributedSampler(train_dataset)
+            train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], sampler=train_sampler, shuffle=(train_sampler is None))
+        else:
+            train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
         train_model(
             full_model,
             train_loader,
@@ -453,7 +496,6 @@ if __name__ == '__main__':
             optimizer,
             scheduler,
             num_epochs=training_params['epochs_full_model'],
-            device=device
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,
@@ -463,6 +505,6 @@ if __name__ == '__main__':
 #                                        workers=workers,
 #                                        callbacks=callbacks)
 
-        pickle.dump(hist.history, open(os.path.join(training_params['weight_path'], 'hist.pkl'), 'wb'))
+#        pickle.dump(hist.history, open(os.path.join(training_params['weight_path'], 'hist.pkl'), 'wb')) change to tensorboard
     if is_dist:
         dist.destroy_process_group()

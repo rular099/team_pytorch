@@ -122,7 +122,19 @@ def load_events(data_paths, limit=None, parts=None, shuffle_train_dev=False, cus
                 if key not in data:
                     data[key] = []
                 if key == 'waveforms':
-                    data[key] += [g_event[key][:, ::decimate, :]]
+                    # pad to 10000 points
+                    cur_waveform = g_event[key][:, ::decimate, :]
+                    cur_waveform -= np.mean(cur_waveform, axis=1, keepdims=True)
+                    std = np.std(cur_waveform, axis=1, keepdims=True) + 1e-8
+                    cur_waveform = cur_waveform / std
+                    if cur_waveform.shape[1] < 10000:
+                        pad_arr = np.zeros((cur_waveform.shape[0],
+                                            10000 - cur_waveform.shape[1],
+                                            cur_waveform.shape[2]))
+                        data[key] += [np.concatenate((g_event[key][:, ::decimate, :], pad_arr),
+                                                     axis=1)]
+                    else:
+                        data[key] += [g_event[key][:, ::decimate, :]]
                 else:
                     #data[key] += [g_event[key].value]
                     data[key] += [g_event[key][()]]

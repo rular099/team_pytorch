@@ -1,7 +1,7 @@
 {
     "seed": 42,
     "model": "transformer",
-    "ensemble": 10,
+    "ensemble": 1,
     "model_params": {
         "waveform_model_dims": [
             500,
@@ -62,10 +62,10 @@
         "rotation_anchor": [42, 0]
     },
     "training_params": {
-        "lr": 0.0001,
+        "lr": 0.001,
         "clipnorm": 1.0,
-        "epochs_single_station": 25,
-        "epochs_full_model": 100,
+        "epochs_single_station": 10,
+        "epochs_full_model": 10,
         "filter_single_station_by_pick": true,
         "data_path": [
             "../TEAM/data/italy/italy.hdf5"

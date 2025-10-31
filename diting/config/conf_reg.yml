@@ -1,0 +1,91 @@
+# 任务设定
+downstream_task: emg # 任务名称，随便取。但 emg,dis,dpk 已被占用。
+mode: train_test # 可以是 train,val,test 三者组合，以下划线分隔。
+downstream_task_type: reg # 可以是 reg 或者 cls，分别表示回归任务和分类任务
+num_classes: 2 # 一共有几类，仅对分类任务有效。
+head_scale_factor: 10.0 # 模型默认输出结果范围是 [0,1]，这里乘以系数调整取值范围。仅对回归任务有效。
+# 训练记录
+log_step: 10 # 每隔多少步做一次记录。
+log_dir: /public/home/zhangbei/work_dir/DiTing/single_task_custom/results/LP_EP_prandom_mr75_100M_pretrain_2400w/outs/ds1000_emg_lpCkpt29_1_ep20_pt0070_rpt1_headvit_adapter_decoder_new_evallinear_probe_dpfalse_zero0_dtmtrue_lr0.001_bs16_augtrue_wd0.05_drop0_rcp0_augadd_noise-add_mask_window-pre_emphasis
+eval_log_dir: /public/home/zhangbei/work_dir/DiTing/single_task_custom/evaluate/LSD_ditingV3/LP_EP_prandom_mr75_100M_pretrain_2400w/ds1000_emg_lpCkpt29_1_ep20_pt0070_rpt1_headvit_adapter_decoder_new_evallinear_probe_dpfalse_zero0_dtmtrue_lr0.001_bs16_augtrue_wd0.05_drop0_rcp0_augadd_noise-add_mask_window-pre_emphasis
+# 数据
+subset_names: custom # 数据来源，对应 csv 文件的 From 列值
+train_meta_data_path: /public/home/zhangbei/work_dir/DiTing/single_task_custom/for_finetune_api/demo_data/train_data.csv
+train_data_dir: /public/home/zhangbei/work_dir/DiTing/single_task_custom/for_finetune_api/demo_data/train_data.h5
+test_meta_data_path: /public/home/zhangbei/work_dir/DiTing/single_task_custom/for_finetune_api/demo_data/train_data.csv
+test_data_dir: /public/home/zhangbei/work_dir/DiTing/single_task_custom/for_finetune_api/demo_data/train_data.h5
+train_target_column: Mag_value # 目标值在 csv 文件的哪一列
+test_target_column: Mag_value
+train_sample_num: 500 # 训练数据量，必须小于或者等于 train_data_dir 中数据条数。
+# 训练超参数
+# loss_type could be one of CELoss, BCELoss, HuberLoss, BazLoss, FocalLoss, BinaryFocalLoss, CircleLoss, MSELoss, MousaviLoss
+loss_type: HuberLoss
+batch_size: 16
+epochs: 5
+base_lr: 0.003
+warmup_steps: 0.02
+optim: adamw
+weight_decay: 0.05
+lr_scheduler_mode: exp_range
+head_drop_rate: 0.0
+drop_path: 0.0
+layer_decay: 1.0
+enable_deepspeed: false
+zero_stage: 0
+lr_scheduler: cosine
+task_loss_weight: [1.0]
+block_decay: [1.0, 1.0]
+use_deterministic: true
+no_set_device_rank: false
+# 数据增强
+augmentation: true
+operations: ['add_noise', 'add_mask_window', 'pre_emphasis']
+add_noise_rate: 0.33
+noise_type: uniform
+add_noise_window_rate: 0.5
+noise_percent: 30.0
+add_mask_window_rate: 0.33
+mask_percent: 0.2
+add_gap_rate: 0.5
+min_event_gap: 0.5
+drop_channel_rate: 0.5
+pre_emphasis_rate: 0.33
+pre_emphasis_ratio: 0.97
+shift_event_rate: 0.0
+num_aug: 1
+mag_aug: 0.0
+patience: 30
+random_crop_p: 0.0
+# 模型设定
+pretrain_method: lp
+eval_type: linear_probe
+pretrained: /public/home/zhangbei/work_dir/DiTing/single_task_custom/100M_model-29-latest.pth
+resume: ''
+hps: modelsize512_lr0.003_wd5e-06_mr0.75_init-std0.16_attn-mult32.0_input-mult10.0_output-mult16.0
+seed: 0
+model_name: llama
+data_split: true
+train_size: 1.0
+val_size: 0.0
+shuffle: true
+workers: 2
+in_samples: 10000
+patch_size: 50
+encoder_size: {'n_layers': 12, 'd_model': 192, 'n_heads': 6, 'd_ff': 768}
+pool_type: none
+dpk_head: vit_adapter_decoder_new
+precision: fp32
+num_interactions: 4
+pale_size: 5
+stem_convKs: 3
+cpe_kernel_size: 3
+ffn_convKS: 3
+out_channels: 256
+fpn_convKS: 3
+aggregate_convKS: 3
+head_convKS: 3
+target_width: 512
+input_mult: 10.0
+attn_mult: 32.0
+output_mult: 16.0
+inter_mode: fpn_deep_5
