@@ -16,6 +16,7 @@ import torch.nn as nn
 import torch.nn.utils as nn_utils
 import torch.distributed as dist
 from torch.utils.data import DataLoader, TensorDataset, DistributedSampler
+from torch.utils.tensorboard import SummaryWriter
 
 import gemini_util as util
 import loader
@@ -26,10 +27,16 @@ from diting.downstream.gemini_utils import get_args as get_args_diting
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None):
+    tb_path = f'runs/{save_name}'
+    if (not is_dist) or (is_dist and (rank == 0)):
+        os.makedirs(tb_path, exist_ok=True)
+        writer = SummaryWriter(log_dir = tb_path)
     try:
         device = next(model.parameters()).device
     except:
         device = 'cpu'
+    global_step = 0
+    steps_per_epoch = 0
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -45,12 +52,24 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 outputs = model(inputs)
             loss = models.mixture_density_loss(outputs, labels)
             loss.backward()
+            if (not is_dist) or (is_dist and (rank == 0)):
+                writer.add_scalar('train/loss', loss.item(), global_step)
+                step_in_ep = global_step - steps_per_epoch * epoch
+                print(f'Step/Epoch {step_in_ep}/{epoch}, Loss: {loss.item():.4f}')
             if clipnorm is not None:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
             optimizer.step()
             running_loss += loss.item()
-
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}')
+            if global_step % 100 == 0:
+                if (not is_dist) or (is_dist and (rank == 0)):
+                    writer.add_scalar('train/lr', optimizer.param_groups[0]['lr'], global_step)
+            global_step += 1
+        epoch_loss = running_loss/len(train_loader)
+        if steps_per_epoch == 0:
+            steps_per_epoch = global_step
+        if (not is_dist) or (is_dist and (rank == 0)):
+            writer.add_scalar('train/epoch_loss',epoch_loss, epoch)
+            print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}')
 
         # Validation step
         if (not is_dist) or (is_dist and (rank == 0)):
@@ -70,6 +89,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     val_running_loss += loss.item()
 
             val_loss = val_running_loss / len(val_loader)
+            writer.add_scalar('val/epoch_loss',val_loss, epoch)
             print(f'Validation Loss: {val_loss:.4f}')
             if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                 scheduler.step(val_loss)
@@ -90,6 +110,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 'scheduler_state_dict': scheduler.state_dict(),
                 'loss': val_loss,
             }, filepath)
+    if (not is_dist) or (is_dist and (rank == 0)):
+        writer.close()
 
 def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dist=False, rank=0):
     checkpoint = None
@@ -237,7 +259,8 @@ if __name__ == '__main__':
     generator_params = training_params.get('generator_params', [training_params.copy()])
 
     if not os.path.isdir(training_params['weight_path']):
-        os.mkdir(training_params['weight_path'])
+        if (not is_dist) or (is_dist and (rank == 0)):
+            os.makedirs(training_params['weight_path'], exist_ok=True)
     listdir = os.listdir(training_params['weight_path'])
     if not args.continue_ensemble and listdir:
         if len(listdir) != 1 or listdir[0] != 'config.json':
@@ -323,7 +346,8 @@ if __name__ == '__main__':
                     raise ValueError(f'Can not continue unclean ensemble. Checking for {hist_path} failed.')
 
             if not os.path.isdir(training_params['weight_path']):
-                os.mkdir(training_params['weight_path'])
+                if (not is_dist) or (is_dist and (rank == 0)):
+                    os.makedirs(training_params['weight_path'], exist_ok=True)
 
             with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
                 json.dump(config, f, indent=4)
@@ -396,6 +420,9 @@ if __name__ == '__main__':
                 optimizer,
                 scheduler,
                 num_epochs=training_params['epochs_single_station'],
+                is_dist=is_dist,
+                rank=local_rank,
+                save_name='simple_model'
             )
             # Free memory
             del x_train
@@ -496,6 +523,9 @@ if __name__ == '__main__':
             optimizer,
             scheduler,
             num_epochs=training_params['epochs_full_model'],
+            is_dist=is_dist,
+            rank=local_rank,
+            save_name='full_model'
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,
