@@ -364,24 +364,26 @@ class LayerNormalization(nn.Module):
 
 
 class AddEventToken(nn.Module):
-    def __init__(self, fixed=True, init_range=None):
+    def __init__(self, fixed=False, init_range=None):
         super().__init__()
         self.fixed = fixed
         self.init_range = init_range
         self.emb = None
 
-    def build(self, input_shape):
+    def build(self, x):
+        input_shape = x.shape
+        device = x.device
         if not self.fixed:
             if self.init_range is None:
-                self.emb = nn.Parameter(torch.ones(input_shape[-1]))
+                self.emb = nn.Parameter(torch.ones(input_shape[-1])).to(device)
             else:
-                self.emb = nn.Parameter(torch.rand(input_shape[-1]) * 2 * self.init_range - self.init_range)
+                self.emb = nn.Parameter(torch.rand(input_shape[-1]) * 2 * self.init_range - self.init_range).to(device)
 
     def forward(self, x, mask=None):
         if self.emb is None and not self.fixed:
-             self.build(x.shape)
+             self.build(x)
 
-        pad = torch.ones_like(x[:, :1, :])
+        pad = torch.ones_like(x[:, :1, :]).to(x.device)
         if self.emb is not None:
             pad = pad * self.emb
         x = torch.cat([pad, x], dim=1)
@@ -463,7 +465,10 @@ def mixture_density_loss(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=
         sigma = y_pred[:, :, j + 1 + d]
         sigma = torch.maximum(sigma, torch.tensor(eps).to(y_pred.device)) #Move to device
 
-        density *= 1 / (np.sqrt(2 * np.pi) * sigma) * torch.exp(-(y_true[:, j] - mu) ** 2 / (2 * sigma ** 2))
+        y_true_tmp = y_true[:, j].clone()
+        while y_true_tmp.dim() < sigma.dim():
+            y_true_tmp = y_true_tmp.unsqueeze(-1)
+        density *= 1 / (np.sqrt(2 * np.pi) * sigma) * torch.exp(-(y_true_tmp - mu) ** 2 / (2 * sigma ** 2))
 
     density *= alpha
     density = torch.sum(density, dim=1)
@@ -508,7 +513,7 @@ class SingleStationModel(nn.Module):
 class FullModel(nn.Module):
     def __init__(self, waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
-                 metadata_shape, emb_dim, no_event_token, AddEventToken, n_pga_targets, dataset_bias,
+                 metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                  AddConstantToMixture, n_datasets):
         super().__init__()
         self.waveform_model = waveform_model
@@ -525,7 +530,7 @@ class FullModel(nn.Module):
         self.metadata_shape = metadata_shape
         self.emb_dim = emb_dim
         self.no_event_token = no_event_token
-        self.add_event_token = AddEventToken
+        self.add_event_token = add_event_token
         self.n_pga_targets = n_pga_targets
         self.dataset_bias = dataset_bias
         self.add_constant_to_mixture = AddConstantToMixture
@@ -535,9 +540,6 @@ class FullModel(nn.Module):
             self.att_masking = True
         else:
             self.att_masking = False
-
-        if not no_event_token:
-             self.add_event_token = AddEventToken(fixed=False, init_range=event_token_init_range)
 
         if dataset_bias:
             self.dataset_embedding = nn.Embedding(n_datasets, 1)
@@ -575,8 +577,13 @@ class FullModel(nn.Module):
 
             if att_mask is None:
                 # Create an attention mask based on the shape of emb
-                att_mask = torch.cat([torch.ones_like(emb[:, :emb.shape[1] - pga_emb.shape[1], 0], dtype=torch.bool),
-                                       torch.zeros_like(emb[:, emb.shape[1] - pga_emb.shape[1]:, 0], dtype=torch.bool)], dim=1)
+#                att_mask = torch.cat([torch.ones_like(emb[:, :emb.shape[1] - pga_emb.shape[1], 0], dtype=torch.bool),
+#                                       torch.zeros_like(emb[:, emb.shape[1] - pga_emb.shape[1]:, 0], dtype=torch.bool)], dim=1)
+                att_mask = self.Masking_nd_0_23.compute_mask(waveform_inp)
+                att_mask = torch.cat([att_mask,
+                                      torch.zeros_like(emb[:, emb.shape[1] - pga_emb.shape[1]:, 0], dtype=torch.bool)], dim=1)
+                if not (self.skip_transformer or self.no_event_token):
+                    att_mask = torch.cat([torch.ones_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
             emb = self.transformer(emb.float(), att_mask) # Modified line
         else:
             if self.skip_transformer:

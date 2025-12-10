@@ -58,14 +58,14 @@
         "bias_loc_mu": 0,
         "bias_loc_sigma": 2,
         "event_token_init_range": 0.02,
-        "no_event_token": true,
+        "no_event_token": false,
         "rotation_anchor": [42, 0]
     },
     "training_params": {
         "lr": 0.001,
         "clipnorm": 1.0,
-        "epochs_single_station": 1,
-        "epochs_full_model": 1,
+        "epochs_single_station": 10,
+        "epochs_full_model": 20,
         "filter_single_station_by_pick": true,
         "data_path": [
             "../TEAM/data/italy/italy.hdf5"
@@ -91,7 +91,6 @@
                 "trigger_based": true,
                 "scale_metadata": false,
                 "custom_split": "test_2016",
-                "upsample_high_station_events": 10,
                 "transform_target_only": false,
                 "pga_selection_skew": 1000,
                 "cutout_start": -1,
