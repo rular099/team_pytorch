@@ -26,7 +26,8 @@ from diting.downstream.gemini_utils import get_args as get_args_diting
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None):
+def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
+                res_comps=None, res_weight=None):
     tb_path = f'runs/{save_name}'
     if (not is_dist) or (is_dist and (rank == 0)):
         os.makedirs(tb_path, exist_ok=True)
@@ -50,7 +51,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 outputs = model(*inputs)
             else:
                 outputs = model(inputs)
-            loss = models.mixture_density_loss(outputs, labels)
+            loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight)
             loss.backward()
             if (not is_dist) or (is_dist and (rank == 0)):
                 writer.add_scalar('train/loss', loss.item(), global_step)
@@ -103,13 +104,14 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             else:
                 state_dict = model.state_dict()
 
-            torch.save({
-                'epoch': epoch+1,
-                'model_state_dict': state_dict,
-                'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'loss': val_loss,
-            }, filepath)
+            if epoch % 10 == 0:
+                torch.save({
+                    'epoch': epoch+1,
+                    'model_state_dict': state_dict,
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': scheduler.state_dict(),
+                    'loss': val_loss,
+                }, filepath)
     if (not is_dist) or (is_dist and (rank == 0)):
         writer.close()
 
@@ -401,7 +403,9 @@ if __name__ == '__main__':
                 num_epochs=training_params['epochs_single_station'],
                 is_dist=is_dist,
                 rank=local_rank,
-                save_name='simple_model'
+                save_name='simple_model',
+                res_comps=['mag'],
+                res_weight=np.array([1.])
             )
             # Free memory
 
@@ -502,11 +506,13 @@ if __name__ == '__main__':
             train_loader,
             val_loader,
             optimizer,
-            scheduler,
+            lr_decay,
             num_epochs=training_params['epochs_full_model'],
             is_dist=is_dist,
             rank=local_rank,
-            save_name='full_model'
+            save_name='full_model',
+	    res_comps=['mag','loc','pga'],
+	    res_weight=np.array([1.,1.,1.])
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,

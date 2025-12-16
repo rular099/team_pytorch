@@ -480,6 +480,35 @@ def mixture_density_loss(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=
     else:
         return loss
 
+def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=False, res_comps=None, res_weight=None):
+    if res_comps is None:
+        res_comps = ['mag', 'loc', 'pga']
+        res_weight = np.array([1.,1.,1.])
+    res_weight = res_weight / np.sum(res_weight)
+    loss = 0.
+    for i, res_comp in enumerate(res_comps):
+        alpha = y_pred[i][..., 0]
+        log_density = torch.zeros_like(y_pred[i][..., 0]).to(y_pred[i].device)  # Move to device
+        
+        if res_comp == 'loc':
+            d = 3
+        else:
+            d = 1 
+
+        for j in range(d):
+            mu = y_pred[i][..., j + 1]
+            sigma = y_pred[i][..., j + 1 + d]
+            sigma = torch.maximum(sigma, torch.tensor(eps).to(y_pred[i].device)) #Move to device
+    
+            y_true_tmp = y_true[i][..., j].clone()
+            while y_true_tmp.dim() < sigma.dim():
+                y_true_tmp = y_true_tmp.unsqueeze(-1)
+            log_density +=  - torch.log(np.sqrt(2 * np.pi) * sigma) - (y_true_tmp - mu) ** 2 / (2 * sigma ** 2)
+    
+        log_density += torch.log(alpha)
+        log_density = torch.logsumexp(log_density, dim=-1)
+        loss -= res_weight[i]*torch.mean(log_density)
+    return loss
 
 def time_distributed_loss(y_true, y_pred, loss_func, norm=1, mean=True, summation=True, kwloss={}):
     seq_length = y_pred.shape[1]

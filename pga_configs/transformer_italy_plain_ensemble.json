@@ -64,8 +64,8 @@
     "training_params": {
         "lr": 0.001,
         "clipnorm": 1.0,
-        "epochs_single_station": 10,
-        "epochs_full_model": 20,
+        "epochs_single_station": 1,
+        "epochs_full_model": 200,
         "filter_single_station_by_pick": true,
         "data_path": [
             "../TEAM/data/italy/italy.hdf5"

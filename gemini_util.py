@@ -118,6 +118,244 @@ class DataGenerator(Dataset):
             np.random.shuffle(self.indexes)
 
 
+class EvaluateEventGenerator(PreloadedEventGenerator):
+    def __init__(self, data, event_metadata, key='MA', cutout=None,
+                 sliding_window=False, windowlen=10000, shuffle=True,
+                 coords_target=True, oversample=1, pos_offset=(-21, -69),
+                 label_smoothing=False, station_blinding=False, magnitude_resampling=3,
+                 pga_targets=None, adjust_mean=True, transform_target_only=False,
+                 max_stations=None, trigger_based=None, min_upsample_magnitude=2,
+                 disable_station_foreshadowing=False, selection_skew=None, pga_from_inactive=False,
+                 integrate=False, sampling_rate=100.,
+                 select_first=False, fake_borehole=False, scale_metadata=True, pga_key='pga',
+                 pga_mode=False, p_pick_limit=5000, coord_keys=None, upsample_high_station_events=None,
+                 no_event_token=False, pga_selection_skew=None, **kwargs):
+        super().__init__(data, event_metadata, key, cutout,
+                 sliding_window, windowlen, shuffle,
+                 coords_target, oversample, pos_offset,
+                 label_smoothing, station_blinding, magnitude_resampling,
+                 pga_targets, adjust_mean, transform_target_only,
+                 max_stations, trigger_based, min_upsample_magnitude,
+                 disable_station_foreshadowing, selection_skew, pga_from_inactive,
+                 integrate, sampling_rate,
+                 select_first, fake_borehole, scale_metadata, pga_key,
+                 pga_mode, p_pick_limit, coord_keys, upsample_high_station_events,
+                 no_event_token, pga_selection_skew, **kwargs)
+
+    def __getitem__(self, index):
+        # Generate indexes of the batch
+        indexes = self.indexes[index:(index + 1)]
+        true_batch_size = len(indexes)
+        if self.pga_mode:
+            pga_indexes = [x[1] for x in indexes]
+            indexes = [x[0] for x in indexes]
+
+        waveforms = np.zeros((true_batch_size, self.max_stations) + self.waveforms[0].shape[1:])
+        true_max_stations_in_batch = max(max([self.metadata[idx].shape[0] for idx in indexes]), self.max_stations)
+        metadata = np.zeros((true_batch_size, true_max_stations_in_batch) + self.metadata[0].shape[1:])
+        pga = np.zeros((true_batch_size, true_max_stations_in_batch))
+        full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch))
+        p_picks = np.zeros((true_batch_size, self.max_stations))
+        reverse_selections = []
+
+        # Find list of IDs
+        for i, idx in enumerate(indexes):
+            if len(self.waveforms[idx]) <= self.max_stations:
+                waveforms[i, :len(self.waveforms[idx])] = self.waveforms[idx]
+                metadata[i, :len(self.metadata[idx])] = self.metadata[idx]
+                pga[i, :len(self.pga[idx])] = self.pga[idx]
+                p_picks[i, :len(self.triggers[idx])] = self.triggers[idx]
+                reverse_selections += [[]]
+            else:
+                if self.selection_skew is None:
+                    selection = np.arange(0, len(self.waveforms[idx]))
+                    np.random.shuffle(selection)
+                else:
+                    tmp_p_picks = self.triggers[idx].copy()
+                    mask = np.logical_and(tmp_p_picks <= 0, tmp_p_picks > self.p_pick_limit)
+                    tmp_p_picks[mask] = min(np.max(tmp_p_picks), self.p_pick_limit)
+                    coeffs = np.exp(-tmp_p_picks / self.selection_skew)
+                    coeffs *= np.random.random(coeffs.shape)
+                    coeffs[self.triggers[idx] == 0] = 0
+                    coeffs[self.triggers[idx] > self.waveforms[0].shape[1]] = 0
+                    selection = np.argsort(-coeffs)
+
+                if self.select_first:
+                    selection = np.argsort(self.triggers[idx])
+
+                metadata[i, :len(selection)] = self.metadata[idx][selection]
+                pga[i, :len(selection)] = self.pga[idx][selection]
+                full_p_picks[i, :len(selection)] = self.triggers[idx][selection]
+
+                tmp_reverse_selection = [0 for _ in selection]
+                for j, s in enumerate(selection):
+                    tmp_reverse_selection[s] = j
+                reverse_selections += [tmp_reverse_selection]
+
+                selection = selection[:self.max_stations]
+                waveforms[i] = self.waveforms[idx][selection]
+                p_picks[i] = self.triggers[idx][selection]
+
+        magnitude = self.event_metadata.iloc[indexes][self.key].values.copy()
+
+        target = None
+        if self.coords_target:
+            target = self.event_metadata.iloc[indexes][self.coord_keys].values
+
+        org_waveform_length = waveforms.shape[2]
+        if self.cutout:
+            if self.sliding_window:
+                windowlen = self.windowlen
+                window_end = np.random.randint(max(windowlen, self.cutout[0]),
+                                              min(waveforms.shape[2], self.cutout[1]) + 1)
+                waveforms = waveforms[:, :, window_end - windowlen: window_end]
+
+                cutout = window_end
+                if self.adjust_mean:
+                    waveforms -= np.mean(waveforms, axis=2, keepdims=True)
+            else:
+                cutout = np.random.randint(*self.cutout)
+                if self.adjust_mean:
+                    waveforms -= np.mean(waveforms[:, :, :cutout + 1], axis=2, keepdims=True)
+                waveforms[:, :, cutout:] = 0
+        else:
+            cutout = waveforms.shape[2]
+
+        if self.trigger_based:
+            # Remove waveforms for all stations that did not trigger yet to avoid knowledge leakage
+            p_picks[p_picks <= 0] = org_waveform_length  # Ensure that stations without P picks do not show data
+            waveforms[cutout < p_picks, :, :] = 0
+
+        if self.integrate:
+            waveforms = np.cumsum(waveforms, axis=2) / self.sampling_rate
+
+        # Reshape magnitude to match dimension number of MDN output
+        magnitude = np.expand_dims(np.expand_dims(magnitude, axis=-1), axis=-1)
+        # Center location on mean of locations
+        if self.coords_target:
+            metadata, target = self.location_transformation(metadata, target)
+        else:
+            metadata = self.location_transformation(metadata)
+
+        if self.label_smoothing:
+            magnitude += (magnitude > 4) * np.random.randn(magnitude.shape[0]).reshape(magnitude.shape) * (
+                    magnitude - 4) * 0.05
+
+        if not self.pga_from_inactive and not self.pga_mode:
+            metadata = metadata[:, :self.max_stations]
+            pga = pga[:, :self.max_stations]
+
+        if self.pga_targets:
+            pga_values = np.zeros(
+                (true_batch_size, self.pga_targets))
+            pga_targets = np.zeros((true_batch_size, self.pga_targets, 3))
+            if self.pga_mode:
+                for i in range(waveforms.shape[0]):
+                    pga_index = pga_indexes[i]
+                    if len(reverse_selections[i]) > 0:
+                        sorted_pga = pga[i, reverse_selections[i]]
+                        sorted_metadata = metadata[i, reverse_selections[i]]
+                    else:
+                        sorted_pga = pga[i]
+                        sorted_metadata = metadata[i]
+                    pga_values_pre = sorted_pga[
+                                     pga_index * self.pga_targets:(pga_index + 1) * self.pga_targets]
+                    pga_values[i, :len(pga_values_pre)] = pga_values_pre
+                    pga_targets_pre = sorted_metadata[
+                                      pga_index * self.pga_targets:(pga_index + 1) * self.pga_targets, :]
+                    if pga_targets_pre.shape[-1] == 4:
+                        pga_targets_pre = pga_targets_pre[:, (0, 1, 3)]
+                    pga_targets[i, :len(pga_targets_pre), :] = pga_targets_pre
+            else:
+                pga[np.logical_or(np.isnan(pga), np.isinf(pga))] = 0  # Ensure only legal PGA values are selected
+                for i in range(waveforms.shape[0]):
+                    active = np.where(pga[i] != 0)[0]
+                    if len(active) == 0:
+                        raise ValueError(f'Found event without PGA idx={indexes[i]}')
+                    while len(active) < self.pga_targets:
+                        active = np.repeat(active, 2)
+                    if self.pga_selection_skew is not None:
+                        active_p_picks = full_p_picks[i, active]
+                        mask = np.logical_and(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
+                        active_p_picks[mask] = min(np.max(active_p_picks), self.p_pick_limit)
+                        coeffs = np.exp(-active_p_picks / self.pga_selection_skew)
+                        coeffs *= np.random.random(coeffs.shape)
+                        active = active[np.argsort(-coeffs)]
+                    else:
+                        np.random.shuffle(active)
+
+                    samples = active[:self.pga_targets]
+                    if metadata.shape[-1] == 3:
+                        pga_targets[i] = metadata[i, samples, :]
+                    else:
+                        full_targets = metadata[i, samples]
+                        pga_targets[i] = full_targets[:, (0, 1, 3)]
+                    pga_values[i] = pga[i, samples]
+            # Last two dimensions to match shape for keras loss
+            pga_values = pga_values.reshape((true_batch_size, self.pga_targets, 1, 1))
+
+        metadata = metadata[:, :self.max_stations]
+
+        if self.station_blinding:
+            mask = np.zeros(waveforms.shape[:2], dtype=bool)
+
+            for i in range(waveforms.shape[0]):
+                active = np.where((waveforms[i] != 0).any(axis=(1, 2)))[0]
+                if len(active) == 0:
+                    active = np.zeros(1, dtype=int)
+                blind_length = np.random.randint(0, len(active))
+                np.random.shuffle(active)
+                blind = active[:blind_length]
+                mask[i, blind] = True
+
+            waveforms[mask] = 0
+            metadata[mask] = 0
+
+        # To avoid that stations without a trigger are masked, we can set a value in the waveforms to non-zero.
+        # Thereby we keep the information that the station did not trigger yet.
+        # On the other hand this might leak information that a station is still going to trigger
+        stations_without_trigger = (metadata != 0).any(axis=2) & (waveforms == 0).all(axis=(2, 3))
+        if self.disable_station_foreshadowing:
+            metadata[stations_without_trigger] = 0
+        else:
+            waveforms[stations_without_trigger, 0, 0] += 1e-9
+
+        # Avoid completely zero events, leading to NaN values in energy loss
+        mask = np.logical_and((metadata == 0).all(axis=(1, 2)), (waveforms == 0).all(axis=(1, 2, 3)))
+        waveforms[mask, 0, 0, 0] = 1e-9
+        metadata[mask, 0, 0] = 1e-9
+
+        if self.fake_borehole and waveforms.shape[3] == 3:
+            waveforms = np.concatenate([np.zeros_like(waveforms), waveforms], axis=3)
+            metadata_new = np.zeros(metadata.shape[:-1] + (4,))
+            metadata_new[:, :, 0] = metadata[:, :, 0]
+            metadata_new[:, :, 1] = metadata[:, :, 1]
+            metadata_new[:, :, 3] = metadata[:, :, 2]
+            metadata = metadata_new
+
+        # Convert to Torch tensors
+        waveforms = torch.from_numpy(np.swapaxes(waveforms[0],1,2)).float()
+        metadata = torch.from_numpy(metadata[0]).float()
+        magnitude = torch.from_numpy(magnitude[0]).float()
+
+        inputs = [waveforms, metadata]
+        outputs = []
+        if not self.no_event_token:
+            outputs += [magnitude]
+
+            if self.coords_target:
+                target = np.expand_dims(target, axis=-1)
+                target = torch.from_numpy(target[0]).float()
+                outputs += [target]
+
+        if self.pga_targets:
+            pga_targets = torch.from_numpy(pga_targets[0]).float()
+            pga_values = torch.from_numpy(pga_values[0]).float()
+            inputs += [pga_targets]
+            outputs += [pga_values]
+
+        return inputs, outputs
+
 class PreloadedEventGenerator(Dataset):
     def __init__(self, data, event_metadata, key='MA', cutout=None,
                  sliding_window=False, windowlen=10000, shuffle=True,

@@ -328,7 +328,7 @@ class PreloadedEventGenerator(Dataset):
                     data[key][-1] //= self.decimate
 
         X = np.concatenate(data['waveforms'], axis=0)
-        self.metadata = np.concatenate(data['coords'], axis=0)
+        self.metadata = np.concatenate(data['coords'], axis=0) # coords of stations (lat, lon, elev)
         self.waveforms = X
 
         if self.pga_key in data:
@@ -346,12 +346,12 @@ class PreloadedEventGenerator(Dataset):
         y = np.array([self.event_metadata.get_group(ith_event)[self.target_key]])
         true_batch_size = 1
 
-        waveforms = np.zeros((true_batch_size, self.max_stations) + X.shape[1:])
-        true_max_stations_in_batch = max(max([self.metadata.shape[0] for idx in indexes]), self.max_stations)
-        metadata = np.zeros((true_batch_size, true_max_stations_in_batch) + self.metadata.shape[1:])
-        pga = np.zeros((true_batch_size, true_max_stations_in_batch))
-        full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch))
-        p_picks = np.zeros((true_batch_size, self.max_stations))
+        waveforms = np.zeros((true_batch_size, self.max_stations) + X.shape[1:])  # shape (1, 25, 10000, 3)
+        true_max_stations_in_batch = max(max([self.metadata.shape[0] for idx in indexes]), self.max_stations) # 25
+        metadata = np.zeros((true_batch_size, true_max_stations_in_batch) + self.metadata.shape[1:]) # shape (1, 25, 3)
+        pga = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1,25)
+        full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1, 25)
+        p_picks = np.zeros((true_batch_size, self.max_stations)) # shape (1, 25)
         reverse_selections = []
 
         # Find list of IDs
@@ -361,14 +361,15 @@ class PreloadedEventGenerator(Dataset):
                 metadata[i, :len(self.metadata)] = self.metadata
                 pga[i, :len(self.pga)] = self.pga
                 p_picks[i, :len(self.triggers)] = self.triggers
+                full_p_picks[i, :len(self.triggers)] = self.triggers
                 reverse_selections += [[]]
             else:
-                if self.selection_skew is None:
+                if self.selection_skew is None:  # random select
                     selection = np.arange(0, len(self.waveforms))
                     np.random.shuffle(selection)
-                else:
+                else:  # pick_time + randomness
                     tmp_p_picks = self.triggers.copy()
-                    mask = np.logical_and(tmp_p_picks <= 0, tmp_p_picks > self.p_pick_limit)
+                    mask = np.logical_or(tmp_p_picks <= 0, tmp_p_picks > self.p_pick_limit)
                     tmp_p_picks[mask] = min(np.max(tmp_p_picks), self.p_pick_limit)
                     coeffs = np.exp(-tmp_p_picks / self.selection_skew)
                     coeffs *= np.random.random(coeffs.shape)
@@ -376,10 +377,11 @@ class PreloadedEventGenerator(Dataset):
                     coeffs[self.triggers > self.waveforms.shape[1]] = 0
                     selection = np.argsort(-coeffs)
 
-                if self.select_first:
+                if self.select_first: # pick_time
                     selection = np.argsort(self.triggers)
 
-                metadata[:, :len(selection)] = self.metadata[selection]
+                selection = selection[:true_max_stations_in_batch]
+                metadata[i, :len(selection)] = self.metadata[selection]
                 pga[i, :len(selection)] = self.pga[selection]
                 full_p_picks[i, :len(selection)] = self.triggers[selection]
 
@@ -396,7 +398,7 @@ class PreloadedEventGenerator(Dataset):
 
         target = None
         if self.coords_target:
-            target = self.event_metadata.get_group(ith_event)[self.coord_keys].values
+            target = self.event_metadata.get_group(ith_event)[self.coord_keys].values  # event location
 
         org_waveform_length = waveforms.shape[2]
         if self.cutout:
@@ -410,7 +412,9 @@ class PreloadedEventGenerator(Dataset):
                 if self.adjust_mean:
                     waveforms -= np.mean(waveforms, axis=2, keepdims=True)
             else:
-                cutout = np.random.randint(*self.cutout)
+                cutout_min = int(p_picks[p_picks  > 0].min()) + self.cutout[0]
+                cutout_max = min(int(p_picks[p_picks > 0].min()) + self.cutout[1], self.windowlen)
+                cutout = np.random.randint(cutout_min, cutout_max)
                 if self.adjust_mean:
                     waveforms -= np.mean(waveforms[:, :, :cutout + 1], axis=2, keepdims=True)
                 waveforms[:, :, cutout:] = 0
@@ -472,7 +476,7 @@ class PreloadedEventGenerator(Dataset):
                         active = np.repeat(active, 2)
                     if self.pga_selection_skew is not None:
                         active_p_picks = full_p_picks[i, active]
-                        mask = np.logical_and(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
+                        mask = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
                         active_p_picks[mask] = min(np.max(active_p_picks), self.p_pick_limit)
                         coeffs = np.exp(-active_p_picks / self.pga_selection_skew)
                         coeffs *= np.random.random(coeffs.shape)
@@ -487,8 +491,7 @@ class PreloadedEventGenerator(Dataset):
                         full_targets = metadata[i, samples]
                         pga_targets[i] = full_targets[:, (0, 1, 3)]
                     pga_values[i] = pga[i, samples]
-            # Last two dimensions to match shape for keras loss
-            pga_values = pga_values.reshape((true_batch_size, self.pga_targets, 1, 1))
+            pga_values = pga_values.reshape((true_batch_size, self.pga_targets, 1))
 
         metadata = metadata[:, :self.max_stations]
 
@@ -540,7 +543,7 @@ class PreloadedEventGenerator(Dataset):
             outputs += [magnitude[0]]
 
             if self.coords_target:
-                target = np.expand_dims(target, axis=-1)
+#                target = np.expand_dims(target, axis=-1)
                 target = torch.from_numpy(target[0]).float()
                 outputs += [target]
 
