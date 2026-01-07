@@ -155,8 +155,9 @@ class DataGenerator(Dataset):
         X = torch.from_numpy(X[0].T).float()  # Convert to torch tensor
         y = torch.from_numpy(y).float()  # Convert to torch tensor
 #        y = torch.from_numpy(y[0]).float()  # Convert to torch tensor
+        metadata = 1
 
-        return X, y
+        return X, y, metadata
 
     def on_epoch_end(self):
         self.indexes = np.repeat(self.indexes, self.oversample)
@@ -412,12 +413,16 @@ class PreloadedEventGenerator(Dataset):
                 if self.adjust_mean:
                     waveforms -= np.mean(waveforms, axis=2, keepdims=True)
             else:
-                cutout_min = int(p_picks[p_picks  > 0].min()) + self.cutout[0]
-                cutout_max = min(int(p_picks[p_picks > 0].min()) + self.cutout[1], self.windowlen)
-                cutout = np.random.randint(cutout_min, cutout_max)
+                cutout_min = p_picks + self.cutout[0]
+                cutout_max = p_picks + self.cutout[1]
+                #cutout_max = cutout_max * (cutout_max < self.windowlen)
+                #cutout = np.random.randint(low=cutout_min, high=cutout_max)
+                cutout = self.windowlen + np.zeros_like(cutout_min)
+                waveform_pts = np.arange(self.windowlen)
+                selected_pts = waveform_pts[np.newaxis, np.newaxis, :, np.newaxis] < cutout[:, :, np.newaxis, np.newaxis]
+                waveforms = waveforms * selected_pts
                 if self.adjust_mean:
-                    waveforms -= np.mean(waveforms[:, :, :cutout + 1], axis=2, keepdims=True)
-                waveforms[:, :, cutout:] = 0
+                    waveforms = waveforms - np.mean(waveforms, axis=2, keepdims=True)
         else:
             cutout = waveforms.shape[2]
 
@@ -553,7 +558,7 @@ class PreloadedEventGenerator(Dataset):
             inputs += [pga_targets]
             outputs += [pga_values]
 
-        return inputs, outputs
+        return inputs, outputs, p_picks
 
     def on_epoch_end(self):
         self.indexes = np.repeat(self.base_indexes.copy(), self.oversample, axis=0)
@@ -610,7 +615,7 @@ class JointGenerator(Dataset):
 
     def __getitem__(self, index):
         generator_id, batch_id = self.indexes[index]
-        batch_inp, batch_out = self.generators[generator_id][batch_id]
+        batch_inp, batch_out, batch_info = self.generators[generator_id][batch_id]
 
         if self.dataset_id:
             if self.fake_id is None:
@@ -618,7 +623,7 @@ class JointGenerator(Dataset):
             else:
                 dataset_id = torch.ones((batch_inp[0].shape[0], 1)) * self.fake_id
             batch_inp += [dataset_id]
-        return batch_inp, batch_out
+        return batch_inp, batch_out, batch_info
 
     def on_epoch_end(self):
         self.indexes = []

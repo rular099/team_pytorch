@@ -15,29 +15,126 @@ def gelu(x):
     """GELU activation function."""
     return 0.5 * x * (1 + torch.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
 
+def normalize(s):
+    return s.strip().lower().replace("-", "_")
+
+def get_activation(activation: str):
+    act = normalize(activation)
+    table = {
+        "relu": nn.ReLU(),
+        "gelu": nn.GELU(),
+        "tanh": nn.Tanh(),
+        "sigmoid": nn.Sigmoid(),
+        "silu": nn.SiLU(),
+        "swish": nn.SiLU(),
+        "elu": nn.ELU(),
+        "leaky_relu": nn.LeakyReLU(0.01),
+        "prelu": nn.PReLU(),
+        "none": nn.Identity(),
+    }
+    if act not in table:
+        raise ValueError(f"Unknown activation: {activation}")
+    return table[act]
+
+#class MLP(nn.Module):
+#    def __init__(self, input_shape, dims=(100, 50), activation=F.relu, last_activation=None):
+#        super().__init__()
+#        if last_activation is None:
+#            last_activation = activation
+#
+#        layers = [nn.Linear(input_shape[-1], dims[0]),
+#                  nn.ReLU()]  # Assuming input_shape is a tuple (batch_size, feature_dim)
+#
+#        for i in range(len(dims) - 1):
+#            layers.append(nn.Linear(dims[i], dims[i+1]))
+#            if i < len(dims) - 2: # Add activation except for the last layer
+#                layers.append(nn.ReLU())
+#
+#        self.mlp = nn.Sequential(*layers)
+#
+#    def forward(self, x):
+#        return self.mlp(x)
 
 class MLP(nn.Module):
-    def __init__(self, input_shape, dims=(100, 50), activation=F.relu, last_activation=None):
+    """
+    通用全连接 MLP：
+    - in_dim: 输入特征维度
+    - dims:  每层输出维度列表（包含最后一层的输出维度）
+    - activation: 中间层激活函数（默认 ReLU）
+    - last_activation: 最后一层激活函数（默认 None，即不加）
+    - dropout: 每个激活后可选 dropout
+    - use_layernorm: 是否在最后一层前加 LayerNorm
+    - use_batchnorm: 是否在每个线性层后加 BatchNorm1d（和 LayerNorm 二选一）
+    """
+    def __init__(
+        self,
+        input_shape: int,
+        dims,
+        activation='relu',
+        last_activation=None,
+        dropout: float = 0.0,
+        use_layernorm: bool = False,
+        use_batchnorm: bool = False,
+    ):
         super().__init__()
-        if last_activation is None:
-            last_activation = activation
 
-        layers = [nn.Linear(input_shape[-1], dims[0]),
-                  nn.ReLU()]  # Assuming input_shape is a tuple (batch_size, feature_dim)
+        assert not (use_layernorm and use_batchnorm), "LayerNorm 和 BatchNorm 不要同时开"
+        in_dim = input_shape[-1]
+        if isinstance(activation, str):
+            activation_layer = get_activation(activation)
+        if isinstance(last_activation, str):
+            last_activation_layer = get_activation(last_activation)
 
-        for i in range(len(dims) - 1):
-            layers.append(nn.Linear(dims[i], dims[i+1]))
-            if i < len(dims) - 2: # Add activation except for the last layer
-                layers.append(nn.ReLU())
+        if isinstance(dims, int):
+            dims = [dims]
+
+        layers = []
+        prev_dim = in_dim
+
+        for i, dim in enumerate(dims):
+            tmp_layer = nn.Linear(prev_dim, dim)
+            nn.init.zeros_(tmp_layer.bias)
+            layers.append(tmp_layer)
+
+            is_last = (i == len(dims) - 1)
+
+            # norm 一般只加在中间层或最后一层前，可以按需调整策略
+            if use_batchnorm and not is_last:
+                layers.append(nn.BatchNorm1d(dim))
+
+            # 激活
+            if not is_last:
+                if activation is not None:
+                    layers.append(activation_layer)
+                    nn.init.kaiming_normal_(tmp_layer.weight, nonlinearity=activation)
+            else:
+                if last_activation is not None:
+                    layers.append(last_activation_layer)
+                    nn.init.kaiming_normal_(tmp_layer.weight, nonlinearity=last_activation)
+
+            # Dropout
+            if dropout > 0 and not is_last:
+                layers.append(nn.Dropout(dropout))
+
+            prev_dim = dim
+
+        # 可选最后一层 LayerNorm（一般用于做 embedding）
+        if use_layernorm:
+            layers.append(nn.LayerNorm(prev_dim))
 
         self.mlp = nn.Sequential(*layers)
 
     def forward(self, x):
-        return self.mlp(x)
-
+        # x: (..., in_dim)
+        # 支持任意前导维度（batch / 序列），只要最后一维是特征
+        orig_shape = x.shape
+        x = x.reshape(-1, orig_shape[-1])   # 展平成 (N, in_dim)
+        x = self.mlp(x)
+        x = x.reshape(*orig_shape[:-1], -1)
+        return x
 
 class MixtureOutput(nn.Module):
-    def __init__(self, input_shape, n=5, d=1, activation=F.relu, eps=1e-4, bias_mu=1.8, bias_sigma=0.2, name=None):
+    def __init__(self, input_shape, n=5, d=1, activation=None, eps=1e-4, bias_mu=1.8, bias_sigma=0.2, name=None):
         super().__init__()
         self.n = n
         self.d = d
@@ -45,22 +142,37 @@ class MixtureOutput(nn.Module):
         self.eps = eps
 
         self.alpha = nn.Linear(input_shape[-1], n)
+        nn.init.zeros_(self.alpha.weight) #
+        nn.init.zeros_(self.alpha.bias) # Bias Init
+
         self.mu = nn.Linear(input_shape[-1], n * d)
+        if activation is None: 
+            nn.init.zeros_(self.mu.weight) #
+        else:
+            nn.init.kaiming_normal_(self.mu.weight, nonlinearity=activation) #
         nn.init.constant_(self.mu.bias, bias_mu) # Bias Init
+
         self.sigma = nn.Linear(input_shape[-1], n * d)
-        nn.init.constant_(self.sigma.bias, bias_sigma)
+        nn.init.zeros_(self.sigma.weight)
+        nn.init.constant_(self.sigma.bias, math.log(bias_sigma))
 
     def forward(self, x):
-        alpha = torch.softmax(self.alpha(x), dim=-1).unsqueeze(-1) # (batch, n, 1)
-        mu = self.activation(self.mu(x)).reshape(-1, self.n, self.d)  # (batch, n, d)
-        sigma = F.relu(self.sigma(x)).reshape(-1, self.n, self.d) + self.eps  # (batch, n, d)
-        out = torch.cat([alpha, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
-        return out
+        #alpha = torch.softmax(self.alpha(x), dim=-1).unsqueeze(-1) # (batch, n, 1)
+        alpha_logits = self.alpha(x).unsqueeze(-1) # (batch, n, 1)
+        mu = self.mu(x).reshape(-1, self.n, self.d)  # (batch, n, d)
+        if self.activation is not None:
+            mu = self.activation(mu) # (batch, n, d)
+        #sigma = F.relu(self.sigma(x)).reshape(-1, self.n, self.d) + self.eps  # (batch, n, d)
+        log_sigma = self.sigma(x).reshape(-1, self.n, self.d) # (batch, n, d)
+        sigma = torch.exp(log_sigma)
+        #out = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
+        #return out
+        return alpha_logits, mu, sigma
 
 
 
 class NormalizedScaleEmbedding(nn.Module):
-    def __init__(self, input_shape, activation=F.relu, downsample=1, mlp_dims=(500, 300, 200, 150), eps=1e-8):
+    def __init__(self, input_shape, activation='relu', downsample=1, mlp_dims=(500, 300, 200, 150), eps=1e-8):
         super().__init__()
         self.activation = activation
         self.inp_shape = input_shape
@@ -487,7 +599,7 @@ def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_sh
     res_weight = res_weight / np.sum(res_weight)
     loss = 0.
     for i, res_comp in enumerate(res_comps):
-        alpha = y_pred[i][..., 0]
+        alpha_logits = y_pred[i][..., 0]
         log_density = torch.zeros_like(y_pred[i][..., 0]).to(y_pred[i].device)  # Move to device
         
         if res_comp == 'loc':
@@ -498,16 +610,15 @@ def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_sh
         for j in range(d):
             mu = y_pred[i][..., j + 1]
             sigma = y_pred[i][..., j + 1 + d]
-            sigma = torch.maximum(sigma, torch.tensor(eps).to(y_pred[i].device)) #Move to device
     
             y_true_tmp = y_true[i][..., j].clone()
             while y_true_tmp.dim() < sigma.dim():
                 y_true_tmp = y_true_tmp.unsqueeze(-1)
-            log_density +=  - torch.log(np.sqrt(2 * np.pi) * sigma) - (y_true_tmp - mu) ** 2 / (2 * sigma ** 2)
+            log_density = log_density - torch.log(np.sqrt(2 * np.pi) * sigma) - (y_true_tmp - mu) ** 2 / (2 * sigma ** 2)
     
-        log_density += torch.log(alpha)
+        log_density = log_density + torch.log_softmax(alpha_logits,dim=-1)
         log_density = torch.logsumexp(log_density, dim=-1)
-        loss -= res_weight[i]*torch.mean(log_density)
+        loss = loss - res_weight[i]*torch.mean(log_density)
     return loss
 
 def time_distributed_loss(y_true, y_pred, loss_func, norm=1, mean=True, summation=True, kwloss={}):
@@ -536,14 +647,16 @@ class SingleStationModel(nn.Module):
     def forward(self, waveform_inp_single_station):
         emb = self.waveform_model(waveform_inp_single_station)
         emb = self.mlp_mag_single_station(emb)
-        out = self.output_model_single_station(emb)
+        alpha_logits, mu, sigma = self.output_model_single_station(emb)
+        mu = 10 * mu
+        out = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
         return out
 
 class FullModel(nn.Module):
     def __init__(self, waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                  metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
-                 AddConstantToMixture, n_datasets):
+                 add_constant_to_mixture, n_datasets):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -562,7 +675,7 @@ class FullModel(nn.Module):
         self.add_event_token = add_event_token
         self.n_pga_targets = n_pga_targets
         self.dataset_bias = dataset_bias
-        self.add_constant_to_mixture = AddConstantToMixture
+        self.add_constant_to_mixture = add_constant_to_mixture
         self.n_datasets = n_datasets
 
         if self.n_pga_targets > 0:
@@ -583,7 +696,29 @@ class FullModel(nn.Module):
             self.mlp_layer = MLP((mlp_input_length,), [self.emb_dim, self.emb_dim], activation='relu')
             self.maxpool = GlobalMaxPooling1DMasked()
 
+    def _normalize(self, data, mode, axis=1):
+        """  
+        Normalize waveform of each sample. (inplace)
+        """
+        data = data - torch.mean(data, axis=axis, keepdims=True)
+        if mode == "max":
+            max_data = torch.max(data, axis=axis, keepdims=True)
+            max_data[max_data == 0] = 1
+            data = data/max_data # + 1e-6
+
+        elif mode == "std":
+            std_data = torch.std(data, axis=axis, keepdims=True)
+            std_data[std_data == 0] = 1
+            data = data/std_data # + 1e-6
+        elif mode == "":
+            return data 
+        else:
+            raise ValueError(f"Supported mode: 'max','std', got '{mode}'")
+        return data 
+
+
     def forward(self, waveform_inp, metadata_inp, pga_targets_inp=None, dataset=None, att_mask = None):
+        waveform_inp = self._normalize(waveform_inp, mode='std', axis=3)
         waveforms_masked = self.Masking_nd_0_23(waveform_inp)
         coords_masked = self.Masking_nd_0_2(metadata_inp)
 
@@ -612,7 +747,8 @@ class FullModel(nn.Module):
                 att_mask = torch.cat([att_mask,
                                       torch.zeros_like(emb[:, emb.shape[1] - pga_emb.shape[1]:, 0], dtype=torch.bool)], dim=1)
                 if not (self.skip_transformer or self.no_event_token):
-                    att_mask = torch.cat([torch.ones_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
+#                    att_mask = torch.cat([torch.ones_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
+                    att_mask = torch.cat([torch.zeros_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
             emb = self.transformer(emb.float(), att_mask) # Modified line
         else:
             if self.skip_transformer:
@@ -629,10 +765,15 @@ class FullModel(nn.Module):
                 event_emb = emb[:, 0, :]  # Select event embedding
 
             mag_embedding = self.mlp_mag(event_emb)
-            out_mag = self.output_model_mag(mag_embedding)
+            #out_mag = self.output_model_mag(mag_embedding)
+            alpha_logits, mu, sigma = self.output_model_mag(mag_embedding)
+            mu = mu * 10
+            out_mag = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
 
             loc_embedding = self.mlp_loc(event_emb)
-            out_loc = self.output_model_loc(loc_embedding)
+            #out_loc = self.output_model_loc(loc_embedding)
+            alpha_logits, mu, sigma = self.output_model_loc(loc_embedding)
+            out_loc = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
 
             outputs.append(out_mag)
             outputs.append(out_loc)
@@ -640,13 +781,18 @@ class FullModel(nn.Module):
         if self.n_pga_targets:
             pga_emb = emb[:, -self.n_pga_targets:, :]  # Select embeddings for pga
             pga_emb = torch.stack([self.mlp_pga(pga_emb[:, i, :]) for i in range(pga_emb.shape[1])], dim=1)
-            output_pga = torch.stack([self.output_model_pga(pga_emb[:, i, :]) for i in range(pga_emb.shape[1])], dim=1)
+            #output_pga = torch.stack([self.output_model_pga(pga_emb[:, i, :]) for i in range(pga_emb.shape[1])], dim=1)
+            pga_out_tmp = []
+            for i in range(pga_emb.shape[1]):
+                alpha_logits, mu, sigma = self.output_model_pga(pga_emb[:, i, :])
+                pga_out_tmp.append(torch.cat([alpha_logits, mu, sigma], dim=-1))
+            output_pga = torch.stack(pga_out_tmp, dim=1)
             outputs.append(output_pga)
 
         if self.dataset_bias:
             assert self.n_datasets is not None
             dataset_bias_term = self.dataset_embedding(dataset).squeeze(-1)
-            out = self.add_constant_to_mixture()(out, dataset_bias_term)
+            outputs = self.add_constant_to_mixture()(outputs, dataset_bias_term)
 
         return outputs
 
@@ -748,7 +894,7 @@ def build_transformer_model(max_stations,
                             ffn_params={'hidden_dim': 1000},
                             transformer_layers=6,
                             hidden_dropout=0.0,
-                            activation=F.relu,
+                            activation='relu',
                             n_pga_targets=0,
                             location_mixture=5,
                             pga_mixture=5,
@@ -790,10 +936,11 @@ def build_transformer_model(max_stations,
 #                                              mlp_dims=waveform_model_dims)
 #    mlp_mag_single_station = MLP((waveform_model.mlp.mlp[-1].out_features,), output_mlp_dims, activation=activation) #Modified line
     waveform_model = get_diting_model(diting_args)
-    dt2team = MLP((diting_args.out_channels,), waveform_model_dims[-1:], activation=activation)
+    #dt2team = MLP((diting_args.out_channels,), waveform_model_dims[-1:], activation=activation)
+    dt2team = nn.Linear(diting_args.out_channels, waveform_model_dims[-1])
     waveform_model.add_module('dt2team', dt2team)
     mlp_mag_single_station = MLP((waveform_model_dims[-1],), output_mlp_dims, activation=activation) #Modified line
-    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), n=5, name='magnitude',
+    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), n=5, name='magnitude',activation=F.sigmoid,
                                                 bias_mu=bias_mag_mu, bias_sigma=bias_mag_sigma)
 
     single_station_model = SingleStationModel(waveform_model, mlp_mag_single_station, output_model_single_station)
@@ -816,15 +963,15 @@ def build_transformer_model(max_stations,
                                   ffn_params=ffn_params)
 
     mlp_mag = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu,
+    output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation=F.sigmoid,
                                  bias_sigma=bias_mag_sigma)
 
     mlp_loc = MLP((emb_dim,), output_location_dims, activation=activation)
-    output_model_loc = MixtureOutput((output_location_dims[-1],), n=location_mixture, d=3, bias_mu=bias_loc_mu,
-                                     bias_sigma=bias_loc_sigma, activation=F.relu)
+    output_model_loc = MixtureOutput((output_location_dims[-1],), n=location_mixture, d=3, bias_mu=bias_loc_mu,activation=None,
+                                     bias_sigma=bias_loc_sigma)
 
     mlp_pga = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_mixture, activation=F.relu, bias_mu=-5, bias_sigma=1)
+    output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_mixture, bias_mu=-5, bias_sigma=1, activation=None)
 
     # Module instantiation
     position_embedding = PositionEmbedding(wavelengths=wavelength, emb_dim=emb_dim, borehole=borehole, rotation=rotation, rotation_anchor=rotation_anchor)

@@ -10,16 +10,10 @@
         ],
         "output_mlp_dims": [
             150,
-            100,
-            50,
-            30,
             10
         ],
         "output_location_dims": [
             150,
-            100,
-            50,
-            50,
             50
         ],
         "wavelength": [

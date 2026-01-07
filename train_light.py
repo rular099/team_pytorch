@@ -41,7 +41,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        for inputs, labels in train_loader:
+        for inputs, labels, _ in train_loader:
             if isinstance(inputs, list): 
                 inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
             else:
@@ -77,7 +77,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             model.eval()
             val_running_loss = 0.0
             with torch.no_grad():
-                for inputs, labels in val_loader:
+                for inputs, labels, _ in val_loader:
                     if isinstance(inputs, list): 
                         inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
                     else:
@@ -86,7 +86,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         outputs = model(*inputs)
                     else:
                         outputs = model(inputs)
-                    loss = models.mixture_density_loss(outputs, labels)
+                    loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight)
                     val_running_loss += loss.item()
 
             val_loss = val_running_loss / len(val_loader)
