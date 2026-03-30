@@ -4,6 +4,7 @@ __pycache__/
 
 # Notebook cache
 .ipynb_checkpoints/
+/check_model.ipynb
 
 # Training outputs
 runs/
