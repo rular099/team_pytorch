@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 #from diting.finetuneing.utils import create_model
 import diting.finetuneing.utils.help_builder as help_builder
@@ -139,29 +140,34 @@ class MixtureOutput(nn.Module):
         self.n = n
         self.d = d
         self.activation = activation
+        if activation is not None:
+            self.activation_fun = get_activation(activation)
         self.eps = eps
 
         self.alpha = nn.Linear(input_shape[-1], n)
-        nn.init.zeros_(self.alpha.weight) #
-        nn.init.zeros_(self.alpha.bias) # Bias Init
+        nn.init.normal_(self.alpha.weight, mean=0.0, std=1e-3)
+        nn.init.zeros_(self.alpha.bias)
 
         self.mu = nn.Linear(input_shape[-1], n * d)
-        if activation is None: 
-            nn.init.zeros_(self.mu.weight) #
-        else:
-            nn.init.kaiming_normal_(self.mu.weight, nonlinearity=activation) #
-        nn.init.constant_(self.mu.bias, bias_mu) # Bias Init
+        nn.init.normal_(self.mu.weight, mean=0.0, std=1e-3)
+        mu_bias = torch.full((n * d,), float(bias_mu))
+        mu_bias += 1e-3 * torch.randn(n * d)
+        with torch.no_grad():
+            self.mu.bias.copy_(mu_bias)
 
         self.sigma = nn.Linear(input_shape[-1], n * d)
-        nn.init.zeros_(self.sigma.weight)
-        nn.init.constant_(self.sigma.bias, math.log(bias_sigma))
+        nn.init.normal_(self.sigma.weight, mean=0.0, std=1e-3)
+        sigma_bias = torch.full((n * d,), float(math.log(bias_sigma)))
+        sigma_bias += 1e-3 * torch.randn(n * d)
+        with torch.no_grad():
+            self.sigma.bias.copy_(sigma_bias)
 
     def forward(self, x):
         #alpha = torch.softmax(self.alpha(x), dim=-1).unsqueeze(-1) # (batch, n, 1)
         alpha_logits = self.alpha(x).unsqueeze(-1) # (batch, n, 1)
         mu = self.mu(x).reshape(-1, self.n, self.d)  # (batch, n, d)
         if self.activation is not None:
-            mu = self.activation(mu) # (batch, n, d)
+            mu = self.activation_fun(mu) # (batch, n, d)
         #sigma = F.relu(self.sigma(x)).reshape(-1, self.n, self.d) + self.eps  # (batch, n, d)
         log_sigma = self.sigma(x).reshape(-1, self.n, self.d) # (batch, n, d)
         sigma = torch.exp(log_sigma)
@@ -621,6 +627,16 @@ def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_sh
         loss = loss - res_weight[i]*torch.mean(log_density)
     return loss
 
+
+def clip_magnitude_mixture(mixture_output, mag_min=-2.0, mag_max=10.0):
+    if isinstance(mixture_output, torch.Tensor):
+        clipped = mixture_output.clone()
+        clipped[..., 1] = torch.clamp(clipped[..., 1], min=mag_min, max=mag_max)
+        return clipped
+    clipped = np.array(mixture_output, copy=True)
+    clipped[..., 1] = np.clip(clipped[..., 1], mag_min, mag_max)
+    return clipped
+
 def time_distributed_loss(y_true, y_pred, loss_func, norm=1, mean=True, summation=True, kwloss={}):
     seq_length = y_pred.shape[1]
     y_true = y_true.reshape(-1, (y_pred.shape[-1] - 1) // 2, 1)
@@ -638,17 +654,40 @@ def time_distributed_loss(y_true, y_pred, loss_func, norm=1, mean=True, summatio
     return loss
 
 class SingleStationModel(nn.Module):
-    def __init__(self, waveform_model, mlp_mag_single_station, output_model_single_station):
+    def __init__(self, waveform_model, mlp_mag_single_station, output_model_single_station, waveform_scale_proj=None):
         super().__init__()
         self.waveform_model = waveform_model
         self.mlp_mag_single_station = mlp_mag_single_station
         self.output_model_single_station = output_model_single_station
+        self.waveform_scale_proj = waveform_scale_proj
+
+    def _normalize(self, data, mode='std', axis=1):
+        data = data - torch.mean(data, dim=axis, keepdim=True)
+        if mode == 'std':
+            std_data = torch.std(data, dim=axis, keepdim=True)
+            std_data = torch.where(std_data == 0, torch.ones_like(std_data), std_data)
+            return data / std_data
+        if mode == 'max':
+            max_data = torch.amax(torch.abs(data), dim=axis, keepdim=True)
+            max_data = torch.where(max_data == 0, torch.ones_like(max_data), max_data)
+            return data / max_data
+        if mode == '':
+            return data
+        raise ValueError(f"Supported mode: 'max','std','', got '{mode}'")
+
+    def _extract_scale(self, waveform):
+        scale = torch.log(torch.amax(torch.abs(waveform), dim=(1, 2)) + 1e-6)
+        return scale.unsqueeze(-1)
 
     def forward(self, waveform_inp_single_station):
+        raw_waveform = waveform_inp_single_station
+        # Input shape is (batch, channel, time); normalize along time, not across channels.
+        waveform_inp_single_station = self._normalize(waveform_inp_single_station, mode='std', axis=2)
         emb = self.waveform_model(waveform_inp_single_station)
+        if self.waveform_scale_proj is not None:
+            emb = emb + self.waveform_scale_proj(self._extract_scale(raw_waveform))
         emb = self.mlp_mag_single_station(emb)
         alpha_logits, mu, sigma = self.output_model_single_station(emb)
-        mu = 10 * mu
         out = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
         return out
 
@@ -656,7 +695,7 @@ class FullModel(nn.Module):
     def __init__(self, waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                  metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
-                 add_constant_to_mixture, n_datasets):
+                 add_constant_to_mixture, n_datasets, waveform_scale_proj=None):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -677,6 +716,7 @@ class FullModel(nn.Module):
         self.dataset_bias = dataset_bias
         self.add_constant_to_mixture = add_constant_to_mixture
         self.n_datasets = n_datasets
+        self.waveform_scale_proj = waveform_scale_proj
 
         if self.n_pga_targets > 0:
             self.att_masking = True
@@ -717,12 +757,19 @@ class FullModel(nn.Module):
         return data 
 
 
+    def _extract_scale(self, waveform):
+        scale = torch.log(torch.amax(torch.abs(waveform), dim=(2, 3)) + 1e-6)
+        return scale.unsqueeze(-1)
+
     def forward(self, waveform_inp, metadata_inp, pga_targets_inp=None, dataset=None, att_mask = None):
+        raw_waveform = waveform_inp
         waveform_inp = self._normalize(waveform_inp, mode='std', axis=3)
         waveforms_masked = self.Masking_nd_0_23(waveform_inp)
         coords_masked = self.Masking_nd_0_2(metadata_inp)
 
         waveforms_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
+        if self.waveform_scale_proj is not None:
+            waveforms_emb = waveforms_emb + self.waveform_scale_proj(self._extract_scale(raw_waveform))
         waveforms_emb = self.layernorm(waveforms_emb)
 
         if not self.alternative_coords_embedding:
@@ -748,7 +795,7 @@ class FullModel(nn.Module):
                                       torch.zeros_like(emb[:, emb.shape[1] - pga_emb.shape[1]:, 0], dtype=torch.bool)], dim=1)
                 if not (self.skip_transformer or self.no_event_token):
 #                    att_mask = torch.cat([torch.ones_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
-                    att_mask = torch.cat([torch.zeros_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
+                    att_mask = torch.cat([torch.ones_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
             emb = self.transformer(emb.float(), att_mask) # Modified line
         else:
             if self.skip_transformer:
@@ -767,7 +814,6 @@ class FullModel(nn.Module):
             mag_embedding = self.mlp_mag(event_emb)
             #out_mag = self.output_model_mag(mag_embedding)
             alpha_logits, mu, sigma = self.output_model_mag(mag_embedding)
-            mu = mu * 10
             out_mag = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
 
             loc_embedding = self.mlp_loc(event_emb)
@@ -939,11 +985,13 @@ def build_transformer_model(max_stations,
     #dt2team = MLP((diting_args.out_channels,), waveform_model_dims[-1:], activation=activation)
     dt2team = nn.Linear(diting_args.out_channels, waveform_model_dims[-1])
     waveform_model.add_module('dt2team', dt2team)
+    single_station_scale_proj = nn.Linear(1, waveform_model_dims[-1])
     mlp_mag_single_station = MLP((waveform_model_dims[-1],), output_mlp_dims, activation=activation) #Modified line
-    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), n=5, name='magnitude',activation=F.sigmoid,
+    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), n=5, name='magnitude',activation=None,
                                                 bias_mu=bias_mag_mu, bias_sigma=bias_mag_sigma)
 
-    single_station_model = SingleStationModel(waveform_model, mlp_mag_single_station, output_model_single_station)
+    single_station_model = SingleStationModel(waveform_model, mlp_mag_single_station, output_model_single_station,
+                                              waveform_scale_proj=single_station_scale_proj)
 
     #   Event model
 
@@ -963,7 +1011,7 @@ def build_transformer_model(max_stations,
                                   ffn_params=ffn_params)
 
     mlp_mag = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation=F.sigmoid,
+    output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation=None,
                                  bias_sigma=bias_mag_sigma)
 
     mlp_loc = MLP((emb_dim,), output_location_dims, activation=activation)
@@ -986,10 +1034,11 @@ def build_transformer_model(max_stations,
     else:
         add_constant_to_mixture = None
 
+    full_waveform_scale_proj = nn.Linear(1, emb_dim)
     full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
-                             add_constant_to_mixture, n_datasets)
+                             add_constant_to_mixture, n_datasets, waveform_scale_proj=full_waveform_scale_proj)
     return single_station_model, full_model
 
 
@@ -1023,13 +1072,18 @@ class EnsembleEvaluateModel:
         raise NotImplementedError("Predict Generator not supported")
 
     def predict(self, inputs):
-         # Ensure inputs are tensors and on the correct device
-         inputs = [torch.as_tensor(i, device=self.device) for i in inputs]
+        # Ensure inputs are tensors and on the correct device
+        inputs = [torch.as_tensor(i, device=self.device) for i in inputs]
 
-         with torch.no_grad():  # Disable gradient calculation
+        with torch.no_grad():  # Disable gradient calculation
             preds = [model(*inputs) for model in self.models]  # Call model with inputs, unpack if list
 
-         return self.merge_preds(preds)
+        merged = self.merge_preds(preds)
+        if isinstance(merged, list) and len(merged) > 0:
+            merged[0] = clip_magnitude_mixture(merged[0])
+        else:
+            merged = clip_magnitude_mixture(merged)
+        return merged
 
     @staticmethod
     def merge_preds(preds):

@@ -11,6 +11,7 @@ from tqdm import tqdm
 from scipy.stats import norm
 
 import torch
+import torch.distributed as dist
 from torch.utils.data import Dataset, DataLoader
 
 # warnings.simplefilter("ignore", UserWarning)
@@ -123,8 +124,6 @@ class DataGenerator(Dataset):
                     # pad to 10000 points
                     cur_waveform = g_event[key][event['wave_idx']:event['wave_idx']+1, ::self.decimate, :]
                     cur_waveform -= np.mean(cur_waveform, axis=1, keepdims=True)
-                    std = np.std(cur_waveform, axis=1, keepdims=True) + 1e-8
-                    cur_waveform = cur_waveform / std
                     if cur_waveform.shape[1] < 10000:
                         pad_arr = np.zeros((cur_waveform.shape[0],
                                             10000 - cur_waveform.shape[1],
@@ -313,8 +312,6 @@ class PreloadedEventGenerator(Dataset):
                     # pad to 10000 points
                     cur_waveform = g_event[key][:, ::self.decimate, :]
                     cur_waveform -= np.mean(cur_waveform, axis=1, keepdims=True)
-                    std = np.std(cur_waveform, axis=1, keepdims=True) + 1e-8
-                    cur_waveform = cur_waveform / std
                     if cur_waveform.shape[1] < 10000:
                         pad_arr = np.zeros((cur_waveform.shape[0],
                                             10000 - cur_waveform.shape[1],
@@ -415,9 +412,11 @@ class PreloadedEventGenerator(Dataset):
             else:
                 cutout_min = p_picks + self.cutout[0]
                 cutout_max = p_picks + self.cutout[1]
-                #cutout_max = cutout_max * (cutout_max < self.windowlen)
-                #cutout = np.random.randint(low=cutout_min, high=cutout_max)
-                cutout = self.windowlen + np.zeros_like(cutout_min)
+                cutout_min = np.clip(cutout_min, 0, self.windowlen)
+                cutout_max = np.clip(cutout_max, 0, self.windowlen)
+                # Sample a visible length per station from the configured cutout window.
+                high = np.maximum(cutout_min + 1, cutout_max + 1)
+                cutout = np.random.randint(low=cutout_min, high=high)
                 waveform_pts = np.arange(self.windowlen)
                 selected_pts = waveform_pts[np.newaxis, np.newaxis, :, np.newaxis] < cutout[:, :, np.newaxis, np.newaxis]
                 waveforms = waveforms * selected_pts
@@ -479,7 +478,12 @@ class PreloadedEventGenerator(Dataset):
                         raise ValueError(f'Found event without PGA idx={indexes[i]}')
                     while len(active) < self.pga_targets:
                         active = np.repeat(active, 2)
-                    if self.pga_selection_skew is not None:
+                    if self.select_first:
+                        active_p_picks = full_p_picks[i, active].copy()
+                        mask = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
+                        active_p_picks[mask] = min(np.max(active_p_picks), self.p_pick_limit)
+                        active = active[np.argsort(active_p_picks)]
+                    elif self.pga_selection_skew is not None:
                         active_p_picks = full_p_picks[i, active]
                         mask = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
                         active_p_picks[mask] = min(np.max(active_p_picks), self.p_pick_limit)

@@ -5,6 +5,7 @@ import yaml
 import random
 import h5py
 import os
+import copy
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import pickle
 import argparse
@@ -15,6 +16,7 @@ import torch.optim as optim
 import torch.nn as nn
 import torch.nn.utils as nn_utils
 import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, TensorDataset, DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
 
@@ -26,9 +28,18 @@ from diting.downstream.gemini_utils import get_args as get_args_diting
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+
+def subset_events(event_metadata, n):
+    if n is None:
+        return event_metadata
+    if hasattr(event_metadata, "iloc"):
+        return event_metadata.iloc[:n].copy()
+    return event_metadata[:n]
+
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
-                res_comps=None, res_weight=None):
+                res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None):
     tb_path = f'runs/{save_name}'
+    eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     if (not is_dist) or (is_dist and (rank == 0)):
         os.makedirs(tb_path, exist_ok=True)
         writer = SummaryWriter(log_dir = tb_path)
@@ -39,8 +50,11 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
     global_step = 0
     steps_per_epoch = 0
     for epoch in range(num_epochs):
+        if is_dist and train_sampler is not None:
+            train_sampler.set_epoch(epoch)
         model.train()
         running_loss = 0.0
+        num_train_batches = 0
         for inputs, labels, _ in train_loader:
             if isinstance(inputs, list): 
                 inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
@@ -61,11 +75,17 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
             optimizer.step()
             running_loss += loss.item()
+            num_train_batches += 1
             if global_step % 100 == 0:
                 if (not is_dist) or (is_dist and (rank == 0)):
                     writer.add_scalar('train/lr', optimizer.param_groups[0]['lr'], global_step)
             global_step += 1
-        epoch_loss = running_loss/len(train_loader)
+        if is_dist:
+            train_stats = torch.tensor([running_loss, float(num_train_batches)], device=device)
+            dist.all_reduce(train_stats, op=dist.ReduceOp.SUM)
+            epoch_loss = (train_stats[0] / train_stats[1]).item()
+        else:
+            epoch_loss = running_loss / max(num_train_batches, 1)
         if steps_per_epoch == 0:
             steps_per_epoch = global_step
         if (not is_dist) or (is_dist and (rank == 0)):
@@ -73,36 +93,37 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}')
 
         # Validation step
-        if (not is_dist) or (is_dist and (rank == 0)):
-            model.eval()
-            val_running_loss = 0.0
-            with torch.no_grad():
-                for inputs, labels, _ in val_loader:
-                    if isinstance(inputs, list): 
-                        inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
-                    else:
-                        inputs, labels = inputs.to(device), labels.to(device)
-                    if isinstance(inputs, list): 
-                        outputs = model(*inputs)
-                    else:
-                        outputs = model(inputs)
-                    loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight)
-                    val_running_loss += loss.item()
+        eval_model.eval()
+        val_running_loss = 0.0
+        num_val_batches = 0
+        with torch.no_grad():
+            for inputs, labels, _ in val_loader:
+                if isinstance(inputs, list):
+                    inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
+                else:
+                    inputs, labels = inputs.to(device), labels.to(device)
+                if isinstance(inputs, list):
+                    outputs = eval_model(*inputs)
+                else:
+                    outputs = eval_model(inputs)
+                loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight)
+                val_running_loss += loss.item()
+                num_val_batches += 1
 
-            val_loss = val_running_loss / len(val_loader)
+        if is_dist:
+            val_stats = torch.tensor([val_running_loss, float(num_val_batches)], device=device)
+            dist.all_reduce(val_stats, op=dist.ReduceOp.SUM)
+            val_loss = (val_stats[0] / val_stats[1]).item()
+        else:
+            val_loss = val_running_loss / max(num_val_batches, 1)
+
+        if (not is_dist) or (is_dist and (rank == 0)):
             writer.add_scalar('val/epoch_loss',val_loss, epoch)
             print(f'Validation Loss: {val_loss:.4f}')
-            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                scheduler.step(val_loss)
-            else:
-                scheduler.step()
 
             # Save checkpoint
             filepath = os.path.join(training_params['weight_path'], f'{save_name}_{epoch+1}.pth')
-            if isinstance(model, torch.nn.parallel.DistributedDataParallel):
-                state_dict = model.module.state_dict()
-            else:
-                state_dict = model.state_dict()
+            state_dict = eval_model.state_dict()
 
             if epoch % 10 == 0:
                 torch.save({
@@ -112,6 +133,18 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     'scheduler_state_dict': scheduler.state_dict(),
                     'loss': val_loss,
                 }, filepath)
+        if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            scheduler.step(val_loss)
+        else:
+            scheduler.step()
+        if is_dist:
+            dist.barrier()
+        if epoch_sanity and ((not is_dist) or (is_dist and (rank == 0))):
+            run_sanity_check(eval_model, train_loader, device, name=f'{save_name}_train_epoch_{epoch+1}')
+            run_sanity_check(eval_model, val_loader, device, name=f'{save_name}_val_epoch_{epoch+1}')
+    if post_train_sanity and ((not is_dist) or (is_dist and (rank == 0))):
+        run_sanity_check(eval_model, train_loader, device, name=f'{save_name}_train_post')
+        run_sanity_check(eval_model, val_loader, device, name=f'{save_name}_val_post')
     if (not is_dist) or (is_dist and (rank == 0)):
         writer.close()
 
@@ -225,12 +258,74 @@ def set_seed(seed=42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+def run_sanity_check(model, data_loader, device, name='sanity', max_batches=1):
+    model.eval()
+    print(f'===== {name} check =====')
+    with torch.no_grad():
+        for batch_id, (inputs, labels, _) in enumerate(data_loader):
+            if batch_id >= max_batches:
+                break
+
+            if isinstance(inputs, list):
+                inputs = [i.to(device) for i in inputs]
+                labels = [l.to(device) for l in labels]
+            else:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+
+            if isinstance(inputs, list):
+                wave = inputs[0]
+                outputs = model(*inputs)
+            else:
+                wave = inputs
+                outputs = model(inputs)
+
+            if wave.ndim == 3:
+                amp = torch.log(torch.amax(torch.abs(wave), dim=(1, 2)) + 1e-6)
+            elif wave.ndim == 4:
+                amp = torch.log(torch.amax(torch.abs(wave), dim=(2, 3)) + 1e-6)
+                amp = amp.mean(dim=1)
+            else:
+                amp = None
+
+            print(f'[{name}] batch={batch_id}')
+            if amp is not None:
+                print(f'  waveform log-scale: mean={amp.mean().item():.4f}, std={amp.std().item():.4f}, min={amp.min().item():.4f}, max={amp.max().item():.4f}')
+                if wave.ndim == 4:
+                    station_has_signal = (wave != 0).any(dim=(2, 3))
+                    signal_frac = (wave != 0).float().mean(dim=(1, 2, 3))
+                    print(f'  active stations/sample: {station_has_signal.sum(dim=1).tolist()}')
+                    print(f'  nonzero waveform fraction/sample: {[round(float(x), 4) for x in signal_frac]}')
+
+            if isinstance(labels, list):
+                for i, lab in enumerate(labels):
+                    labf = lab.float()
+                    print(f'  label[{i}]: shape={tuple(lab.shape)}, mean={labf.mean().item():.4f}, std={labf.std().item():.4f}, min={labf.min().item():.4f}, max={labf.max().item():.4f}')
+            else:
+                labf = labels.float()
+                print(f'  label: shape={tuple(labels.shape)}, mean={labf.mean().item():.4f}, std={labf.std().item():.4f}, min={labf.min().item():.4f}, max={labf.max().item():.4f}')
+
+            if not isinstance(outputs, list):
+                outputs = [outputs]
+            for i, out in enumerate(outputs):
+                outf = out.float()
+                print(f'  output[{i}]: shape={tuple(out.shape)}, mean={outf.mean().item():.4f}, std={outf.std().item():.4f}, min={outf.min().item():.4f}, max={outf.max().item():.4f}')
+                if out.ndim >= 3:
+                    alpha_logits = out[..., 0]
+                    mu = out[..., 1]
+                    sigma = out[..., -1]
+                    print(f'    alpha_logits: mean={alpha_logits.mean().item():.4f}, std={alpha_logits.std().item():.4f}')
+                    print(f'    mu: mean={mu.mean().item():.4f}, std={mu.std().item():.4f}')
+                    print(f'    sigma: mean={sigma.mean().item():.4f}, std={sigma.std().item():.4f}')
+    model.train()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
     parser.add_argument('--diting_config', type=str, required=True)
     parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--test_run', action='store_true')  # Test run with less data
+    parser.add_argument('--overfit_n', type=int, default=0)  # Use the same tiny subset for train/val
     parser.add_argument('--no_multiprocessing', action='store_true')  # Prevents certain deadlocks
     parser.add_argument('--continue_ensemble', action='store_true')  # Continues a stopped ensemble training
     args = parser.parse_args()
@@ -238,9 +333,13 @@ if __name__ == '__main__':
     set_seed(config.get('seed', 42))
 
     is_dist, rank, world_size, local_rank = util.setup_distributed()
-    device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
+    if is_dist:
+        device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(args.device if torch.cuda.is_available() and args.device.startswith('cuda') else ('cuda:0' if torch.cuda.is_available() else 'cpu'))
 # args for diting model
     diting_args, ds_init = get_args_diting()
+    diting_args.conf_file = args.diting_config
     with open(diting_args.conf_file, 'r') as f:
         diting_conf_data = yaml.safe_load(f)
     vars(diting_args).update(diting_conf_data)
@@ -260,9 +359,10 @@ if __name__ == '__main__':
     training_params = config['training_params']
     generator_params = training_params.get('generator_params', [training_params.copy()])
 
-    if not os.path.isdir(training_params['weight_path']):
-        if (not is_dist) or (is_dist and (rank == 0)):
-            os.makedirs(training_params['weight_path'], exist_ok=True)
+    if (not is_dist) or (is_dist and (rank == 0)):
+        os.makedirs(training_params['weight_path'], exist_ok=True)
+    if is_dist:
+        dist.barrier()
     listdir = os.listdir(training_params['weight_path'])
     if not args.continue_ensemble and listdir:
         if len(listdir) != 1 or listdir[0] != 'config.json':
@@ -308,8 +408,27 @@ if __name__ == '__main__':
     event_metadata_dev = [d[0] for d in full_data_dev]
     metadata_dev = [d[2] for d in full_data_dev]
 
+    if args.overfit_n > 0:
+        event_metadata_train = [subset_events(meta, args.overfit_n) for meta in event_metadata_train]
+        event_metadata_dev = [subset_events(meta, args.overfit_n) for meta in event_metadata_train]
+        generator_params = [copy.deepcopy(g) for g in generator_params]
+        for generator_param in generator_params:
+            fixed_cutout = generator_param.get('cutout_end', generator_param.get('cutout_start', 0))
+            generator_param['trigger_based'] = False
+            generator_param['disable_station_foreshadowing'] = False
+            generator_param['shuffle_train_dev'] = False
+            generator_param['oversample'] = 1
+            generator_param['select_first'] = True
+            generator_param['cutout_start'] = fixed_cutout
+            generator_param['cutout_end'] = fixed_cutout
+        training_params['epochs_single_station'] = 0
+        if (not is_dist) or (is_dist and (rank == 0)):
+            print(f'Overfit mode enabled: using the first {args.overfit_n} samples for both train and val')
+            print('Overfit mode adjustments: single-station pretraining disabled, trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, deterministic station selection, no train/dev shuffling')
+
     sampling_rate = metadata_train[0]['sampling_rate']
     assert all(m['sampling_rate'] == sampling_rate for m in metadata_train + metadata_dev)
+    overfit_mode = args.overfit_n > 0
 
     max_stations = config['model_params']['max_stations']
 
@@ -344,9 +463,10 @@ if __name__ == '__main__':
                 else:
                     raise ValueError(f'Can not continue unclean ensemble. Checking for {hist_path} failed.')
 
-            if not os.path.isdir(training_params['weight_path']):
-                if (not is_dist) or (is_dist and (rank == 0)):
-                    os.makedirs(training_params['weight_path'], exist_ok=True)
+            if (not is_dist) or (is_dist and (rank == 0)):
+                os.makedirs(training_params['weight_path'], exist_ok=True)
+            if is_dist:
+                dist.barrier()
 
             with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
                 json.dump(config, f, indent=4)
@@ -358,8 +478,20 @@ if __name__ == '__main__':
                                                                           diting_args=diting_args
 )
         if is_dist:
-            single_station_model = DDP(single_station_model, device_ids=[local_rank],output_device=local_rank)
-            full_model = DDP(full_model, device_ids=[local_rank],output_device=local_rank)
+            single_station_model.to(device)
+            full_model.to(device)
+            single_station_model = DDP(
+                single_station_model,
+                device_ids=[local_rank],
+                output_device=local_rank,
+                find_unused_parameters=True,
+            )
+            full_model = DDP(
+                full_model,
+                device_ids=[local_rank],
+                output_device=local_rank,
+                find_unused_parameters=True,
+            )
         else:
             single_station_model.to(device)
             full_model.to(device)
@@ -368,7 +500,7 @@ if __name__ == '__main__':
             print('Loading single station model')
             checkpoint = torch.load(training_params['single_station_model_path'])
             single_station_model.load_state_dict(checkpoint["model_state_dict"]) # need modify with save state dict.
-        elif 'transfer_model_path' not in training_params:
+        elif 'transfer_model_path' not in training_params and not overfit_mode:
             optimizer = optim.Adam(single_station_model.parameters(),lr=training_params['lr'])
             key = generator_params[0]['key']
             filter_single_station_by_pick = training_params.get('filter_single_station_by_pick', False)
@@ -380,19 +512,25 @@ if __name__ == '__main__':
             sliding_window = generator_params[0].get('sliding_window', False)
 
             train_dataset = util.DataGenerator(event_metadata_train[0], metadata_train[0], training_params['data_path'][0], generator_params[0],
-                                                 cutout=cutout, label_smoothing=True, sliding_window=sliding_window)
-            val_dataset = util.DataGenerator(event_metadata_train[0], metadata_train[0], training_params['data_path'][0], generator_params[0],
-                                                 cutout=cutout, label_smoothing=True, sliding_window=sliding_window)
+                                                 cutout=cutout, label_smoothing=False if overfit_mode else True, sliding_window=sliding_window)
+            val_dataset = util.DataGenerator(event_metadata_dev[0], metadata_dev[0], training_params['data_path'][0], generator_params[0],
+                                                 cutout=cutout, label_smoothing=False if overfit_mode else True, sliding_window=sliding_window)
             if is_dist:
                 train_sampler = DistributedSampler(train_dataset)
                 train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], sampler=train_sampler, shuffle=(train_sampler is None))
+                val_sampler = DistributedSampler(val_dataset, shuffle=False)
             else:
+                train_sampler = None
+                val_sampler = None
                 train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
-            val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
+            val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], sampler=val_sampler, shuffle=(val_sampler is None))
             # Only save weights due to open issue:
             # https://github.com/matterport/Mask_RCNN/issues/308
 
             scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=4, verbose=1)
+
+            if ((not is_dist) or local_rank == 0):
+                run_sanity_check(single_station_model, train_loader, device, name='single_station_train_pre')
 
             train_model(
                 single_station_model,
@@ -401,11 +539,15 @@ if __name__ == '__main__':
                 optimizer,
                 scheduler,
                 num_epochs=training_params['epochs_single_station'],
+                clipnorm=training_params.get('clipnorm', None),
                 is_dist=is_dist,
                 rank=local_rank,
                 save_name='simple_model',
                 res_comps=['mag'],
-                res_weight=np.array([1.])
+                res_weight=np.array([1.]),
+                post_train_sanity=True,
+                epoch_sanity=training_params.get('epoch_sanity', False),
+                train_sampler=train_sampler
             )
             # Free memory
 
@@ -456,8 +598,8 @@ if __name__ == '__main__':
                                                               data_path=training_params['data_path'][i],
                                                               generator_params=generator_params[i],
                                                               coords_target=True,
-                                                              label_smoothing=True,
-                                                              station_blinding=True,
+                                                              label_smoothing=False if overfit_mode else True,
+                                                              station_blinding=False,
                                                               cutout=cutout,
                                                               pga_targets=n_pga_targets,
                                                               max_stations=max_stations,
@@ -466,13 +608,13 @@ if __name__ == '__main__':
                                                               **generator_param_set)]
 
             old_oversample = generator_param_set.get('oversample', 1)
-            generator_param_set['oversample'] = 4
+            generator_param_set['oversample'] = 1 if overfit_mode else 4
             validation_generators += [util.PreloadedEventGenerator(event_metadata=event_metadata_dev[i],
                                                                    metadata=metadata_dev[i],
                                                                    data_path=training_params['data_path'][i],
                                                                    generator_params=generator_params[i],
                                                                    coords_target=True,
-                                                                   station_blinding=True,
+                                                                   station_blinding=False,
                                                                    cutout=cutout,
                                                                    pga_targets=n_pga_targets,
                                                                    max_stations=max_stations,
@@ -481,7 +623,7 @@ if __name__ == '__main__':
                                                                    **generator_param_set)]
             generator_param_set['oversample'] = old_oversample
 
-        if len(train_generators) == 0:
+        if len(train_generators) == 1:
             train_dataset = train_generators[0]
             val_dataset = validation_generators[0]
         else:
@@ -491,6 +633,8 @@ if __name__ == '__main__':
 
         filepath = os.path.join(training_params['weight_path'], 'event-{epoch:02d}.hdf5')
         patience = training_params.get('lr_decay_patience', 6)
+        if overfit_mode:
+            patience = max(patience, training_params['epochs_full_model'] + 1)
 #        lr_decay = ReduceLROnPlateau(monitor='val_loss', mode='min', patience=patience, factor=0.3, verbose=1) # need modify
         lr_decay = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=patience, verbose=1)
         logdir = os.path.join('logs/scalars/', training_params['weight_path'])
@@ -498,9 +642,14 @@ if __name__ == '__main__':
         if is_dist:
             train_sampler = DistributedSampler(train_dataset)
             train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], sampler=train_sampler, shuffle=(train_sampler is None))
+            val_sampler = DistributedSampler(val_dataset, shuffle=False)
         else:
+            train_sampler = None
+            val_sampler = None
             train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], sampler=val_sampler, shuffle=(val_sampler is None))
+        if ((not is_dist) or local_rank == 0):
+            run_sanity_check(full_model, train_loader, device, name='full_model_train_pre')
         train_model(
             full_model,
             train_loader,
@@ -508,11 +657,15 @@ if __name__ == '__main__':
             optimizer,
             lr_decay,
             num_epochs=training_params['epochs_full_model'],
+            clipnorm=training_params.get('clipnorm', None),
             is_dist=is_dist,
             rank=local_rank,
             save_name='full_model',
 	    res_comps=['mag','loc','pga'],
-	    res_weight=np.array([1.,1.,1.])
+	    res_weight=np.array([1.,1.,1.]),
+            post_train_sanity=True,
+            epoch_sanity=training_params.get('epoch_sanity', False),
+            train_sampler=train_sampler
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,
