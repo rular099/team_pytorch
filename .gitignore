@@ -1,0 +1,25 @@
+*.pyc
+__pycache__/
+*.pyo
+
+# Notebook cache
+.ipynb_checkpoints/
+
+# Training outputs
+runs/
+weights_transformer_italy_plain_ensemble/
+logs_train_light_*.log
+
+# Local data artifacts
+*.hdf5
+event_metadata.csv
+train_ev.csv
+test_ev.csv
+GFZ_mag*_*.csv
+GFZ_mag*_*.hdf5
+ISC_chinamainland_mag*_*.csv
+
+# Local scratch / backups
+*.bak
+resume_codex.txt
+CLAUDE.md
