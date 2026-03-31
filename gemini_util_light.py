@@ -410,7 +410,10 @@ class PreloadedEventGenerator(Dataset):
                 if self.adjust_mean:
                     waveforms -= np.mean(waveforms, axis=2, keepdims=True)
             else:
-                cutout = np.random.randint(*self.cutout)
+                if self.cutout[0] == self.cutout[1]:
+                    cutout = self.cutout[0]
+                else:
+                    cutout = np.random.randint(*self.cutout)
                 if self.adjust_mean:
                     waveforms -= np.mean(waveforms[:, :, :cutout+1], axis=2, keepdims=True)
                 waveforms[:, :, cutout:] = 0
