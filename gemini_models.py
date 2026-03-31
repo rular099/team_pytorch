@@ -157,7 +157,8 @@ class MixtureOutput(nn.Module):
 
         self.sigma = nn.Linear(input_shape[-1], n * d)
         nn.init.normal_(self.sigma.weight, mean=0.0, std=1e-3)
-        sigma_bias = torch.full((n * d,), float(bias_sigma))
+        # softplus_inverse(bias_sigma) so that softplus(bias) ≈ bias_sigma at init
+        sigma_bias = torch.full((n * d,), float(math.log(math.expm1(bias_sigma))))
         sigma_bias += 1e-3 * torch.randn(n * d)
         with torch.no_grad():
             self.sigma.bias.copy_(sigma_bias)
@@ -168,7 +169,7 @@ class MixtureOutput(nn.Module):
         mu = self.mu(x).reshape(-1, self.n, self.d)  # (batch, n, d)
         if self.activation is not None:
             mu = self.activation_fun(mu) # (batch, n, d)
-        sigma = F.relu(self.sigma(x)).reshape(-1, self.n, self.d) + self.eps  # (batch, n, d)
+        sigma = F.softplus(self.sigma(x)).reshape(-1, self.n, self.d) + self.eps  # (batch, n, d)
         #out = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
         #return out
         return alpha_logits, mu, sigma
