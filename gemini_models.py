@@ -863,7 +863,6 @@ def get_diting_model(args):
         pool_type=args.pool_type,
         args=args,
     )
-    print(model)
     ### muP: set base_shapes
     set_base_shapes(model, base_model) # do_assert=False
 
