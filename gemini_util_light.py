@@ -410,18 +410,10 @@ class PreloadedEventGenerator(Dataset):
                 if self.adjust_mean:
                     waveforms -= np.mean(waveforms, axis=2, keepdims=True)
             else:
-                cutout_min = p_picks + self.cutout[0]
-                cutout_max = p_picks + self.cutout[1]
-                cutout_min = np.clip(cutout_min, 0, self.windowlen)
-                cutout_max = np.clip(cutout_max, 0, self.windowlen)
-                # Sample a visible length per station from the configured cutout window.
-                high = np.maximum(cutout_min + 1, cutout_max + 1)
-                cutout = np.random.randint(low=cutout_min, high=high)
-                waveform_pts = np.arange(self.windowlen)
-                selected_pts = waveform_pts[np.newaxis, np.newaxis, :, np.newaxis] < cutout[:, :, np.newaxis, np.newaxis]
-                waveforms = waveforms * selected_pts
+                cutout = np.random.randint(*self.cutout)
                 if self.adjust_mean:
-                    waveforms = waveforms - np.mean(waveforms, axis=2, keepdims=True)
+                    waveforms -= np.mean(waveforms[:, :, :cutout+1], axis=2, keepdims=True)
+                waveforms[:, :, cutout:] = 0
         else:
             cutout = waveforms.shape[2]
 

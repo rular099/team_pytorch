@@ -157,7 +157,7 @@ class MixtureOutput(nn.Module):
 
         self.sigma = nn.Linear(input_shape[-1], n * d)
         nn.init.normal_(self.sigma.weight, mean=0.0, std=1e-3)
-        sigma_bias = torch.full((n * d,), float(math.log(bias_sigma)))
+        sigma_bias = torch.full((n * d,), float(bias_sigma))
         sigma_bias += 1e-3 * torch.randn(n * d)
         with torch.no_grad():
             self.sigma.bias.copy_(sigma_bias)
@@ -168,9 +168,7 @@ class MixtureOutput(nn.Module):
         mu = self.mu(x).reshape(-1, self.n, self.d)  # (batch, n, d)
         if self.activation is not None:
             mu = self.activation_fun(mu) # (batch, n, d)
-        #sigma = F.relu(self.sigma(x)).reshape(-1, self.n, self.d) + self.eps  # (batch, n, d)
-        log_sigma = self.sigma(x).reshape(-1, self.n, self.d) # (batch, n, d)
-        sigma = torch.exp(log_sigma)
+        sigma = F.relu(self.sigma(x)).reshape(-1, self.n, self.d) + self.eps  # (batch, n, d)
         #out = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
         #return out
         return alpha_logits, mu, sigma
@@ -251,7 +249,7 @@ class TransformerBlock(nn.Module):
 #        self.attention = nn.MultiheadAttention(embed_dim=emb_dim, num_heads=n_heads, batch_first=True)
         self.ffn = nn.Sequential(
                       nn.Linear(emb_dim, hidden_dim),
-                      nn.ReLU(),
+                      nn.GELU(),
                       nn.Linear(hidden_dim, emb_dim),
         )
 #        self.norm1 = LayerNormalization(eps=eps)
@@ -987,7 +985,7 @@ def build_transformer_model(max_stations,
     waveform_model.add_module('dt2team', dt2team)
     single_station_scale_proj = nn.Linear(1, waveform_model_dims[-1])
     mlp_mag_single_station = MLP((waveform_model_dims[-1],), output_mlp_dims, activation=activation) #Modified line
-    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), n=5, name='magnitude',activation=None,
+    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), n=5, name='magnitude',activation='relu',
                                                 bias_mu=bias_mag_mu, bias_sigma=bias_mag_sigma)
 
     single_station_model = SingleStationModel(waveform_model, mlp_mag_single_station, output_model_single_station,
@@ -1011,7 +1009,7 @@ def build_transformer_model(max_stations,
                                   ffn_params=ffn_params)
 
     mlp_mag = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation=None,
+    output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation='relu',
                                  bias_sigma=bias_mag_sigma)
 
     mlp_loc = MLP((emb_dim,), output_location_dims, activation=activation)
