@@ -565,8 +565,16 @@ if __name__ == '__main__':
         def location_loss(y_true, y_pred):
             return models.mixture_density_loss(y_true, y_pred, eps=1e-5, d=3)
 
+        # Freeze pretrained diting backbone, only train TEAM heads
+        raw_full = full_model.module if is_dist else full_model
+        for param in raw_full.waveform_model.parameters():
+            param.requires_grad = False
+        # Keep dt2team (last module in waveform_model Sequential) trainable
+        for param in raw_full.waveform_model.dt2team.parameters():
+            param.requires_grad = True
+
         no_event_token = config['model_params'].get('no_event_token', False)
-        optimizer = optim.Adam(full_model.parameters(), lr=training_params['lr'])
+        optimizer = optim.Adam(filter(lambda p: p.requires_grad, full_model.parameters()), lr=training_params['lr'])
         if not no_event_token:
             losses = {'magnitude': models.mixture_density_loss, 'location': location_loss}
         else:
@@ -633,8 +641,6 @@ if __name__ == '__main__':
 
         filepath = os.path.join(training_params['weight_path'], 'event-{epoch:02d}.hdf5')
         patience = training_params.get('lr_decay_patience', 6)
-        if overfit_mode:
-            patience = max(patience, training_params['epochs_full_model'] + 1)
 #        lr_decay = ReduceLROnPlateau(monitor='val_loss', mode='min', patience=patience, factor=0.3, verbose=1) # need modify
         lr_decay = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=patience, verbose=1)
         logdir = os.path.join('logs/scalars/', training_params['weight_path'])
