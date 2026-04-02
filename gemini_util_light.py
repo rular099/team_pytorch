@@ -309,7 +309,7 @@ class PreloadedEventGenerator(Dataset):
                 if key not in data:
                     data[key] = []
                 if key == 'waveforms':
-                    # pad or truncate to 10000 points
+                    # pad to 10000 points
                     cur_waveform = g_event[key][:, ::self.decimate, :]
                     cur_waveform -= np.mean(cur_waveform, axis=1, keepdims=True)
                     if cur_waveform.shape[1] < 10000:
@@ -319,7 +319,7 @@ class PreloadedEventGenerator(Dataset):
                         data[key] += [np.concatenate((cur_waveform, pad_arr),
                                                      axis=1)]
                     else:
-                        data[key] += [cur_waveform[:, :10000, :]]
+                        data[key] += [cur_waveform]
                 else:
                     data[key] += [g_event[key][()]]
                 if key == 'p_picks':
