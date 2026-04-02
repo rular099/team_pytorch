@@ -61,8 +61,24 @@ class TrainDevTestSplitter:
     def no_test(event_metadata):
         return np.zeros(len(event_metadata), dtype=bool)
 
+def _read_event_metadata_h5(data_path):
+    """Read event metadata from HDF5, supporting both pytables and raw h5py formats."""
+    with h5py.File(data_path, 'r') as f:
+        em = f['metadata/event_metadata']
+        if isinstance(em, h5py.Group):
+            # Raw h5py format: each column is a separate dataset
+            cols = {}
+            for col_name in em.keys():
+                vals = em[col_name][()]
+                if vals.dtype.kind == 'S':  # byte strings → str
+                    vals = np.array([v.decode() for v in vals])
+                cols[col_name] = vals
+            return pd.DataFrame(cols)
+    # Fallback: pytables format
+    return pd.read_hdf(data_path, 'metadata/event_metadata')
+
 def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate=None):
-    event_metadata = pd.read_hdf(data_path, 'metadata/event_metadata')
+    event_metadata = _read_event_metadata_h5(data_path)
     for event_key in ['KiK_File', '#EventID', 'EVENT']:
         if event_key in event_metadata.columns:
             break
