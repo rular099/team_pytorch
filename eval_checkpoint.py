@@ -98,17 +98,29 @@ def build_datasets(config, overfit_n=0):
     metadata_dev = [d[2] for d in full_data_dev]
 
     if overfit_n > 0:
-        from train_light import subset_events
-        event_metadata_train = [subset_events(meta, overfit_n) for meta in event_metadata_train]
-        event_metadata_dev = [subset_events(meta, overfit_n) for meta in event_metadata_train]
+        # NOTE: train_light.py's subset_events takes first N *rows* from expanded metadata
+        # (1 row per station), so overfit_n=16 actually gives ~1 event, not 16.
+        # Here we subset by unique events instead, so overfit_n=16 means 16 events.
+        def subset_by_events(meta, n):
+            event_key = None
+            for k in ['KiK_File', '#EventID', 'EVENT']:
+                if k in meta.columns:
+                    event_key = k
+                    break
+            unique_events = meta[event_key].unique()[:n]
+            return meta[meta[event_key].isin(unique_events)].copy()
+        event_metadata_train = [subset_by_events(meta, overfit_n) for meta in event_metadata_train]
+        event_metadata_dev = [subset_by_events(meta, overfit_n) for meta in event_metadata_train]
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for gp in generator_params:
             fixed_cutout = gp.get('cutout_end', gp.get('cutout_start', 0))
             gp['trigger_based'] = False
             gp['disable_station_foreshadowing'] = False
+            gp['shuffle_train_dev'] = False
             gp['selection_skew'] = 0
             gp['oversample'] = 1
             gp['magnitude_resampling'] = 1.0
+            gp['select_first'] = True
             gp['cutout_start'] = fixed_cutout
             gp['cutout_end'] = fixed_cutout
 
@@ -138,6 +150,88 @@ def build_datasets(config, overfit_n=0):
                 **gp_copy))
         datasets[split_name] = generators[0] if len(generators) == 1 else generators
     return datasets
+
+
+def diagnose_diting_features(model, dataset, device):
+    """Check whether diting produces distinct features per station."""
+    raw_model = model.module if hasattr(model, 'module') else model
+    waveform_model = raw_model.waveform_model
+
+    # Identify submodules: waveform_model is nn.Sequential [encoder, EncoderFeatures, ..., dt2team]
+    module_names = list(waveform_model._modules.keys())
+    print(f'\nwaveform_model submodules: {module_names}')
+
+    # Register hooks on key layers
+    captured = {}
+    def make_hook(name):
+        def hook(module, inp, out):
+            if name not in captured:
+                captured[name] = []
+            # out may be tensor or list of tensors
+            if isinstance(out, torch.Tensor):
+                captured[name].append(out.detach().cpu())
+            elif isinstance(out, (list, tuple)):
+                captured[name].append([x.detach().cpu() if isinstance(x, torch.Tensor) else x for x in out])
+        return hook
+
+    hooks = []
+    for name, module in waveform_model.named_modules():
+        if name in module_names:  # top-level submodules only
+            hooks.append(module.register_forward_hook(make_hook(name)))
+
+    # Run one sample
+    inputs, labels, p_picks = dataset[0]
+    inputs_dev = [x.unsqueeze(0).to(device) if isinstance(x, torch.Tensor) else x for x in inputs]
+
+    with torch.no_grad():
+        _ = raw_model(*inputs_dev)
+
+    for h in hooks:
+        h.remove()
+
+    # Analyze: waveform_model is called per-station in FullModel.forward
+    # so each hook fires N_stations times per forward pass
+    print(f'\n{"="*60}')
+    print('  Diting feature diagnostics (1 sample)')
+    print(f'{"="*60}')
+
+    for name in module_names:
+        if name not in captured:
+            continue
+        feats = captured[name]
+        n_calls = len(feats)
+        print(f'\n--- {name} ({n_calls} calls = {n_calls} stations) ---')
+
+        # For tensor outputs, compute inter-station similarity
+        if isinstance(feats[0], torch.Tensor):
+            stacked = torch.stack(feats).squeeze(1)  # (n_stations, dim)
+            print(f'  output shape per station: {feats[0].shape}')
+            print(f'  stacked shape: {stacked.shape}')
+
+            # L2 norms
+            norms = stacked.norm(dim=-1)
+            print(f'  L2 norm: min={norms.min():.4f}, max={norms.max():.4f}, mean={norms.mean():.4f}')
+
+            # Pairwise cosine similarity
+            if stacked.ndim == 2 and stacked.shape[0] > 1:
+                normed = stacked / (stacked.norm(dim=-1, keepdim=True) + 1e-8)
+                cos_sim = normed @ normed.T
+                # Exclude diagonal
+                n = cos_sim.shape[0]
+                mask = ~torch.eye(n, dtype=bool)
+                off_diag = cos_sim[mask]
+                print(f'  Cosine similarity (off-diag): min={off_diag.min():.4f}, max={off_diag.max():.4f}, mean={off_diag.mean():.4f}')
+
+                # Per-dim variance across stations
+                var_per_dim = stacked.var(dim=0)
+                print(f'  Per-dim variance: min={var_per_dim.min():.6f}, max={var_per_dim.max():.6f}, mean={var_per_dim.mean():.6f}')
+        elif isinstance(feats[0], (list, tuple)):
+            print(f'  output is list of {len(feats[0])} elements')
+            for j, elem in enumerate(feats[0]):
+                if isinstance(elem, torch.Tensor):
+                    print(f'    [{j}] shape={elem.shape}')
+
+    print()
 
 
 @torch.no_grad()
@@ -209,7 +303,8 @@ def print_summary(results, split_name):
         if name == 'magnitude':
             # label shape: (N,) scalar
             for i in range(min(len(labels), 16)):
-                print(f'  [{i:2d}] label={labels[i]:.3f}, pred={mu_best[i][0] if mu_best[i].ndim > 0 else mu_best[i]:.3f}')
+                pred_val = float(mu_best[i][0]) if mu_best[i].ndim > 0 else float(mu_best[i])
+                print(f'  [{i:2d}] label={float(labels[i]):.3f}, pred={pred_val:.3f}')
             residuals = mu_best.flatten() - labels.flatten()
             print(f'  MAE={np.mean(np.abs(residuals)):.4f}, RMSE={np.sqrt(np.mean(residuals**2)):.4f}')
 
@@ -262,6 +357,10 @@ def main():
 
     print('Building datasets...')
     datasets = build_datasets(config, overfit_n=args.overfit_n)
+
+    # Diagnose diting features on first available dataset
+    first_dataset = next(iter(datasets.values()))
+    diagnose_diting_features(model, first_dataset, device)
 
     all_results = {}
     for split_name, dataset in datasets.items():

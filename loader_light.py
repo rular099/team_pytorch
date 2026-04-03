@@ -115,7 +115,7 @@ def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate
                     n_rec_per_event.append(cur_waveform.shape[0])
     event_metadata = event_metadata[contained].reset_index(drop=True)
     event_metadata = event_metadata.loc[event_metadata.index.repeat(n_rec_per_event)].reset_index(drop=True)
-    wave_idx_per_event = np.concat([np.arange(i) for i in n_rec_per_event])
+    wave_idx_per_event = np.concatenate([np.arange(i) for i in n_rec_per_event])
     event_metadata['wave_idx'] = wave_idx_per_event
     event_metadata.to_csv(event_metadata_path, index=False)
     return event_metadata
