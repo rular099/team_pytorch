@@ -29,20 +29,24 @@ import loader_light as loader
 
 
 def load_diting_args(diting_config_path, device='cpu'):
-    """Load diting config as argparse Namespace."""
+    """Load diting config, matching train_light.py logic."""
     import yaml
-    with open(diting_config_path) as f:
-        diting_cfg = yaml.safe_load(f)
-    diting_cfg['device'] = device
-    diting_cfg['base_width'] = 128
-    diting_cfg['interaction_indexes'] = [[0, 2], [3, 5], [6, 8], [9, 11]]
-    diting_cfg['norm_layer'] = 'LN'
-    diting_cfg['xattn'] = False
-    diting_cfg['freeze_layers'] = 6
-    diting_cfg.setdefault('fused_feature', False)
-    diting_cfg.setdefault('fused_weight', False)
-    diting_cfg.setdefault('reuse_ppm', False)
-    return argparse.Namespace(**diting_cfg)
+    from diting.downstream.gemini_utils import get_args as get_args_diting
+    diting_args, _ = get_args_diting()
+    diting_args.conf_file = diting_config_path
+    with open(diting_args.conf_file, 'r') as f:
+        diting_conf_data = yaml.safe_load(f)
+    vars(diting_args).update(diting_conf_data)
+    depth = 24
+    if depth % diting_args.num_interactions != 0:
+        diting_args.num_interactions -= 1
+    n = (depth - 1) // diting_args.num_interactions
+    diting_args.interaction_indexes = [[i*n, (i+1)*n] for i in range(diting_args.num_interactions)]
+    if diting_args.num_interactions * n != depth:
+        diting_args.interaction_indexes.append([diting_args.num_interactions*n, depth])
+    diting_args.distributed = False
+    diting_args.device = device
+    return diting_args
 
 
 def build_model_and_load(config, diting_args, checkpoint_path, device):
