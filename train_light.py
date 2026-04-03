@@ -571,17 +571,16 @@ if __name__ == '__main__':
             param.requires_grad = False
         # waveform_model[1] (EncoderFeatures) and dt2team remain trainable
 
-        # Re-initialize the emg task head in EncoderFeatures.
-        # The pretrained projlast_emg was optimized for magnitude regression,
-        # which encourages extracting event-level commonality across stations
-        # rather than station-level differences needed for PGA prediction.
+        # Re-initialize all of EncoderFeatures (FPN + bottleneck + task head).
+        # Only the diting encoder (ViTAdapter) keeps pretrained weights.
         encoder_features = raw_full.waveform_model[1]
-        if hasattr(encoder_features, 'projlast_emg'):
-            nn.init.kaiming_normal_(encoder_features.projlast_emg.weight)
-            if encoder_features.projlast_emg.bias is not None:
-                nn.init.zeros_(encoder_features.projlast_emg.bias)
-            if rank == 0:
-                print('Re-initialized projlast_emg (emg task head) in EncoderFeatures')
+        for name, param in encoder_features.named_parameters():
+            if param.dim() >= 2:
+                nn.init.kaiming_normal_(param)
+            else:
+                nn.init.zeros_(param)
+        if rank == 0:
+            print('Re-initialized entire EncoderFeatures (FPN, bottleneck, task head)')
 
         no_event_token = config['model_params'].get('no_event_token', False)
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, full_model.parameters()), lr=training_params['lr'])
