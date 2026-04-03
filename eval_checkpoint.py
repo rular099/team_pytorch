@@ -18,7 +18,9 @@ import numpy as np
 import torch
 from collections import defaultdict
 
-sys.path.insert(0, os.path.dirname(__file__))
+_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _dir)
+sys.path.insert(0, os.path.join(_dir, 'diting'))
 import gemini_models as models
 import gemini_util_light as util
 import loader_light as loader
