@@ -980,8 +980,7 @@ def build_transformer_model(max_stations,
 #                                              mlp_dims=waveform_model_dims)
 #    mlp_mag_single_station = MLP((waveform_model.mlp.mlp[-1].out_features,), output_mlp_dims, activation=activation) #Modified line
     waveform_model = get_diting_model(diting_args)
-    #dt2team = MLP((diting_args.out_channels,), waveform_model_dims[-1:], activation=activation)
-    dt2team = nn.Linear(diting_args.out_channels, waveform_model_dims[-1])
+    dt2team = MLP((diting_args.out_channels,), [diting_args.out_channels, waveform_model_dims[-1]], activation=activation)
     waveform_model.add_module('dt2team', dt2team)
     single_station_scale_proj = nn.Linear(1, waveform_model_dims[-1])
     mlp_mag_single_station = MLP((waveform_model_dims[-1],), output_mlp_dims, activation=activation) #Modified line

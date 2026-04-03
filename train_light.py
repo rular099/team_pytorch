@@ -565,13 +565,11 @@ if __name__ == '__main__':
         def location_loss(y_true, y_pred):
             return models.mixture_density_loss(y_true, y_pred, eps=1e-5, d=3)
 
-        # Freeze pretrained diting backbone, only train TEAM heads
+        # Freeze only the diting encoder (ViTAdapter), unfreeze EncoderFeatures head + dt2team
         raw_full = full_model.module if is_dist else full_model
-        for param in raw_full.waveform_model.parameters():
+        for param in raw_full.waveform_model[0].parameters():
             param.requires_grad = False
-        # Keep dt2team (last module in waveform_model Sequential) trainable
-        for param in raw_full.waveform_model.dt2team.parameters():
-            param.requires_grad = True
+        # waveform_model[1] (EncoderFeatures) and dt2team remain trainable
 
         no_event_token = config['model_params'].get('no_event_token', False)
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, full_model.parameters()), lr=training_params['lr'])
