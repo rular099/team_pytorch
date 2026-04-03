@@ -1016,7 +1016,7 @@ def build_transformer_model(max_stations,
                                      bias_sigma=bias_loc_sigma)
 
     mlp_pga = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_mixture, bias_mu=-5, bias_sigma=1, activation=None)
+    output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_mixture, bias_mu=0, bias_sigma=1, activation=None)
 
     # Module instantiation
     position_embedding = PositionEmbedding(wavelengths=wavelength, emb_dim=emb_dim, borehole=borehole, rotation=rotation, rotation_anchor=rotation_anchor)
