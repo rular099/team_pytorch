@@ -584,6 +584,8 @@ if __name__ == '__main__':
         for name, param in encoder_features.named_parameters():
             if param.dim() >= 2:
                 nn.init.kaiming_normal_(param)
+            elif 'norm' in name and 'weight' in name:
+                nn.init.ones_(param)  # LayerNorm gamma must be 1, not 0
             else:
                 nn.init.zeros_(param)
         if rank == 0:
