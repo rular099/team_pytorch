@@ -311,12 +311,19 @@ def run_sanity_check(model, data_loader, device, name='sanity', max_batches=1):
                 outf = out.float()
                 print(f'  output[{i}]: shape={tuple(out.shape)}, mean={outf.mean().item():.4f}, std={outf.std().item():.4f}, min={outf.min().item():.4f}, max={outf.max().item():.4f}')
                 if out.ndim >= 3:
+                    # Determine d (number of mu/sigma dimensions) from output shape
+                    # Layout: [alpha, mu_1..mu_d, sigma_1..sigma_d] → total = 1 + 2d
+                    last_dim = out.shape[-1]
+                    d = (last_dim - 1) // 2
                     alpha_logits = out[..., 0]
-                    mu = out[..., 1]
-                    sigma = out[..., -1]
                     print(f'    alpha_logits: mean={alpha_logits.mean().item():.4f}, std={alpha_logits.std().item():.4f}')
-                    print(f'    mu: mean={mu.mean().item():.4f}, std={mu.std().item():.4f}')
-                    print(f'    sigma: mean={sigma.mean().item():.4f}, std={sigma.std().item():.4f}')
+                    dim_names = ['lat', 'lon', 'depth'] if d == 3 else [str(j) for j in range(d)]
+                    for j in range(d):
+                        mu_j = out[..., 1 + j]
+                        sigma_j = out[..., 1 + d + j]
+                        name_j = dim_names[j] if j < len(dim_names) else str(j)
+                        print(f'    mu_{name_j}: mean={mu_j.mean().item():.4f}, std={mu_j.std().item():.4f}')
+                        print(f'    sigma_{name_j}: mean={sigma_j.mean().item():.4f}, std={sigma_j.std().item():.4f}')
     model.train()
 
 if __name__ == '__main__':
