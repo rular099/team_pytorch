@@ -671,6 +671,14 @@ if __name__ == '__main__':
             train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], sampler=val_sampler, shuffle=(val_sampler is None))
         if ((not is_dist) or local_rank == 0):
+            # Save initial checkpoint before training
+            init_ckpt_path = os.path.join(training_params['weight_path'], 'full_model_init.pth')
+            eval_model = full_model.module if is_dist else full_model
+            torch.save({
+                'epoch': 0,
+                'model_state_dict': eval_model.state_dict(),
+            }, init_ckpt_path)
+            print(f'Saved initial checkpoint to {init_ckpt_path}')
             run_sanity_check(full_model, train_loader, device, name='full_model_train_pre')
         train_model(
             full_model,
