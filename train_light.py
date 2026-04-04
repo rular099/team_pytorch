@@ -581,13 +581,20 @@ if __name__ == '__main__':
         # Re-initialize all of EncoderFeatures (FPN + bottleneck + task head).
         # Only the diting encoder (ViTAdapter) keeps pretrained weights.
         encoder_features = raw_full.waveform_model[1]
-        for name, param in encoder_features.named_parameters():
-            if param.dim() >= 2:
-                nn.init.kaiming_normal_(param)
-            elif 'norm' in name and 'weight' in name:
-                nn.init.ones_(param)  # LayerNorm gamma must be 1, not 0
-            else:
-                nn.init.zeros_(param)
+        for name, module in encoder_features.named_modules():
+            if isinstance(module, (nn.Conv1d, nn.ConvTranspose1d)):
+                nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
+            elif isinstance(module, nn.Linear):
+                nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
+            elif hasattr(module, 'weight') and hasattr(module, 'bias') and isinstance(module.weight, nn.Parameter):
+                # LayerNorm and similar
+                nn.init.constant_(module.weight, 1)
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
         if rank == 0:
             print('Re-initialized entire EncoderFeatures (FPN, bottleneck, task head)')
 
