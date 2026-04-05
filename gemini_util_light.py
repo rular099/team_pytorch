@@ -416,14 +416,20 @@ class PreloadedEventGenerator(Dataset):
                     cutout = np.random.randint(*self.cutout)
                 if self.adjust_mean:
                     waveforms -= np.mean(waveforms[:, :, :cutout+1], axis=2, keepdims=True)
-                waveforms[:, :, cutout:] = 0
+                # Right-align: shift valid signal [0:cutout] to end of window,
+                # matching real-time EEW where signal arrives at the tail
+                shift = waveforms.shape[2] - cutout
+                waveforms = np.roll(waveforms, shift, axis=2)
+                waveforms[:, :, :shift] = 0
+                p_picks = p_picks + shift
         else:
             cutout = waveforms.shape[2]
+            shift = 0
 
         if self.trigger_based: #?zb
             # Remove waveforms for all stations that did not trigger yet to avoid knowledge leakage
             p_picks[p_picks <= 0] = org_waveform_length  # Ensure that stations without P picks do not show data
-            waveforms[cutout < p_picks, :, :] = 0
+            waveforms[cutout + shift < p_picks, :, :] = 0
 
         if self.integrate:
             waveforms = np.cumsum(waveforms, axis=2) / self.sampling_rate
