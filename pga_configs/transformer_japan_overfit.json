@@ -80,7 +80,7 @@
                 "pga_selection_skew": 0,
                 "noise_seconds": 5,
                 "cutout_start": -1,
-                "cutout_end": 25,
+                "cutout_end": 90,
                 "pos_offset": [
                     37,
                     140
