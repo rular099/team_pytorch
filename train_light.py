@@ -203,12 +203,16 @@ def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=Fal
         weights_path = os.path.join(weights_path, pth_files[-1])
 
     # 加载 checkpoint
-    state_dict = torch.load(weights_path, map_location=device)
+    ckpt = torch.load(weights_path, map_location=device)
+    state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+
+    # Unwrap DDP if needed
+    raw_model = model.module if hasattr(model, 'module') else model
 
     # 判断目标模型是不是 borehole (Conv1d 输入通道是否 64)
     conv1d_layer = None
     conv1d_name = None
-    for name, module in model.named_modules():
+    for name, module in raw_model.named_modules():
         if isinstance(module, nn.Conv1d):
             conv1d_layer = module
             conv1d_name = name + ".weight"
@@ -234,7 +238,7 @@ def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=Fal
         state_dict[conv1d_name] = kernel * 2.0
 
     # 加载参数
-    missing, unexpected = model.load_state_dict(state_dict, strict=False)
+    missing, unexpected = raw_model.load_state_dict(state_dict, strict=False)
     print(f"Transferred {len(state_dict) - len(missing)} weights, "
           f"Missing: {missing}, Unexpected: {unexpected}")
     return model
@@ -507,8 +511,9 @@ if __name__ == '__main__':
 
         if 'single_station_model_path' in training_params:
             print('Loading single station model')
-            checkpoint = torch.load(training_params['single_station_model_path'])
-            single_station_model.load_state_dict(checkpoint["model_state_dict"]) # need modify with save state dict.
+            checkpoint = torch.load(training_params['single_station_model_path'], map_location=device)
+            load_target = single_station_model.module if is_dist else single_station_model
+            load_target.load_state_dict(checkpoint["model_state_dict"])
         elif 'transfer_model_path' not in training_params and not overfit_mode:
             optimizer = optim.Adam(single_station_model.parameters(),lr=training_params['lr'])
             key = generator_params[0]['key']
@@ -566,7 +571,8 @@ if __name__ == '__main__':
             print('Loading full model')
             ckpt = torch.load(training_params['load_model_path'], map_location=device)
             state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
-            full_model.load_state_dict(state_dict)
+            load_target = full_model.module if is_dist else full_model
+            load_target.load_state_dict(state_dict)
 
         if 'transfer_model_path' in training_params:
             print('Transfering model weights')
