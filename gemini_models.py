@@ -568,6 +568,21 @@ class StripMask(nn.Module):
 
 
 
+class StatPool1d(nn.Module):
+    """Replace GAP with mean+max+std pooling, then project back to original dim."""
+    def __init__(self, channels):
+        super().__init__()
+        self.proj = nn.Linear(channels * 3, channels)
+
+    def forward(self, x):
+        # x: (B, C, T)
+        mean_pool = x.mean(dim=-1)              # (B, C)
+        max_pool = x.max(dim=-1).values         # (B, C)
+        std_pool = x.std(dim=-1)                # (B, C)
+        out = torch.cat([mean_pool, max_pool, std_pool], dim=-1)  # (B, 3C)
+        return self.proj(out).unsqueeze(-1)      # (B, C, 1) — same shape as GAP output
+
+
 class GlobalMaxPooling1DMasked(nn.Module):
     def forward(self, x, mask=None):
         pseudo_infty = 1000.
@@ -1009,6 +1024,9 @@ def build_transformer_model(max_stations,
 #                                              mlp_dims=waveform_model_dims)
 #    mlp_mag_single_station = MLP((waveform_model.mlp.mlp[-1].out_features,), output_mlp_dims, activation=activation) #Modified line
     waveform_model = get_diting_model(diting_args)
+    # Replace GAP in EncoderFeatures with StatPool1d (mean+max+std)
+    encoder_features = waveform_model[1]
+    encoder_features.gap = StatPool1d(diting_args.out_channels)
     dt2team = MLP((diting_args.out_channels,), [diting_args.out_channels, waveform_model_dims[-1]], activation=activation)
     waveform_model.add_module('dt2team', dt2team)
     single_station_scale_proj = nn.Linear(1, waveform_model_dims[-1])
