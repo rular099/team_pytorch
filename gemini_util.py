@@ -172,7 +172,7 @@ class EvaluateEventGenerator(PreloadedEventGenerator):
                     np.random.shuffle(selection)
                 else:
                     tmp_p_picks = self.triggers[idx].copy()
-                    mask = np.logical_and(tmp_p_picks <= 0, tmp_p_picks > self.p_pick_limit)
+                    mask = np.logical_or(tmp_p_picks <= 0, tmp_p_picks > self.p_pick_limit)
                     tmp_p_picks[mask] = min(np.max(tmp_p_picks), self.p_pick_limit)
                     coeffs = np.exp(-tmp_p_picks / self.selection_skew)
                     coeffs *= np.random.random(coeffs.shape)
@@ -276,7 +276,7 @@ class EvaluateEventGenerator(PreloadedEventGenerator):
                         active = np.repeat(active, 2)
                     if self.pga_selection_skew is not None:
                         active_p_picks = full_p_picks[i, active]
-                        mask = np.logical_and(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
+                        mask = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
                         active_p_picks[mask] = min(np.max(active_p_picks), self.p_pick_limit)
                         coeffs = np.exp(-active_p_picks / self.pga_selection_skew)
                         coeffs *= np.random.random(coeffs.shape)
@@ -491,7 +491,7 @@ class PreloadedEventGenerator(Dataset):
                     np.random.shuffle(selection)
                 else:
                     tmp_p_picks = self.triggers[idx].copy()
-                    mask = np.logical_and(tmp_p_picks <= 0, tmp_p_picks > self.p_pick_limit)
+                    mask = np.logical_or(tmp_p_picks <= 0, tmp_p_picks > self.p_pick_limit)
                     tmp_p_picks[mask] = min(np.max(tmp_p_picks), self.p_pick_limit)
                     coeffs = np.exp(-tmp_p_picks / self.selection_skew)
                     coeffs *= np.random.random(coeffs.shape)
@@ -595,7 +595,7 @@ class PreloadedEventGenerator(Dataset):
                         active = np.repeat(active, 2)
                     if self.pga_selection_skew is not None:
                         active_p_picks = full_p_picks[i, active]
-                        mask = np.logical_and(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
+                        mask = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
                         active_p_picks[mask] = min(np.max(active_p_picks), self.p_pick_limit)
                         coeffs = np.exp(-active_p_picks / self.pga_selection_skew)
                         coeffs *= np.random.random(coeffs.shape)
