@@ -867,7 +867,7 @@ class FullModel(nn.Module):
         if self.dataset_bias:
             assert self.n_datasets is not None
             dataset_bias_term = self.dataset_embedding(dataset).squeeze(-1)
-            outputs = self.add_constant_to_mixture()(outputs, dataset_bias_term)
+            outputs[0] = self.add_constant_to_mixture(outputs[0], dataset_bias_term)
 
         return outputs
 
