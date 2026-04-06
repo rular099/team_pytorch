@@ -30,8 +30,15 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def subset_events(event_metadata, n):
+    """Subset to the first n *events* (not rows). event_metadata is station-level."""
     if n is None:
         return event_metadata
+    if hasattr(event_metadata, "columns"):
+        for event_key in ['KiK_File', '#EventID', 'EVENT']:
+            if event_key in event_metadata.columns:
+                unique_events = event_metadata[event_key].unique()[:n]
+                return event_metadata[event_metadata[event_key].isin(unique_events)].copy()
+    # Fallback for non-DataFrame
     if hasattr(event_metadata, "iloc"):
         return event_metadata.iloc[:n].copy()
     return event_metadata[:n]
