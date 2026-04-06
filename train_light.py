@@ -614,8 +614,15 @@ if __name__ == '__main__':
                 nn.init.constant_(module.weight, 1)
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)
+        # Also re-initialize dt2team MLP for consistency
+        dt2team = raw_full.waveform_model.dt2team
+        for name, module in dt2team.named_modules():
+            if isinstance(module, nn.Linear):
+                nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
         if rank == 0:
-            print('Re-initialized entire EncoderFeatures (FPN, bottleneck, task head)')
+            print('Re-initialized EncoderFeatures (FPN, bottleneck, task head) and dt2team')
 
         no_event_token = config['model_params'].get('no_event_token', False)
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, full_model.parameters()), lr=training_params['lr'])
