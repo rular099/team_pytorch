@@ -941,7 +941,7 @@ def generator_from_config(config, data, event_metadata, time, batch_size=64, sam
     else:
         generator_params = training_params.get('generator_params', [training_params.copy()])[0]
 
-    noise_seconds = generator_params[0].get('noise_seconds', 5)
+    noise_seconds = generator_params.get('noise_seconds', 5)
     cutout = int(sampling_rate * (noise_seconds + time))
     cutout = (cutout, cutout + 1)
 
