@@ -235,10 +235,10 @@ class Transformer(nn.Module):
         self.att_masking = att_masking
         self.hidden_dropout = hidden_dropout
 
-    def forward(self, x, att_mask=None):
+    def forward(self, x, att_mask=None, padding_mask=None):
         # The inputs are already handled by the calling function.
         for block in self.blocks:
-            x = block(x, att_mask)
+            x = block(x, att_mask, padding_mask)
         return x
 
 
@@ -260,8 +260,8 @@ class TransformerBlock(nn.Module):
         self.dropout1 = nn.Dropout(0.0) #Fixed dropout
         self.dropout2 = nn.Dropout(0.0) #Fixed dropout
 
-    def forward(self, x, att_mask=None, src_key_padding_mask=None):
-        modified_x, _ = self.attention(x, attn_mask=att_mask)#, key_padding_mask=src_key_padding_mask)
+    def forward(self, x, att_mask=None, padding_mask=None):
+        modified_x, _ = self.attention(x, attn_mask=att_mask, padding_mask=padding_mask)
         modified_x = self.dropout1(modified_x)
         x = self.norm1(x + modified_x)
         modified_x = self.ffn(x)
@@ -388,7 +388,7 @@ class MultiHeadSelfAttention(nn.Module):
         self.WV = nn.Linear(emb_dim, emb_dim)
         self.WO = nn.Linear(emb_dim, emb_dim)
 
-    def forward(self, x, attn_mask=None):
+    def forward(self, x, attn_mask=None, padding_mask=None):
         self.stations = x.shape[1]
 
         d_key = self.d_key
@@ -405,9 +405,16 @@ class MultiHeadSelfAttention(nn.Module):
 
         score = torch.matmul(q, k) / np.sqrt(d_key)  # (batch, n_heads, stations, stations)
 
+        # Key masking: prevent attending to padding stations (from padding_mask)
+        # Matches TF lines 268-271: score -= ~mask * infinity
+        if padding_mask is not None:
+            inv_mask = (~padding_mask).float()[:, None, None, :]  # (batch, 1, 1, stations)
+            score = score - inv_mask * self.infinity
+
+        # Additional key masking for PGA-only positions (from attn_mask)
+        # Matches TF lines 272-276: score -= ~att_mask * infinity
         if attn_mask is not None:
             inv_mask = (~attn_mask).float()[:, None, None, :]  # (batch, 1, 1, stations)
-
             score = score - inv_mask * self.infinity
 
         score = torch.softmax(score, dim=-1) #Softmax on the last dimension
@@ -422,6 +429,12 @@ class MultiHeadSelfAttention(nn.Module):
         o = o.permute(0, 2, 1, 3)  # (batch, stations, n_heads, key)
         o = o.reshape(-1, stations, n_heads * d_key)
         o = self.WO(o)
+
+        # Output masking: zero padding positions and apply abs
+        # Matches TF lines 287-289: o = abs(o * mask)
+        if padding_mask is not None:
+            mask_float = padding_mask.unsqueeze(-1).float()  # (batch, stations, 1)
+            o = torch.abs(o * mask_float)
 
         return o, None
 
@@ -780,28 +793,45 @@ class FullModel(nn.Module):
         if not (self.skip_transformer or self.no_event_token):
             emb = self.add_event_token(emb)
 
+        # padding_mask: True=valid position, used for key masking + output zeroing (matches TF `mask`)
+        # att_mask: True=attendable as key, used only for additional key masking (matches TF `att_mask`)
+        station_mask = self.Masking_nd_0_23.compute_mask(waveform_inp)  # (batch, n_stations)
+
         if self.n_pga_targets:
             pga_targets_masked = self.Masking_nd_0_2(pga_targets_inp)
             pga_emb = self.position_embedding(pga_targets_masked)
             emb = torch.cat([emb, pga_emb], dim=1)
 
+            n_pga = pga_emb.shape[1]
+            ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
+            pga_true = torch.ones(station_mask.shape[0], n_pga, device=station_mask.device, dtype=torch.bool)
+            pga_false = torch.zeros(station_mask.shape[0], n_pga, device=station_mask.device, dtype=torch.bool)
+
+            # padding_mask: [event_token=True, station_mask, pga=True]
+            padding_mask = torch.cat([station_mask, pga_true], dim=1)
+            if not (self.skip_transformer or self.no_event_token):
+                padding_mask = torch.cat([ones_1, padding_mask], dim=1)
+
+            # att_mask: [event_token=True, station_mask=True(all), pga=False] — PGA positions are query-only
             if att_mask is None:
-                # Create an attention mask based on the shape of emb
-#                att_mask = torch.cat([torch.ones_like(emb[:, :emb.shape[1] - pga_emb.shape[1], 0], dtype=torch.bool),
-#                                       torch.zeros_like(emb[:, emb.shape[1] - pga_emb.shape[1]:, 0], dtype=torch.bool)], dim=1)
-                att_mask = self.Masking_nd_0_23.compute_mask(waveform_inp)
-                att_mask = torch.cat([att_mask,
-                                      torch.zeros_like(emb[:, emb.shape[1] - pga_emb.shape[1]:, 0], dtype=torch.bool)], dim=1)
+                att_mask = torch.cat([pga_false], dim=1)  # only PGA part differs
                 if not (self.skip_transformer or self.no_event_token):
-#                    att_mask = torch.cat([torch.ones_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
-                    att_mask = torch.cat([torch.ones_like(emb[:, :1, 0], dtype=torch.bool), att_mask], dim=1)
-            emb = self.transformer(emb.float(), att_mask) # Modified line
+                    att_mask = torch.cat([ones_1, torch.ones_like(station_mask), att_mask], dim=1)
+                else:
+                    att_mask = torch.cat([torch.ones_like(station_mask), att_mask], dim=1)
+
+            emb = self.transformer(emb.float(), att_mask, padding_mask)
         else:
             if self.skip_transformer:
                 emb = torch.stack([self.mlp_layer(emb[:, i, :]) for i in range(emb.shape[1])], dim=1)
                 emb = self.maxpool(emb, mask=coords_masked[:,:,0] != 0)
             else:
-                emb = self.transformer(emb.float())
+                # padding_mask: [event_token=True, station_mask]
+                padding_mask = station_mask.clone()
+                if not (self.skip_transformer or self.no_event_token):
+                    ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
+                    padding_mask = torch.cat([ones_1, padding_mask], dim=1)
+                emb = self.transformer(emb.float(), padding_mask=padding_mask)
 
         outputs = []
         if not self.no_event_token:
