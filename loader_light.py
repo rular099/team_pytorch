@@ -141,9 +141,15 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
 
     if limit:
         event_metadata = event_metadata.iloc[:limit]
+
+    # Split at event level to avoid data leakage (same event in train+dev/test).
+    # event_metadata is station-level (one row per station per event), so we
+    # deduplicate to event level, run the splitter, then map back.
     if parts:
-        mask = TrainDevTestSplitter.run_method(event_metadata, custom_split, shuffle_train_dev, parts=parts)
-        event_metadata = event_metadata[mask]
+        unique_events = event_metadata.drop_duplicates(subset=event_key, keep='first')
+        event_mask = TrainDevTestSplitter.run_method(unique_events, custom_split, shuffle_train_dev, parts=parts)
+        keep_events = set(unique_events.loc[event_mask, event_key])
+        event_metadata = event_metadata[event_metadata[event_key].isin(keep_events)]
 
     if decimate_events is not None:
         event_metadata = event_metadata.iloc[::decimate_events]
