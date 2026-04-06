@@ -571,11 +571,10 @@ class StripMask(nn.Module):
 class GlobalMaxPooling1DMasked(nn.Module):
     def forward(self, x, mask=None):
         pseudo_infty = 1000.
-        if mask is None:
-            # Ensure that the mask is not the maximum value any more
-            mask = torch.ones_like(x, dtype=torch.bool).to(x.device) # Changed from None to ones
-        mask = mask.unsqueeze(-1)
-        x = x - mask.float() * pseudo_infty
+        if mask is not None:
+            # Subtract infty from padding positions so they never win max
+            inv_mask = (~mask).unsqueeze(-1).float()
+            x = x - inv_mask * pseudo_infty
         return torch.max(x, dim=1)[0]
 
 
@@ -1036,6 +1035,8 @@ def build_transformer_model(max_stations,
         transformer = Transformer(max_stations=transformer_max_stations, emb_dim=emb_dim, att_masking=att_masking,
                                   layers=transformer_layers, hidden_dropout=hidden_dropout, mad_params=mad_params,
                                   ffn_params=ffn_params)
+    else:
+        transformer = None
 
     mlp_mag = MLP((emb_dim,), output_mlp_dims, activation=activation)
     output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation='relu',
