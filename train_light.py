@@ -191,15 +191,16 @@ def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=Fal
 
     # 如果文件还没生成，循环等待
     if wait_for_load:
-        target_object = weights_path if os.path.isfile(weights_path) else os.path.join(weights_path, "hist.pkl")
-        while not os.path.exists(target_object):
-            print(f"File {target_object} for weight transfer missing. Sleeping {sleeptime}s")
+        while not os.path.exists(weights_path) and not os.path.isdir(weights_path):
+            print(f"Path {weights_path} for weight transfer missing. Sleeping {sleeptime}s")
             time.sleep(sleeptime)
 
-    # 如果是目录，取最新 event- 文件
+    # 如果是目录，取最新 .pth checkpoint
     if os.path.isdir(weights_path):
-        last_weight = sorted([x for x in os.listdir(weights_path) if x.startswith("event-")])[-1]
-        weights_path = os.path.join(weights_path, last_weight)
+        pth_files = sorted([x for x in os.listdir(weights_path) if x.endswith('.pth')])
+        if not pth_files:
+            raise FileNotFoundError(f'No .pth checkpoints found in {weights_path}')
+        weights_path = os.path.join(weights_path, pth_files[-1])
 
     # 加载 checkpoint
     state_dict = torch.load(weights_path, map_location=device)
@@ -464,11 +465,12 @@ if __name__ == '__main__':
                 config['model_params']['rotation'] = np.pi / 4 * ens_id / (ensemble - 1)
 
             if args.continue_ensemble and os.path.isdir(training_params['weight_path']):
-                hist_path = os.path.join(training_params['weight_path'], 'hist.pkl')
-                if os.path.isfile(hist_path):
+                # Check if any checkpoint exists in this ensemble member's directory
+                pth_files = [x for x in os.listdir(training_params['weight_path']) if x.endswith('.pth')]
+                if pth_files:
                     continue
                 else:
-                    raise ValueError(f'Can not continue unclean ensemble. Checking for {hist_path} failed.')
+                    raise ValueError(f'Can not continue unclean ensemble. No .pth checkpoints in {training_params["weight_path"]}')
 
             if (not is_dist) or (is_dist and (rank == 0)):
                 os.makedirs(training_params['weight_path'], exist_ok=True)
@@ -664,7 +666,8 @@ if __name__ == '__main__':
             train_dataset = util.JointGenerator(train_generators, shuffle=True, dataset_id=dataset_bias)
             val_dataset = util.JointGenerator(validation_generators, shuffle=True, dataset_id=dataset_bias)
 
-        filepath = os.path.join(training_params['weight_path'], 'event-{epoch:02d}.hdf5')
+        # filepath variable kept for reference; actual saving uses save_name in train_model
+        filepath = os.path.join(training_params['weight_path'], 'full_model_{epoch}.pth')
         patience = training_params.get('lr_decay_patience', 6)
 #        lr_decay = ReduceLROnPlateau(monitor='val_loss', mode='min', patience=patience, factor=0.3, verbose=1) # need modify
         lr_decay = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=patience, verbose=1)

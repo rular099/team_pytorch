@@ -1146,23 +1146,26 @@ class EnsembleEvaluateModel:
         self.models = []
         removed_models = 0
         for ens_id, model in enumerate(tmp_models):
+            tmp_weights_path = os.path.join(weights_path, f'{ens_id}')
+
+            # Find latest .pth checkpoint
+            pth_files = sorted([x for x in os.listdir(tmp_weights_path) if x.endswith('.pth')])
+            if not pth_files:
+                raise FileNotFoundError(f'No .pth checkpoints found in {tmp_weights_path}')
+
             if self.loss_limit is not None:
-                hist_path = os.path.join(weights_path, f'{ens_id}', 'hist.pkl')
-                with open(hist_path, 'rb') as f:
-                    hist = pickle.load(f)
-                if np.min(hist['val_loss']) > self.loss_limit:
+                # Check val_loss from the latest checkpoint
+                ckpt = torch.load(os.path.join(tmp_weights_path, pth_files[-1]), map_location='cpu')
+                if isinstance(ckpt, dict) and 'loss' in ckpt and ckpt['loss'] > self.loss_limit:
                     removed_models += 1
                     continue
 
-            tmp_weights_path = os.path.join(weights_path, f'{ens_id}')
-            weight_file = sorted([x for x in os.listdir(tmp_weights_path) if x[:5] == 'event'])[-1]
-            weight_file = os.path.join(tmp_weights_path, weight_file)
-
-            # Load weights to CPU first, then move to the device
-            state_dict = torch.load(weight_file, map_location='cpu')
+            weight_file = os.path.join(tmp_weights_path, pth_files[-1])
+            ckpt = torch.load(weight_file, map_location='cpu')
+            state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
             model.load_state_dict(state_dict)
 
-            self.models.append(model.to(self.device)) # Then move model to device after loading weights
+            self.models.append(model.to(self.device))
 
         if removed_models > 0:
             print(f'Removed {removed_models} models not fulfilling loss limit')
