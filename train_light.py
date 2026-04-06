@@ -562,7 +562,9 @@ if __name__ == '__main__':
 
         if 'load_model_path' in training_params:
             print('Loading full model')
-            full_model.load_weights(training_params['load_model_path'])
+            ckpt = torch.load(training_params['load_model_path'], map_location=device)
+            state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+            full_model.load_state_dict(state_dict)
 
         if 'transfer_model_path' in training_params:
             print('Transfering model weights')
