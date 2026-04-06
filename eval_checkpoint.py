@@ -227,9 +227,28 @@ def diagnose_diting_features(model, dataset, device):
                 print(f'  Per-dim variance: min={var_per_dim.min():.6f}, max={var_per_dim.max():.6f}, mean={var_per_dim.mean():.6f}')
         elif isinstance(feats[0], (list, tuple)):
             print(f'  output is list of {len(feats[0])} elements')
-            for j, elem in enumerate(feats[0]):
-                if isinstance(elem, torch.Tensor):
-                    print(f'    [{j}] shape={elem.shape}')
+            for j in range(len(feats[0])):
+                elem0 = feats[0][j]
+                if not isinstance(elem0, torch.Tensor):
+                    continue
+                print(f'    [{j}] shape={elem0.shape}')
+                # Stack same element across stations and compute similarity
+                if len(feats) > 1:
+                    elems = [feats[s][j] for s in range(len(feats))]
+                    # Flatten each to 1D: (C, T) -> (C*T)
+                    flat = torch.stack([e.squeeze(0).flatten() for e in elems])  # (n_stations, C*T)
+                    normed = flat / (flat.norm(dim=-1, keepdim=True) + 1e-8)
+                    cos_sim = normed @ normed.T
+                    n = cos_sim.shape[0]
+                    mask = ~torch.eye(n, dtype=bool)
+                    off_diag = cos_sim[mask]
+                    # Also try GAP: average over temporal dim, then cosine sim
+                    gap = torch.stack([e.squeeze(0).mean(dim=-1) for e in elems])  # (n_stations, C)
+                    gap_normed = gap / (gap.norm(dim=-1, keepdim=True) + 1e-8)
+                    gap_cos = gap_normed @ gap_normed.T
+                    gap_off = gap_cos[mask]
+                    print(f'        cosine sim (flat): min={off_diag.min():.4f}, max={off_diag.max():.4f}, mean={off_diag.mean():.4f}')
+                    print(f'        cosine sim (GAP):  min={gap_off.min():.4f}, max={gap_off.max():.4f}, mean={gap_off.mean():.4f}')
 
     print()
 
