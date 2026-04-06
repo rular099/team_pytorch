@@ -513,6 +513,8 @@ if __name__ == '__main__':
             optimizer = optim.Adam(single_station_model.parameters(),lr=training_params['lr'])
             key = generator_params[0]['key']
             filter_single_station_by_pick = training_params.get('filter_single_station_by_pick', False)
+            # TODO: filter_single_station_by_pick is not yet implemented for DataGenerator-based loading.
+            # In train.py it filters stations with p_pick >= 3000 from the concatenated arrays.
 
             noise_seconds = generator_params[0].get('noise_seconds', 5)
             cutout = (

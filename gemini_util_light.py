@@ -110,6 +110,7 @@ class DataGenerator(Dataset):
         return int(np.floor(self.oversample * len(self.event_metadata)))
 
     def __getitem__(self, index):
+        index = self.indexes[index]
         with h5py.File(self.data_path, 'r') as f:
             event = self.event_metadata.iloc[index]
             event_name = str(event[self.event_key])
