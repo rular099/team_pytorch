@@ -130,6 +130,12 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
         raise NotImplementedError('Loading partitioned data is currently not supported')
     data_path = data_paths[0]
 
+    # Derive cache path from data_path to avoid stale CSV when switching datasets
+    import hashlib
+    data_hash = hashlib.md5(os.path.abspath(data_path).encode()).hexdigest()[:8]
+    base, ext = os.path.splitext(event_metadata_path)
+    event_metadata_path = f'{base}_{data_hash}{ext}'
+
     if not os.path.exists(event_metadata_path):
         build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate)
     event_metadata = pd.read_csv(event_metadata_path)
