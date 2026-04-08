@@ -77,3 +77,30 @@ FPN 虽然是通用多尺度融合结构，但预训练权重仍可能带有震�
   - 解冻 waveform_model[1] (EncoderFeatures) 和 dt2team
   - dt2team 改为 MLP (256 → 512 → 500, with ReLU)
   - 注意学习率：adapter/head 可用较大 lr，encoder 冻结或极小 lr
+
+## PGA target sampling strategy
+
+Current:
+  - `pga_targets` usually come from station coordinates that are already included in the input station set
+  - this is good for "read out PGA more accurately when local waveform is available"
+  - but it is weaker for true spatial generalization to unseen coordinates
+
+Desired:
+  - support both:
+    1. better prediction at locations with waveform observations
+    2. generalization to arbitrary spatial coordinates
+
+Proposed:
+  - use mixed PGA target sampling during training
+  - sample part of `pga_targets` from observed/input stations
+  - sample part of `pga_targets` from inactive or held-out stations (`pga_from_inactive=True` style)
+  - optionally add non-station query coordinates if labels can be constructed, to better approximate continuous-space interpolation
+
+Benefits:
+  - preserves strong supervision for station locations with local waveform evidence
+  - improves held-out station prediction
+  - narrows the gap between current station-to-station supervision and true arbitrary-coordinate inference
+
+Files to modify:
+  - `gemini_util_light.py`: `PreloadedEventGenerator` target sampling logic
+  - Config: expose ratios / modes for observed vs inactive vs arbitrary-coordinate PGA targets
