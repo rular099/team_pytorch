@@ -537,25 +537,26 @@ class AddConstantToMixture(nn.Module):
 
 
 class Masking_nd(nn.Module):
-    def __init__(self, mask_value=0., axis=-1, nodim=False):
+    def __init__(self, mask_value=0., axis=-1, nodim=False, eps=1e-7):
         super().__init__()
         self.mask_value = mask_value
         self.axis = axis
         self.nodim = nodim
+        self.eps = eps
 
     def forward(self, inputs, mask=None):
         if self.nodim:
-            boolean_mask = (inputs != self.mask_value)
+            boolean_mask = (torch.abs(inputs - self.mask_value) > self.eps)
         else:
-            boolean_mask = torch.any((inputs != self.mask_value), dim=self.axis, keepdim=True)
+            boolean_mask = torch.any((torch.abs(inputs - self.mask_value) > self.eps), dim=self.axis, keepdim=True)
 
-        return inputs * boolean_mask.float()  # Ensure boolean_mask is float
+        return inputs * boolean_mask.float()
 
-    def compute_mask(self, inputs, mask=None):  # Add this for mask propagation
+    def compute_mask(self, inputs, mask=None):
         if self.nodim:
-            output_mask = (inputs != self.mask_value)
+            output_mask = (torch.abs(inputs - self.mask_value) > self.eps)
         else:
-            output_mask = torch.any((inputs != self.mask_value), dim=self.axis)
+            output_mask = torch.any((torch.abs(inputs - self.mask_value) > self.eps), dim=self.axis)
         return output_mask
 
 
@@ -624,7 +625,7 @@ def mixture_density_loss(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=
     else:
         return loss
 
-def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=False, res_comps=None, res_weight=None):
+def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=False, res_comps=None, res_weight=None, pga_target_valid=None):
     if res_comps is None:
         res_comps = ['mag', 'loc', 'pga']
         res_weight = np.array([1.,1.,1.])
@@ -633,24 +634,30 @@ def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_sh
     for i, res_comp in enumerate(res_comps):
         alpha_logits = y_pred[i][..., 0]
         log_density = torch.zeros_like(y_pred[i][..., 0]).to(y_pred[i].device)  # Move to device
-        
+
         if res_comp == 'loc':
             d = 3
         else:
-            d = 1 
+            d = 1
 
         for j in range(d):
             mu = y_pred[i][..., j + 1]
             sigma = y_pred[i][..., j + 1 + d]
-    
+
             y_true_tmp = y_true[i][..., j].clone()
             while y_true_tmp.dim() < sigma.dim():
                 y_true_tmp = y_true_tmp.unsqueeze(-1)
             log_density = log_density - torch.log(np.sqrt(2 * np.pi) * sigma) - (y_true_tmp - mu) ** 2 / (2 * sigma ** 2)
-    
+
         log_density = log_density + torch.log_softmax(alpha_logits,dim=-1)
-        log_density = torch.logsumexp(log_density, dim=-1)
-        loss = loss - res_weight[i]*torch.mean(log_density)
+        log_density = torch.logsumexp(log_density, dim=-1)  # shape (B, n_pga) for pga, (B,) for mag/loc
+        if res_comp == 'pga' and pga_target_valid is not None:
+            mask = pga_target_valid.to(log_density.dtype)
+            denom = mask.sum().clamp_min(1.0)
+            comp_loss = -(log_density * mask).sum() / denom
+        else:
+            comp_loss = -torch.mean(log_density)
+        loss = loss + res_weight[i] * comp_loss
     return loss
 
 
@@ -787,11 +794,16 @@ class FullModel(nn.Module):
         scale = torch.log(torch.amax(torch.abs(waveform), dim=(2, 3)) + 1e-6)
         return scale.unsqueeze(-1)
 
-    def forward(self, waveform_inp, metadata_inp, pga_targets_inp=None, dataset=None, att_mask = None):
+    def forward(self, waveform_inp, metadata_inp, station_valid,
+                pga_targets_inp=None, pga_target_valid=None,
+                dataset=None, att_mask=None):
         raw_waveform = waveform_inp
         waveform_inp = self._normalize(waveform_inp, mode='std', axis=3)
-        waveforms_masked = self.Masking_nd_0_23(waveform_inp)
-        coords_masked = self.Masking_nd_0_2(metadata_inp)
+        # Apply explicit masks instead of inferring "validity == nonzero".
+        # station_valid: (B, S) bool. pga_target_valid: (B, n_pga) bool.
+        sv = station_valid.bool()
+        waveforms_masked = waveform_inp * sv[:, :, None, None].float()
+        coords_masked = metadata_inp * sv[:, :, None].float()
 
         waveforms_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
         if self.waveform_scale_proj is not None:
@@ -809,20 +821,22 @@ class FullModel(nn.Module):
 
         # padding_mask: True=valid position, used for key masking + output zeroing (matches TF `mask`)
         # att_mask: True=attendable as key, used only for additional key masking (matches TF `att_mask`)
-        station_mask = self.Masking_nd_0_23.compute_mask(waveform_inp)  # (batch, n_stations)
+        station_mask = sv  # (batch, n_stations) — comes from explicit station_valid input
 
         if self.n_pga_targets:
-            pga_targets_masked = self.Masking_nd_0_2(pga_targets_inp)
+            assert pga_target_valid is not None, \
+                'pga_target_valid must be provided when n_pga_targets > 0'
+            ptv = pga_target_valid.bool()
+            pga_targets_masked = pga_targets_inp * ptv[:, :, None].float()
             pga_emb = self.position_embedding(pga_targets_masked)
             emb = torch.cat([emb, pga_emb], dim=1)
 
             n_pga = pga_emb.shape[1]
             ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
-            pga_true = torch.ones(station_mask.shape[0], n_pga, device=station_mask.device, dtype=torch.bool)
             pga_false = torch.zeros(station_mask.shape[0], n_pga, device=station_mask.device, dtype=torch.bool)
 
-            # padding_mask: [event_token=True, station_mask, pga=True]
-            padding_mask = torch.cat([station_mask, pga_true], dim=1)
+            # padding_mask: [event_token=True, station_mask, pga_target_valid]
+            padding_mask = torch.cat([station_mask, ptv], dim=1)
             if not (self.skip_transformer or self.no_event_token):
                 padding_mask = torch.cat([ones_1, padding_mask], dim=1)
 
@@ -838,7 +852,7 @@ class FullModel(nn.Module):
         else:
             if self.skip_transformer:
                 emb = torch.stack([self.mlp_layer(emb[:, i, :]) for i in range(emb.shape[1])], dim=1)
-                emb = self.maxpool(emb, mask=coords_masked[:,:,0] != 0)
+                emb = self.maxpool(emb, mask=station_mask)
             else:
                 # padding_mask: [event_token=True, station_mask]
                 padding_mask = station_mask.clone()

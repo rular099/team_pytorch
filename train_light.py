@@ -63,16 +63,20 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
         running_loss = 0.0
         num_train_batches = 0
         for inputs, labels, _ in train_loader:
-            if isinstance(inputs, list): 
+            if isinstance(inputs, list):
                 inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
             else:
                 inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
-            if isinstance(inputs, list): 
+            if isinstance(inputs, list):
                 outputs = model(*inputs)
             else:
                 outputs = model(inputs)
-            loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight)
+            # Layout when n_pga_targets > 0:
+            #   inputs = [waveforms, metadata, station_valid, pga_targets, pga_target_valid, (dataset_id?)]
+            pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
+            loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight,
+                                                    pga_target_valid=pga_target_valid)
             loss.backward()
             if (not is_dist) or (is_dist and (rank == 0)):
                 writer.add_scalar('train/loss', loss.item(), global_step)
@@ -113,7 +117,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     outputs = eval_model(*inputs)
                 else:
                     outputs = eval_model(inputs)
-                loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight)
+                pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
+                loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight,
+                                                        pga_target_valid=pga_target_valid)
                 val_running_loss += loss.item()
                 num_val_batches += 1
 
@@ -304,8 +310,8 @@ def run_sanity_check(model, data_loader, device, name='sanity', max_batches=1):
             if amp is not None:
                 print(f'  waveform log-scale: mean={amp.mean().item():.4f}, std={amp.std().item():.4f}, min={amp.min().item():.4f}, max={amp.max().item():.4f}')
                 if wave.ndim == 4:
-                    station_has_signal = (wave != 0).any(dim=(2, 3))
-                    signal_frac = (wave != 0).float().mean(dim=(1, 2, 3))
+                    station_has_signal = (torch.abs(wave) > 1e-7).any(dim=(2, 3))
+                    signal_frac = (torch.abs(wave) > 1e-7).float().mean(dim=(1, 2, 3))
                     print(f'  active stations/sample: {station_has_signal.sum(dim=1).tolist()}')
                     print(f'  nonzero waveform fraction/sample: {[round(float(x), 4) for x in signal_frac]}')
 

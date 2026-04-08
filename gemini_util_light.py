@@ -348,9 +348,14 @@ class PreloadedEventGenerator(Dataset):
         waveforms = np.zeros((true_batch_size, self.max_stations) + X.shape[1:])  # shape (1, 25, 10000, 3)
         true_max_stations_in_batch = max(max([self.metadata.shape[0] for idx in indexes]), self.max_stations) # 25
         metadata = np.zeros((true_batch_size, true_max_stations_in_batch) + self.metadata.shape[1:]) # shape (1, 25, 3)
-        pga = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1,25)
+        # Use NaN for PGA so that "no measurement" is unambiguous and the legal
+        # log-PGA value 0 is not confused with padding.
+        pga = np.full((true_batch_size, true_max_stations_in_batch), np.nan)  # shape (1, 25)
         full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1, 25)
         p_picks = np.zeros((true_batch_size, self.max_stations)) # shape (1, 25)
+        # station_valid: True for slots that hold a real station (not padding).
+        # Will be tightened later by cutout/blinding/etc.
+        station_valid_full = np.zeros((true_batch_size, true_max_stations_in_batch), dtype=bool)
         reverse_selections = []
 
         # Find list of IDs
@@ -361,6 +366,7 @@ class PreloadedEventGenerator(Dataset):
                 pga[i, :len(self.pga)] = self.pga
                 p_picks[i, :len(self.triggers)] = self.triggers
                 full_p_picks[i, :len(self.triggers)] = self.triggers
+                station_valid_full[i, :len(self.metadata)] = True
                 reverse_selections += [[]]
             else:
                 if self.selection_skew is None:  # random select
@@ -383,6 +389,7 @@ class PreloadedEventGenerator(Dataset):
                 metadata[i, :len(selection)] = self.metadata[selection]
                 pga[i, :len(selection)] = self.pga[selection]
                 full_p_picks[i, :len(selection)] = self.triggers[selection]
+                station_valid_full[i, :len(selection)] = True
 
                 tmp_reverse_selection = [0 for _ in selection]
                 for j, s in enumerate(selection):
@@ -398,6 +405,11 @@ class PreloadedEventGenerator(Dataset):
         target = None
         if self.coords_target:
             target = self.event_metadata.get_group(ith_event)[self.coord_keys].values  # event location
+            if np.isnan(target).any() or np.isinf(target).any():
+                raise ValueError(
+                    f'Event {ith_event} has NaN/Inf hypocenter coordinates: {target}. '
+                    f'Filter such events out of event_metadata before training.'
+                )
 
         org_waveform_length = waveforms.shape[2]
         if self.cutout:
@@ -439,9 +451,9 @@ class PreloadedEventGenerator(Dataset):
         magnitude = np.expand_dims(np.expand_dims(magnitude, axis=-1), axis=-1)
         # Center location on mean of locations
         if self.coords_target:
-            metadata, target = self.location_transformation(metadata, target)
+            metadata, target = self.location_transformation(metadata, target, station_valid=station_valid_full)
         else:
-            metadata = self.location_transformation(metadata)
+            metadata = self.location_transformation(metadata, station_valid=station_valid_full)
 
         if self.label_smoothing:
             magnitude += (magnitude > 4) * np.random.randn(magnitude.shape[0]).reshape(magnitude.shape) * (
@@ -451,44 +463,56 @@ class PreloadedEventGenerator(Dataset):
             metadata = metadata[:, :self.max_stations]
             pga = pga[:, :self.max_stations]
 
+        # PGA validity is detected via NaN/Inf so that the legal value 0 is preserved.
+        pga_valid_full = ~(np.isnan(pga) | np.isinf(pga))
+
         if self.pga_targets:
             pga_values = np.zeros(
                 (true_batch_size, self.pga_targets))
             pga_targets = np.zeros((true_batch_size, self.pga_targets, 3))
+            pga_target_valid = np.zeros((true_batch_size, self.pga_targets), dtype=bool)
             if self.pga_mode:
                 for i in range(waveforms.shape[0]):
                     pga_index = pga_indexes[i]
                     if len(reverse_selections[i]) > 0:
                         sorted_pga = pga[i, reverse_selections[i]]
                         sorted_metadata = metadata[i, reverse_selections[i]]
+                        sorted_valid = pga_valid_full[i, reverse_selections[i]]
                     else:
                         sorted_pga = pga[i]
                         sorted_metadata = metadata[i]
-                    pga_values_pre = sorted_pga[
-                                     pga_index * self.pga_targets:(pga_index + 1) * self.pga_targets]
-                    pga_values[i, :len(pga_values_pre)] = pga_values_pre
-                    pga_targets_pre = sorted_metadata[
-                                      pga_index * self.pga_targets:(pga_index + 1) * self.pga_targets, :]
+                        sorted_valid = pga_valid_full[i]
+                    sl = slice(pga_index * self.pga_targets, (pga_index + 1) * self.pga_targets)
+                    pga_values_pre = sorted_pga[sl]
+                    pga_valid_pre = sorted_valid[sl]
+                    pga_targets_pre = sorted_metadata[sl, :]
                     if pga_targets_pre.shape[-1] == 4:
                         pga_targets_pre = pga_targets_pre[:, (0, 1, 3)]
-                    pga_targets[i, :len(pga_targets_pre), :] = pga_targets_pre
+                    n = len(pga_values_pre)
+                    # Replace NaN/Inf with 0 in label tensor; loss will mask via pga_target_valid.
+                    pga_values[i, :n] = np.where(pga_valid_pre, pga_values_pre, 0.0)
+                    pga_targets[i, :n, :] = pga_targets_pre
+                    pga_target_valid[i, :n] = pga_valid_pre
             else:
-                pga[np.logical_or(np.isnan(pga), np.isinf(pga))] = 0  # Ensure only legal PGA values are selected
+                # Slice station_valid to match metadata/pga slicing above (462-464).
+                if not self.pga_from_inactive:
+                    sv_for_pga = station_valid_full[:, :self.max_stations]
+                else:
+                    sv_for_pga = station_valid_full
                 for i in range(waveforms.shape[0]):
-                    active = np.where(pga[i] != 0)[0]
+                    valid_pos = pga_valid_full[i] & sv_for_pga[i]
+                    active = np.where(valid_pos)[0]
                     if len(active) == 0:
                         raise ValueError(f'Found event without PGA idx={indexes[i]}')
-                    while len(active) < self.pga_targets:
-                        active = np.repeat(active, 2)
                     if self.select_first:
                         active_p_picks = full_p_picks[i, active].copy()
-                        mask = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
-                        active_p_picks[mask] = min(np.max(active_p_picks), self.p_pick_limit)
+                        bad = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
+                        active_p_picks[bad] = min(np.max(active_p_picks), self.p_pick_limit)
                         active = active[np.argsort(active_p_picks)]
                     elif self.pga_selection_skew is not None:
                         active_p_picks = full_p_picks[i, active]
-                        mask = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
-                        active_p_picks[mask] = min(np.max(active_p_picks), self.p_pick_limit)
+                        bad = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
+                        active_p_picks[bad] = min(np.max(active_p_picks), self.p_pick_limit)
                         coeffs = np.exp(-active_p_picks / self.pga_selection_skew)
                         coeffs *= np.random.random(coeffs.shape)
                         active = active[np.argsort(-coeffs)]
@@ -496,44 +520,53 @@ class PreloadedEventGenerator(Dataset):
                         np.random.shuffle(active)
 
                     samples = active[:self.pga_targets]
+                    n = len(samples)
                     if metadata.shape[-1] == 3:
-                        pga_targets[i] = metadata[i, samples, :]
+                        pga_targets[i, :n, :] = metadata[i, samples, :]
                     else:
                         full_targets = metadata[i, samples]
-                        pga_targets[i] = full_targets[:, (0, 1, 3)]
-                    pga_values[i] = pga[i, samples]
+                        pga_targets[i, :n, :] = full_targets[:, (0, 1, 3)]
+                    pga_values[i, :n] = pga[i, samples]
+                    pga_target_valid[i, :n] = True
+                    # Unfilled slots [n:] keep value=0 and valid=False; the loss masks them.
             pga_values = pga_values.reshape((true_batch_size, self.pga_targets, 1))
 
         metadata = metadata[:, :self.max_stations]
+        station_valid = station_valid_full[:, :self.max_stations].copy()
+
+        # Mark stations whose waveform was zeroed by cutout / trigger_based as
+        # invalid for the encoder. Waveform "all zero" is a safe sentinel here:
+        # real seismic data is mean-subtracted but never identically zero across
+        # all samples and channels; only explicit zeroing produces this state.
+        has_signal = (waveforms != 0).any(axis=(2, 3))
+        station_valid &= has_signal
 
         if self.station_blinding:
-            mask = np.zeros(waveforms.shape[:2], dtype=bool)
-
+            blind_mask = np.zeros(waveforms.shape[:2], dtype=bool)
             for i in range(waveforms.shape[0]):
-                active = np.where((waveforms[i] != 0).any(axis=(1, 2)))[0]
+                active = np.where(station_valid[i])[0]
                 if len(active) == 0:
-                    active = np.zeros(1, dtype=int)
-                blind_length = np.random.randint(0, len(active)) # 可调整
+                    continue
+                blind_length = np.random.randint(0, len(active))
                 np.random.shuffle(active)
-                blind = active[:blind_length]
-                mask[i, blind] = True
+                blind_mask[i, active[:blind_length]] = True
+            waveforms[blind_mask] = 0
+            station_valid &= ~blind_mask
+            # Note: metadata is intentionally NOT zeroed at blinded positions —
+            # the model uses station_valid for masking, not the value.
 
-            waveforms[mask] = 0
-            metadata[mask] = 0
-
-        # To avoid that stations without a trigger are masked, we can set a value in the waveforms to non-zero.
-        # Thereby we keep the information that the station did not trigger yet.
-        # On the other hand this might leak information that a station is still going to trigger
-        stations_without_trigger = (metadata != 0).any(axis=2) & (waveforms == 0).all(axis=(2, 3))
-        if self.disable_station_foreshadowing:
-            metadata[stations_without_trigger] = 0
-        else:
-            waveforms[stations_without_trigger, 0, 0] += 1e-9
-
-        # Avoid completely zero events, leading to NaN values in energy loss
-        mask = np.logical_and((metadata == 0).all(axis=(1, 2)), (waveforms == 0).all(axis=(1, 2, 3)))
-        waveforms[mask, 0, 0, 0] = 1e-9
-        metadata[mask, 0, 0] = 1e-9
+        # Sanity check: at least one station must have a real waveform to avoid
+        # degenerate forward passes (all-zero input → NaN in energy loss).
+        # If violated, skip to the next sample.
+        for i in range(waveforms.shape[0]):
+            if not station_valid[i].any():
+                import warnings
+                warnings.warn(
+                    f'Event {ith_event} has no station with nonzero waveform '
+                    f'after cutout — skipping sample.'
+                )
+                next_index = (index + 1) % len(self.indexes)
+                return self.__getitem__(next_index)
 
         if self.fake_borehole and waveforms.shape[3] == 3:
             waveforms = np.concatenate([np.zeros_like(waveforms), waveforms], axis=3)
@@ -547,8 +580,9 @@ class PreloadedEventGenerator(Dataset):
         waveforms = torch.from_numpy(np.swapaxes(waveforms[0],1,2)).float()
         metadata = torch.from_numpy(metadata[0]).float()
         magnitude = torch.from_numpy(magnitude[0]).float()
+        station_valid_t = torch.from_numpy(station_valid[0]).bool()
 
-        inputs = [waveforms, metadata]
+        inputs = [waveforms, metadata, station_valid_t]
         outputs = []
         if not self.no_event_token:
             outputs += [magnitude[0]]
@@ -561,7 +595,8 @@ class PreloadedEventGenerator(Dataset):
         if self.pga_targets:
             pga_targets = torch.from_numpy(pga_targets[0]).float()
             pga_values = torch.from_numpy(pga_values[0]).float()
-            inputs += [pga_targets]
+            pga_target_valid_t = torch.from_numpy(pga_target_valid[0]).bool()
+            inputs += [pga_targets, pga_target_valid_t]
             outputs += [pga_values]
 
         return inputs, outputs, p_picks
@@ -571,13 +606,18 @@ class PreloadedEventGenerator(Dataset):
         if self.shuffle:
             np.random.shuffle(self.indexes)
 
-    def location_transformation(self, metadata, target=None):
+    def location_transformation(self, metadata, target=None, station_valid=None):
         transform_target_only = self.transform_target_only
         metadata = metadata.copy()
 
         metadata_old = metadata
         metadata = metadata.copy()
-        mask = (metadata == 0).all(axis=2)
+        # Padding mask now comes from the explicit station_valid array.
+        # This avoids treating legitimate (lat=0, lon=0, depth=0) coords as padding.
+        if station_valid is not None:
+            mask = ~station_valid
+        else:
+            mask = np.zeros(metadata.shape[:2], dtype=bool)
         if target is not None:
             target[:, 0] -= self.pos_offset[0]
             target[:, 1] -= self.pos_offset[1]

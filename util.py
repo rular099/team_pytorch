@@ -121,6 +121,10 @@ class EventDataset(Dataset):
             np.random.shuffle(self.indexes)
 
 if keras is not None:
+    # TODO: legacy keras path. Not updated for the station_valid / pga_target_valid
+    # mask refactor that lives in gemini_util_light.PreloadedEventGenerator. If you
+    # ever resurrect this code path, mirror those changes (NaN-based pga validity,
+    # explicit station_valid mask, no zero sentinels for metadata/PGA).
     class PreloadedEventGenerator(keras.utils.Sequence):
         def __init__(self, data, event_metadata, key='MA', batch_size=32, cutout=None,
                      sliding_window=False, windowlen=3000, shuffle=True,
