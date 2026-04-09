@@ -430,11 +430,10 @@ class MultiHeadSelfAttention(nn.Module):
         o = o.reshape(-1, stations, n_heads * d_key)
         o = self.WO(o)
 
-        # Output masking: zero padding positions and apply abs
-        # Matches TF lines 287-289: o = abs(o * mask)
+        # Output masking: zero padding positions
         if padding_mask is not None:
             mask_float = padding_mask.unsqueeze(-1).float()  # (batch, stations, 1)
-            o = torch.abs(o * mask_float)
+            o = o * mask_float
 
         return o, None
 
