@@ -389,7 +389,7 @@ class PreloadedEventGenerator(Dataset):
                 station_valid_full[i, :len(self.metadata)] = True
                 reverse_selections += [[]]
             else:
-                if self.selection_skew is None:  # random select
+                if self.selection_skew is None or self.selection_skew <= 0:  # random select
                     selection = np.arange(0, len(self.waveforms))
                     np.random.shuffle(selection)
                 else:  # pick_time + randomness
@@ -535,7 +535,7 @@ class PreloadedEventGenerator(Dataset):
                         bad = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
                         active_p_picks[bad] = min(np.max(active_p_picks), self.p_pick_limit)
                         active = active[np.argsort(active_p_picks)]
-                    elif self.pga_selection_skew is not None:
+                    elif self.pga_selection_skew is not None and self.pga_selection_skew > 0:
                         active_p_picks = full_p_picks[i, active]
                         bad = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
                         active_p_picks[bad] = min(np.max(active_p_picks), self.p_pick_limit)
