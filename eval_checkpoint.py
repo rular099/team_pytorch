@@ -51,7 +51,7 @@ def load_diting_args(diting_config_path, device='cpu'):
 
 def build_model_and_load(config, diting_args, checkpoint_path, device):
     """Build model and load checkpoint."""
-    single_station_model, full_model = models.build_transformer_model(
+    full_model = models.build_transformer_model(
         **config['model_params'], trace_length=10000, diting_args=diting_args)
     full_model = full_model.to(device)
 

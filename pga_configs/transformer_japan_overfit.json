@@ -50,17 +50,14 @@
         "lr": 0.001,
         "clipnorm": 1.0,
         "epoch_sanity": true,
-        "epochs_single_station": 0,
         "epochs_full_model": 200,
-        "filter_single_station_by_pick": false,
         "data_path": [
             "japan_overfit.hdf5"
         ],
         "workers": 0,
         "weight_path": "weights_japan_overfit",
-        "loss_weights": {
-            "pga": 1
-        },
+        "res_comps": ["pga"],
+        "res_weight": [1.0],
         "ensemble_rotation": false,
         "generator_params": [
             {

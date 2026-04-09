@@ -75,7 +75,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             # Layout when n_pga_targets > 0:
             #   inputs = [waveforms, metadata, station_valid, pga_targets, pga_target_valid, (dataset_id?)]
             pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
-            loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight,
+            sel_pred, sel_true = models.select_loss_components(
+                outputs, labels, eval_model.output_layout, res_comps)
+            loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
                                                     pga_target_valid=pga_target_valid)
             loss.backward()
             if (not is_dist) or (is_dist and (rank == 0)):
@@ -118,7 +120,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 else:
                     outputs = eval_model(inputs)
                 pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
-                loss = models.mixture_density_loss_full(outputs, labels, res_comps=res_comps, res_weight=res_weight,
+                sel_pred, sel_true = models.select_loss_components(
+                    outputs, labels, eval_model.output_layout, res_comps)
+                loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
                                                         pga_target_valid=pga_target_valid)
                 val_running_loss += loss.item()
                 num_val_batches += 1
@@ -446,10 +450,9 @@ if __name__ == '__main__':
             generator_param['select_first'] = True
             generator_param['cutout_start'] = fixed_cutout
             generator_param['cutout_end'] = fixed_cutout
-        training_params['epochs_single_station'] = 0
         if (not is_dist) or (is_dist and (rank == 0)):
             print(f'Overfit mode enabled: using the first {args.overfit_n} samples for both train and val')
-            print('Overfit mode adjustments: single-station pretraining disabled, trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, deterministic station selection, no train/dev shuffling')
+            print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, deterministic station selection, no train/dev shuffling')
 
     sampling_rate = metadata_train[0]['sampling_rate']
     assert all(m['sampling_rate'] == sampling_rate for m in metadata_train + metadata_dev)
@@ -498,87 +501,17 @@ if __name__ == '__main__':
                 json.dump(config, f, indent=4)
 
         print('Building model')
-        single_station_model, full_model = models.build_transformer_model(**config['model_params'],
-#                                                                          trace_length=data_train[0]['waveforms'][0].shape[1],
-                                                                          trace_length=10000,
-                                                                          diting_args=diting_args
-)
+        full_model = models.build_transformer_model(**config['model_params'],
+                                                    trace_length=10000,
+                                                    diting_args=diting_args)
+        full_model.to(device)
         if is_dist:
-            single_station_model.to(device)
-            full_model.to(device)
-            single_station_model = DDP(
-                single_station_model,
-                device_ids=[local_rank],
-                output_device=local_rank,
-                find_unused_parameters=True,
-            )
             full_model = DDP(
                 full_model,
                 device_ids=[local_rank],
                 output_device=local_rank,
                 find_unused_parameters=True,
             )
-        else:
-            single_station_model.to(device)
-            full_model.to(device)
-
-        if 'single_station_model_path' in training_params:
-            print('Loading single station model')
-            checkpoint = torch.load(training_params['single_station_model_path'], map_location=device)
-            load_target = single_station_model.module if is_dist else single_station_model
-            load_target.load_state_dict(checkpoint["model_state_dict"])
-        elif 'transfer_model_path' not in training_params and not overfit_mode:
-            optimizer = optim.Adam(single_station_model.parameters(),lr=training_params['lr'])
-            key = generator_params[0]['key']
-            filter_single_station_by_pick = training_params.get('filter_single_station_by_pick', False)
-            # TODO: filter_single_station_by_pick is not yet implemented for DataGenerator-based loading.
-            # In train.py it filters stations with p_pick >= 3000 from the concatenated arrays.
-
-            noise_seconds = generator_params[0].get('noise_seconds', 5)
-            cutout = (
-                sampling_rate * (noise_seconds + generator_params[0]['cutout_start']), sampling_rate * (noise_seconds + generator_params[0]['cutout_end']))
-
-            sliding_window = generator_params[0].get('sliding_window', False)
-
-            train_dataset = util.DataGenerator(event_metadata_train[0], metadata_train[0], training_params['data_path'][0], generator_params[0],
-                                                 cutout=cutout, label_smoothing=False if overfit_mode else True, sliding_window=sliding_window)
-            val_dataset = util.DataGenerator(event_metadata_dev[0], metadata_dev[0], training_params['data_path'][0], generator_params[0],
-                                                 cutout=cutout, label_smoothing=False if overfit_mode else True, sliding_window=sliding_window)
-            if is_dist:
-                train_sampler = DistributedSampler(train_dataset)
-                train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], sampler=train_sampler, shuffle=(train_sampler is None))
-                val_sampler = DistributedSampler(val_dataset, shuffle=False)
-            else:
-                train_sampler = None
-                val_sampler = None
-                train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
-            val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], sampler=val_sampler, shuffle=(val_sampler is None))
-            # Only save weights due to open issue:
-            # https://github.com/matterport/Mask_RCNN/issues/308
-
-            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=4, verbose=1)
-
-            if ((not is_dist) or local_rank == 0):
-                run_sanity_check(single_station_model, train_loader, device, name='single_station_train_pre')
-
-            train_model(
-                single_station_model,
-                train_loader,
-                val_loader,
-                optimizer,
-                scheduler,
-                num_epochs=training_params['epochs_single_station'],
-                clipnorm=training_params.get('clipnorm', None),
-                is_dist=is_dist,
-                rank=local_rank,
-                save_name='simple_model',
-                res_comps=['mag'],
-                res_weight=np.array([1.]),
-                post_train_sanity=True,
-                epoch_sanity=training_params.get('epoch_sanity', False),
-                train_sampler=train_sampler
-            )
-            # Free memory
 
         if 'load_model_path' in training_params:
             print('Loading full model')
@@ -722,6 +655,19 @@ if __name__ == '__main__':
             }, init_ckpt_path)
             print(f'Saved initial checkpoint to {init_ckpt_path}')
             run_sanity_check(full_model, train_loader, device, name='full_model_train_pre')
+        # Task enable switches: set training_params['res_comps'] in the JSON
+        # config to e.g. ["pga"] to train PGA only, ["mag","pga"] for mag+PGA,
+        # etc. Default trains all three tasks. res_weight is parallel to
+        # res_comps and is normalized inside the loss.
+        res_comps_cfg = training_params.get('res_comps', ['mag', 'loc', 'pga'])
+        res_weight_cfg = np.asarray(
+            training_params.get('res_weight', [1.0] * len(res_comps_cfg)),
+            dtype=float,
+        )
+        assert len(res_comps_cfg) == len(res_weight_cfg), \
+            f'res_comps ({len(res_comps_cfg)}) and res_weight ({len(res_weight_cfg)}) length mismatch'
+        if (not is_dist) or local_rank == 0:
+            print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
         train_model(
             full_model,
             train_loader,
@@ -733,8 +679,8 @@ if __name__ == '__main__':
             is_dist=is_dist,
             rank=local_rank,
             save_name='full_model',
-	    res_comps=['mag','loc','pga'],
-	    res_weight=np.array([1.,1.,1.]),
+            res_comps=res_comps_cfg,
+            res_weight=res_weight_cfg,
             post_train_sanity=True,
             epoch_sanity=training_params.get('epoch_sanity', False),
             train_sampler=train_sampler

@@ -625,6 +625,30 @@ def mixture_density_loss(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=
     else:
         return loss
 
+def select_loss_components(outputs, labels, output_layout, res_comps):
+    """Pick model outputs / labels for the requested task components.
+
+    `output_layout` is the ordered list of task heads the model and generator
+    actually produce (e.g. ['mag','loc','pga']). `res_comps` is the subset of
+    tasks to train on this step; the returned lists are in res_comps order so
+    the loss function can iterate positionally.
+
+    Raises ValueError if a requested component is not in the layout — e.g.
+    user asks to train 'loc' but the model was built with no_event_token=True.
+    """
+    name_to_idx = {n: i for i, n in enumerate(output_layout)}
+    missing = [c for c in res_comps if c not in name_to_idx]
+    if missing:
+        raise ValueError(
+            f'res_comps {missing} not in model output_layout {output_layout}. '
+            f'Enable the corresponding heads in the model config or remove '
+            f'them from res_comps.'
+        )
+    sel_pred = [outputs[name_to_idx[c]] for c in res_comps]
+    sel_true = [labels[name_to_idx[c]] for c in res_comps]
+    return sel_pred, sel_true
+
+
 def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=False, res_comps=None, res_weight=None, pga_target_valid=None):
     if res_comps is None:
         res_comps = ['mag', 'loc', 'pga']
@@ -686,44 +710,6 @@ def time_distributed_loss(y_true, y_pred, loss_func, norm=1, mean=True, summatio
 
     return loss
 
-class SingleStationModel(nn.Module):
-    def __init__(self, waveform_model, mlp_mag_single_station, output_model_single_station, waveform_scale_proj=None):
-        super().__init__()
-        self.waveform_model = waveform_model
-        self.mlp_mag_single_station = mlp_mag_single_station
-        self.output_model_single_station = output_model_single_station
-        self.waveform_scale_proj = waveform_scale_proj
-
-    def _normalize(self, data, mode='std', axis=1):
-        data = data - torch.mean(data, dim=axis, keepdim=True)
-        if mode == 'std':
-            std_data = torch.std(data, dim=axis, keepdim=True)
-            std_data = torch.where(std_data == 0, torch.ones_like(std_data), std_data)
-            return data / std_data
-        if mode == 'max':
-            max_data = torch.amax(torch.abs(data), dim=axis, keepdim=True)
-            max_data = torch.where(max_data == 0, torch.ones_like(max_data), max_data)
-            return data / max_data
-        if mode == '':
-            return data
-        raise ValueError(f"Supported mode: 'max','std','', got '{mode}'")
-
-    def _extract_scale(self, waveform):
-        scale = torch.log(torch.amax(torch.abs(waveform), dim=(1, 2)) + 1e-6)
-        return scale.unsqueeze(-1)
-
-    def forward(self, waveform_inp_single_station):
-        raw_waveform = waveform_inp_single_station
-        # Input shape is (batch, channel, time); normalize along time, not across channels.
-        waveform_inp_single_station = self._normalize(waveform_inp_single_station, mode='std', axis=2)
-        emb = self.waveform_model(waveform_inp_single_station)
-        if self.waveform_scale_proj is not None:
-            emb = emb + self.waveform_scale_proj(self._extract_scale(raw_waveform))
-        emb = self.mlp_mag_single_station(emb)
-        alpha_logits, mu, sigma = self.output_model_single_station(emb)
-        out = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
-        return out
-
 class FullModel(nn.Module):
     def __init__(self, waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
@@ -755,6 +741,16 @@ class FullModel(nn.Module):
             self.att_masking = True
         else:
             self.att_masking = False
+
+        # Ordered list of task heads actually produced by forward(), used to
+        # map res_comps (e.g. ['pga']) to the correct index in outputs/labels.
+        # mag and loc are tied together under `no_event_token`; pga is gated
+        # independently by n_pga_targets.
+        self.output_layout = []
+        if not self.no_event_token:
+            self.output_layout += ['mag', 'loc']
+        if self.n_pga_targets > 0:
+            self.output_layout += ['pga']
 
         if dataset_bias:
             self.dataset_embedding = nn.Embedding(n_datasets, 1)
@@ -1043,13 +1039,6 @@ def build_transformer_model(max_stations,
     encoder_features.gap = StatPool1d(diting_args.out_channels)
     dt2team = MLP((diting_args.out_channels,), [diting_args.out_channels, waveform_model_dims[-1]], activation=activation)
     waveform_model.add_module('dt2team', dt2team)
-    single_station_scale_proj = nn.Linear(1, waveform_model_dims[-1])
-    mlp_mag_single_station = MLP((waveform_model_dims[-1],), output_mlp_dims, activation=activation) #Modified line
-    output_model_single_station = MixtureOutput((output_mlp_dims[-1],), n=5, name='magnitude',activation='relu',
-                                                bias_mu=bias_mag_mu, bias_sigma=bias_mag_sigma)
-
-    single_station_model = SingleStationModel(waveform_model, mlp_mag_single_station, output_model_single_station,
-                                              waveform_scale_proj=single_station_scale_proj)
 
     #   Event model
 
@@ -1099,7 +1088,7 @@ def build_transformer_model(max_stations,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                              add_constant_to_mixture, n_datasets, waveform_scale_proj=full_waveform_scale_proj)
-    return single_station_model, full_model
+    return full_model
 
 
 class EnsembleEvaluateModel:
@@ -1117,7 +1106,7 @@ class EnsembleEvaluateModel:
             if config['training_params'].get('ensemble_rotation', False):
                 # Rotated by angles between 0 and pi/4
                 model_params['rotation'] = np.pi / 4 * ens_id / (true_ensemble_size - 1)
-            single_station_model, full_model = build_transformer_model(**model_params)
+            full_model = build_transformer_model(**model_params)
 
             # Move models to the specified device
             self.models.append(full_model.to(self.device))

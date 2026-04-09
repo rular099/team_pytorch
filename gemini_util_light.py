@@ -18,6 +18,11 @@ from torch.utils.data import Dataset, DataLoader
 
 D2KM = 111.19492664455874
 
+
+class _EmptySample(Exception):
+    """Internal signal: this index has no valid station after cutout; skip it."""
+    pass
+
 def setup_distributed(backend='nccl', init_method='env://'):
     if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
         rank = int(os.environ["RANK"])
@@ -291,6 +296,21 @@ class PreloadedEventGenerator(Dataset):
         return self.indexes.shape[0]
 
     def __getitem__(self, index):
+        # Iteratively skip empty samples (no station with signal after cutout).
+        # Previous implementation recursed into __getitem__, which could blow
+        # the Python stack if many consecutive samples happen to be empty.
+        n = len(self.indexes)
+        for _ in range(n):
+            try:
+                return self._get_one(index)
+            except _EmptySample:
+                index = (index + 1) % n
+        raise RuntimeError(
+            'All samples in dataset produced empty waveforms after cutout; '
+            'check data quality or cutout configuration.'
+        )
+
+    def _get_one(self, index):
         # Generate indexes of the batch
         indexes = self.indexes[index:(index + 1)]
         index = self.indexes[index]
@@ -399,6 +419,12 @@ class PreloadedEventGenerator(Dataset):
                 selection = selection[:self.max_stations]
                 waveforms[i] = self.waveforms[selection]
                 p_picks[i] = self.triggers[selection]
+
+        # Defensive: mark stations with NaN/Inf coordinates as invalid. Current
+        # KiK-Net data is clean, but this guards the model against upstream
+        # corruption (NaN coord → NaN position embedding → NaN loss).
+        coord_valid = ~(np.isnan(metadata).any(axis=-1) | np.isinf(metadata).any(axis=-1))
+        station_valid_full &= coord_valid
 
         magnitude = self.event_metadata.get_group(ith_event)[self.key].values.copy()
 
@@ -565,8 +591,7 @@ class PreloadedEventGenerator(Dataset):
                     f'Event {ith_event} has no station with nonzero waveform '
                     f'after cutout — skipping sample.'
                 )
-                next_index = (index + 1) % len(self.indexes)
-                return self.__getitem__(next_index)
+                raise _EmptySample()
 
         if self.fake_borehole and waveforms.shape[3] == 3:
             waveforms = np.concatenate([np.zeros_like(waveforms), waveforms], axis=3)

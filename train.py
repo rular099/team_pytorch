@@ -353,80 +353,13 @@ if __name__ == '__main__':
                 json.dump(config, f, indent=4)
 
         print('Building model')
-        single_station_model, full_model = models.build_transformer_model(**config['model_params'],
-                                                                          trace_length=data_train[0]['waveforms'][0].shape[1],
-                                                                          diting_args=diting_args
-)
+        full_model = models.build_transformer_model(**config['model_params'],
+                                                    trace_length=data_train[0]['waveforms'][0].shape[1],
+                                                    diting_args=diting_args)
         if is_dist:
-            single_station_model = DDP(single_station_model, device_ids=[local_rank],output_device=local_rank)
-            full_model = DDP(full_model, device_ids=[local_rank],output_device=local_rank)
+            full_model = DDP(full_model, device_ids=[local_rank], output_device=local_rank)
         else:
-            single_station_model.to(device)
             full_model.to(device)
-
-        if 'single_station_model_path' in training_params:
-            print('Loading single station model')
-            checkpoint = torch.load(training_params['single_station_model_path'])
-            single_station_model.load_state_dict(checkpoint["model_state_dict"]) # need modify with save state dict.
-        elif 'transfer_model_path' not in training_params:
-            optimizer = optim.Adam(single_station_model.parameters(),lr=training_params['lr'])
-            key = generator_params[0]['key']
-            filter_single_station_by_pick = training_params.get('filter_single_station_by_pick', False)
-
-            x_train = np.concatenate(data_train[0]['waveforms'], axis=0)
-            x_dev = np.concatenate(data_dev[0]['waveforms'], axis=0)
-            y_train = np.concatenate([np.full(x.shape[0], mag) for x, mag in
-                                      zip(data_train[0]['waveforms'], event_metadata_train[0][key])])
-            y_dev = np.concatenate([np.full(x.shape[0], mag) for x, mag in
-                                    zip(data_dev[0]['waveforms'], event_metadata_dev[0][key])])
-
-            train_mask = (x_train != 0).any(axis=(1, 2))
-            dev_mask = (x_dev != 0).any(axis=(1, 2))
-            if filter_single_station_by_pick:
-                picks_train = np.concatenate(data_train[0]['p_picks'], axis=0)
-                train_mask = np.logical_and(train_mask, picks_train < 3000)
-                picks_dev = np.concatenate(data_dev[0]['p_picks'], axis=0)
-                dev_mask = np.logical_and(dev_mask, picks_dev < 3000)
-            x_train = x_train[train_mask]
-            y_train = y_train[train_mask]
-            x_dev = x_dev[dev_mask]
-            y_dev = y_dev[dev_mask]
-
-            noise_seconds = generator_params[0].get('noise_seconds', 5)
-            cutout = (
-                sampling_rate * (noise_seconds + generator_params[0]['cutout_start']), sampling_rate * (noise_seconds + generator_params[0]['cutout_end']))
-
-            sliding_window = generator_params[0].get('sliding_window', False)
-
-            train_dataset = util.DataGenerator(x_train, np.expand_dims(np.expand_dims(y_train, axis=1), axis=2),
-                                                 cutout=cutout, label_smoothing=True, sliding_window=sliding_window)
-            val_dataset = util.DataGenerator(x_dev, np.expand_dims(np.expand_dims(y_dev, axis=1), axis=2),
-                                                 cutout=cutout, label_smoothing=True, sliding_window=sliding_window)
-            if is_dist:
-                train_sampler = DistributedSampler(train_dataset)
-                train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], sampler=train_sampler, shuffle=(train_sampler is None))
-            else:
-                train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
-            val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
-            # Only save weights due to open issue:
-            # https://github.com/matterport/Mask_RCNN/issues/308
-
-            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=4, verbose=1)
-
-            train_model(
-                single_station_model,
-                train_loader,
-                val_loader,
-                optimizer,
-                scheduler,
-                num_epochs=training_params['epochs_single_station'],
-                is_dist=is_dist,
-                rank=local_rank,
-                save_name='simple_model'
-            )
-            # Free memory
-            del x_train
-            del x_dev
 
         if 'load_model_path' in training_params:
             print('Loading full model')
