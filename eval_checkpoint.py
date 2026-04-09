@@ -258,6 +258,77 @@ def diagnose_diting_features(model, dataset, device):
 
 
 @torch.no_grad()
+def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0)):
+    raw_model = model.module if hasattr(model, 'module') else model
+    inputs, labels, _ = dataset[0]
+
+    waveform_inp = inputs[0].unsqueeze(0).to(device)
+    metadata_inp = inputs[1].unsqueeze(0).to(device)
+    station_valid = inputs[2].unsqueeze(0).to(device)
+    valid_idx = inputs[2].bool().nonzero(as_tuple=False).flatten()
+
+    pga_targets_inp = inputs[3].unsqueeze(0).to(device) if len(inputs) > 3 else None
+    pga_target_valid = inputs[4].unsqueeze(0).to(device) if len(inputs) > 4 else None
+
+    print(f'{"="*60}')
+    print('  Amplitude sensitivity diagnostics (1 sample)')
+    print(f'{"="*60}')
+
+    base_emb = None
+    for scale in scales:
+        scaled_waveform = waveform_inp * scale
+        waveform_norm = raw_model._normalize(scaled_waveform, mode='std', axis=3)
+        waveforms_masked = waveform_norm * station_valid[:, :, None, None].float()
+        waveforms_emb = torch.stack(
+            [raw_model.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])],
+            dim=1
+        )
+
+        trunk_valid = waveforms_emb[0, valid_idx]
+        trunk_norm = trunk_valid.norm(dim=-1).mean().item()
+
+        scale_norm = 0.0
+        ratio = 0.0
+        if raw_model.waveform_scale_proj is not None:
+            scale_emb = raw_model.waveform_scale_proj(raw_model._extract_scale(scaled_waveform))
+            scale_valid = scale_emb[0, valid_idx]
+            scale_norm = scale_valid.norm(dim=-1).mean().item()
+            ratio = scale_norm / max(trunk_norm, 1e-8)
+        else:
+            scale_emb = None
+
+        print(f'\n--- waveform x{scale:.1f} ---')
+        print(f'  valid stations: {len(valid_idx)}')
+        print(f'  mean ||waveforms_emb||: {trunk_norm:.4f}')
+        print(f'  mean ||waveform_scale_proj(scale)||: {scale_norm:.4f}')
+        print(f'  scale/trunk norm ratio: {ratio:.4f}')
+
+        if base_emb is None:
+            base_emb = trunk_valid
+        else:
+            cos = torch.nn.functional.cosine_similarity(base_emb, trunk_valid, dim=-1)
+            print(f'  cosine vs x1.0 per-station: min={cos.min():.4f}, max={cos.max():.4f}, mean={cos.mean():.4f}')
+
+        outputs = raw_model(
+            scaled_waveform, metadata_inp, station_valid,
+            pga_targets_inp=pga_targets_inp, pga_target_valid=pga_target_valid
+        )
+        if raw_model.n_pga_targets > 0:
+            pga_out = outputs[-1][0].detach().cpu().numpy()
+            alpha = pga_out[:, :, 0]
+            mu = pga_out[:, :, 1]
+            best = np.argmax(alpha, axis=1)
+            mu_best = mu[np.arange(len(best)), best]
+            if pga_target_valid is not None:
+                valid_pga = pga_target_valid[0].bool().cpu().numpy()
+                mu_best = mu_best[valid_pga]
+            n_show = min(5, len(mu_best))
+            print(f'  PGA mu_best[:{n_show}]: {mu_best[:n_show]}')
+
+    print()
+
+
+@torch.no_grad()
 def run_inference(model, dataset, device):
     """Run inference on all samples, collect predictions and labels."""
     results = defaultdict(list)
@@ -384,6 +455,7 @@ def main():
     # Diagnose diting features on first available dataset
     first_dataset = next(iter(datasets.values()))
     diagnose_diting_features(model, first_dataset, device)
+    diagnose_amplitude_sensitivity(model, first_dataset, device)
 
     all_results = {}
     for split_name, dataset in datasets.items():
