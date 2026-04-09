@@ -191,6 +191,7 @@ def diagnose_diting_features(model, dataset, device):
     print('  Diting feature diagnostics (1 sample)')
     print(f'{"="*60}')
 
+    total_idx = list(range(len(station_valid)))
     valid_idx = station_valid.nonzero(as_tuple=False).flatten().tolist()
 
     for name in module_names:
@@ -198,8 +199,8 @@ def diagnose_diting_features(model, dataset, device):
             continue
         feats = captured[name]
         n_calls = len(feats)
-        if len(valid_idx) != n_calls:
-            print(f'\n--- {name} ({n_calls} calls, valid stations={len(valid_idx)}) ---')
+        if len(total_idx) != n_calls:
+            print(f'\n--- {name} ({n_calls} calls, total stations={len(total_idx)}, valid stations={len(valid_idx)}) ---')
             print('  skipped: hook count does not match station_valid length')
             continue
         feats = [feats[i] for i in valid_idx]
