@@ -439,7 +439,7 @@ if __name__ == '__main__':
 
     if args.overfit_n > 0:
         event_metadata_train = [subset_events(meta, args.overfit_n) for meta in event_metadata_train]
-        event_metadata_dev = [subset_events(meta, args.overfit_n) for meta in event_metadata_train]
+        event_metadata_dev = [subset_events(meta, args.overfit_n) for meta in event_metadata_dev]
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for generator_param in generator_params:
             fixed_cutout = generator_param.get('cutout_end', generator_param.get('cutout_start', 0))
@@ -451,7 +451,7 @@ if __name__ == '__main__':
             generator_param['cutout_start'] = fixed_cutout
             generator_param['cutout_end'] = fixed_cutout
         if (not is_dist) or (is_dist and (rank == 0)):
-            print(f'Overfit mode enabled: using the first {args.overfit_n} samples for both train and val')
+            print(f'Overfit mode enabled: using the first {args.overfit_n} events for both train and val')
             print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, deterministic station selection, no train/dev shuffling')
 
     sampling_rate = metadata_train[0]['sampling_rate']

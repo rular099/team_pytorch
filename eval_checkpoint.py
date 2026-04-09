@@ -98,19 +98,14 @@ def build_datasets(config, overfit_n=0):
     metadata_dev = [d[2] for d in full_data_dev]
 
     if overfit_n > 0:
-        # NOTE: train_light.py's subset_events takes first N *rows* from expanded metadata
-        # (1 row per station), so overfit_n=16 actually gives ~1 event, not 16.
-        # Here we subset by unique events instead, so overfit_n=16 means 16 events.
         def subset_by_events(meta, n):
-            event_key = None
             for k in ['KiK_File', '#EventID', 'EVENT']:
                 if k in meta.columns:
-                    event_key = k
                     break
-            unique_events = meta[event_key].unique()[:n]
-            return meta[meta[event_key].isin(unique_events)].copy()
+            unique_events = meta[k].unique()[:n]
+            return meta[meta[k].isin(unique_events)].copy()
         event_metadata_train = [subset_by_events(meta, overfit_n) for meta in event_metadata_train]
-        event_metadata_dev = [subset_by_events(meta, overfit_n) for meta in event_metadata_train]
+        event_metadata_dev = [subset_by_events(meta, overfit_n) for meta in event_metadata_dev]
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for gp in generator_params:
             fixed_cutout = gp.get('cutout_end', gp.get('cutout_start', 0))
