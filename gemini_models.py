@@ -713,7 +713,7 @@ class FullModel(nn.Module):
     def __init__(self, waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                  metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
-                 add_constant_to_mixture, n_datasets, waveform_scale_proj=None):
+                 add_constant_to_mixture, n_datasets, waveform_scale_proj=None, waveform_scale_gain=1.0):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -735,6 +735,7 @@ class FullModel(nn.Module):
         self.add_constant_to_mixture = add_constant_to_mixture
         self.n_datasets = n_datasets
         self.waveform_scale_proj = waveform_scale_proj
+        self.waveform_scale_gain = waveform_scale_gain
 
         if self.n_pga_targets > 0:
             self.att_masking = True
@@ -802,7 +803,8 @@ class FullModel(nn.Module):
 
         waveforms_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
         if self.waveform_scale_proj is not None:
-            waveforms_emb = waveforms_emb + self.waveform_scale_proj(self._extract_scale(raw_waveform))
+            scale_emb = self.waveform_scale_proj(self._extract_scale(raw_waveform))
+            waveforms_emb = waveforms_emb + self.waveform_scale_gain * scale_emb
         waveforms_emb = self.layernorm(waveforms_emb)
 
         if not self.alternative_coords_embedding:
@@ -1011,6 +1013,7 @@ def build_transformer_model(max_stations,
                             rotation_anchor=None,
                             skip_transformer=False,
                             alternative_coords_embedding=False,
+                            waveform_scale_gain=1.0,
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -1086,7 +1089,8 @@ def build_transformer_model(max_stations,
     full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
-                             add_constant_to_mixture, n_datasets, waveform_scale_proj=full_waveform_scale_proj)
+                             add_constant_to_mixture, n_datasets, waveform_scale_proj=full_waveform_scale_proj,
+                             waveform_scale_gain=waveform_scale_gain)
     return full_model
 
 

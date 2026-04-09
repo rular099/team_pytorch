@@ -44,6 +44,7 @@
         "bias_loc_sigma": 2,
         "event_token_init_range": 0.02,
         "no_event_token": false,
+        "waveform_scale_gain": 4.0,
         "rotation_anchor": [37, 140]
     },
     "training_params": {
