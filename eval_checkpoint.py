@@ -176,6 +176,7 @@ def diagnose_diting_features(model, dataset, device):
 
     # Run one sample
     inputs, labels, p_picks = dataset[0]
+    station_valid = inputs[2].bool().cpu()
     inputs_dev = [x.unsqueeze(0).to(device) if isinstance(x, torch.Tensor) else x for x in inputs]
 
     with torch.no_grad():
@@ -190,12 +191,20 @@ def diagnose_diting_features(model, dataset, device):
     print('  Diting feature diagnostics (1 sample)')
     print(f'{"="*60}')
 
+    valid_idx = station_valid.nonzero(as_tuple=False).flatten().tolist()
+
     for name in module_names:
         if name not in captured:
             continue
         feats = captured[name]
         n_calls = len(feats)
-        print(f'\n--- {name} ({n_calls} calls = {n_calls} stations) ---')
+        if len(valid_idx) != n_calls:
+            print(f'\n--- {name} ({n_calls} calls, valid stations={len(valid_idx)}) ---')
+            print('  skipped: hook count does not match station_valid length')
+            continue
+        feats = [feats[i] for i in valid_idx]
+        n_valid = len(feats)
+        print(f'\n--- {name} ({n_valid} valid stations out of {n_calls}) ---')
 
         # For tensor outputs, compute inter-station similarity
         if isinstance(feats[0], torch.Tensor):
