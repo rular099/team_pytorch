@@ -330,6 +330,62 @@ def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0
 
 
 @torch.no_grad()
+def diagnose_embedding_scales(model, dataset, device):
+    raw_model = model.module if hasattr(model, 'module') else model
+    inputs, _, _ = dataset[0]
+
+    waveform_inp = inputs[0].unsqueeze(0).to(device)
+    metadata_inp = inputs[1].unsqueeze(0).to(device)
+    station_valid = inputs[2].unsqueeze(0).to(device)
+    valid_idx = inputs[2].bool().nonzero(as_tuple=False).flatten()
+
+    waveform_norm = raw_model._normalize(waveform_inp, mode='std', axis=3)
+    waveforms_masked = waveform_norm * station_valid[:, :, None, None].float()
+    coords_masked = metadata_inp * station_valid[:, :, None].float()
+
+    waveforms_emb = torch.stack(
+        [raw_model.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])],
+        dim=1
+    )
+    waveforms_emb_valid = waveforms_emb[0, valid_idx]
+
+    scale_emb = None
+    scale_emb_valid = None
+    if raw_model.waveform_scale_proj is not None:
+        scale_emb = raw_model.waveform_scale_proj(raw_model._extract_scale(waveform_inp))
+        scale_emb_valid = scale_emb[0, valid_idx]
+
+    wave_plus_scale = waveforms_emb
+    if scale_emb is not None:
+        wave_plus_scale = wave_plus_scale + raw_model.waveform_scale_gain * scale_emb
+    wave_plus_scale = raw_model.layernorm(wave_plus_scale)
+    wave_plus_scale_valid = wave_plus_scale[0, valid_idx]
+
+    coords_emb = raw_model.position_embedding(coords_masked)
+    coords_emb_valid = coords_emb[0, valid_idx]
+
+    station_emb = wave_plus_scale + coords_emb
+    station_emb_valid = station_emb[0, valid_idx]
+
+    def mean_norm(x):
+        return x.norm(dim=-1).mean().item()
+
+    print(f'{"="*60}')
+    print('  Embedding scale diagnostics (1 sample)')
+    print(f'{"="*60}')
+    print(f'  valid stations: {len(valid_idx)}')
+    print(f'  mean ||waveforms_emb||: {mean_norm(waveforms_emb_valid):.4f}')
+    if scale_emb_valid is not None:
+        print(f'  mean ||scale_emb||: {mean_norm(scale_emb_valid):.4f}')
+        print(f'  waveform_scale_gain: {raw_model.waveform_scale_gain:.4f}')
+        print(f'  mean ||gain*scale_emb||: {(raw_model.waveform_scale_gain * scale_emb_valid.norm(dim=-1)).mean().item():.4f}')
+    print(f'  mean ||layernorm(wave+scale)||: {mean_norm(wave_plus_scale_valid):.4f}')
+    print(f'  mean ||coords_emb||: {mean_norm(coords_emb_valid):.4f}')
+    print(f'  mean ||station_emb before transformer||: {mean_norm(station_emb_valid):.4f}')
+    print()
+
+
+@torch.no_grad()
 def run_inference(model, dataset, device):
     """Run inference on all samples, collect predictions and labels."""
     results = defaultdict(list)
@@ -457,6 +513,7 @@ def main():
     first_dataset = next(iter(datasets.values()))
     diagnose_diting_features(model, first_dataset, device)
     diagnose_amplitude_sensitivity(model, first_dataset, device)
+    diagnose_embedding_scales(model, first_dataset, device)
 
     all_results = {}
     for split_name, dataset in datasets.items():
