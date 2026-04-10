@@ -255,8 +255,8 @@ class TransformerBlock(nn.Module):
         )
 #        self.norm1 = LayerNormalization(eps=eps)
 #        self.norm2 = LayerNormalization(eps=eps)
-        self.norm1 =nn.LayerNorm(emb_dim) 
-        self.norm2 =nn.LayerNorm(emb_dim) 
+        self.norm1 =nn.LayerNorm(emb_dim)
+        self.norm2 =nn.LayerNorm(emb_dim)
         self.dropout1 = nn.Dropout(0.0) #Fixed dropout
         self.dropout2 = nn.Dropout(0.0) #Fixed dropout
 
@@ -766,7 +766,7 @@ class FullModel(nn.Module):
             self.maxpool = GlobalMaxPooling1DMasked()
 
     def _normalize(self, data, mode, axis=1):
-        """  
+        """
         Normalize waveform of each sample. (inplace)
         """
         data = data - torch.mean(data, axis=axis, keepdims=True)
@@ -780,10 +780,10 @@ class FullModel(nn.Module):
             std_data[std_data == 0] = 1
             data = data/std_data # + 1e-6
         elif mode == "":
-            return data 
+            return data
         else:
             raise ValueError(f"Supported mode: 'max','std', got '{mode}'")
-        return data 
+        return data
 
 
     def _extract_scale(self, waveform):
@@ -793,7 +793,7 @@ class FullModel(nn.Module):
     def forward(self, waveform_inp, metadata_inp, station_valid,
                 pga_targets_inp=None, pga_target_valid=None,
                 dataset=None, att_mask=None):
-        raw_waveform = waveform_inp
+        raw_waveform = waveform_inp.clone()
         waveform_inp = self._normalize(waveform_inp, mode='std', axis=3)
         # Apply explicit masks instead of inferring "validity == nonzero".
         # station_valid: (B, S) bool. pga_target_valid: (B, n_pga) bool.
@@ -946,14 +946,14 @@ def get_diting_model(args):
                     if args.dpk_head == 'vit_adapter_decoder_new':
                         if k.startswith("base_decoder."):
                             state_dict['1.decoder.'+k[len("base_decoder.") :]] = state_dict[k]
-                        elif k.startswith("module.base_decoder."): 
+                        elif k.startswith("module.base_decoder."):
                             state_dict['1.decoder.'+k[len("module.base_decoder.") :]] = state_dict[k]
                     elif 'decoder' in args.dpk_head or args.dpk_head == 'vit_adapter_TaskSeparatedUPerHead':
                         if k.startswith("base_decoder."):
                             state_dict['0.decoder.'+k[len("base_decoder.") :]] = state_dict[k]
-                        elif k.startswith("module.base_decoder."): 
+                        elif k.startswith("module.base_decoder."):
                             state_dict['0.decoder.'+k[len("module.base_decoder.") :]] = state_dict[k]
-                    
+
                     del state_dict[k]
             elif args.pretrain_method == "lp":
                 if args.pretrained.endswith('.pt'):
@@ -967,13 +967,13 @@ def get_diting_model(args):
             args.start_epoch = 0
             msg = model.load_state_dict(state_dict, strict=False)
             print(msg)
-            
+
             if args.pool_type == 'cls':
                 assert msg.missing_keys == ['2.fc.weight', '2.fc.bias'],"load pretrain model fail!"
             elif args.pool_type == 'avg' or args.pool_type == 'attentive':
                 missing_keys_except_attentive = [k for k in msg.missing_keys if not k.startswith('1.')]
                 assert missing_keys_except_attentive == ['3.fc.weight', '3.fc.bias'],"load pretrain model fail!"
-            
+
             print("=> loaded pre-trained model '{}'".format(args.pretrained))
         else:
             print("=> no checkpoint found at '{}'".format(args.pretrained))

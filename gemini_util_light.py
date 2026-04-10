@@ -689,10 +689,10 @@ class JointGenerator(Dataset):
         batch_inp, batch_out, batch_info = self.generators[generator_id][batch_id]
 
         if self.dataset_id:
-            if self.fake_id is None:
-                dataset_id = torch.ones((batch_inp[0].shape[0], 1)) * generator_id
-            else:
-                dataset_id = torch.ones((batch_inp[0].shape[0], 1)) * self.fake_id
+            # Per-sample scalar (collate will stack into shape (B,)) — matches
+            # FullModel.dataset_embedding which expects a 1D index tensor.
+            id_value = generator_id if self.fake_id is None else self.fake_id
+            dataset_id = torch.tensor(id_value, dtype=torch.long)
             batch_inp += [dataset_id]
         return batch_inp, batch_out, batch_info
 
