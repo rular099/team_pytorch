@@ -81,7 +81,10 @@ def build_datasets(config, overfit_n=0):
         parts=(True, False, False),
         shuffle_train_dev=g.get('shuffle_train_dev', False),
         custom_split=g.get('custom_split', None),
-        overwrite_sampling_rate=overwrite_sampling_rate)
+        min_mag=g.get('min_mag', None),
+        mag_key=g.get('key', 'MA'),
+        overwrite_sampling_rate=overwrite_sampling_rate,
+        decimate_events=g.get('decimate_events', None))
         for data_path, g in zip(training_params['data_path'], generator_params)]
 
     full_data_dev = [loader.load_events(
@@ -89,7 +92,10 @@ def build_datasets(config, overfit_n=0):
         parts=(False, True, False),
         shuffle_train_dev=g.get('shuffle_train_dev', False),
         custom_split=g.get('custom_split', None),
-        overwrite_sampling_rate=overwrite_sampling_rate)
+        min_mag=g.get('min_mag', None),
+        mag_key=g.get('key', 'MA'),
+        overwrite_sampling_rate=overwrite_sampling_rate,
+        decimate_events=g.get('decimate_events', None))
         for data_path, g in zip(training_params['data_path'], generator_params)]
 
     event_metadata_train = [d[0] for d in full_data_train]
@@ -139,6 +145,7 @@ def build_datasets(config, overfit_n=0):
                 coords_target=True, label_smoothing=False, station_blinding=False,
                 cutout=cutout, pga_targets=n_pga_targets, max_stations=max_stations,
                 sampling_rate=sampling_rate, no_event_token=no_event_token,
+                shuffle=False,  # deterministic eval order
             )
             merged = {**defaults, **gp_copy}
             generators.append(util.PreloadedEventGenerator(
@@ -391,6 +398,8 @@ def diagnose_embedding_scales(model, dataset, device):
 @torch.no_grad()
 def run_inference(model, dataset, device):
     """Run inference on all samples, collect predictions and labels."""
+    raw_model = model.module if hasattr(model, 'module') else model
+    head_names = raw_model.output_layout  # e.g. ['mag', 'loc', 'pga']
     results = defaultdict(list)
 
     for idx in range(len(dataset)):
@@ -400,26 +409,27 @@ def run_inference(model, dataset, device):
         inputs_dev = [x.unsqueeze(0).to(device) if isinstance(x, torch.Tensor) else x for x in inputs]
         outputs = model(*inputs_dev)
 
-        # Parse outputs: [magnitude, location, pga]
-        head_names = ['magnitude', 'location', 'pga']
-        for i, (name, out) in enumerate(zip(head_names, outputs)):
-            out_np = out.cpu().numpy().squeeze(0)  # remove batch dim
-            # MDN output: (n_mixtures, 3) where last dim = [alpha_logit, mu, sigma]
-            # or for PGA: (n_pga_targets, n_mixtures, 3)
+        # Save pga_target_valid if present
+        if isinstance(inputs, list) and len(inputs) >= 5:
+            ptv = inputs[4]
+            ptv_np = ptv.numpy() if isinstance(ptv, torch.Tensor) else np.array(ptv)
+            results['pga_target_valid'].append(ptv_np)
+
+        # Parse outputs using model.output_layout
+        for i, name in enumerate(head_names):
+            out_np = outputs[i].cpu().numpy().squeeze(0)
             results[f'{name}_pred'].append(out_np)
 
-        # Parse labels
-        label_names = ['magnitude', 'location', 'pga']
-        for i, (name, lab) in enumerate(zip(label_names, labels)):
-            lab_np = lab.numpy() if isinstance(lab, torch.Tensor) else np.array(lab)
+        # Parse labels (same layout as outputs)
+        for i, name in enumerate(head_names):
+            lab_np = labels[i].numpy() if isinstance(labels[i], torch.Tensor) else np.array(labels[i])
             results[f'{name}_label'].append(lab_np)
 
         # Extract mu from MDN (best mixture component by alpha)
-        for i, name in enumerate(head_names):
+        for name in head_names:
             out_np = results[f'{name}_pred'][-1]
             if name == 'pga':
                 # shape: (n_pga_targets, n_mixtures, 3)
-                n_mix = out_np.shape[1]
                 alpha = out_np[:, :, 0]
                 mu = out_np[:, :, 1]
                 best = np.argmax(alpha, axis=1)
@@ -428,8 +438,7 @@ def run_inference(model, dataset, device):
             else:
                 # shape: (n_mixtures, D) where D=3 for [alpha, mu, sigma] or D=7 for loc
                 if out_np.ndim == 2:
-                    n_mix = out_np.shape[0]
-                    d = (out_np.shape[1] - 1) // 2  # alpha(1) + mu(d) + sigma(d)
+                    d = (out_np.shape[1] - 1) // 2
                     alpha = out_np[:, 0]
                     mu = out_np[:, 1:1+d]
                     best = np.argmax(alpha)
@@ -442,11 +451,18 @@ def run_inference(model, dataset, device):
 
 def print_summary(results, split_name):
     """Print summary statistics of predictions vs labels."""
+    # Detect which heads are present from result keys
+    head_names = []
+    for candidate in ['mag', 'loc', 'pga']:
+        if f'{candidate}_label' in results:
+            head_names.append(candidate)
+    n_samples = len(results[f'{head_names[0]}_label']) if head_names else 0
+
     print(f'\n{"="*60}')
-    print(f'  {split_name.upper()} set: {len(results["magnitude_label"])} samples')
+    print(f'  {split_name.upper()} set: {n_samples} samples')
     print(f'{"="*60}')
 
-    for name in ['magnitude', 'location', 'pga']:
+    for name in head_names:
         labels = np.array(results[f'{name}_label'])
         mu_best = results.get(f'{name}_mu_best')
         if mu_best is None:
@@ -454,16 +470,14 @@ def print_summary(results, split_name):
         mu_best = np.array(mu_best)
 
         print(f'\n--- {name} ---')
-        if name == 'magnitude':
-            # label shape: (N,) scalar
+        if name == 'mag':
             for i in range(min(len(labels), 16)):
                 pred_val = float(mu_best[i][0]) if mu_best[i].ndim > 0 else float(mu_best[i])
                 print(f'  [{i:2d}] label={float(labels[i]):.3f}, pred={pred_val:.3f}')
             residuals = mu_best.flatten() - labels.flatten()
             print(f'  MAE={np.mean(np.abs(residuals)):.4f}, RMSE={np.sqrt(np.mean(residuals**2)):.4f}')
 
-        elif name == 'location':
-            # label shape: (N, 3) [lat, lon, depth]
+        elif name == 'loc':
             for i in range(min(len(labels), 16)):
                 l = labels[i]
                 p = mu_best[i]
@@ -473,21 +487,35 @@ def print_summary(results, split_name):
             print(f'  MAE per dim: {np.mean(np.abs(residuals), axis=0)}')
 
         elif name == 'pga':
-            # label shape: (N, n_pga_targets, 1), pred shape: (N, n_pga_targets)
+            # Mask invalid targets using pga_target_valid
             labels_flat = labels.reshape(len(labels), -1)
+            ptv = results.get('pga_target_valid')
+            if ptv is not None:
+                mask = np.array(ptv).astype(bool).reshape(len(labels), -1)
+            else:
+                # Fallback: treat non-NaN as valid
+                mask = ~np.isnan(labels_flat)
+
             for i in range(min(len(labels), 4)):
                 l = labels_flat[i]
                 p = mu_best[i]
+                v = mask[i]
                 n_show = min(5, len(l))
-                print(f'  [{i:2d}] label={l[:n_show]}, pred={p[:n_show]}')
-            residuals = mu_best - labels_flat
-            print(f'  MAE={np.mean(np.abs(residuals)):.4f}, RMSE={np.sqrt(np.mean(residuals**2)):.4f}')
-            # Per-station correlation
-            all_l = labels_flat.flatten()
-            all_p = mu_best.flatten()
-            if len(all_l) > 1:
-                corr = np.corrcoef(all_l, all_p)[0, 1]
-                print(f'  Correlation: {corr:.4f}')
+                valid_tag = ['v' if v[j] else '.' for j in range(n_show)]
+                print(f'  [{i:2d}] label={l[:n_show]}, pred={p[:n_show]}, valid={"".join(valid_tag)}')
+
+            # Compute metrics only on valid targets
+            valid = mask.flatten()
+            all_l = labels_flat.flatten()[valid]
+            all_p = mu_best.flatten()[valid]
+            if len(all_l) > 0:
+                residuals = all_p - all_l
+                print(f'  MAE={np.mean(np.abs(residuals)):.4f}, RMSE={np.sqrt(np.mean(residuals**2)):.4f} ({valid.sum()}/{len(valid)} valid targets)')
+                if len(all_l) > 1:
+                    corr = np.corrcoef(all_l, all_p)[0, 1]
+                    print(f'  Correlation: {corr:.4f}')
+            else:
+                print(f'  No valid PGA targets found')
 
 
 def main():
@@ -502,6 +530,13 @@ def main():
 
     with open(args.config) as f:
         config = json.load(f)
+
+    # Reproducible evaluation
+    import random
+    seed = config.get('seed', 42)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     device = torch.device(args.device)
     diting_args = load_diting_args(args.diting_config, device=str(device))
