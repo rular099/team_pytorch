@@ -386,11 +386,11 @@ class PreloadedEventGenerator(Dataset):
                 pga[i, :len(self.pga)] = self.pga
                 p_picks[i, :len(self.triggers)] = self.triggers
                 full_p_picks[i, :len(self.triggers)] = self.triggers
-                station_valid_full[i, :len(self.metadata)] = True # init to True?
+                station_valid_full[i, :len(self.metadata)] = True # all stations init to True
                 reverse_selections += [[]]
             else:
                 if self.selection_skew is None or self.selection_skew <= 0:  # random select
-                    selection = np.arange(0, len(self.waveforms))
+                    selection = np.arange(0, len(self.waveforms)) # all stations
                     np.random.shuffle(selection)
                 else:  # pick_time + randomness
                     tmp_p_picks = self.triggers.copy()
@@ -405,11 +405,11 @@ class PreloadedEventGenerator(Dataset):
                 if self.select_first: # pick_time
                     selection = np.argsort(self.triggers)
 
-                selection = selection[:true_max_stations_in_batch] # len 25
+                selection = selection[:true_max_stations_in_batch] # len tms
                 metadata[i, :len(selection)] = self.metadata[selection]
                 pga[i, :len(selection)] = self.pga[selection]
                 full_p_picks[i, :len(selection)] = self.triggers[selection]
-                station_valid_full[i, :len(selection)] = True
+                station_valid_full[i, :len(selection)] = True # tms set to True
 
                 tmp_reverse_selection = [0 for _ in selection]
                 for j, s in enumerate(selection):
@@ -471,12 +471,12 @@ class PreloadedEventGenerator(Dataset):
             cutout = waveforms.shape[2]
             shift = 0
 
-        if self.trigger_based: #?zb
+        if self.trigger_based:
             # Remove waveforms for all stations that did not trigger yet to avoid knowledge leakage
             p_picks[p_picks <= 0] = org_waveform_length  # Ensure that stations without P picks do not show data
             waveforms[cutout + shift < p_picks, :, :] = 0
 
-        if self.integrate:
+        if self.integrate: # always False. acc to vel should be done on the data source.
             waveforms = np.cumsum(waveforms, axis=2) / self.sampling_rate
 
         # Reshape magnitude to match dimension number of MDN output
@@ -491,7 +491,7 @@ class PreloadedEventGenerator(Dataset):
             magnitude += (magnitude > 4) * np.random.randn(magnitude.shape[0]).reshape(magnitude.shape) * (
                     magnitude - 4) * 0.05
 
-        if not self.pga_from_inactive and not self.pga_mode:
+        if not self.pga_from_inactive and not self.pga_mode: # select 1st 25 zb.
             metadata = metadata[:, :self.max_stations]
             pga = pga[:, :self.max_stations]
 
@@ -531,7 +531,7 @@ class PreloadedEventGenerator(Dataset):
                     sv_for_pga = station_valid_full[:, :self.max_stations]
                 else:
                     sv_for_pga = station_valid_full
-                for i in range(waveforms.shape[0]):
+                for i in range(waveforms.shape[0]): # ith event ,zb
                     valid_pos = pga_valid_full[i] & sv_for_pga[i]
                     active = np.where(valid_pos)[0]
                     if len(active) == 0:
@@ -608,7 +608,7 @@ class PreloadedEventGenerator(Dataset):
             metadata = metadata_new
 
         # Convert to Torch tensors
-        waveforms = torch.from_numpy(np.swapaxes(waveforms[0],1,2)).float()
+        waveforms = torch.from_numpy(np.swapaxes(waveforms[0],1,2)).float() # shape (nstation, channel, length)
         metadata = torch.from_numpy(metadata[0]).float()
         magnitude = torch.from_numpy(magnitude[0]).float()
         station_valid_t = torch.from_numpy(station_valid[0]).bool()

@@ -20,7 +20,7 @@ class TrainDevTestSplitter:
         else:
             raise ValueError(f'Unknown split function: {name}')
 
-        b1 = int(0.6 / 0.7 * np.sum(~test_set))
+        b1 = int(0.7 / 0.8 * np.sum(~test_set))
         train_set = np.zeros(np.sum(~test_set), dtype=bool)
         train_set[:b1] = True
 
@@ -42,7 +42,7 @@ class TrainDevTestSplitter:
     @staticmethod
     def default(event_metadata):
         test_set = np.zeros(len(event_metadata), dtype=bool)
-        b2 = int(0.7 * len(event_metadata))
+        b2 = int(0.8 * len(event_metadata))
         test_set[b2:] = True
         return test_set
 
