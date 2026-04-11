@@ -321,7 +321,7 @@ class PreloadedEventGenerator(Dataset):
             index = indexes[0]
         with h5py.File(self.data_path, 'r') as f:
             event = self.event_metadata.get_group(ith_event)
-            event_name = str(event[self.event_key].iloc[0])
+            event_name = str(event[self.event_key].iloc[0]) # ith_event? zb
             g_event = f['data'][event_name]
             data = {}
             for key in g_event:
@@ -354,28 +354,28 @@ class PreloadedEventGenerator(Dataset):
             self.pga = np.concatenate(data[self.pga_key], axis=0)
         else:
             print('Found no PGA values')
-            self.pga = np.zeros(X.shape[1])
+            self.pga = np.zeros(X.shape[0])
 
         if 'p_picks' in data:
             self.triggers = np.concatenate(data['p_picks'], axis=0)
         else:
             print('Found no picks')
-            self.triggers = np.zeros(X.shape[1])
+            self.triggers = np.zeros(X.shape[0])
 
-        y = np.array([self.event_metadata.get_group(ith_event)[self.target_key]])
+        y = np.array([self.event_metadata.get_group(ith_event)[self.target_key]]) # magnitude
         true_batch_size = 1
 
         waveforms = np.zeros((true_batch_size, self.max_stations) + X.shape[1:])  # shape (1, 25, 10000, 3)
-        true_max_stations_in_batch = max(max([self.metadata.shape[0] for idx in indexes]), self.max_stations) # 25
-        metadata = np.zeros((true_batch_size, true_max_stations_in_batch) + self.metadata.shape[1:]) # shape (1, 25, 3)
+        true_max_stations_in_batch = max(max([self.metadata.shape[0] for idx in indexes]), self.max_stations) # max(n_stations,25) = tms
+        metadata = np.zeros((true_batch_size, true_max_stations_in_batch) + self.metadata.shape[1:]) # shape (1,tms, 3), coords
         # Use NaN for PGA so that "no measurement" is unambiguous and the legal
         # log-PGA value 0 is not confused with padding.
-        pga = np.full((true_batch_size, true_max_stations_in_batch), np.nan)  # shape (1, 25)
-        full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1, 25)
+        pga = np.full((true_batch_size, true_max_stations_in_batch), np.nan)  # shape (1, tms)
+        full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1, tms)
         p_picks = np.zeros((true_batch_size, self.max_stations)) # shape (1, 25)
         # station_valid: True for slots that hold a real station (not padding).
         # Will be tightened later by cutout/blinding/etc.
-        station_valid_full = np.zeros((true_batch_size, true_max_stations_in_batch), dtype=bool)
+        station_valid_full = np.zeros((true_batch_size, true_max_stations_in_batch), dtype=bool) # shape (1, tms)
         reverse_selections = []
 
         # Find list of IDs
@@ -386,7 +386,7 @@ class PreloadedEventGenerator(Dataset):
                 pga[i, :len(self.pga)] = self.pga
                 p_picks[i, :len(self.triggers)] = self.triggers
                 full_p_picks[i, :len(self.triggers)] = self.triggers
-                station_valid_full[i, :len(self.metadata)] = True
+                station_valid_full[i, :len(self.metadata)] = True # init to True?
                 reverse_selections += [[]]
             else:
                 if self.selection_skew is None or self.selection_skew <= 0:  # random select
@@ -405,7 +405,7 @@ class PreloadedEventGenerator(Dataset):
                 if self.select_first: # pick_time
                     selection = np.argsort(self.triggers)
 
-                selection = selection[:true_max_stations_in_batch]
+                selection = selection[:true_max_stations_in_batch] # len 25
                 metadata[i, :len(selection)] = self.metadata[selection]
                 pga[i, :len(selection)] = self.pga[selection]
                 full_p_picks[i, :len(selection)] = self.triggers[selection]
@@ -454,7 +454,13 @@ class PreloadedEventGenerator(Dataset):
                 else:
                     cutout = np.random.randint(*self.cutout)
                 if self.adjust_mean:
-                    waveforms -= np.mean(waveforms[:, :, :cutout+1], axis=2, keepdims=True)
+                    # Mean only over non-zero samples so that leading zero-padding
+                    # is neither diluting the mean nor getting offset by it.
+                    region = waveforms[:, :, :cutout + 1]                    # (B, S, T, C)
+                    has_data = np.any(region != 0, axis=-1)                  # (B, S, T)
+                    n = has_data.sum(axis=2, keepdims=True).clip(min=1)      # (B, S, 1)
+                    mu = (region * has_data[..., None]).sum(axis=2, keepdims=True) / n[..., None]
+                    waveforms[:, :, :cutout + 1] -= mu * has_data[..., None]
                 # Right-align: shift valid signal [0:cutout] to end of window,
                 # matching real-time EEW where signal arrives at the tail
                 shift = waveforms.shape[2] - cutout
