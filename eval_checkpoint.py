@@ -135,14 +135,17 @@ def build_datasets(config, overfit_n=0):
             gp_copy = copy.deepcopy(gp)
             gp_copy['transform_target_only'] = gp_copy.get('transform_target_only', True)
             gp_copy['oversample'] = 1  # no oversampling for eval
+            defaults = dict(
+                coords_target=True, label_smoothing=False, station_blinding=False,
+                cutout=cutout, pga_targets=n_pga_targets, max_stations=max_stations,
+                sampling_rate=sampling_rate, no_event_token=no_event_token,
+            )
+            merged = {**defaults, **gp_copy}
             generators.append(util.PreloadedEventGenerator(
                 event_metadata=em_list[i], metadata=meta_list[i],
                 data_path=training_params['data_path'][i],
                 generator_params=generator_params[i],
-                coords_target=True, label_smoothing=False, station_blinding=False,
-                cutout=cutout, pga_targets=n_pga_targets, max_stations=max_stations,
-                sampling_rate=sampling_rate, no_event_token=no_event_token,
-                **gp_copy))
+                **merged))
         datasets[split_name] = generators[0] if len(generators) == 1 else generators
     return datasets
 
