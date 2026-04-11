@@ -570,12 +570,20 @@ if __name__ == '__main__':
         train_generators = []
         validation_generators = []
 
+        # Keys passed explicitly below — strip from generator_param_set to
+        # avoid "got multiple values" when the same key also appears in the
+        # JSON config's generator_params section.
+        _explicit_keys = {'coords_target', 'label_smoothing', 'station_blinding',
+                          'cutout', 'pga_targets', 'max_stations', 'sampling_rate',
+                          'no_event_token'}
+
         for i, generator_param_set in enumerate(generator_params):
             noise_seconds = generator_param_set.get('noise_seconds', 5)
             cutout = (
                 sampling_rate * (noise_seconds + generator_param_set['cutout_start']), sampling_rate * (noise_seconds + generator_param_set['cutout_end']))
 
             generator_param_set['transform_target_only'] = generator_param_set.get('transform_target_only', True)
+            extra = {k: v for k, v in generator_param_set.items() if k not in _explicit_keys}
 
             train_generators += [util.PreloadedEventGenerator(event_metadata=event_metadata_train[i],
                                                               metadata=metadata_train[i],
@@ -589,10 +597,11 @@ if __name__ == '__main__':
                                                               max_stations=max_stations,
                                                               sampling_rate=sampling_rate,
                                                               no_event_token=no_event_token,
-                                                              **generator_param_set)]
+                                                              **extra)]
 
             old_oversample = generator_param_set.get('oversample', 1)
             generator_param_set['oversample'] = 1 if overfit_mode else 4
+            extra_val = {k: v for k, v in generator_param_set.items() if k not in _explicit_keys}
             validation_generators += [util.PreloadedEventGenerator(event_metadata=event_metadata_dev[i],
                                                                    metadata=metadata_dev[i],
                                                                    data_path=training_params['data_path'][i],
@@ -604,7 +613,7 @@ if __name__ == '__main__':
                                                                    max_stations=max_stations,
                                                                    sampling_rate=sampling_rate,
                                                                    no_event_token=no_event_token,
-                                                                   **generator_param_set)]
+                                                                   **extra_val)]
             generator_param_set['oversample'] = old_oversample
 
         if len(train_generators) == 1:
