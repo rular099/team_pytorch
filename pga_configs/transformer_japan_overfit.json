@@ -59,6 +59,7 @@
         "weight_path": "weights_japan_overfit",
         "res_comps": ["pga"],
         "res_weight": [1.0],
+        "reinit_fpn": false,
         "ensemble_rotation": false,
         "generator_params": [
             {

@@ -529,30 +529,29 @@ if __name__ == '__main__':
             transfer_weights(full_model, training_params['transfer_model_path'],
                              ensemble_load=ensemble_load, wait_for_load=wait_for_load, ens_id=ens_id)
 
-        # Freeze only the diting encoder (ViTAdapter), unfreeze EncoderFeatures head + dt2team
+        # Freeze diting encoder (ViTAdapter); keep EncoderFeatures + dt2team trainable.
         raw_full = full_model.module if is_dist else full_model
         for param in raw_full.waveform_model[0].parameters():
             param.requires_grad = False
-        # waveform_model[1] (EncoderFeatures) and dt2team remain trainable
 
-        # Re-initialize all of EncoderFeatures (FPN + bottleneck + task head).
-        # Only the diting encoder (ViTAdapter) keeps pretrained weights.
-        encoder_features = raw_full.waveform_model[1]
-        for name, module in encoder_features.named_modules():
-            if isinstance(module, (nn.Conv1d, nn.ConvTranspose1d)):
-                nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-            elif isinstance(module, nn.Linear):
-                nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-            elif hasattr(module, 'weight') and hasattr(module, 'bias') and isinstance(module.weight, nn.Parameter):
-                # LayerNorm and similar
-                nn.init.constant_(module.weight, 1)
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-        # Also re-initialize dt2team MLP for consistency
+        reinit_fpn = training_params.get('reinit_fpn', True)
+        if reinit_fpn:
+            encoder_features = raw_full.waveform_model[1]
+            for name, module in encoder_features.named_modules():
+                if isinstance(module, (nn.Conv1d, nn.ConvTranspose1d)):
+                    nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
+                    if module.bias is not None:
+                        nn.init.constant_(module.bias, 0)
+                elif isinstance(module, nn.Linear):
+                    nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
+                    if module.bias is not None:
+                        nn.init.constant_(module.bias, 0)
+                elif hasattr(module, 'weight') and hasattr(module, 'bias') and isinstance(module.weight, nn.Parameter):
+                    nn.init.constant_(module.weight, 1)
+                    if module.bias is not None:
+                        nn.init.constant_(module.bias, 0)
+
+        # Always re-initialize dt2team MLP
         dt2team = raw_full.waveform_model.dt2team
         for name, module in dt2team.named_modules():
             if isinstance(module, nn.Linear):
@@ -560,7 +559,10 @@ if __name__ == '__main__':
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)
         if rank == 0:
-            print('Re-initialized EncoderFeatures (FPN, bottleneck, task head) and dt2team')
+            if reinit_fpn:
+                print('Re-initialized EncoderFeatures (FPN) and dt2team')
+            else:
+                print('Kept pretrained EncoderFeatures; re-initialized dt2team only')
 
         no_event_token = config['model_params'].get('no_event_token', False)
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, full_model.parameters()), lr=training_params['lr'])
