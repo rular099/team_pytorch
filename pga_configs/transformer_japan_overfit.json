@@ -60,6 +60,7 @@
         "res_comps": ["pga"],
         "res_weight": [1.0],
         "reinit_fpn": false,
+        "lr_monitor": "train",
         "ensemble_rotation": false,
         "generator_params": [
             {

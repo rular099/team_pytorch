@@ -44,7 +44,7 @@ def subset_events(event_metadata, n):
     return event_metadata[:n]
 
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
-                res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None):
+                res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val'):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     if (not is_dist) or (is_dist and (rank == 0)):
@@ -151,7 +151,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     'loss': val_loss,
                 }, filepath)
         if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-            scheduler.step(val_loss)
+            monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
+            scheduler.step(monitor_loss)
         else:
             scheduler.step()
         if is_dist:
@@ -653,8 +654,10 @@ if __name__ == '__main__':
         )
         assert len(res_comps_cfg) == len(res_weight_cfg), \
             f'res_comps ({len(res_comps_cfg)}) and res_weight ({len(res_weight_cfg)}) length mismatch'
+        lr_monitor = training_params.get('lr_monitor', 'val')
         if (not is_dist) or local_rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
+            print(f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss')
         train_model(
             full_model,
             train_loader,
@@ -670,7 +673,8 @@ if __name__ == '__main__':
             res_weight=res_weight_cfg,
             post_train_sanity=True,
             epoch_sanity=training_params.get('epoch_sanity', False),
-            train_sampler=train_sampler
+            train_sampler=train_sampler,
+            lr_monitor=lr_monitor,
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,
