@@ -153,7 +153,11 @@ def build_datasets(config, overfit_n=0):
                 data_path=training_params['data_path'][i],
                 generator_params=generator_params[i],
                 **merged))
-        datasets[split_name] = generators[0] if len(generators) == 1 else generators
+        if len(generators) == 1:
+            datasets[split_name] = generators[0]
+        else:
+            dataset_bias = config['model_params'].get('dataset_bias', False)
+            datasets[split_name] = util.JointGenerator(generators, shuffle=False, dataset_id=dataset_bias)
     return datasets
 
 
@@ -493,7 +497,9 @@ def print_summary(results, split_name):
             if ptv is not None:
                 mask = np.array(ptv).astype(bool).reshape(len(labels), -1)
             else:
-                # Fallback: treat non-NaN as valid
+                # Fallback: treat non-NaN as valid (pga padding is NaN)
+                import warnings
+                warnings.warn('pga_target_valid not found in results; falling back to NaN-based mask')
                 mask = ~np.isnan(labels_flat)
 
             for i in range(min(len(labels), 4)):
