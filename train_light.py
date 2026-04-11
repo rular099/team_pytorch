@@ -449,7 +449,7 @@ if __name__ == '__main__':
             generator_param['disable_station_foreshadowing'] = False
             generator_param['shuffle_train_dev'] = False
             generator_param['oversample'] = 1
-            generator_param['select_first'] = True
+            generator_param['select_first'] = False
             generator_param['cutout_start'] = fixed_cutout
             generator_param['cutout_end'] = fixed_cutout
         if (not is_dist) or (is_dist and (rank == 0)):
