@@ -10,12 +10,9 @@ from mup import set_base_shapes
 from dtbench.models.diting.models.vit_adapter import ViTAdapter
 from dtbench.models.diting.models.backbone_ablation import get_encoder_size_dict
 from dtbench.training.modeling import (
-    build_interaction_indexes,
-    parse_hps,
     _extract_pretrained_state_dict,
     _filter_backbone_state_dict,
 )
-from LSD.models.head import EncoderFeatures
 
 # Helper Functions
 def gelu(x):
@@ -589,6 +586,45 @@ class StatPool1d(nn.Module):
         return self.proj(out).unsqueeze(-1)      # (B, C, 1) — same shape as GAP output
 
 
+class DitingStationAdapter(nn.Module):
+    """Light multi-scale adapter from ViTAdapter features to station embeddings."""
+    def __init__(self, encoder_dim, out_channels):
+        super().__init__()
+        self.out_channels = out_channels
+        self.proj_f2 = nn.Conv1d(encoder_dim, out_channels, kernel_size=1)
+        self.proj_f3 = nn.Conv1d(encoder_dim, out_channels, kernel_size=1)
+        self.proj_f4 = nn.Conv1d(encoder_dim, out_channels, kernel_size=1)
+        self.proj_x = nn.Conv1d(encoder_dim, out_channels, kernel_size=1)
+        self.fuse = nn.Sequential(
+            nn.Conv1d(out_channels * 4, out_channels, kernel_size=3, padding=1),
+            nn.GELU(),
+            nn.Conv1d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.GELU(),
+        )
+        self.pool = StatPool1d(out_channels)
+        self.norm = nn.LayerNorm(out_channels)
+
+    def _resize_to(self, x, target_len):
+        if x.shape[-1] == target_len:
+            return x
+        return F.interpolate(x, size=target_len, mode='linear', align_corners=False)
+
+    def forward(self, inputs):
+        f2, f3, f4, x = inputs
+        x = x.transpose(1, 2).contiguous()
+        target_len = f2.shape[-1]
+
+        feats = [
+            self.proj_f2(f2),
+            self._resize_to(self.proj_f3(f3), target_len),
+            self._resize_to(self.proj_f4(f4), target_len),
+            self._resize_to(self.proj_x(x), target_len),
+        ]
+        fused = self.fuse(torch.cat(feats, dim=1))
+        pooled = self.pool(fused).squeeze(-1)
+        return self.norm(pooled.float())
+
+
 class GlobalMaxPooling1DMasked(nn.Module):
     def forward(self, x, mask=None):
         pseudo_infty = 1000.
@@ -903,10 +939,10 @@ class FullModel(nn.Module):
         return outputs
 
 def get_diting_model(args):
-    """Build diting model (ViTAdapter + EncoderFeatures) with muP and pretrained weights.
+    """Build diting model (ViTAdapter + light station adapter) with muP and pretrained weights.
 
     Uses the ditingbench approach for model construction and weight loading.
-    The model is nn.Sequential([0]=ViTAdapter encoder, [1]=EncoderFeatures head).
+    The model is nn.Sequential([0]=ViTAdapter encoder, [1]=station adapter).
     """
     depth = args.model_depth if hasattr(args, 'model_depth') else 24
     base_encoder_size = get_encoder_size_dict(width=args.base_width, depth=depth)
@@ -924,7 +960,7 @@ def get_diting_model(args):
         use_extra_extractor=use_extra_extractor,
         out_x=True,
     )
-    base_head = EncoderFeatures(encoder_dim=base_encoder.backbone.d_model, args=args)
+    base_head = DitingStationAdapter(encoder_dim=base_encoder.backbone.d_model, out_channels=args.out_channels)
     base_model = nn.Sequential(base_encoder, base_head)
 
     # Build target model
@@ -936,7 +972,7 @@ def get_diting_model(args):
         use_extra_extractor=use_extra_extractor,
         out_x=True,
     )
-    target_head = EncoderFeatures(encoder_dim=target_encoder.backbone.d_model, args=args)
+    target_head = DitingStationAdapter(encoder_dim=target_encoder.backbone.d_model, out_channels=args.out_channels)
     model = nn.Sequential(target_encoder, target_head)
 
     # muP: set base shapes
@@ -1018,9 +1054,6 @@ def build_transformer_model(max_stations,
 #                                              mlp_dims=waveform_model_dims)
 #    mlp_mag_single_station = MLP((waveform_model.mlp.mlp[-1].out_features,), output_mlp_dims, activation=activation) #Modified line
     waveform_model = get_diting_model(diting_args)
-    # Replace GAP in EncoderFeatures with StatPool1d (mean+max+std)
-    encoder_features = waveform_model[1]
-    encoder_features.gap = StatPool1d(diting_args.out_channels)
     dt2team = MLP((diting_args.out_channels,), [diting_args.out_channels, waveform_model_dims[-1]], activation=activation)
     waveform_model.add_module('dt2team', dt2team)
 

@@ -563,15 +563,15 @@ if __name__ == '__main__':
             transfer_weights(full_model, training_params['transfer_model_path'],
                              ensemble_load=ensemble_load, wait_for_load=wait_for_load, ens_id=ens_id)
 
-        # Freeze diting encoder (ViTAdapter); keep EncoderFeatures + dt2team trainable.
+        # Freeze diting encoder (ViTAdapter); keep station adapter + dt2team trainable.
         raw_full = full_model.module if is_dist else full_model
         for param in raw_full.waveform_model[0].parameters():
             param.requires_grad = False
 
         reinit_fpn = training_params.get('reinit_fpn', True)
         if reinit_fpn:
-            encoder_features = raw_full.waveform_model[1]
-            for name, module in encoder_features.named_modules():
+            station_adapter = raw_full.waveform_model[1]
+            for name, module in station_adapter.named_modules():
                 if isinstance(module, (nn.Conv1d, nn.ConvTranspose1d)):
                     nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
                     if module.bias is not None:
@@ -594,9 +594,9 @@ if __name__ == '__main__':
                     nn.init.constant_(module.bias, 0)
         if rank == 0:
             if reinit_fpn:
-                print('Re-initialized EncoderFeatures (FPN) and dt2team')
+                print('Re-initialized station adapter and dt2team')
             else:
-                print('Kept pretrained EncoderFeatures; re-initialized dt2team only')
+                print('Kept current station adapter initialization; re-initialized dt2team only')
 
         no_event_token = config['model_params'].get('no_event_token', False)
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, full_model.parameters()), lr=training_params['lr'])
