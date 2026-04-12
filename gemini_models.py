@@ -5,11 +5,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
-#from diting.finetuneing.utils import create_model
-import diting.finetuneing.utils.help_builder as help_builder
-import diting.LSD.models.backbone_ablation as backbone_ablation
-
 from mup import set_base_shapes
+
+from dtbench.models.diting.models.vit_adapter import ViTAdapter
+from dtbench.models.diting.models.backbone_ablation import get_encoder_size_dict
+from dtbench.training.modeling import (
+    build_interaction_indexes,
+    parse_hps,
+    _extract_pretrained_state_dict,
+    _filter_backbone_state_dict,
+)
+from LSD.models.head import EncoderFeatures
 
 # Helper Functions
 def gelu(x):
@@ -897,87 +903,63 @@ class FullModel(nn.Module):
         return outputs
 
 def get_diting_model(args):
-    # Model (todo) enable mup init
-    base_encoder_size_dict = backbone_ablation.get_encoder_size_dict(width=args.base_width, depth=24) # args.encoder_size
-    base_model = help_builder.create_model(
-        model_name=args.model_name,
-        downstream_tasks=args.downstream_task,
-        in_samples=args.in_samples,
-        encoder_size=base_encoder_size_dict,
-        eval_type=args.eval_type,
-        pool_type=args.pool_type,
+    """Build diting model (ViTAdapter + EncoderFeatures) with muP and pretrained weights.
+
+    Uses the ditingbench approach for model construction and weight loading.
+    The model is nn.Sequential([0]=ViTAdapter encoder, [1]=EncoderFeatures head).
+    """
+    depth = args.model_depth if hasattr(args, 'model_depth') else 24
+    base_encoder_size = get_encoder_size_dict(width=args.base_width, depth=depth)
+    target_encoder_size = get_encoder_size_dict(width=args.target_width, depth=depth)
+
+    add_vit_feature = getattr(args, 'add_vit_feature', True)
+    use_extra_extractor = getattr(args, 'use_extra_extractor', False)
+
+    # Build base model for muP
+    base_encoder = ViTAdapter(
+        encoder_size=base_encoder_size,
+        input_length=args.in_samples,
         args=args,
+        add_vit_feature=add_vit_feature,
+        use_extra_extractor=use_extra_extractor,
+        out_x=True,
     )
-    target_encoder_size_dict = backbone_ablation.get_encoder_size_dict(width=args.target_width, depth=24)
-    model = help_builder.create_model(
-        model_name=args.model_name,
-        downstream_tasks=args.downstream_task,
-        in_samples=args.in_samples,
-        encoder_size=target_encoder_size_dict,
-        eval_type=args.eval_type,
-        pool_type=args.pool_type,
+    base_head = EncoderFeatures(encoder_dim=base_encoder.backbone.d_model, args=args)
+    base_model = nn.Sequential(base_encoder, base_head)
+
+    # Build target model
+    target_encoder = ViTAdapter(
+        encoder_size=target_encoder_size,
+        input_length=args.in_samples,
         args=args,
+        add_vit_feature=add_vit_feature,
+        use_extra_extractor=use_extra_extractor,
+        out_x=True,
     )
-    ### muP: set base_shapes
-    set_base_shapes(model, base_model) # do_assert=False
+    target_head = EncoderFeatures(encoder_dim=target_encoder.backbone.d_model, args=args)
+    model = nn.Sequential(target_encoder, target_head)
 
-    if not os.path.exists(args.resume) and args.pretrained:
-        if os.path.isfile(args.pretrained):
-            print("=> loading checkpoint '{}'".format(args.pretrained))
-            checkpoint = torch.load(args.pretrained,weights_only=False, map_location="cpu")
+    # muP: set base shapes
+    set_base_shapes(model, base_model)
 
-            # rename moco pre-trained keys
-            print('############# ckpt keys', checkpoint.keys())
-            if args.pretrain_method == "mae":
-                if args.pretrained.endswith('.pt'):
-                    key = 'module'
-                else:
-                    key = 'state_dict'
-                state_dict = checkpoint[key]
-                # print(f'############# {key} has ', state_dict.keys())
-                for k in list(state_dict.keys()):
-                    # from deepspeed
-                    if k.startswith("base_encoder."):
-                        # remove prefix
-                        state_dict['0.'+k[len("base_encoder.") :]] = state_dict[k] # for MAE:0. is mapped to encoder(in func:help_builder.create_model)
-                    elif k.startswith("module.base_encoder."):
-                        # remove prefix
-                        state_dict['0.'+k[len("module.base_encoder.") :]] = state_dict[k] # for MAE:0. is mapped to encoder(in func:help_builder.create_model)
-                    if args.dpk_head == 'vit_adapter_decoder_new':
-                        if k.startswith("base_decoder."):
-                            state_dict['1.decoder.'+k[len("base_decoder.") :]] = state_dict[k]
-                        elif k.startswith("module.base_decoder."):
-                            state_dict['1.decoder.'+k[len("module.base_decoder.") :]] = state_dict[k]
-                    elif 'decoder' in args.dpk_head or args.dpk_head == 'vit_adapter_TaskSeparatedUPerHead':
-                        if k.startswith("base_decoder."):
-                            state_dict['0.decoder.'+k[len("base_decoder.") :]] = state_dict[k]
-                        elif k.startswith("module.base_decoder."):
-                            state_dict['0.decoder.'+k[len("module.base_decoder.") :]] = state_dict[k]
+    # Freeze encoder for linear_probe
+    if args.eval_type == 'linear_probe':
+        for param in model[0].backbone.parameters():
+            param.requires_grad = False
 
-                    del state_dict[k]
-            elif args.pretrain_method == "lp":
-                if args.pretrained.endswith('.pt'):
-                    key = 'module'
-                else:
-                    key = 'model_dict'
-                state_dict = checkpoint[key]
-                del checkpoint["optimizer_dict"]
-            else:
-                raise NotImplementedError(f"Unsupported pretrain method:'{args.pretrain_method}'")
-            args.start_epoch = 0
-            msg = model.load_state_dict(state_dict, strict=False)
-            print(msg)
-
-            if args.pool_type == 'cls':
-                assert msg.missing_keys == ['2.fc.weight', '2.fc.bias'],"load pretrain model fail!"
-            elif args.pool_type == 'avg' or args.pool_type == 'attentive':
-                missing_keys_except_attentive = [k for k in msg.missing_keys if not k.startswith('1.')]
-                assert missing_keys_except_attentive == ['3.fc.weight', '3.fc.bias'],"load pretrain model fail!"
-
-            print("=> loaded pre-trained model '{}'".format(args.pretrained))
-        else:
-            print("=> no checkpoint found at '{}'".format(args.pretrained))
-            assert os.path.isfile(args.pretrained),"no checkpoint found at '{}'".format(args.pretrained)
+    # Load pretrained weights
+    if args.pretrained and os.path.isfile(args.pretrained):
+        print(f"=> loading pretrained checkpoint '{args.pretrained}'")
+        checkpoint = torch.load(args.pretrained, map_location="cpu", weights_only=False)
+        state_dict = _extract_pretrained_state_dict(checkpoint, args)
+        pretrained_load_mode = getattr(args, 'pretrained_load_mode', 'backbone')
+        if pretrained_load_mode == 'backbone':
+            state_dict = _filter_backbone_state_dict(state_dict)
+        msg = model.load_state_dict(state_dict, strict=False)
+        print(f"pretrained_load_mode: {pretrained_load_mode}")
+        print(f"load_state_dict result: {msg}")
+    elif args.pretrained:
+        raise FileNotFoundError(f"Pretrained checkpoint not found: {args.pretrained}")
 
     model = model.to(args.device)
     return model

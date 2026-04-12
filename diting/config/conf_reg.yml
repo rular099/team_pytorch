@@ -58,10 +58,13 @@ patience: 30
 random_crop_p: 0.0
 # 模型设定
 pretrain_method: lp
+pretrained_load_mode: backbone
 eval_type: linear_probe
 pretrained: /public/home/zhangbei/work_dir/DiTing/single_task_custom/100M_model-29-latest.pth
 resume: ''
 hps: modelsize512_lr0.003_wd5e-06_mr0.75_init-std0.16_attn-mult32.0_input-mult10.0_output-mult16.0
+model_depth: 24
+base_width: 256
 seed: 0
 model_name: llama
 data_split: true

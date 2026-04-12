@@ -1,10 +1,11 @@
 import numpy as np
+import os
 import sys
-sys.path.append('./diting')
+sys.path.insert(0, './diting')
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'ditingbench'))
 import yaml
 import random
 import h5py
-import os
 import copy
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import pickle
@@ -24,9 +25,56 @@ import gemini_util_light as util
 import loader_light as loader
 import gemini_models as models
 
-from diting.downstream.gemini_utils import get_args as get_args_diting
+from dtbench.training.modeling import build_interaction_indexes, parse_hps
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+def build_diting_args(diting_config_path, device='cpu', distributed=False):
+    """Build diting args from YAML config, replacing the old get_args_diting() approach.
+
+    Uses ditingbench's parse_hps and build_interaction_indexes.
+    """
+    with open(diting_config_path, 'r') as f:
+        conf = yaml.safe_load(f)
+
+    # Defaults matching ditingbench cli.py parser
+    defaults = dict(
+        base_width=256, target_width=256, model_depth=24,
+        in_samples=10000, patch_size=50,
+        num_interactions=4, out_channels=256,
+        pale_size=5, stem_convKs=3, cpe_kernel_size=3,
+        ffn_convKS=3, fpn_convKS=3, aggregate_convKS=3, head_convKS=3,
+        inter_mode='fpn_deep_5',
+        add_vit_feature=True, use_extra_extractor=False,
+        norm_layer='rmsnorm', xattn=False,
+        drop_path=0.0, head_drop_rate=0.0,
+        init_std=0.02, input_mult=1.0, attn_mult=256.0, output_mult=1.0,
+        eval_type='linear_probe',
+        pretrained='', resume='',
+        pretrain_method='lp', pretrained_load_mode='backbone',
+        hps='',
+        downstream_task='emg',
+        reuse_ppm=True,
+        loss_type='bce',
+    )
+    defaults.update(conf)
+
+    diting_args = argparse.Namespace(**defaults)
+    diting_args.conf_file = diting_config_path
+
+    # Parse HPS string to extract target_width, input_mult, attn_mult, output_mult
+    parse_hps(diting_args)
+
+    # Build interaction indexes
+    diting_args.interaction_indexes = build_interaction_indexes(
+        diting_args.model_depth, diting_args.num_interactions
+    )
+
+    diting_args.distributed = distributed
+    diting_args.device = device
+
+    return diting_args
 
 
 def subset_events(event_metadata, n):
@@ -370,22 +418,7 @@ if __name__ == '__main__':
     else:
         device = torch.device(args.device if torch.cuda.is_available() and args.device.startswith('cuda') else ('cuda:0' if torch.cuda.is_available() else 'cpu'))
 # args for diting model
-    diting_args, ds_init = get_args_diting()
-    diting_args.conf_file = args.diting_config
-    with open(diting_args.conf_file, 'r') as f:
-        diting_conf_data = yaml.safe_load(f)
-    vars(diting_args).update(diting_conf_data)
-    depth = 24
-    if depth % diting_args.num_interactions != 0:
-        diting_args.num_interactions -= 1
-    n = (depth - 1)//diting_args.num_interactions
-    diting_args.interaction_indexes = [[i*n, (i+1)*n] for i in range(diting_args.num_interactions)]
-    if diting_args.num_interactions * n != depth:
-        diting_args.interaction_indexes.append([diting_args.num_interactions*n, depth])
-
-    diting_args.distributed = is_dist
-    if diting_args.distributed:
-        diting_args.device = device
+    diting_args = build_diting_args(args.diting_config, device=device, distributed=is_dist)
  # end diting args
 
     training_params = config['training_params']

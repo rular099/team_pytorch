@@ -21,32 +21,13 @@ from collections import defaultdict
 _dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _dir)
 sys.path.insert(0, os.path.join(_dir, 'diting'))
+sys.path.insert(0, os.path.join(_dir, '..', 'ditingbench'))
 import gemini_models as models
 import gemini_util_light as util
 import loader_light as loader
 
-# diting imports are handled via gemini_models.py; not needed here directly
-
-
-def load_diting_args(diting_config_path, device='cpu'):
-    """Load diting config, matching train_light.py logic."""
-    import yaml
-    from diting.downstream.gemini_utils import get_args as get_args_diting
-    diting_args, _ = get_args_diting()
-    diting_args.conf_file = diting_config_path
-    with open(diting_args.conf_file, 'r') as f:
-        diting_conf_data = yaml.safe_load(f)
-    vars(diting_args).update(diting_conf_data)
-    depth = 24
-    if depth % diting_args.num_interactions != 0:
-        diting_args.num_interactions -= 1
-    n = (depth - 1) // diting_args.num_interactions
-    diting_args.interaction_indexes = [[i*n, (i+1)*n] for i in range(diting_args.num_interactions)]
-    if diting_args.num_interactions * n != depth:
-        diting_args.interaction_indexes.append([diting_args.num_interactions*n, depth])
-    diting_args.distributed = False
-    diting_args.device = device
-    return diting_args
+# Reuse the same build_diting_args from train_light.py
+from train_light import build_diting_args as load_diting_args
 
 
 def build_model_and_load(config, diting_args, checkpoint_path, device):
