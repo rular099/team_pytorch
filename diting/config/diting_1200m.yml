@@ -1,0 +1,40 @@
+# DiTing 1200M backbone config for TEAM
+# Only contains fields needed by build_diting_args / get_diting_model
+
+# Pretrained weights
+pretrain_method: lp
+pretrained_load_mode: backbone
+eval_type: linear_probe
+pretrained: /opt/zb/ckpt/1200m/dpk/720w_sft/model-4-latest.pth
+
+# muP hyperparameters
+hps: modelsize1792_lr0.003_wd5e-06_mr0.75_init-std0.16_attn-mult32.0_input-mult10.0_output-mult16.0
+base_width: 256
+# target_width: 1792  # parsed from hps
+model_depth: 24
+
+# ViTAdapter architecture
+in_samples: 10000
+patch_size: 50
+num_interactions: 4
+out_channels: 256
+inter_mode: fpn_deep_5
+norm_layer: rmsnorm
+add_vit_feature: true
+use_extra_extractor: false
+
+# Convolution kernel sizes
+pale_size: 5
+stem_convKs: 3
+cpe_kernel_size: 3
+ffn_convKS: 3
+fpn_convKS: 3
+aggregate_convKS: 3
+head_convKS: 3
+
+# Head
+downstream_task: emg
+reuse_ppm: true
+head_drop_rate: 0.0
+drop_path: 0.0
+init_std: 0.02
