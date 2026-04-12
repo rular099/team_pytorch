@@ -806,6 +806,27 @@ class FullModel(nn.Module):
                 mlp_input_length += self.metadata_shape[0]
             self.mlp_layer = MLP((mlp_input_length,), [self.emb_dim, self.emb_dim], activation='relu')
             self.maxpool = GlobalMaxPooling1DMasked()
+        self._last_diag = {}
+
+    @staticmethod
+    def _mean_token_norm(x):
+        return x.norm(dim=-1).mean()
+
+    @staticmethod
+    def _masked_pairwise_cosine_mean(x, mask):
+        vals = []
+        for sample, valid in zip(x, mask):
+            valid_sample = sample[valid]
+            if valid_sample.shape[0] < 2:
+                continue
+            normed = valid_sample / (valid_sample.norm(dim=-1, keepdim=True) + 1e-8)
+            cos = normed @ normed.T
+            n = cos.shape[0]
+            off_diag = cos[~torch.eye(n, dtype=torch.bool, device=cos.device)]
+            vals.append(off_diag.mean())
+        if not vals:
+            return x.new_tensor(float('nan'))
+        return torch.stack(vals).mean()
 
     def _normalize(self, data, mode, axis=1):
         """
@@ -844,6 +865,7 @@ class FullModel(nn.Module):
         coords_masked = metadata_inp * sv[:, :, None].float()
 
         waveforms_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
+        scale_emb = None
         if self.waveform_scale_proj is not None:
             scale_emb = self.waveform_scale_proj(self._extract_scale(raw_waveform))
             waveforms_emb = waveforms_emb + self.waveform_scale_gain * scale_emb
@@ -854,6 +876,18 @@ class FullModel(nn.Module):
             emb = waveforms_emb + coords_emb
         else:
             emb = torch.cat([waveforms_emb, coords_masked], dim=-1)
+
+        self._last_diag = {
+            'wave_emb_norm': self._mean_token_norm(waveforms_emb).detach(),
+            'station_emb_norm': self._mean_token_norm(emb).detach(),
+            'station_emb_cosine_mean': self._masked_pairwise_cosine_mean(emb, sv).detach(),
+        }
+        if scale_emb is not None:
+            scale_norm = self._mean_token_norm(scale_emb)
+            self._last_diag['scale_emb_norm'] = scale_norm.detach()
+            self._last_diag['scale_trunk_ratio'] = (scale_norm / (self._mean_token_norm(waveforms_emb) + 1e-8)).detach()
+        if not self.alternative_coords_embedding:
+            self._last_diag['coords_emb_norm'] = self._mean_token_norm(coords_emb).detach()
 
         if not (self.skip_transformer or self.no_event_token):
             emb = self.add_event_token(emb)

@@ -91,6 +91,123 @@ def subset_events(event_metadata, n):
         return event_metadata.iloc[:n].copy()
     return event_metadata[:n]
 
+
+def module_grad_norm(module):
+    sq_sum = None
+    for param in module.parameters():
+        if param.grad is None:
+            continue
+        grad_sq = torch.sum(param.grad.detach() ** 2)
+        sq_sum = grad_sq if sq_sum is None else sq_sum + grad_sq
+    if sq_sum is None:
+        return None
+    return torch.sqrt(sq_sum)
+
+
+def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
+    if 'pga' not in output_layout:
+        return {}
+    pga_idx = output_layout.index('pga')
+    pga_pred = outputs[pga_idx]
+    pga_true = labels[pga_idx]
+    alpha_logits = pga_pred[..., 0]
+    mu = pga_pred[..., 1]
+    sigma = pga_pred[..., 2]
+    best_idx = alpha_logits.argmax(dim=-1, keepdim=True)
+    mu_best = mu.gather(-1, best_idx).squeeze(-1)
+
+    stats = {
+        'diag/pga_alpha_logits_mean': alpha_logits.mean().detach(),
+        'diag/pga_alpha_logits_std': alpha_logits.std(unbiased=False).detach(),
+        'diag/pga_mu_mean': mu.mean().detach(),
+        'diag/pga_mu_std': mu.std(unbiased=False).detach(),
+        'diag/pga_sigma_mean': sigma.mean().detach(),
+        'diag/pga_sigma_std': sigma.std(unbiased=False).detach(),
+        'diag/pga_mu_best_mean': mu_best.mean().detach(),
+        'diag/pga_mu_best_std': mu_best.std(unbiased=False).detach(),
+    }
+    if pga_target_valid is not None:
+        mask = pga_target_valid.bool()
+        if mask.any():
+            valid_pred = mu_best[mask]
+            valid_true = pga_true[mask]
+            stats.update({
+                'diag/pga_target_mean': valid_true.mean().detach(),
+                'diag/pga_target_std': valid_true.std(unbiased=False).detach(),
+                'diag/pga_pred_target_mean_gap': (valid_pred.mean() - valid_true.mean()).detach(),
+                'diag/pga_pred_target_std_gap': (valid_pred.std(unbiased=False) - valid_true.std(unbiased=False)).detach(),
+                'diag/pga_valid_target_count': mask.sum().detach().float(),
+            })
+    return stats
+
+
+def collect_input_stats(inputs, labels, p_picks):
+    if not isinstance(inputs, list):
+        return {}
+
+    stats = {}
+    waveforms = inputs[0]
+    metadata = inputs[1] if len(inputs) > 1 else None
+    station_valid = inputs[2].bool() if len(inputs) > 2 else None
+    pga_targets = inputs[3] if len(inputs) > 3 else None
+    pga_target_valid = inputs[4].bool() if len(inputs) > 4 else None
+    pga_labels = labels[-1] if isinstance(labels, list) and len(labels) > 0 else None
+
+    abs_wave = waveforms.abs()
+    stats.update({
+        'data/raw_wave_abs_mean': abs_wave.mean().detach(),
+        'data/raw_wave_abs_max': abs_wave.max().detach(),
+        'data/raw_wave_std': waveforms.std(unbiased=False).detach(),
+        'data/raw_wave_nonzero_ratio': (waveforms != 0).float().mean().detach(),
+        'data/raw_wave_nan_count': torch.isnan(waveforms).sum().detach().float(),
+        'data/raw_wave_inf_count': torch.isinf(waveforms).sum().detach().float(),
+    })
+
+    if station_valid is not None:
+        stats.update({
+            'data/station_valid_count_mean': station_valid.float().sum(dim=1).mean().detach(),
+            'data/station_valid_ratio': station_valid.float().mean().detach(),
+        })
+
+    if metadata is not None:
+        stats.update({
+            'data/coords_abs_mean': metadata.abs().mean().detach(),
+            'data/coords_abs_max': metadata.abs().max().detach(),
+            'data/coords_nan_count': torch.isnan(metadata).sum().detach().float(),
+        })
+
+    if pga_targets is not None:
+        stats.update({
+            'data/pga_target_abs_mean': pga_targets.abs().mean().detach(),
+            'data/pga_target_abs_max': pga_targets.abs().max().detach(),
+        })
+
+    if pga_target_valid is not None:
+        stats.update({
+            'data/pga_target_valid_count_mean': pga_target_valid.float().sum(dim=1).mean().detach(),
+            'data/pga_target_valid_ratio': pga_target_valid.float().mean().detach(),
+        })
+
+    if pga_labels is not None:
+        stats.update({
+            'data/pga_label_mean': pga_labels.mean().detach(),
+            'data/pga_label_std': pga_labels.std(unbiased=False).detach(),
+        })
+
+    if p_picks is not None:
+        p_picks = p_picks.to(waveforms.device)
+        p_pick_valid = p_picks > 0
+        stats['data/p_pick_valid_count_mean'] = p_pick_valid.float().sum(dim=1).mean().detach()
+        if p_pick_valid.any():
+            valid_p = p_picks[p_pick_valid]
+            stats.update({
+                'data/p_pick_mean': valid_p.mean().detach(),
+                'data/p_pick_min': valid_p.min().detach(),
+                'data/p_pick_max': valid_p.max().detach(),
+            })
+
+    return stats
+
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val'):
     tb_path = f'runs/{save_name}'
@@ -110,7 +227,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
         model.train()
         running_loss = 0.0
         num_train_batches = 0
-        for inputs, labels, _ in train_loader:
+        first_batch_logged = False
+        for inputs, labels, p_picks in train_loader:
             if isinstance(inputs, list):
                 inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
             else:
@@ -128,6 +246,30 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
                                                     pga_target_valid=pga_target_valid)
             loss.backward()
+            if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
+                diag_scalars = {}
+                forward_diag = getattr(eval_model, '_last_diag', {})
+                for key, value in forward_diag.items():
+                    if torch.is_tensor(value):
+                        if torch.isnan(value).any():
+                            continue
+                        diag_scalars[f'diag/{key}'] = value.detach()
+                diag_scalars.update(collect_input_stats(inputs, labels, p_picks))
+                diag_scalars.update(collect_pga_output_stats(outputs, labels, eval_model.output_layout, pga_target_valid))
+
+                grad_targets = {
+                    'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
+                    'grad/dt2team': module_grad_norm(eval_model.waveform_model.dt2team),
+                    'grad/mlp_pga': module_grad_norm(eval_model.mlp_pga),
+                    'grad/output_model_pga': module_grad_norm(eval_model.output_model_pga),
+                }
+                for key, value in grad_targets.items():
+                    if value is not None and not torch.isnan(value).any():
+                        diag_scalars[key] = value.detach()
+
+                for key, value in diag_scalars.items():
+                    writer.add_scalar(key, value.item(), epoch)
+                first_batch_logged = True
             if (not is_dist) or (is_dist and (rank == 0)):
                 writer.add_scalar('train/loss', loss.item(), global_step)
                 step_in_ep = global_step - steps_per_epoch * epoch
