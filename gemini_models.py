@@ -1077,7 +1077,7 @@ def build_transformer_model(max_stations,
 
 
 class EnsembleEvaluateModel:
-    def __init__(self, config, max_ensemble_size=None, loss_limit=None, device='cpu'):
+    def __init__(self, config, max_ensemble_size=None, loss_limit=None, device='cpu', diting_args=None):
         self.config = config
         self.ensemble = config.get('ensemble', 1)
         true_ensemble_size = self.ensemble
@@ -1091,7 +1091,7 @@ class EnsembleEvaluateModel:
             if config['training_params'].get('ensemble_rotation', False):
                 # Rotated by angles between 0 and pi/4
                 model_params['rotation'] = np.pi / 4 * ens_id / (true_ensemble_size - 1)
-            full_model = build_transformer_model(**model_params)
+            full_model = build_transformer_model(**model_params, diting_args=diting_args)
 
             # Move models to the specified device
             self.models.append(full_model.to(self.device))

@@ -1,10 +1,11 @@
 import numpy as np
+import os
 import sys
-sys.path.append('./diting')
+sys.path.insert(0, './diting')
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'ditingbench'))
 import yaml
 import random
 import h5py
-import os
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import pickle
 import argparse
