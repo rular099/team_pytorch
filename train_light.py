@@ -686,12 +686,12 @@ if __name__ == '__main__':
             generator_param['disable_station_foreshadowing'] = False
             generator_param['shuffle_train_dev'] = False
             generator_param['oversample'] = 1
-            generator_param['select_first'] = False
+            generator_param['select_first'] = True
             generator_param['cutout_start'] = fixed_cutout
             generator_param['cutout_end'] = fixed_cutout
         if (not is_dist) or (is_dist and (rank == 0)):
             print(f'Overfit mode enabled: using the first {args.overfit_n} events for both train and val')
-            print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, deterministic station selection, no train/dev shuffling')
+            print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, earliest-trigger station/target selection, no train/dev split shuffling')
 
     sampling_rate = metadata_train[0]['sampling_rate']
     assert all(m['sampling_rate'] == sampling_rate for m in metadata_train + metadata_dev)

@@ -7,14 +7,14 @@
 # Environment variables:
 #   CUDA_VISIBLE_DEVICES  (default: auto based on overfit mode)
 #   NPROC_PER_NODE        (default: 1 if overfit, 4 otherwise)
-#   DITING_CONFIG         (default: ./diting/config/conf_reg.yml)
+#   DITING_CONFIG         (default: ./diting/config/diting_100m.yml)
 
 set -e
 
 CONFIG=${1:?Usage: bash train_light.sh <config> [extra args...]}
 shift
 
-DITING_CONFIG=${DITING_CONFIG:-./diting/config/conf_reg.yml}
+DITING_CONFIG=${DITING_CONFIG:-./diting/config/diting_100m.yml}
 
 # Extract weight_path from config
 WEIGHT_PATH=$(python3 -c "import json; print(json.load(open('$CONFIG'))['training_params']['weight_path'])")
