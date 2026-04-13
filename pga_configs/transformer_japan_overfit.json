@@ -9,8 +9,7 @@
             500
         ],
         "output_mlp_dims": [
-            150,
-            10
+            64
         ],
         "output_location_dims": [
             150,
@@ -29,7 +28,7 @@
         "ffn_params": {
             "hidden_dim": 1000
         },
-        "transformer_layers": 6,
+        "transformer_layers": 2,
         "hidden_dropout": 0.0,
         "activation": "relu",
         "n_pga_targets": 15,
