@@ -43,14 +43,14 @@
         "bias_loc_sigma": 2,
         "event_token_init_range": 0.02,
         "no_event_token": false,
-        "waveform_scale_gain": 4.0,
+        "waveform_scale_gain": 1.0,
         "rotation_anchor": [37, 140]
     },
     "training_params": {
         "lr": 0.001,
         "clipnorm": 1.0,
         "epoch_sanity": true,
-        "epochs_full_model": 200,
+        "epochs_full_model": 300,
         "data_path": [
             "japan_overfit.hdf5"
         ],
@@ -58,7 +58,7 @@
         "weight_path": "weights_japan_overfit",
         "res_comps": ["pga"],
         "res_weight": [1.0],
-        "reinit_fpn": false,
+        "reinit_fpn": true,
         "lr_monitor": "train",
         "ensemble_rotation": false,
         "generator_params": [
