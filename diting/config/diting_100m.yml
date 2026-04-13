@@ -16,7 +16,7 @@ model_depth: 24
 # ViTAdapter architecture
 in_samples: 10000
 patch_size: 50
-num_interactions: 4
+num_interactions: 5
 out_channels: 256
 inter_mode: fpn_deep_5
 norm_layer: rmsnorm
