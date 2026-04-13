@@ -104,6 +104,33 @@ def module_grad_norm(module):
     return torch.sqrt(sq_sum)
 
 
+def module_grad_rms(module):
+    sq_sum = None
+    count = 0
+    for param in module.parameters():
+        if param.grad is None:
+            continue
+        grad = param.grad.detach()
+        grad_sq = torch.sum(grad ** 2)
+        sq_sum = grad_sq if sq_sum is None else sq_sum + grad_sq
+        count += grad.numel()
+    if sq_sum is None or count == 0:
+        return None
+    return torch.sqrt(sq_sum / count)
+
+
+def global_grad_norm(parameters):
+    sq_sum = None
+    for param in parameters:
+        if param.grad is None:
+            continue
+        grad_sq = torch.sum(param.grad.detach() ** 2)
+        sq_sum = grad_sq if sq_sum is None else sq_sum + grad_sq
+    if sq_sum is None:
+        return None
+    return torch.sqrt(sq_sum)
+
+
 def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
     if 'pga' not in output_layout:
         return {}
@@ -246,6 +273,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
                                                     pga_target_valid=pga_target_valid)
             loss.backward()
+            pre_clip_global_grad = global_grad_norm(model.parameters())
             if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
                 diag_scalars = {}
                 forward_diag = getattr(eval_model, '_last_diag', {})
@@ -259,22 +287,30 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
 
                 grad_targets = {
                     'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
+                    'grad_rms/station_adapter': module_grad_rms(eval_model.waveform_model[1]),
                     'grad/mlp_pga': module_grad_norm(eval_model.mlp_pga),
+                    'grad_rms/mlp_pga': module_grad_rms(eval_model.mlp_pga),
                     'grad/output_model_pga': module_grad_norm(eval_model.output_model_pga),
+                    'grad_rms/output_model_pga': module_grad_rms(eval_model.output_model_pga),
                 }
+                if pre_clip_global_grad is not None and not torch.isnan(pre_clip_global_grad).any():
+                    diag_scalars['grad/global_pre_clip_norm'] = pre_clip_global_grad.detach()
                 for key, value in grad_targets.items():
                     if value is not None and not torch.isnan(value).any():
                         diag_scalars[key] = value.detach()
-
-                for key, value in diag_scalars.items():
-                    writer.add_scalar(key, value.item(), epoch)
-                first_batch_logged = True
             if (not is_dist) or (is_dist and (rank == 0)):
                 writer.add_scalar('train/loss', loss.item(), global_step)
                 step_in_ep = global_step - steps_per_epoch * epoch
                 print(f'Step/Epoch {step_in_ep}/{epoch}, Loss: {loss.item():.4f}')
             if clipnorm is not None:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
+            post_clip_global_grad = global_grad_norm(model.parameters())
+            if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
+                if post_clip_global_grad is not None and not torch.isnan(post_clip_global_grad).any():
+                    diag_scalars['grad/global_post_clip_norm'] = post_clip_global_grad.detach()
+                for key, value in diag_scalars.items():
+                    writer.add_scalar(key, value.item(), epoch)
+                first_batch_logged = True
             optimizer.step()
             running_loss += loss.item()
             num_train_batches += 1

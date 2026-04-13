@@ -596,34 +596,39 @@ class DitingStationAdapter(nn.Module):
         self.proj_f3 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.proj_f4 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.proj_x = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
-        self.fuse = nn.Sequential(
-            nn.Conv1d(hidden_channels * 4, hidden_channels, kernel_size=3, padding=1),
-            nn.GELU(),
+        self.refine_f2 = nn.Sequential(
             nn.Conv1d(hidden_channels, hidden_channels, kernel_size=3, padding=1),
             nn.GELU(),
         )
-        self.pool = StatPool1d(hidden_channels)
-        self.proj_out = nn.Linear(hidden_channels, output_dim)
+        self.refine_f3 = nn.Sequential(
+            nn.Conv1d(hidden_channels, hidden_channels, kernel_size=3, padding=1),
+            nn.GELU(),
+        )
+        self.refine_f4 = nn.Sequential(
+            nn.Conv1d(hidden_channels, hidden_channels, kernel_size=3, padding=1),
+            nn.GELU(),
+        )
+        self.refine_x = nn.Sequential(
+            nn.Conv1d(hidden_channels, hidden_channels, kernel_size=3, padding=1),
+            nn.GELU(),
+        )
+        self.pool_f2 = StatPool1d(hidden_channels)
+        self.pool_f3 = StatPool1d(hidden_channels)
+        self.pool_f4 = StatPool1d(hidden_channels)
+        self.pool_x = StatPool1d(hidden_channels)
+        self.proj_out = nn.Linear(hidden_channels * 4, output_dim)
         self.norm = nn.LayerNorm(output_dim)
-
-    def _resize_to(self, x, target_len):
-        if x.shape[-1] == target_len:
-            return x
-        return F.interpolate(x, size=target_len, mode='linear', align_corners=False)
 
     def forward(self, inputs):
         f2, f3, f4, x = inputs
         x = x.transpose(1, 2).contiguous()
-        target_len = f2.shape[-1]
 
-        feats = [
-            self.proj_f2(f2),
-            self._resize_to(self.proj_f3(f3), target_len),
-            self._resize_to(self.proj_f4(f4), target_len),
-            self._resize_to(self.proj_x(x), target_len),
-        ]
-        fused = self.fuse(torch.cat(feats, dim=1))
-        pooled = self.pool(fused).squeeze(-1)
+        branch_f2 = self.pool_f2(self.refine_f2(self.proj_f2(f2))).squeeze(-1)
+        branch_f3 = self.pool_f3(self.refine_f3(self.proj_f3(f3))).squeeze(-1)
+        branch_f4 = self.pool_f4(self.refine_f4(self.proj_f4(f4))).squeeze(-1)
+        branch_x = self.pool_x(self.refine_x(self.proj_x(x))).squeeze(-1)
+
+        pooled = torch.cat([branch_f2, branch_f3, branch_f4, branch_x], dim=-1)
         return self.norm(self.proj_out(pooled.float()))
 
 
