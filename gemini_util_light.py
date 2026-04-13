@@ -438,6 +438,7 @@ class PreloadedEventGenerator(Dataset):
                 )
 
         org_waveform_length = waveforms.shape[2]
+        raw_p_picks = p_picks.copy()
         if self.cutout:
             if self.sliding_window:
                 windowlen = self.windowlen
@@ -630,7 +631,12 @@ class PreloadedEventGenerator(Dataset):
             inputs += [pga_targets, pga_target_valid_t]
             outputs += [pga_values]
 
-        return inputs, outputs, p_picks
+        p_pick_info = {
+            'shifted': torch.from_numpy(p_picks[0]).float(),
+            'raw': torch.from_numpy(raw_p_picks[0]).float(),
+            'shift': torch.tensor(float(shift), dtype=torch.float32),
+        }
+        return inputs, outputs, p_pick_info
 
     def on_epoch_end(self):
         self.indexes = np.repeat(self.base_indexes.copy(), self.oversample, axis=0)

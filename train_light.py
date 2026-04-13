@@ -222,15 +222,41 @@ def collect_input_stats(inputs, labels, p_picks):
         })
 
     if p_picks is not None:
-        p_picks = p_picks.to(waveforms.device)
-        p_pick_valid = p_picks > 0
-        stats['data/p_pick_valid_count_mean'] = p_pick_valid.float().sum(dim=1).mean().detach()
-        if p_pick_valid.any():
-            valid_p = p_picks[p_pick_valid]
+        if isinstance(p_picks, dict):
+            shifted_p_picks = p_picks['shifted'].to(waveforms.device)
+            raw_p_picks = p_picks['raw'].to(waveforms.device)
+            shift_values = p_picks['shift'].to(waveforms.device)
+        else:
+            shifted_p_picks = p_picks.to(waveforms.device)
+            raw_p_picks = shifted_p_picks
+            shift_values = None
+
+        raw_p_pick_valid = raw_p_picks > 0
+        stats['data/raw_p_pick_valid_count_mean'] = raw_p_pick_valid.float().sum(dim=1).mean().detach()
+        stats['data/raw_p_pick_missing_ratio'] = (~raw_p_pick_valid).float().mean().detach()
+        if raw_p_pick_valid.any():
+            raw_valid_p = raw_p_picks[raw_p_pick_valid]
             stats.update({
-                'data/p_pick_mean': valid_p.mean().detach(),
-                'data/p_pick_min': valid_p.min().detach(),
-                'data/p_pick_max': valid_p.max().detach(),
+                'data/raw_p_pick_mean': raw_valid_p.mean().detach(),
+                'data/raw_p_pick_min': raw_valid_p.min().detach(),
+                'data/raw_p_pick_max': raw_valid_p.max().detach(),
+            })
+
+        shifted_p_pick_valid = raw_p_pick_valid
+        stats['data/p_pick_valid_count_mean'] = shifted_p_pick_valid.float().sum(dim=1).mean().detach()
+        if shifted_p_pick_valid.any():
+            shifted_valid_p = shifted_p_picks[shifted_p_pick_valid]
+            stats.update({
+                'data/p_pick_mean': shifted_valid_p.mean().detach(),
+                'data/p_pick_min': shifted_valid_p.min().detach(),
+                'data/p_pick_max': shifted_valid_p.max().detach(),
+            })
+
+        if shift_values is not None:
+            stats.update({
+                'data/p_pick_shift_mean': shift_values.mean().detach(),
+                'data/p_pick_shift_min': shift_values.min().detach(),
+                'data/p_pick_shift_max': shift_values.max().detach(),
             })
 
     return stats

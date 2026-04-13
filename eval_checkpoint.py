@@ -30,6 +30,13 @@ import loader_light as loader
 from train_light import build_diting_args as load_diting_args
 
 
+def shifted_p_picks_array(p_picks):
+    if isinstance(p_picks, dict):
+        shifted = p_picks.get('shifted')
+        return shifted.numpy() if isinstance(shifted, torch.Tensor) else np.array(shifted)
+    return p_picks.numpy() if isinstance(p_picks, torch.Tensor) else np.array(p_picks)
+
+
 def build_model_and_load(config, diting_args, checkpoint_path, device):
     """Build model and load checkpoint."""
     full_model = models.build_transformer_model(
@@ -429,7 +436,7 @@ def run_inference(model, dataset, device):
                     best = np.argmax(alpha)
                     results[f'{name}_mu_best'].append(mu[best])
 
-        results['p_picks'].append(p_picks.numpy() if isinstance(p_picks, torch.Tensor) else np.array(p_picks))
+        results['p_picks'].append(shifted_p_picks_array(p_picks))
 
     return dict(results)
 
