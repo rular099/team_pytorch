@@ -813,6 +813,20 @@ class FullModel(nn.Module):
         return x.norm(dim=-1).mean()
 
     @staticmethod
+    def _masked_pairwise_cosine_between(x, y, mask):
+        vals = []
+        for sample_x, sample_y, valid in zip(x, y, mask):
+            vx = sample_x[valid]
+            vy = sample_y[valid]
+            if vx.shape[0] == 0:
+                continue
+            cos = F.cosine_similarity(vx, vy, dim=-1)
+            vals.append(cos.mean())
+        if not vals:
+            return x.new_tensor(float('nan'))
+        return torch.stack(vals).mean()
+
+    @staticmethod
     def _masked_pairwise_cosine_mean(x, mask):
         vals = []
         for sample, valid in zip(x, mask):
@@ -864,12 +878,16 @@ class FullModel(nn.Module):
         waveforms_masked = waveform_inp * sv[:, :, None, None].float()
         coords_masked = metadata_inp * sv[:, :, None].float()
 
-        waveforms_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
+        raw_station_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
         scale_emb = None
+        preln_wave_emb = raw_station_emb
         if self.waveform_scale_proj is not None:
             scale_emb = self.waveform_scale_proj(self._extract_scale(raw_waveform))
-            waveforms_emb = waveforms_emb + self.waveform_scale_gain * scale_emb
-        waveforms_emb = self.layernorm(waveforms_emb)
+            gain_scale_emb = self.waveform_scale_gain * scale_emb
+            preln_wave_emb = preln_wave_emb + gain_scale_emb
+        else:
+            gain_scale_emb = None
+        waveforms_emb = self.layernorm(preln_wave_emb)
 
         if not self.alternative_coords_embedding:
             coords_emb = self.position_embedding(coords_masked)
@@ -878,6 +896,8 @@ class FullModel(nn.Module):
             emb = torch.cat([waveforms_emb, coords_masked], dim=-1)
 
         self._last_diag = {
+            'station_adapter_raw_norm': self._mean_token_norm(raw_station_emb).detach(),
+            'preln_wave_emb_norm': self._mean_token_norm(preln_wave_emb).detach(),
             'wave_emb_norm': self._mean_token_norm(waveforms_emb).detach(),
             'station_emb_norm': self._mean_token_norm(emb).detach(),
             'station_emb_cosine_mean': self._masked_pairwise_cosine_mean(emb, sv).detach(),
@@ -885,7 +905,13 @@ class FullModel(nn.Module):
         if scale_emb is not None:
             scale_norm = self._mean_token_norm(scale_emb)
             self._last_diag['scale_emb_norm'] = scale_norm.detach()
-            self._last_diag['scale_trunk_ratio'] = (scale_norm / (self._mean_token_norm(waveforms_emb) + 1e-8)).detach()
+            gain_scale_norm = self._mean_token_norm(gain_scale_emb)
+            raw_trunk_norm = self._mean_token_norm(raw_station_emb)
+            self._last_diag['gain_scale_emb_norm'] = gain_scale_norm.detach()
+            self._last_diag['scale_trunk_ratio'] = (gain_scale_norm / (raw_trunk_norm + 1e-8)).detach()
+            self._last_diag['raw_trunk_scale_cosine'] = self._masked_pairwise_cosine_between(
+                raw_station_emb, gain_scale_emb, sv
+            ).detach()
         if not self.alternative_coords_embedding:
             self._last_diag['coords_emb_norm'] = self._mean_token_norm(coords_emb).detach()
 
