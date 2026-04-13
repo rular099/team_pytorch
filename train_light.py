@@ -259,7 +259,6 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
 
                 grad_targets = {
                     'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
-                    'grad/dt2team': module_grad_norm(eval_model.waveform_model.dt2team),
                     'grad/mlp_pga': module_grad_norm(eval_model.mlp_pga),
                     'grad/output_model_pga': module_grad_norm(eval_model.output_model_pga),
                 }
@@ -705,7 +704,7 @@ if __name__ == '__main__':
             transfer_weights(full_model, training_params['transfer_model_path'],
                              ensemble_load=ensemble_load, wait_for_load=wait_for_load, ens_id=ens_id)
 
-        # Freeze diting encoder (ViTAdapter); keep station adapter + dt2team trainable.
+        # Freeze diting encoder (ViTAdapter); keep station adapter trainable.
         raw_full = full_model.module if is_dist else full_model
         for param in raw_full.waveform_model[0].parameters():
             param.requires_grad = False
@@ -727,18 +726,11 @@ if __name__ == '__main__':
                     if module.bias is not None:
                         nn.init.constant_(module.bias, 0)
 
-        # Always re-initialize dt2team MLP
-        dt2team = raw_full.waveform_model.dt2team
-        for name, module in dt2team.named_modules():
-            if isinstance(module, nn.Linear):
-                nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
         if rank == 0:
             if reinit_fpn:
-                print('Re-initialized station adapter and dt2team')
+                print('Re-initialized station adapter')
             else:
-                print('Kept current station adapter initialization; re-initialized dt2team only')
+                print('Kept current station adapter initialization')
 
         no_event_token = config['model_params'].get('no_event_token', False)
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, full_model.parameters()), lr=training_params['lr'])

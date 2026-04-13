@@ -588,21 +588,23 @@ class StatPool1d(nn.Module):
 
 class DitingStationAdapter(nn.Module):
     """Light multi-scale adapter from ViTAdapter features to station embeddings."""
-    def __init__(self, encoder_dim, out_channels):
+    def __init__(self, encoder_dim, hidden_channels, output_dim):
         super().__init__()
-        self.out_channels = out_channels
-        self.proj_f2 = nn.Conv1d(encoder_dim, out_channels, kernel_size=1)
-        self.proj_f3 = nn.Conv1d(encoder_dim, out_channels, kernel_size=1)
-        self.proj_f4 = nn.Conv1d(encoder_dim, out_channels, kernel_size=1)
-        self.proj_x = nn.Conv1d(encoder_dim, out_channels, kernel_size=1)
+        self.hidden_channels = hidden_channels
+        self.output_dim = output_dim
+        self.proj_f2 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
+        self.proj_f3 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
+        self.proj_f4 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
+        self.proj_x = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.fuse = nn.Sequential(
-            nn.Conv1d(out_channels * 4, out_channels, kernel_size=3, padding=1),
+            nn.Conv1d(hidden_channels * 4, hidden_channels, kernel_size=3, padding=1),
             nn.GELU(),
-            nn.Conv1d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv1d(hidden_channels, hidden_channels, kernel_size=3, padding=1),
             nn.GELU(),
         )
-        self.pool = StatPool1d(out_channels)
-        self.norm = nn.LayerNorm(out_channels)
+        self.pool = StatPool1d(hidden_channels)
+        self.proj_out = nn.Linear(hidden_channels, output_dim)
+        self.norm = nn.LayerNorm(output_dim)
 
     def _resize_to(self, x, target_len):
         if x.shape[-1] == target_len:
@@ -622,7 +624,7 @@ class DitingStationAdapter(nn.Module):
         ]
         fused = self.fuse(torch.cat(feats, dim=1))
         pooled = self.pool(fused).squeeze(-1)
-        return self.norm(pooled.float())
+        return self.norm(self.proj_out(pooled.float()))
 
 
 class GlobalMaxPooling1DMasked(nn.Module):
@@ -998,7 +1000,7 @@ class FullModel(nn.Module):
 
         return outputs
 
-def get_diting_model(args):
+def get_diting_model(args, station_emb_dim):
     """Build diting model (ViTAdapter + light station adapter) with muP and pretrained weights.
 
     Uses the ditingbench approach for model construction and weight loading.
@@ -1020,7 +1022,11 @@ def get_diting_model(args):
         use_extra_extractor=use_extra_extractor,
         out_x=True,
     )
-    base_head = DitingStationAdapter(encoder_dim=base_encoder.backbone.d_model, out_channels=args.out_channels)
+    base_head = DitingStationAdapter(
+        encoder_dim=base_encoder.backbone.d_model,
+        hidden_channels=args.out_channels,
+        output_dim=station_emb_dim,
+    )
     base_model = nn.Sequential(base_encoder, base_head)
 
     # Build target model
@@ -1032,7 +1038,11 @@ def get_diting_model(args):
         use_extra_extractor=use_extra_extractor,
         out_x=True,
     )
-    target_head = DitingStationAdapter(encoder_dim=target_encoder.backbone.d_model, out_channels=args.out_channels)
+    target_head = DitingStationAdapter(
+        encoder_dim=target_encoder.backbone.d_model,
+        hidden_channels=args.out_channels,
+        output_dim=station_emb_dim,
+    )
     model = nn.Sequential(target_encoder, target_head)
 
     # muP: set base shapes
@@ -1113,9 +1123,7 @@ def build_transformer_model(max_stations,
 #    waveform_model = NormalizedScaleEmbedding(input_shape, downsample=downsample, activation=activation,
 #                                              mlp_dims=waveform_model_dims)
 #    mlp_mag_single_station = MLP((waveform_model.mlp.mlp[-1].out_features,), output_mlp_dims, activation=activation) #Modified line
-    waveform_model = get_diting_model(diting_args)
-    dt2team = MLP((diting_args.out_channels,), [diting_args.out_channels, waveform_model_dims[-1]], activation=activation)
-    waveform_model.add_module('dt2team', dt2team)
+    waveform_model = get_diting_model(diting_args, station_emb_dim=waveform_model_dims[-1])
 
     #   Event model
 
