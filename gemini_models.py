@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
-from mup import set_base_shapes
+from mup import MuReadout, set_base_shapes
 
 from dtbench.models.diting.models.vit_adapter import ViTAdapter
 from dtbench.models.diting.models.backbone_ablation import get_encoder_size_dict
@@ -592,7 +592,7 @@ class DitingStationAdapter(nn.Module):
         super().__init__()
         self.hidden_channels = hidden_channels
         self.output_dim = output_dim
-        self.base_proj = nn.Linear(encoder_dim, output_dim, bias=False)
+        self.base_proj = MuReadout(encoder_dim, output_dim, bias=False)
         self.proj_f2 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.proj_f3 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.proj_f4 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
