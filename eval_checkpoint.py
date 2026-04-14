@@ -109,7 +109,7 @@ def build_datasets(config, overfit_n=0):
             gp['selection_skew'] = None
             gp['oversample'] = 1
             gp['magnitude_resampling'] = 1.0
-            gp['select_first'] = False
+            gp['select_first'] = True
             gp['cutout_start'] = fixed_cutout
             gp['cutout_end'] = fixed_cutout
 
