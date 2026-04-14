@@ -592,6 +592,7 @@ class DitingStationAdapter(nn.Module):
         super().__init__()
         self.hidden_channels = hidden_channels
         self.output_dim = output_dim
+        self.base_proj = nn.Linear(encoder_dim, output_dim, bias=False)
         self.proj_f2 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.proj_f3 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.proj_f4 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
@@ -617,11 +618,22 @@ class DitingStationAdapter(nn.Module):
         self.pool_f4 = StatPool1d(hidden_channels)
         self.pool_x = StatPool1d(hidden_channels)
         self.proj_out = nn.Linear(hidden_channels * 4, output_dim)
+        self.delta_scale = nn.Parameter(torch.tensor(0.1, dtype=torch.float32))
         self.norm = nn.LayerNorm(output_dim)
+        self._init_preserving_path()
+
+    def _init_preserving_path(self):
+        nn.init.zeros_(self.base_proj.weight)
+        diag = min(self.output_dim, self.base_proj.in_features)
+        with torch.no_grad():
+            self.base_proj.weight[:diag, :diag] = torch.eye(diag)
+        nn.init.normal_(self.proj_out.weight, mean=0.0, std=1e-3)
+        nn.init.zeros_(self.proj_out.bias)
 
     def forward(self, inputs):
         f2, f3, f4, x = inputs
         x = x.transpose(1, 2).contiguous()
+        base = self.base_proj(x.mean(dim=-1).float())
 
         branch_f2 = self.pool_f2(self.refine_f2(self.proj_f2(f2))).squeeze(-1)
         branch_f3 = self.pool_f3(self.refine_f3(self.proj_f3(f3))).squeeze(-1)
@@ -629,7 +641,8 @@ class DitingStationAdapter(nn.Module):
         branch_x = self.pool_x(self.refine_x(self.proj_x(x))).squeeze(-1)
 
         pooled = torch.cat([branch_f2, branch_f3, branch_f4, branch_x], dim=-1)
-        return self.norm(self.proj_out(pooled.float()))
+        delta = self.proj_out(pooled.float())
+        return self.norm(base + self.delta_scale * delta)
 
 
 class GlobalMaxPooling1DMasked(nn.Module):
