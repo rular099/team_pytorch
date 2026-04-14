@@ -44,6 +44,7 @@
         "event_token_init_range": 0.02,
         "no_event_token": false,
         "waveform_scale_gain": 1.0,
+        "disable_waveform_scale": true,
         "rotation_anchor": [37, 140]
     },
     "training_params": {

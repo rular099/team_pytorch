@@ -104,3 +104,59 @@ Benefits:
 Files to modify:
   - `gemini_util_light.py`: `PreloadedEventGenerator` target sampling logic
   - Config: expose ratios / modes for observed vs inactive vs arbitrary-coordinate PGA targets
+
+## Two-stage training to reduce amplitude shortcut domination
+
+Hypothesis:
+  - PGA is strongly correlated with amplitude scale.
+  - The current end-to-end objective lets the back-end exploit this shortcut too early.
+  - `station_adapter` then receives weak credit and collapses.
+
+Goal:
+  - first train `station_adapter` to produce usable station-level waveform embeddings
+  - then fine-tune the full event-level model
+
+Suggested staged training:
+
+### Stage 1: station adapter warm-up
+
+Trainable:
+  - `waveform_model[1]` (`station_adapter`)
+
+Frozen:
+  - `waveform_model[0]` (`ViTAdapter`)
+  - TEAM transformer
+  - `mlp_pga`
+  - `output_model_pga`
+  - other event-level heads
+
+Auxiliary supervision:
+  - add a small station-level PGA head on top of station embeddings
+  - predict per-station scalar PGA with masked L1 or MSE
+  - only use valid stations
+
+Suggested defaults:
+  - `phase1_epochs = 20~50`
+  - auxiliary loss weight `= 1.0`
+  - `lr = 3e-4`
+
+### Stage 2: joint fine-tuning
+
+Trainable:
+  - `station_adapter`
+  - TEAM transformer
+  - `mlp_pga`
+  - `output_model_pga`
+
+Loss:
+  - normal event-level PGA loss
+  - optionally keep station-level auxiliary loss with small weight
+
+Suggested defaults:
+  - auxiliary loss weight `= 0.1`
+  - `lr = 1e-4 ~ 3e-4`
+
+Why this is useful:
+  - directly tests whether current failure is mainly a credit-assignment problem
+  - if stage 1 still collapses, adapter structure is likely the main bottleneck
+  - if stage 1 works but stage 2 re-collapses, the back-end shortcut is likely the bottleneck
