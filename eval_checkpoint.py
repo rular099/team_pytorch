@@ -26,8 +26,8 @@ import gemini_models as models
 import gemini_util_light as util
 import loader_light as loader
 
-# Reuse the same build_diting_args from train_light.py
-from train_light import build_diting_args as load_diting_args
+# Reuse the same build_diting_args / subset_events from train_light.py
+from train_light import build_diting_args as load_diting_args, subset_events
 
 
 def shifted_p_picks_array(p_picks):
@@ -92,14 +92,14 @@ def build_datasets(config, overfit_n=0):
     metadata_dev = [d[2] for d in full_data_dev]
 
     if overfit_n > 0:
-        def subset_by_events(meta, n):
-            for k in ['KiK_File', '#EventID', 'EVENT']:
-                if k in meta.columns:
-                    break
-            unique_events = meta[k].unique()[:n]
-            return meta[meta[k].isin(unique_events)].copy()
-        event_metadata_train = [subset_by_events(meta, overfit_n) for meta in event_metadata_train]
-        event_metadata_dev = [subset_by_events(meta, overfit_n) for meta in event_metadata_dev]
+        event_metadata_train = [
+            subset_events(meta, overfit_n, g.get('key', 'MA'))
+            for meta, g in zip(event_metadata_train, generator_params)
+        ]
+        event_metadata_dev = [
+            subset_events(meta, overfit_n, g.get('key', 'MA'))
+            for meta, g in zip(event_metadata_dev, generator_params)
+        ]
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for gp in generator_params:
             fixed_cutout = gp.get('cutout_end', gp.get('cutout_start', 0))
@@ -508,6 +508,13 @@ def print_summary(results, split_name):
                 if len(all_l) > 1:
                     corr = np.corrcoef(all_l, all_p)[0, 1]
                     print(f'  Correlation: {corr:.4f}')
+                    ss_res = np.sum((all_p - all_l) ** 2)
+                    ss_tot = np.sum((all_l - np.mean(all_l)) ** 2)
+                    if ss_tot > 0:
+                        r2 = 1.0 - ss_res / ss_tot
+                        print(f'  R^2: {r2:.4f}')
+                    slope, intercept = np.polyfit(all_l, all_p, 1)
+                    print(f'  Linear fit: pred = {slope:.4f} * label + {intercept:.4f}')
             else:
                 print(f'  No valid PGA targets found')
 

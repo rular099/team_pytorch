@@ -77,15 +77,42 @@ def build_diting_args(diting_config_path, device='cpu', distributed=False):
     return diting_args
 
 
-def subset_events(event_metadata, n):
-    """Subset to the first n *events* (not rows). event_metadata is station-level."""
+def subset_events(event_metadata, n, mag_key=None):
+    """Subset to n events, preferring a wide magnitude spread when possible."""
     if n is None:
         return event_metadata
     if hasattr(event_metadata, "columns"):
-        for event_key in ['KiK_File', '#EventID', 'EVENT']:
-            if event_key in event_metadata.columns:
-                unique_events = event_metadata[event_key].unique()[:n]
-                return event_metadata[event_metadata[event_key].isin(unique_events)].copy()
+        event_key = None
+        for key in ['KiK_File', '#EventID', 'EVENT']:
+            if key in event_metadata.columns:
+                event_key = key
+                break
+        if event_key is None:
+            return event_metadata.iloc[:n].copy() if hasattr(event_metadata, "iloc") else event_metadata[:n]
+
+        event_ids = event_metadata[event_key].unique()
+        if len(event_ids) <= n:
+            return event_metadata[event_metadata[event_key].isin(event_ids)].copy()
+
+        if mag_key is not None and mag_key in event_metadata.columns:
+            grouped = event_metadata.groupby(event_key)[mag_key].mean()
+            mags = grouped.reindex(event_ids).to_numpy(dtype=float)
+            selected = [int(np.nanargmin(mags))]
+            if n > 1:
+                selected.append(int(np.nanargmax(mags)))
+            selected = list(dict.fromkeys(selected))
+            while len(selected) < n:
+                remaining = [i for i in range(len(event_ids)) if i not in selected]
+                if not remaining:
+                    break
+                rem = mags[remaining][:, None]
+                sel = mags[selected][None, :]
+                dist = np.min(np.abs(rem - sel), axis=1)
+                selected.append(remaining[int(np.argmax(dist))])
+            chosen_events = event_ids[selected]
+        else:
+            chosen_events = event_ids[:n]
+        return event_metadata[event_metadata[event_key].isin(chosen_events)].copy()
     # Fallback for non-DataFrame
     if hasattr(event_metadata, "iloc"):
         return event_metadata.iloc[:n].copy()
@@ -178,6 +205,7 @@ def collect_input_stats(inputs, labels, p_picks):
     station_valid = inputs[2].bool() if len(inputs) > 2 else None
     pga_targets = inputs[3] if len(inputs) > 3 else None
     pga_target_valid = inputs[4].bool() if len(inputs) > 4 else None
+    event_mag = labels[0] if isinstance(labels, list) and len(labels) > 0 else None
     pga_labels = labels[-1] if isinstance(labels, list) and len(labels) > 0 else None
 
     abs_wave = waveforms.abs()
@@ -213,6 +241,15 @@ def collect_input_stats(inputs, labels, p_picks):
         stats.update({
             'data/pga_target_valid_count_mean': pga_target_valid.float().sum(dim=1).mean().detach(),
             'data/pga_target_valid_ratio': pga_target_valid.float().mean().detach(),
+        })
+
+    if event_mag is not None and event_mag.shape[-1] == 1:
+        event_mag_vals = event_mag.float().reshape(event_mag.shape[0], -1).mean(dim=1)
+        stats.update({
+            'data/event_mag_mean': event_mag_vals.mean().detach(),
+            'data/event_mag_std': event_mag_vals.std(unbiased=False).detach(),
+            'data/event_mag_min': event_mag_vals.min().detach(),
+            'data/event_mag_max': event_mag_vals.max().detach(),
         })
 
     if pga_labels is not None:
@@ -677,8 +714,14 @@ if __name__ == '__main__':
     metadata_dev = [d[2] for d in full_data_dev]
 
     if args.overfit_n > 0:
-        event_metadata_train = [subset_events(meta, args.overfit_n) for meta in event_metadata_train]
-        event_metadata_dev = [subset_events(meta, args.overfit_n) for meta in event_metadata_dev]
+        event_metadata_train = [
+            subset_events(meta, args.overfit_n, generator.get('key', 'MA'))
+            for meta, generator in zip(event_metadata_train, generator_params)
+        ]
+        event_metadata_dev = [
+            subset_events(meta, args.overfit_n, generator.get('key', 'MA'))
+            for meta, generator in zip(event_metadata_dev, generator_params)
+        ]
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for generator_param in generator_params:
             fixed_cutout = generator_param.get('cutout_end', generator_param.get('cutout_start', 0))
