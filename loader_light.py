@@ -3,6 +3,13 @@ import pandas as pd
 import h5py
 import os
 
+EVENT_KEY_CANDIDATES = ['KiK_File', '#EventID', 'EVENT']
+MAGNITUDE_KEY_ALIASES = {
+    'M_J': ['Magnitude'],
+    'MA': ['Magnitude'],
+    'Magnitude': ['M_J', 'MA'],
+}
+
 
 class TrainDevTestSplitter:
     @staticmethod
@@ -77,17 +84,62 @@ def _read_event_metadata_h5(data_path):
     # Fallback: pytables format
     return pd.read_hdf(data_path, 'metadata/event_metadata')
 
-def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate=None):
-    event_metadata = _read_event_metadata_h5(data_path)
-    for event_key in ['KiK_File', '#EventID', 'EVENT']:
-        if event_key in event_metadata.columns:
-            break
+
+def _read_metadata_table_h5(data_path, table_name):
+    with h5py.File(data_path, 'r') as f:
+        table = f[f'metadata/{table_name}']
+        if isinstance(table, h5py.Group):
+            cols = {}
+            for col_name in table.keys():
+                vals = table[col_name][()]
+                if vals.dtype.kind == 'S':
+                    vals = np.array([v.decode() for v in vals])
+                cols[col_name] = vals
+            return pd.DataFrame(cols)
+    return pd.read_hdf(data_path, f'metadata/{table_name}')
+
+
+def detect_event_key(columns):
+    for event_key in EVENT_KEY_CANDIDATES:
+        if event_key in columns:
+            return event_key
+    raise ValueError(f'Unable to find event key column in {list(columns)}')
+
+
+def resolve_target_key(columns, requested_key):
+    if requested_key is None or requested_key in columns:
+        return requested_key
+    for alias in MAGNITUDE_KEY_ALIASES.get(requested_key, []):
+        if alias in columns:
+            return alias
+    return requested_key
+
+
+def _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=1):
+    kept_rows = []
+    with h5py.File(data_path, 'r') as f:
+        for idx, event in event_metadata.iterrows():
+            event_name = str(event[event_key])
+            if event_name not in f['data']:
+                continue
+            g_event = f['data'][event_name]
+            if 'waveforms' not in g_event:
+                continue
+            n_stations = g_event['waveforms'][:, ::decimate, :].shape[0]
+            wave_idx = event.get('wave_idx', None)
+            if pd.isna(wave_idx):
+                kept_rows.append(idx)
+            elif int(wave_idx) < n_stations:
+                kept_rows.append(idx)
+    return event_metadata.loc[kept_rows].reset_index(drop=True)
+
+
+def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate=None, min_stalta_ratio_at_pick=None):
     metadata = {}
     with h5py.File(data_path, 'r') as f:
         for key in f['metadata'].keys():
-            if key == 'event_metadata':
+            if key in ('event_metadata', 'station_metadata'):
                 continue
-            #metadata[key] = f['metadata'][key].value
             metadata[key] = f['metadata'][key][()]
 
         if overwrite_sampling_rate is not None:
@@ -98,30 +150,39 @@ def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate
             metadata['sampling_rate'] = overwrite_sampling_rate
         else:
             decimate = 1
-        skipped = 0
-        contained = []
-        n_rec_per_event = []
-        for _, event in event_metadata.iterrows():
-            event_name = str(event[event_key])
-            if event_name not in f['data']:
-                skipped += 1
-                contained += [False]
-                continue
-            contained += [True]
-            g_event = f['data'][event_name]
-            for key in g_event:
-                if key == 'waveforms':
-                    cur_waveform = g_event[key][:, ::decimate, :]
+
+        if 'station_metadata' in f['metadata']:
+            event_metadata = _read_metadata_table_h5(data_path, 'station_metadata')
+        else:
+            event_metadata = _read_event_metadata_h5(data_path)
+            event_key = detect_event_key(event_metadata.columns)
+            contained = []
+            n_rec_per_event = []
+            for _, event in event_metadata.iterrows():
+                event_name = str(event[event_key])
+                if event_name not in f['data']:
+                    contained += [False]
+                    continue
+                contained += [True]
+                g_event = f['data'][event_name]
+                if 'waveforms' in g_event:
+                    cur_waveform = g_event['waveforms'][:, ::decimate, :]
                     n_rec_per_event.append(cur_waveform.shape[0])
-    event_metadata = event_metadata[contained].reset_index(drop=True)
-    event_metadata = event_metadata.loc[event_metadata.index.repeat(n_rec_per_event)].reset_index(drop=True)
-    wave_idx_per_event = np.concatenate([np.arange(i) for i in n_rec_per_event])
-    event_metadata['wave_idx'] = wave_idx_per_event
+            event_metadata = event_metadata[contained].reset_index(drop=True)
+            event_metadata = event_metadata.loc[event_metadata.index.repeat(n_rec_per_event)].reset_index(drop=True)
+            wave_idx_per_event = np.concatenate([np.arange(i) for i in n_rec_per_event]) if n_rec_per_event else np.array([], dtype=int)
+            event_metadata['wave_idx'] = wave_idx_per_event
+
+    event_key = detect_event_key(event_metadata.columns)
+    event_metadata = _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=decimate)
+    if min_stalta_ratio_at_pick is not None and 'stalta_ratio_at_pick' in event_metadata.columns:
+        event_metadata = event_metadata[event_metadata['stalta_ratio_at_pick'] >= min_stalta_ratio_at_pick].reset_index(drop=True)
     event_metadata.to_csv(event_metadata_path, index=False)
     return event_metadata
 
 def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=None, parts=None, shuffle_train_dev=False, custom_split=None, data_keys=None,
-                overwrite_sampling_rate=None, min_mag=None, mag_key=None, decimate_events=None):
+                overwrite_sampling_rate=None, min_mag=None, mag_key=None, decimate_events=None,
+                min_stalta_ratio_at_pick=0.1):
     if min_mag is not None and mag_key is None:
         raise ValueError('mag_key needs to be set to enforce magnitude threshold')
     if isinstance(data_paths, str):
@@ -132,18 +193,19 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
 
     # Derive cache path from data_path to avoid stale CSV when switching datasets
     import hashlib
-    data_hash = hashlib.md5(os.path.abspath(data_path).encode()).hexdigest()[:8]
+    cache_token = f'{os.path.abspath(data_path)}|stationmeta_v2|{overwrite_sampling_rate}|{min_stalta_ratio_at_pick}'
+    data_hash = hashlib.md5(cache_token.encode()).hexdigest()[:8]
     base, ext = os.path.splitext(event_metadata_path)
     event_metadata_path = f'{base}_{data_hash}{ext}'
 
     if not os.path.exists(event_metadata_path):
-        build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate)
+        build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate,
+                             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
     event_metadata = pd.read_csv(event_metadata_path)
+    resolved_mag_key = resolve_target_key(event_metadata.columns, mag_key)
     if min_mag is not None:
-        event_metadata = event_metadata[event_metadata[mag_key] >= min_mag]
-    for event_key in ['KiK_File', '#EventID', 'EVENT']:
-        if event_key in event_metadata.columns:
-            break
+        event_metadata = event_metadata[event_metadata[resolved_mag_key] >= min_mag]
+    event_key = detect_event_key(event_metadata.columns)
 
     if limit:
         event_metadata = event_metadata.iloc[:limit]
@@ -165,9 +227,8 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
 
     with h5py.File(data_path, 'r') as f:
         for key in f['metadata'].keys():
-            if key == 'event_metadata':
+            if key in ('event_metadata', 'station_metadata'):
                 continue
-            #metadata[key] = f['metadata'][key].value
             metadata[key] = f['metadata'][key][()]
 
         if overwrite_sampling_rate is not None:
@@ -179,26 +240,12 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
         else:
             decimate = 1
 
-        skipped = 0
-        contained = []
-        n_rec_per_event = []
-        for _, event in event_metadata.iterrows():
-            event_name = str(event[event_key])
-            if event_name not in f['data']:
-                skipped += 1
-                contained += [False]
-                continue
-            contained += [True]
-            g_event = f['data'][event_name]
-            for key in g_event:
-                if key == 'waveforms':
-                    cur_waveform = g_event[key][:, ::decimate, :]
-                    n_rec_per_event.append(cur_waveform.shape[0])
+    event_metadata = _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=decimate)
+    if min_stalta_ratio_at_pick is not None and 'stalta_ratio_at_pick' in event_metadata.columns:
+        event_metadata = event_metadata[event_metadata['stalta_ratio_at_pick'] >= min_stalta_ratio_at_pick].reset_index(drop=True)
 
-        if len(contained) < len(event_metadata):
-            contained += [True for _ in range(len(event_metadata) - len(contained))]
-        event_metadata = event_metadata[contained]
-        if skipped > 0:
-            print(f'Skipped {skipped} events')
+    metadata['resolved_mag_key'] = resolved_mag_key
+    metadata['event_key'] = event_key
+    metadata['min_stalta_ratio_at_pick'] = min_stalta_ratio_at_pick
 
     return event_metadata, data, metadata

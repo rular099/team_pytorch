@@ -7,6 +7,7 @@ import yaml
 import random
 import h5py
 import copy
+import pandas as pd
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import pickle
 import argparse
@@ -77,43 +78,73 @@ def build_diting_args(diting_config_path, device='cpu', distributed=False):
     return diting_args
 
 
-def subset_events(event_metadata, n, mag_key=None):
-    """Subset to n events, preferring a wide magnitude spread when possible."""
+def select_diverse_event_ids(event_metadata, n, mag_key=None):
+    if n is None:
+        return None
+    if not hasattr(event_metadata, "columns"):
+        return None
+    event_key = loader.detect_event_key(event_metadata.columns)
+    unique_events = event_metadata.drop_duplicates(subset=event_key, keep='first').copy()
+    event_ids = unique_events[event_key].to_numpy()
+    if len(event_ids) <= n:
+        return event_ids
+
+    feature_cols = []
+    resolved_mag_key = loader.resolve_target_key(unique_events.columns, mag_key)
+    if resolved_mag_key in unique_events.columns:
+        feature_cols.append(resolved_mag_key)
+    for coord_key in util.detect_location_keys(unique_events.columns):
+        if coord_key in unique_events.columns and coord_key not in feature_cols:
+            feature_cols.append(coord_key)
+
+    if not feature_cols:
+        return event_ids[:n]
+
+    feature_df = unique_events[feature_cols].apply(pd.to_numeric, errors='coerce')
+    valid_mask = ~feature_df.isna().all(axis=1)
+    feature_df = feature_df.loc[valid_mask].copy()
+    event_ids = event_ids[valid_mask.to_numpy()]
+    if len(event_ids) <= n:
+        return event_ids
+
+    feature_df = feature_df.fillna(feature_df.median(numeric_only=True))
+    features = feature_df.to_numpy(dtype=float)
+    scale = np.nanstd(features, axis=0)
+    scale[~np.isfinite(scale) | (scale == 0)] = 1.0
+    features = (features - np.nanmean(features, axis=0)) / scale
+
+    selected = []
+    for col_idx in range(features.shape[1]):
+        selected.append(int(np.argmin(features[:, col_idx])))
+        selected.append(int(np.argmax(features[:, col_idx])))
+    selected = list(dict.fromkeys(selected))
+    if not selected:
+        selected = [0]
+    if len(selected) > n:
+        selected = selected[:n]
+
+    while len(selected) < n:
+        remaining = np.array([idx for idx in range(len(event_ids)) if idx not in selected], dtype=int)
+        if remaining.size == 0:
+            break
+        dist = np.linalg.norm(features[remaining, None, :] - features[np.array(selected)][None, :, :], axis=2)
+        min_dist = dist.min(axis=1)
+        selected.append(int(remaining[np.argmax(min_dist)]))
+
+    return event_ids[np.array(selected[:n], dtype=int)]
+
+
+def subset_events(event_metadata, n, mag_key=None, selected_event_ids=None):
+    """Subset to n events, preferring a wide spread in magnitude and location."""
     if n is None:
         return event_metadata
     if hasattr(event_metadata, "columns"):
-        event_key = None
-        for key in ['KiK_File', '#EventID', 'EVENT']:
-            if key in event_metadata.columns:
-                event_key = key
-                break
-        if event_key is None:
-            return event_metadata.iloc[:n].copy() if hasattr(event_metadata, "iloc") else event_metadata[:n]
-
-        event_ids = event_metadata[event_key].unique()
-        if len(event_ids) <= n:
-            return event_metadata[event_metadata[event_key].isin(event_ids)].copy()
-
-        if mag_key is not None and mag_key in event_metadata.columns:
-            grouped = event_metadata.groupby(event_key)[mag_key].mean()
-            mags = grouped.reindex(event_ids).to_numpy(dtype=float)
-            selected = [int(np.nanargmin(mags))]
-            if n > 1:
-                selected.append(int(np.nanargmax(mags)))
-            selected = list(dict.fromkeys(selected))
-            while len(selected) < n:
-                remaining = [i for i in range(len(event_ids)) if i not in selected]
-                if not remaining:
-                    break
-                rem = mags[remaining][:, None]
-                sel = mags[selected][None, :]
-                dist = np.min(np.abs(rem - sel), axis=1)
-                selected.append(remaining[int(np.argmax(dist))])
-            chosen_events = event_ids[selected]
-        else:
-            chosen_events = event_ids[:n]
-        return event_metadata[event_metadata[event_key].isin(chosen_events)].copy()
-    # Fallback for non-DataFrame
+        event_key = loader.detect_event_key(event_metadata.columns)
+        if selected_event_ids is None:
+            selected_event_ids = select_diverse_event_ids(event_metadata, n, mag_key=mag_key)
+        if selected_event_ids is None:
+            return event_metadata.iloc[:n].copy()
+        return event_metadata[event_metadata[event_key].isin(set(selected_event_ids))].copy()
     if hasattr(event_metadata, "iloc"):
         return event_metadata.iloc[:n].copy()
     return event_metadata[:n]
@@ -688,6 +719,7 @@ if __name__ == '__main__':
     assert len(generator_params) == len(training_params['data_path'])
 
     overwrite_sampling_rate = training_params.get('overwrite_sampling_rate', None)
+    min_stalta_ratio_at_pick = training_params.get('min_stalta_ratio_at_pick', 0.1)
 
     full_data_train = [loader.load_events(data_path, event_metadata_path='train_ev.csv',limit=limit,
                                           parts=(True, False, False),
@@ -696,7 +728,8 @@ if __name__ == '__main__':
                                           min_mag=generator.get('min_mag', None),
                                           mag_key=generator.get('key', 'MA'),
                                           overwrite_sampling_rate=overwrite_sampling_rate,
-                                          decimate_events=generator.get('decimate_events', None))
+                                          decimate_events=generator.get('decimate_events', None),
+                                          min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
                        for data_path, generator in zip(training_params['data_path'], generator_params)]
     full_data_dev = [loader.load_events(data_path, event_metadata_path='test_ev.csv',limit=limit,
                                         parts=(False, True, False),
@@ -705,7 +738,8 @@ if __name__ == '__main__':
                                         min_mag=generator.get('min_mag', None),
                                         mag_key=generator.get('key', 'MA'),
                                         overwrite_sampling_rate=overwrite_sampling_rate,
-                                        decimate_events=generator.get('decimate_events', None))
+                                        decimate_events=generator.get('decimate_events', None),
+                                        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
                      for data_path, generator in zip(training_params['data_path'], generator_params)]
 
     event_metadata_train = [d[0] for d in full_data_train]
@@ -714,13 +748,27 @@ if __name__ == '__main__':
     metadata_dev = [d[2] for d in full_data_dev]
 
     if args.overfit_n > 0:
+        full_data_all = [loader.load_events(data_path, event_metadata_path='overfit_ev.csv', limit=limit,
+                                            parts=None,
+                                            shuffle_train_dev=generator.get('shuffle_train_dev', False),
+                                            custom_split=generator.get('custom_split', None),
+                                            min_mag=generator.get('min_mag', None),
+                                            mag_key=generator.get('key', 'MA'),
+                                            overwrite_sampling_rate=overwrite_sampling_rate,
+                                            decimate_events=generator.get('decimate_events', None),
+                                            min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+                         for data_path, generator in zip(training_params['data_path'], generator_params)]
+        selected_event_ids = [
+            select_diverse_event_ids(all_meta[0], args.overfit_n, mag_key=generator.get('key', 'MA'))
+            for all_meta, generator in zip(full_data_all, generator_params)
+        ]
         event_metadata_train = [
-            subset_events(meta, args.overfit_n, generator.get('key', 'MA'))
-            for meta, generator in zip(event_metadata_train, generator_params)
+            subset_events(meta, args.overfit_n, generator.get('key', 'MA'), selected_ids)
+            for meta, generator, selected_ids in zip(event_metadata_train, generator_params, selected_event_ids)
         ]
         event_metadata_dev = [
-            subset_events(meta, args.overfit_n, generator.get('key', 'MA'))
-            for meta, generator in zip(event_metadata_dev, generator_params)
+            subset_events(meta, args.overfit_n, generator.get('key', 'MA'), selected_ids)
+            for meta, generator, selected_ids in zip(event_metadata_dev, generator_params, selected_event_ids)
         ]
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for generator_param in generator_params:
@@ -733,7 +781,7 @@ if __name__ == '__main__':
             generator_param['cutout_start'] = fixed_cutout
             generator_param['cutout_end'] = fixed_cutout
         if (not is_dist) or (is_dist and (rank == 0)):
-            print(f'Overfit mode enabled: using the first {args.overfit_n} events for both train and val')
+            print(f'Overfit mode enabled: using {args.overfit_n} diverse events for both train and val')
             print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, earliest-trigger station/target selection, no train/dev split shuffling')
 
     sampling_rate = metadata_train[0]['sampling_rate']

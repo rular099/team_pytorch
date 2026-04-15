@@ -14,6 +14,8 @@ import torch
 import torch.distributed as dist
 from torch.utils.data import Dataset, DataLoader
 
+import loader_light
+
 # warnings.simplefilter("ignore", UserWarning)
 
 D2KM = 111.19492664455874
@@ -79,15 +81,55 @@ def resample_trace(trace, sampling_rate):
         trace.resample(sampling_rate)
 
 
+def _safe_int_array(values):
+    arr = np.asarray(values)
+    if arr.size == 0:
+        return np.zeros(0, dtype=int)
+    return np.rint(arr).astype(int)
+
+
+def _select_wave_idx_rows(event_df, g_event):
+    if 'wave_idx' not in event_df.columns:
+        return slice(None)
+    wave_idx = _safe_int_array(event_df['wave_idx'].values)
+    if wave_idx.size == 0:
+        return wave_idx
+    max_idx = g_event['waveforms'].shape[0]
+    return wave_idx[wave_idx < max_idx]
+
+
+def _crop_aligned_event_window(waveforms, p_picks, target_length, sampling_rate, noise_seconds):
+    if waveforms.shape[1] <= target_length:
+        if waveforms.shape[1] == target_length:
+            return waveforms, p_picks, 0
+        padded = np.zeros((waveforms.shape[0], target_length, waveforms.shape[2]), dtype=waveforms.dtype)
+        padded[:, :waveforms.shape[1], :] = waveforms
+        return padded, p_picks, 0
+
+    valid_picks = p_picks[np.logical_and(np.isfinite(p_picks), p_picks > 0)]
+    if valid_picks.size == 0:
+        start = 0
+    else:
+        pre_samples = int(round(noise_seconds * sampling_rate))
+        start = int(np.floor(np.min(valid_picks))) - pre_samples
+        start = max(0, start)
+    max_start = waveforms.shape[1] - target_length
+    start = min(start, max_start)
+    end = start + target_length
+    return waveforms[:, start:end, :], p_picks - start, start
+
+
 class DataGenerator(Dataset):
     def __init__(self, event_metadata, metadata, data_path, generator_params, cutout=None, sliding_window=False, windowlen=10000, data_keys=None, overwrite_sampling_rate=None,
                  shuffle=True, label_smoothing=False, oversample=1):
         self.event_metadata = event_metadata
         self.metadata = metadata
         self.data_path = data_path
-        self.target_key = generator_params['key']
+        requested_key = generator_params.get('key', 'Magnitude')
+        self.target_key = loader_light.resolve_target_key(event_metadata.columns, requested_key)
         self.data_keys = data_keys
         self.overwrite_sampling_rate = overwrite_sampling_rate
+        self.noise_seconds = generator_params.get('noise_seconds', 5)
 
         self.dist = None
         self.cutout = cutout
@@ -97,10 +139,7 @@ class DataGenerator(Dataset):
         self.oversample = oversample
         self.indexes = np.arange(len(self.event_metadata))
         self.label_smoothing = label_smoothing
-        for event_key in ['KiK_File', '#EventID', 'EVENT']:
-            if event_key in event_metadata.columns:
-                self.event_key = event_key
-                break
+        self.event_key = loader_light.detect_event_key(event_metadata.columns)
         if self.overwrite_sampling_rate is not None:
             if self.metadata['sampling_rate'] % self.overwrite_sampling_rate != 0:
                 raise ValueError(f'Overwrite sampling ({self.overwrite_sampling_rate}) rate must be true divisor of sampling'
@@ -121,29 +160,29 @@ class DataGenerator(Dataset):
             event_name = str(event[self.event_key])
             g_event = f['data'][event_name]
             data = {}
+            wave_idx = int(event['wave_idx']) if 'wave_idx' in event else 0
             for key in g_event:
                 if self.data_keys is not None and key not in self.data_keys:
                     continue
                 if key not in data:
                     data[key] = []
                 if key == 'waveforms':
-                    # pad or truncate to 10000 points
-                    cur_waveform = g_event[key][event['wave_idx']:event['wave_idx']+1, ::self.decimate, :]
+                    cur_waveform = g_event[key][wave_idx:wave_idx+1, ::self.decimate, :]
                     cur_waveform -= np.mean(cur_waveform, axis=1, keepdims=True)
-                    if cur_waveform.shape[1] < 10000:
-                        pad_arr = np.zeros((cur_waveform.shape[0],
-                                            10000 - cur_waveform.shape[1],
-                                            cur_waveform.shape[2]))
-                        data[key] += [np.concatenate((cur_waveform, pad_arr),
-                                                     axis=1)]
-                    else:
-                        data[key] += [cur_waveform[:, :10000, :]]
+                    data[key] += [cur_waveform]
                 else:
-                    data[key] += [g_event[key][()]]
+                    values = g_event[key][()]
+                    if np.ndim(values) > 0 and values.shape[0] > wave_idx:
+                        values = values[wave_idx:wave_idx+1]
+                    data[key] += [values]
                 if key == 'p_picks':
                     data[key][-1] //= self.decimate
 
         X = data['waveforms'][0]
+        picks = data['p_picks'][0] if 'p_picks' in data else np.zeros((1,), dtype=int)
+        X, picks, _ = _crop_aligned_event_window(X, _safe_int_array(picks), 10000,
+                                                 self.metadata['sampling_rate'], self.noise_seconds)
+        data['p_picks'] = [picks]
         y = np.array([self.event_metadata.iloc[index][self.target_key]])
 
         if self.cutout: # 可调整
@@ -188,11 +227,8 @@ class PreloadedEventGenerator(Dataset):
 #        self.waveforms = data['waveforms']
 #        self.metadata = data['coords']
         self.event_metadata = event_metadata
-        for event_key in ['KiK_File', '#EventID', 'EVENT']:
-            if event_key in event_metadata.columns:
-                self.event_key = event_key
-                break
-        self.event_metadata = self.event_metadata.groupby(event_key)
+        self.event_key = loader_light.detect_event_key(event_metadata.columns)
+        self.event_metadata = self.event_metadata.groupby(self.event_key)
         self.metadata = metadata
         self.overwrite_sampling_rate = overwrite_sampling_rate
         if self.overwrite_sampling_rate is not None:
@@ -204,7 +240,9 @@ class PreloadedEventGenerator(Dataset):
         else:
             self.decimate = 1
         self.data_path = data_path
-        self.target_key = generator_params['key']
+        requested_key = generator_params.get('key', key)
+        resolved_key = loader_light.resolve_target_key(event_metadata.columns, requested_key)
+        self.target_key = resolved_key
         self.data_keys = data_keys
         self.pga_key = pga_key
 #        if pga_key in data:
@@ -212,10 +250,12 @@ class PreloadedEventGenerator(Dataset):
 #        else:
 #            print('Found no PGA values')
 #            self.pga = [np.zeros(x.shape[0]) for x in self.waveforms]
-        self.key = key
+        self.key = loader_light.resolve_target_key(event_metadata.columns, key)
         self.cutout = cutout
         self.sliding_window = sliding_window  # If true, selects sliding windows instead of cutout. Uses cutout as values for end of window.
         self.windowlen = windowlen  # Length of window for sliding window
+        self.trace_length = windowlen
+        self.noise_seconds = generator_params.get('noise_seconds', 5)
         self.coords_target = coords_target
         self.oversample = oversample
         self.pos_offset = pos_offset
@@ -256,7 +296,7 @@ class PreloadedEventGenerator(Dataset):
         self.event_keys = list(self.event_metadata.groups.keys())
         self.reverse_index = None
         if magnitude_resampling > 1:
-            magnitude = self.event_metadata[key].mean().values
+            magnitude = self.event_metadata[self.key].mean().values
             for i in np.arange(min_upsample_magnitude, 9):
                 ind = np.where(np.logical_and(i < magnitude, magnitude <= i + 1))[0]
                 self.base_indexes = np.concatenate(
@@ -323,6 +363,9 @@ class PreloadedEventGenerator(Dataset):
             event = self.event_metadata.get_group(ith_event)
             event_name = str(event[self.event_key].iloc[0]) # ith_event? zb
             g_event = f['data'][event_name]
+            row_selector = _select_wave_idx_rows(event, g_event)
+            if isinstance(row_selector, np.ndarray) and row_selector.size == 0:
+                raise _EmptySample()
             data = {}
             for key in g_event:
                 if self.data_keys is not None and key not in self.data_keys:
@@ -330,19 +373,14 @@ class PreloadedEventGenerator(Dataset):
                 if key not in data:
                     data[key] = []
                 if key == 'waveforms':
-                    # pad to 10000 points
-                    cur_waveform = g_event[key][:, ::self.decimate, :]
+                    cur_waveform = g_event[key][row_selector, ::self.decimate, :]
                     cur_waveform -= np.mean(cur_waveform, axis=1, keepdims=True)
-                    if cur_waveform.shape[1] < 10000:
-                        pad_arr = np.zeros((cur_waveform.shape[0],
-                                            10000 - cur_waveform.shape[1],
-                                            cur_waveform.shape[2]))
-                        data[key] += [np.concatenate((cur_waveform, pad_arr),
-                                                     axis=1)]
-                    else:
-                        data[key] += [cur_waveform]
+                    data[key] += [cur_waveform]
                 else:
-                    data[key] += [g_event[key][()]]
+                    values = g_event[key][()]
+                    if np.ndim(values) > 0 and values.shape[0] == g_event['waveforms'].shape[0]:
+                        values = values[row_selector]
+                    data[key] += [values]
                 if key == 'p_picks':
                     data[key][-1] //= self.decimate
 
@@ -362,10 +400,21 @@ class PreloadedEventGenerator(Dataset):
             print('Found no picks')
             self.triggers = np.zeros(X.shape[0])
 
+        self.waveforms, self.triggers, crop_start = _crop_aligned_event_window(
+            self.waveforms,
+            _safe_int_array(self.triggers),
+            self.trace_length,
+            self.sampling_rate,
+            self.noise_seconds,
+        )
+        if self.pga_key in data:
+            self.pga = np.asarray(self.pga)
+        self.crop_start = crop_start
+
         y = np.array([self.event_metadata.get_group(ith_event)[self.target_key]]) # magnitude
         true_batch_size = 1
 
-        waveforms = np.zeros((true_batch_size, self.max_stations) + X.shape[1:])  # shape (1, 25, 10000, 3)
+        waveforms = np.zeros((true_batch_size, self.max_stations) + self.waveforms.shape[1:])  # shape (1, 25, 10000, 3)
         true_max_stations_in_batch = max(max([self.metadata.shape[0] for idx in indexes]), self.max_stations) # max(n_stations,25) = tms
         metadata = np.zeros((true_batch_size, true_max_stations_in_batch) + self.metadata.shape[1:]) # shape (1,tms, 3), coords
         # Use NaN for PGA so that "no measurement" is unambiguous and the legal
