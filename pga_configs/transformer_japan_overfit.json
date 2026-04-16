@@ -53,7 +53,7 @@
         "epoch_sanity": true,
         "epochs_full_model": 300,
         "data_path": [
-            "japan_overfit.hdf5"
+            "/opt/zb/data/japan/japan_2024.hdf5"
         ],
         "workers": 0,
         "weight_path": "weights_japan_overfit",
