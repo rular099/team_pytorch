@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import os
+import time
 
 EVENT_KEY_CANDIDATES = ['KiK_File', '#EventID', 'EVENT']
 MAGNITUDE_KEY_ALIASES = {
@@ -116,25 +117,23 @@ def resolve_target_key(columns, requested_key):
 
 
 def _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=1):
-    kept_rows = []
     with h5py.File(data_path, 'r') as f:
-        for idx, event in event_metadata.iterrows():
-            event_name = str(event[event_key])
-            if event_name not in f['data']:
-                continue
-            g_event = f['data'][event_name]
-            if 'waveforms' not in g_event:
-                continue
-            n_stations = g_event['waveforms'][:, ::decimate, :].shape[0]
-            wave_idx = event.get('wave_idx', None)
-            if pd.isna(wave_idx):
-                kept_rows.append(idx)
-            elif int(wave_idx) < n_stations:
-                kept_rows.append(idx)
-    return event_metadata.loc[kept_rows].reset_index(drop=True)
+        counts = {}
+        for event_name, g_event in f['data'].items():
+            if 'waveforms' in g_event:
+                counts[str(event_name)] = int(g_event['waveforms'].shape[0])
+
+    event_names = event_metadata[event_key].astype(str)
+    present_counts = event_names.map(counts)
+    mask = present_counts.notna()
+    if 'wave_idx' in event_metadata.columns:
+        wave_idx = pd.to_numeric(event_metadata['wave_idx'], errors='coerce')
+        mask &= (wave_idx.isna() | (wave_idx < present_counts))
+    return event_metadata.loc[mask].reset_index(drop=True)
 
 
 def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate=None, min_stalta_ratio_at_pick=None):
+    t0 = time.time()
     metadata = {}
     with h5py.File(data_path, 'r') as f:
         for key in f['metadata'].keys():
@@ -174,10 +173,14 @@ def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate
             event_metadata['wave_idx'] = wave_idx_per_event
 
     event_key = detect_event_key(event_metadata.columns)
+    before_rows = len(event_metadata)
     event_metadata = _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=decimate)
     if min_stalta_ratio_at_pick is not None and 'stalta_ratio_at_pick' in event_metadata.columns:
         event_metadata = event_metadata[event_metadata['stalta_ratio_at_pick'] >= min_stalta_ratio_at_pick].reset_index(drop=True)
     event_metadata.to_csv(event_metadata_path, index=False)
+    dt = time.time() - t0
+    print(f'Built metadata cache {event_metadata_path} with {len(event_metadata)} rows '
+          f'(from {before_rows}) in {dt:.1f}s')
     return event_metadata
 
 def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=None, parts=None, shuffle_train_dev=False, custom_split=None, data_keys=None,
@@ -193,14 +196,17 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
 
     # Derive cache path from data_path to avoid stale CSV when switching datasets
     import hashlib
-    cache_token = f'{os.path.abspath(data_path)}|stationmeta_v2|{overwrite_sampling_rate}|{min_stalta_ratio_at_pick}'
+    cache_token = f'{os.path.abspath(data_path)}|stationmeta_v3|{overwrite_sampling_rate}|{min_stalta_ratio_at_pick}'
     data_hash = hashlib.md5(cache_token.encode()).hexdigest()[:8]
-    base, ext = os.path.splitext(event_metadata_path)
-    event_metadata_path = f'{base}_{data_hash}{ext}'
+    base_dir = os.path.dirname(os.path.abspath(event_metadata_path)) or os.getcwd()
+    event_metadata_path = os.path.join(base_dir, f'station_cache_{data_hash}.csv')
 
     if not os.path.exists(event_metadata_path):
+        print(f'Building station metadata cache for {os.path.basename(data_path)} ...')
         build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate,
                              min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+    else:
+        print(f'Using station metadata cache {event_metadata_path}')
     event_metadata = pd.read_csv(event_metadata_path)
     resolved_mag_key = resolve_target_key(event_metadata.columns, mag_key)
     if min_mag is not None:
