@@ -896,7 +896,8 @@ if __name__ == '__main__':
         for i, generator_param_set in enumerate(generator_params):
             noise_seconds = generator_param_set.get('noise_seconds', 5)
             cutout = (
-                sampling_rate * (noise_seconds + generator_param_set['cutout_start']), sampling_rate * (noise_seconds + generator_param_set['cutout_end']))
+                int(round(sampling_rate * (noise_seconds + generator_param_set['cutout_start']))),
+                int(round(sampling_rate * (noise_seconds + generator_param_set['cutout_end']))))
 
             generator_param_set['transform_target_only'] = generator_param_set.get('transform_target_only', True)
 

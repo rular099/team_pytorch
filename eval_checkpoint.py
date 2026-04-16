@@ -144,6 +144,7 @@ def build_datasets(config, overfit_n=0):
             noise_seconds = gp.get('noise_seconds', 5)
             cutout = (sampling_rate * (noise_seconds + gp['cutout_start']),
                       sampling_rate * (noise_seconds + gp['cutout_end']))
+            cutout = tuple(int(round(x)) for x in cutout)
             gp_copy = copy.deepcopy(gp)
             gp_copy['transform_target_only'] = gp_copy.get('transform_target_only', True)
             gp_copy['oversample'] = 1  # no oversampling for eval

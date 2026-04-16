@@ -132,9 +132,12 @@ class DataGenerator(Dataset):
         self.noise_seconds = generator_params.get('noise_seconds', 5)
 
         self.dist = None
-        self.cutout = cutout
+        if cutout is None:
+            self.cutout = None
+        else:
+            self.cutout = tuple(int(round(x)) for x in cutout)
         self.sliding_window = sliding_window  # If true, selects sliding windows instead of cutout. Uses cutout as values for end of window.
-        self.windowlen = windowlen  # Length of window for sliding window
+        self.windowlen = int(round(windowlen))  # Length of window for sliding window
         self.shuffle = shuffle
         self.oversample = oversample
         self.indexes = np.arange(len(self.event_metadata))
@@ -251,9 +254,12 @@ class PreloadedEventGenerator(Dataset):
 #            print('Found no PGA values')
 #            self.pga = [np.zeros(x.shape[0]) for x in self.waveforms]
         self.key = loader_light.resolve_target_key(event_metadata.columns, key)
-        self.cutout = cutout
+        if cutout is None:
+            self.cutout = None
+        else:
+            self.cutout = tuple(int(round(x)) for x in cutout)
         self.sliding_window = sliding_window  # If true, selects sliding windows instead of cutout. Uses cutout as values for end of window.
-        self.windowlen = windowlen  # Length of window for sliding window
+        self.windowlen = int(round(windowlen))  # Length of window for sliding window
         self.trace_length = windowlen
         self.noise_seconds = generator_params.get('noise_seconds', 5)
         self.coords_target = coords_target
