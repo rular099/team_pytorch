@@ -407,6 +407,7 @@ class PreloadedEventGenerator(Dataset):
             self.sampling_rate,
             self.noise_seconds,
         )
+        X = self.waveforms
         if self.pga_key in data:
             self.pga = np.asarray(self.pga)
         self.crop_start = crop_start
