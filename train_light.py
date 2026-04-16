@@ -150,6 +150,66 @@ def subset_events(event_metadata, n, mag_key=None, selected_event_ids=None):
     return event_metadata[:n]
 
 
+def _event_columns_for_export(df):
+    preferred = [
+        'EVENT', 'Latitude', 'Longitude', 'DEPTH', 'Magnitude',
+        'Origin_Time(JST)', 'Source_Mix', 'Sampling_Rate_Hz',
+        'Event_Length_Samples', 'Event_Length_Seconds',
+    ]
+    cols = [c for c in preferred if c in df.columns]
+    if not cols:
+        event_key = loader.detect_event_key(df.columns)
+        cols = [event_key]
+    return cols
+
+
+def export_split_metadata(weight_path, data_paths, train_dfs, dev_dfs, test_dfs, selected_event_ids=None):
+    station_frames = []
+    selected_event_ids = selected_event_ids or [None] * len(train_dfs)
+
+    for dataset_index, (data_path, train_df, dev_df, test_df, selected_ids) in enumerate(
+            zip(data_paths, train_dfs, dev_dfs, test_dfs, selected_event_ids)):
+        event_key = loader.detect_event_key(train_df.columns if len(train_df) else (dev_df.columns if len(dev_df) else test_df.columns))
+        selected_set = set(map(str, selected_ids)) if selected_ids is not None else set()
+
+        for split_name, split_df in [('train', train_df), ('dev', dev_df), ('test', test_df)]:
+            if split_df is None or len(split_df) == 0:
+                continue
+            df = split_df.copy()
+            df[event_key] = df[event_key].astype(str)
+            if 'EVENT' in df.columns:
+                df['EVENT'] = df['EVENT'].astype(str)
+            else:
+                df['EVENT'] = df[event_key]
+            df['dataset_index'] = dataset_index
+            df['source_data_path'] = str(data_path)
+            df['split'] = split_name
+            df['is_overfit_selected'] = df['EVENT'].isin(selected_set)
+            df['is_overfit_train'] = df['is_overfit_selected'] & (df['split'] == 'train')
+            df['is_overfit_dev'] = df['is_overfit_selected'] & (df['split'] == 'dev')
+            df['is_overfit_test'] = df['is_overfit_selected'] & (df['split'] == 'test')
+            station_frames.append(df)
+
+    if not station_frames:
+        return
+
+    split_stations = pd.concat(station_frames, ignore_index=True)
+    event_cols = _event_columns_for_export(split_stations)
+    event_cols = [c for c in ['dataset_index', 'source_data_path', 'split',
+                              'is_overfit_selected', 'is_overfit_train',
+                              'is_overfit_dev', 'is_overfit_test'] + event_cols
+                  if c in split_stations.columns]
+    agg_kwargs = {col: (col, 'first') for col in event_cols if col not in ['dataset_index', 'EVENT', 'split']}
+    if 'wave_idx' in split_stations.columns:
+        agg_kwargs['n_station_rows'] = ('wave_idx', 'nunique')
+    else:
+        agg_kwargs['n_station_rows'] = ('EVENT', 'size')
+    split_events = split_stations.groupby(['dataset_index', 'EVENT', 'split'], as_index=False).agg(**agg_kwargs)
+
+    split_stations.to_csv(os.path.join(weight_path, 'split_stations.csv'), index=False)
+    split_events.to_csv(os.path.join(weight_path, 'split_events.csv'), index=False)
+
+
 def module_grad_norm(module):
     sq_sum = None
     for param in module.parameters():
@@ -741,11 +801,24 @@ if __name__ == '__main__':
                                         decimate_events=generator.get('decimate_events', None),
                                         min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
                      for data_path, generator in zip(training_params['data_path'], generator_params)]
+    full_data_test = [loader.load_events(data_path, event_metadata_path='test_ev.csv', limit=limit,
+                                         parts=(False, False, True),
+                                         shuffle_train_dev=generator.get('shuffle_train_dev', False),
+                                         custom_split=generator.get('custom_split', None),
+                                         min_mag=generator.get('min_mag', None),
+                                         mag_key=generator.get('key', 'MA'),
+                                         overwrite_sampling_rate=overwrite_sampling_rate,
+                                         decimate_events=generator.get('decimate_events', None),
+                                         min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+                      for data_path, generator in zip(training_params['data_path'], generator_params)]
 
     event_metadata_train = [d[0] for d in full_data_train]
     metadata_train = [d[2] for d in full_data_train]
     event_metadata_dev = [d[0] for d in full_data_dev]
     metadata_dev = [d[2] for d in full_data_dev]
+    event_metadata_test = [d[0] for d in full_data_test]
+    metadata_test = [d[2] for d in full_data_test]
+    selected_event_ids = [None for _ in generator_params]
 
     if args.overfit_n > 0:
         full_data_all = [loader.load_events(data_path, event_metadata_path='overfit_ev.csv', limit=limit,
@@ -784,8 +857,17 @@ if __name__ == '__main__':
             print(f'Overfit mode enabled: using {args.overfit_n} diverse events for both train and val')
             print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, earliest-trigger station/target selection, no train/dev split shuffling')
 
+    if (not is_dist) or (is_dist and (rank == 0)):
+        export_split_metadata(training_params['weight_path'],
+                              training_params['data_path'],
+                              event_metadata_train,
+                              event_metadata_dev,
+                              event_metadata_test,
+                              selected_event_ids=selected_event_ids)
+        print(f'Exported split metadata to {training_params["weight_path"]}/split_events.csv and split_stations.csv')
+
     sampling_rate = metadata_train[0]['sampling_rate']
-    assert all(m['sampling_rate'] == sampling_rate for m in metadata_train + metadata_dev)
+    assert all(m['sampling_rate'] == sampling_rate for m in metadata_train + metadata_dev + metadata_test)
     overfit_mode = args.overfit_n > 0
 
     max_stations = config['model_params']['max_stations']
