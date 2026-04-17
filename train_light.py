@@ -56,6 +56,8 @@ def build_diting_args(diting_config_path, device='cpu', distributed=False, pretr
         base_width=256, target_width=256, model_depth=24,
         in_samples=10000, patch_size=50,
         num_interactions=4, out_channels=256,
+        diting_frontend='vit_adapter',
+        attn_pool_hidden_dim=None, attn_pool_temperature=0.5, attn_pool_topk=0,
         pale_size=5, stem_convKs=3, cpe_kernel_size=3,
         ffn_convKS=3, fpn_convKS=3, aggregate_convKS=3, head_convKS=3,
         inter_mode='fpn_deep_5',
@@ -1026,7 +1028,7 @@ if __name__ == '__main__':
             transfer_weights(full_model, training_params['transfer_model_path'],
                              ensemble_load=ensemble_load, wait_for_load=wait_for_load, ens_id=ens_id)
 
-        # Freeze diting encoder (ViTAdapter); keep station adapter trainable.
+        # Freeze the DiTing encoder; keep the TEAM-side station adapter trainable.
         raw_full = full_model.module if is_dist else full_model
         for param in raw_full.waveform_model[0].parameters():
             param.requires_grad = False
@@ -1034,19 +1036,22 @@ if __name__ == '__main__':
         reinit_fpn = training_params.get('reinit_fpn', True)
         if reinit_fpn:
             station_adapter = raw_full.waveform_model[1]
-            for name, module in station_adapter.named_modules():
-                if isinstance(module, (nn.Conv1d, nn.ConvTranspose1d)):
-                    nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
-                    if module.bias is not None:
-                        nn.init.constant_(module.bias, 0)
-                elif isinstance(module, nn.Linear):
-                    nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
-                    if module.bias is not None:
-                        nn.init.constant_(module.bias, 0)
-                elif hasattr(module, 'weight') and hasattr(module, 'bias') and isinstance(module.weight, nn.Parameter):
-                    nn.init.constant_(module.weight, 1)
-                    if module.bias is not None:
-                        nn.init.constant_(module.bias, 0)
+            if hasattr(station_adapter, 'reset_parameters'):
+                station_adapter.reset_parameters()
+            else:
+                for _, module in station_adapter.named_modules():
+                    if isinstance(module, (nn.Conv1d, nn.ConvTranspose1d)):
+                        nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
+                        if module.bias is not None:
+                            nn.init.constant_(module.bias, 0)
+                    elif isinstance(module, nn.Linear):
+                        nn.init.kaiming_normal_(module.weight, nonlinearity='relu')
+                        if module.bias is not None:
+                            nn.init.constant_(module.bias, 0)
+                    elif hasattr(module, 'weight') and hasattr(module, 'bias') and isinstance(module.weight, nn.Parameter):
+                        nn.init.constant_(module.weight, 1)
+                        if module.bias is not None:
+                            nn.init.constant_(module.bias, 0)
 
         if rank == 0:
             if reinit_fpn:

@@ -8,7 +8,10 @@ import math
 from mup import MuReadout, set_base_shapes
 
 from dtbench.models.diting.models.vit_adapter import ViTAdapter
-from dtbench.models.diting.models.backbone_ablation import get_encoder_size_dict
+from dtbench.models.diting.models.backbone_ablation import (
+    Encoder_baseline_llama,
+    get_encoder_size_dict,
+)
 from dtbench.training.modeling import (
     _extract_pretrained_state_dict,
     _filter_backbone_state_dict,
@@ -630,6 +633,24 @@ class DitingStationAdapter(nn.Module):
         nn.init.normal_(self.proj_out.weight, mean=0.0, std=1e-3)
         nn.init.zeros_(self.proj_out.bias)
 
+    def reset_parameters(self):
+        self._init_preserving_path()
+        for module in (self.proj_f2, self.proj_f3, self.proj_f4, self.proj_x):
+            nn.init.kaiming_normal_(module.weight, nonlinearity='linear')
+            if module.bias is not None:
+                nn.init.zeros_(module.bias)
+        for block in (self.refine_f2, self.refine_f3, self.refine_f4, self.refine_x):
+            conv = block[0]
+            nn.init.kaiming_normal_(conv.weight, nonlinearity='relu')
+            if conv.bias is not None:
+                nn.init.zeros_(conv.bias)
+        for pool in (self.pool_f2, self.pool_f3, self.pool_f4, self.pool_x):
+            nn.init.kaiming_normal_(pool.proj.weight, nonlinearity='linear')
+            if pool.proj.bias is not None:
+                nn.init.zeros_(pool.proj.bias)
+        nn.init.ones_(self.norm.weight)
+        nn.init.zeros_(self.norm.bias)
+
     def forward(self, inputs):
         f2, f3, f4, x = inputs
         x = x.transpose(1, 2).contiguous()
@@ -642,6 +663,70 @@ class DitingStationAdapter(nn.Module):
 
         pooled = torch.cat([branch_f2, branch_f3, branch_f4, branch_x], dim=-1)
         delta = self.proj_out(pooled.float())
+        return self.norm(base + self.delta_scale * delta)
+
+
+class BackboneAttentionPoolAdapter(nn.Module):
+    """Project plain backbone patch tokens into a station embedding."""
+
+    def __init__(self, encoder_dim, output_dim, attn_temperature=0.5, attn_topk=0):
+        super().__init__()
+        self.encoder_dim = encoder_dim
+        self.output_dim = output_dim
+        self.attn_temperature = attn_temperature
+        self.attn_topk = attn_topk
+
+        self.base_proj = MuReadout(encoder_dim, output_dim, bias=False)
+        self.attn_norm = nn.LayerNorm(encoder_dim)
+        self.attn_query = nn.Parameter(torch.zeros(encoder_dim))
+        self.focus_proj = MuReadout(encoder_dim, output_dim, bias=False)
+        self.delta_scale = nn.Parameter(torch.tensor(0.1, dtype=torch.float32))
+        self.norm = nn.LayerNorm(output_dim)
+        self._last_attention = None
+        self.reset_parameters()
+
+    def _init_preserving_path(self):
+        nn.init.zeros_(self.base_proj.weight)
+        diag = min(self.output_dim, self.base_proj.in_features)
+        with torch.no_grad():
+            self.base_proj.weight[:diag, :diag] = torch.eye(diag)
+        nn.init.normal_(self.focus_proj.weight, mean=0.0, std=1e-3)
+
+    def reset_parameters(self):
+        self._init_preserving_path()
+        nn.init.normal_(self.attn_query, mean=0.0, std=1e-3)
+        nn.init.ones_(self.attn_norm.weight)
+        nn.init.zeros_(self.attn_norm.bias)
+        nn.init.ones_(self.norm.weight)
+        nn.init.zeros_(self.norm.bias)
+
+    def _masked_attention_weights(self, scores):
+        if self.attn_topk and 0 < self.attn_topk < scores.shape[1]:
+            topk_idx = torch.topk(scores, k=self.attn_topk, dim=1).indices
+            mask = torch.full_like(scores, float('-inf'))
+            mask.scatter_(1, topk_idx, 0.0)
+            scores = scores + mask
+        temperature = max(float(self.attn_temperature), 1e-4)
+        return torch.softmax(scores / temperature, dim=1)
+
+    def forward(self, x):
+        if x.dim() != 3:
+            raise ValueError(f"Expected backbone features with 3 dims, got shape {tuple(x.shape)}")
+        if x.shape[1] == self.encoder_dim:
+            tokens = x.transpose(1, 2).contiguous()
+        elif x.shape[2] == self.encoder_dim:
+            tokens = x
+        else:
+            raise ValueError(
+                f"Expected encoder dim {self.encoder_dim} in shape {tuple(x.shape)}"
+            )
+
+        base = self.base_proj(tokens.mean(dim=1).float())
+        scores = torch.matmul(self.attn_norm(tokens).float(), self.attn_query.float())
+        weights = self._masked_attention_weights(scores)
+        self._last_attention = weights.detach()
+        focus = torch.sum(tokens * weights.unsqueeze(-1).type_as(tokens), dim=1)
+        delta = self.focus_proj(focus.float())
         return self.norm(base + self.delta_scale * delta)
 
 
@@ -1021,56 +1106,66 @@ class FullModel(nn.Module):
         return outputs
 
 def get_diting_model(args, station_emb_dim):
-    """Build diting model (ViTAdapter + light station adapter) with muP and pretrained weights.
+    """Build diting model with muP and pretrained weights.
 
     Uses the ditingbench approach for model construction and weight loading.
-    The model is nn.Sequential([0]=ViTAdapter encoder, [1]=station adapter).
+    The model is nn.Sequential([0]=encoder, [1]=station adapter).
     """
     depth = args.model_depth if hasattr(args, 'model_depth') else 24
     base_encoder_size = get_encoder_size_dict(width=args.base_width, depth=depth)
     target_encoder_size = get_encoder_size_dict(width=args.target_width, depth=depth)
+    frontend = getattr(args, 'diting_frontend', 'vit_adapter')
 
     add_vit_feature = getattr(args, 'add_vit_feature', True)
     use_extra_extractor = getattr(args, 'use_extra_extractor', False)
 
+    def build_model_pair(encoder_size):
+        if frontend == 'vit_adapter':
+            encoder = ViTAdapter(
+                encoder_size=encoder_size,
+                input_length=args.in_samples,
+                args=args,
+                add_vit_feature=add_vit_feature,
+                use_extra_extractor=use_extra_extractor,
+                out_x=True,
+            )
+            head = DitingStationAdapter(
+                encoder_dim=encoder.backbone.d_model,
+                hidden_channels=args.out_channels,
+                output_dim=station_emb_dim,
+            )
+            backbone_module = encoder.backbone
+        elif frontend == 'backbone_attn_pool':
+            encoder = Encoder_baseline_llama(
+                encoder_size=encoder_size,
+                input_length=args.in_samples,
+                args=args,
+            )
+            if not hasattr(encoder.backbone, 'mask_ratio'):
+                encoder.backbone.set_mask(0.0, 'random')
+            head = BackboneAttentionPoolAdapter(
+                encoder_dim=encoder.backbone.d_model,
+                output_dim=station_emb_dim,
+                attn_temperature=getattr(args, 'attn_pool_temperature', 0.5),
+                attn_topk=getattr(args, 'attn_pool_topk', 0),
+            )
+            backbone_module = encoder.backbone
+        else:
+            raise ValueError(f"Unsupported diting_frontend: {frontend}")
+        return nn.Sequential(encoder, head), backbone_module
+
     # Build base model for muP
-    base_encoder = ViTAdapter(
-        encoder_size=base_encoder_size,
-        input_length=args.in_samples,
-        args=args,
-        add_vit_feature=add_vit_feature,
-        use_extra_extractor=use_extra_extractor,
-        out_x=True,
-    )
-    base_head = DitingStationAdapter(
-        encoder_dim=base_encoder.backbone.d_model,
-        hidden_channels=args.out_channels,
-        output_dim=station_emb_dim,
-    )
-    base_model = nn.Sequential(base_encoder, base_head)
+    base_model, _ = build_model_pair(base_encoder_size)
 
     # Build target model
-    target_encoder = ViTAdapter(
-        encoder_size=target_encoder_size,
-        input_length=args.in_samples,
-        args=args,
-        add_vit_feature=add_vit_feature,
-        use_extra_extractor=use_extra_extractor,
-        out_x=True,
-    )
-    target_head = DitingStationAdapter(
-        encoder_dim=target_encoder.backbone.d_model,
-        hidden_channels=args.out_channels,
-        output_dim=station_emb_dim,
-    )
-    model = nn.Sequential(target_encoder, target_head)
+    model, target_backbone = build_model_pair(target_encoder_size)
 
     # muP: set base shapes
     set_base_shapes(model, base_model)
 
     # Freeze encoder for linear_probe
     if args.eval_type == 'linear_probe':
-        for param in model[0].backbone.parameters():
+        for param in target_backbone.parameters():
             param.requires_grad = False
 
     # Load pretrained weights
