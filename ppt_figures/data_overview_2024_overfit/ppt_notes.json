@@ -1,0 +1,38 @@
+{
+  "full_available_events": 983,
+  "full_available_station_rows": 54176,
+  "full_magnitude_range": [
+    3.0,
+    7.6
+  ],
+  "full_network_counts": {
+    "kik": 32691,
+    "knt": 21485
+  },
+  "full_sensor_counts": {
+    "single_surface": 21485,
+    "surface": 16518,
+    "borehole": 16173
+  },
+  "split_event_counts": {
+    "train": 13,
+    "test": 12,
+    "dev": 7
+  },
+  "split_station_counts": {
+    "train": 3044,
+    "test": 1239,
+    "dev": 1137
+  },
+  "overfit_selected_event_count": 32,
+  "overfit_selected_mag_range": [
+    3.0,
+    7.6
+  ],
+  "overfit_events_by_split": {
+    "dev": 7,
+    "test": 12,
+    "train": 13
+  },
+  "caveat": "Current overfit implementation selects diverse events from the full set, then intersects them with train/dev/test splits. Therefore overfit-selected events are distributed across train/dev/test rather than forming a single train-only or train==dev subset."
+}

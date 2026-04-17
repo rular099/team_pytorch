@@ -111,7 +111,8 @@ def _crop_aligned_event_window(waveforms, p_picks, target_length, sampling_rate,
         start = 0
     else:
         pre_samples = int(round(noise_seconds * sampling_rate))
-        start = int(np.floor(np.min(valid_picks))) - pre_samples
+#        start = int(np.floor(np.min(valid_picks))) - pre_samples
+        start = int(np.floor(np.random.choice(valid_picks))) - pre_samples
         start = max(0, start)
     max_start = waveforms.shape[1] - target_length
     start = min(start, max_start)
@@ -227,6 +228,7 @@ class PreloadedEventGenerator(Dataset):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
+        self.wave_eps = 1e-5
 #        self.waveforms = data['waveforms']
 #        self.metadata = data['coords']
         self.event_metadata = event_metadata
@@ -514,7 +516,7 @@ class PreloadedEventGenerator(Dataset):
                     # Mean only over non-zero samples so that leading zero-padding
                     # is neither diluting the mean nor getting offset by it.
                     region = waveforms[:, :, :cutout + 1]                    # (B, S, T, C)
-                    has_data = np.any(region != 0, axis=-1)                  # (B, S, T)
+                    has_data = np.any(np.abs(region) > self.wave_eps, axis=-1)                  # (B, S, T)
                     n = has_data.sum(axis=2, keepdims=True).clip(min=1)      # (B, S, 1)
                     mu = (region * has_data[..., None]).sum(axis=2, keepdims=True) / n[..., None]
                     waveforms[:, :, :cutout + 1] -= mu * has_data[..., None]
@@ -627,7 +629,7 @@ class PreloadedEventGenerator(Dataset):
         # invalid for the encoder. Waveform "all zero" is a safe sentinel here:
         # real seismic data is mean-subtracted but never identically zero across
         # all samples and channels; only explicit zeroing produces this state.
-        has_signal = (waveforms != 0).any(axis=(2, 3))
+        has_signal = (np.abs(waveforms) > self.wave_eps).any(axis=(2, 3))
         station_valid &= has_signal
 
         if self.station_blinding:
