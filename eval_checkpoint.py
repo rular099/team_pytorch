@@ -533,6 +533,7 @@ def main():
     parser = argparse.ArgumentParser(description='Evaluate TEAM checkpoint')
     parser.add_argument('--config', required=True)
     parser.add_argument('--diting_config', default='./diting/config/conf_reg.yml')
+    parser.add_argument('--diting_pretrained', default=None)
     parser.add_argument('--checkpoint', required=True, help='Path to .pth checkpoint')
     parser.add_argument('--output', default='eval_results.npz', help='Output file for results')
     parser.add_argument('--overfit_n', type=int, default=0)
@@ -550,7 +551,11 @@ def main():
     torch.manual_seed(seed)
 
     device = torch.device(args.device)
-    diting_args = load_diting_args(args.diting_config, device=str(device))
+    diting_args = load_diting_args(
+        args.diting_config,
+        device=str(device),
+        pretrained_override=args.diting_pretrained,
+    )
 
     print('Building model...')
     model = build_model_and_load(config, diting_args, args.checkpoint, device)

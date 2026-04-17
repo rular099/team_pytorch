@@ -3,11 +3,15 @@
 #   bash train_light.sh <config>                          # full training, 4 GPUs
 #   bash train_light.sh <config> --overfit_n 16           # overfit test, 1 GPU
 #   bash train_light.sh <config> --overfit_n 16 --test_run
+#   DITING_CONFIG=./diting/config/diting_1200m.yml \
+#   DITING_PRETRAINED=/path/to/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt \
+#   bash train_light.sh <config>
 #
 # Environment variables:
 #   CUDA_VISIBLE_DEVICES  (default: auto based on overfit mode)
 #   NPROC_PER_NODE        (default: 1 if overfit, 4 otherwise)
 #   DITING_CONFIG         (default: ./diting/config/diting_100m.yml)
+#   DITING_PRETRAINED     (optional: override pretrained ckpt path from YAML)
 
 set -e
 
@@ -39,6 +43,7 @@ echo "=== Train Config ==="
 echo "  Config:    $CONFIG"
 echo "  Weights:   $WEIGHT_PATH"
 echo "  Diting:    $DITING_CONFIG"
+echo "  Diting PT: ${DITING_PRETRAINED:-<from config>}"
 echo "  GPUs:      CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES, nproc=$NPROC_PER_NODE"
 echo "  Extra args: $@"
 echo ""
@@ -48,6 +53,11 @@ rm -rf "$WEIGHT_PATH" "runs/$WEIGHT_PATH" train_ev.csv test_ev.csv event_metadat
 echo "Cleaned previous results."
 
 # Run training
+DITING_PRETRAINED_ARGS=()
+if [ -n "${DITING_PRETRAINED:-}" ]; then
+    DITING_PRETRAINED_ARGS=(--diting_pretrained "$DITING_PRETRAINED")
+fi
+
 CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES} \
 torchrun --standalone --nproc_per_node="${NPROC_PER_NODE}" \
-    train_light.py --config "$CONFIG" --diting_config "$DITING_CONFIG" "$@"
+    train_light.py --config "$CONFIG" --diting_config "$DITING_CONFIG" "${DITING_PRETRAINED_ARGS[@]}" "$@"

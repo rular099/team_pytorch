@@ -31,7 +31,13 @@ from dtbench.training.modeling import build_interaction_indexes, parse_hps
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def build_diting_args(diting_config_path, device='cpu', distributed=False):
+def _normalize_optional_path(path):
+    if not path:
+        return path
+    return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
+
+
+def build_diting_args(diting_config_path, device='cpu', distributed=False, pretrained_override=None, resume_override=None):
     """Build diting args from YAML config, replacing the old get_args_diting() approach.
 
     Uses ditingbench's parse_hps and build_interaction_indexes.
@@ -60,9 +66,15 @@ def build_diting_args(diting_config_path, device='cpu', distributed=False):
         loss_type='bce',
     )
     defaults.update(conf)
+    if pretrained_override is not None:
+        defaults['pretrained'] = pretrained_override
+    if resume_override is not None:
+        defaults['resume'] = resume_override
 
     diting_args = argparse.Namespace(**defaults)
     diting_args.conf_file = diting_config_path
+    diting_args.pretrained = _normalize_optional_path(getattr(diting_args, 'pretrained', ''))
+    diting_args.resume = _normalize_optional_path(getattr(diting_args, 'resume', ''))
 
     # Parse HPS string to extract target_width, input_mult, attn_mult, output_mult
     parse_hps(diting_args)
@@ -798,6 +810,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
     parser.add_argument('--diting_config', type=str, required=True)
+    parser.add_argument('--diting_pretrained', type=str, default=None)
     parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--test_run', action='store_true')  # Test run with less data
     parser.add_argument('--overfit_n', type=int, default=0)  # Select a tiny subset, then re-split it for train/dev/test
@@ -813,7 +826,12 @@ if __name__ == '__main__':
     else:
         device = torch.device(args.device if torch.cuda.is_available() and args.device.startswith('cuda') else ('cuda:0' if torch.cuda.is_available() else 'cpu'))
 # args for diting model
-    diting_args = build_diting_args(args.diting_config, device=device, distributed=is_dist)
+    diting_args = build_diting_args(
+        args.diting_config,
+        device=device,
+        distributed=is_dist,
+        pretrained_override=args.diting_pretrained,
+    )
  # end diting args
 
     training_params = config['training_params']
