@@ -150,6 +150,70 @@ def subset_events(event_metadata, n, mag_key=None, selected_event_ids=None):
     return event_metadata[:n]
 
 
+def split_event_metadata_by_selected_ids(event_metadata, selected_event_ids, custom_split=None, shuffle_train_dev=False):
+    """Re-split a selected event subset with TrainDevTestSplitter."""
+    if not hasattr(event_metadata, "columns"):
+        raise ValueError("event_metadata must be a DataFrame when splitting selected event ids")
+
+    event_key = loader.detect_event_key(event_metadata.columns)
+    selected_set = set(selected_event_ids)
+    selected_event_metadata = event_metadata[event_metadata[event_key].isin(selected_set)].copy()
+    unique_selected_events = selected_event_metadata.drop_duplicates(subset=event_key, keep='first').reset_index(drop=True)
+
+    split_parts = {
+        'train': (True, False, False),
+        'dev': (False, True, False),
+        'test': (False, False, True),
+    }
+    split_event_metadata = {}
+    split_event_ids = {}
+
+    for split_name, parts in split_parts.items():
+        event_mask = loader.TrainDevTestSplitter.run_method(
+            unique_selected_events, custom_split, shuffle_train_dev, parts=parts
+        )
+        event_ids = unique_selected_events.loc[event_mask, event_key].to_numpy()
+        split_event_ids[split_name] = event_ids
+        split_event_metadata[split_name] = selected_event_metadata[
+            selected_event_metadata[event_key].isin(set(event_ids))
+        ].copy()
+
+    return split_event_metadata, split_event_ids
+
+
+def build_overfit_event_metadata_splits(full_data_all, generator_params, overfit_n):
+    """Select a diverse subset, then split that subset into train/dev/test."""
+    event_metadata_train = []
+    event_metadata_dev = []
+    event_metadata_test = []
+    selected_event_ids = []
+
+    for all_meta, generator in zip(full_data_all, generator_params):
+        all_event_metadata = all_meta[0]
+        cur_selected_event_ids = select_diverse_event_ids(
+            all_event_metadata, overfit_n, mag_key=generator.get('key', 'MA')
+        )
+        split_event_metadata, _ = split_event_metadata_by_selected_ids(
+            all_event_metadata,
+            cur_selected_event_ids,
+            custom_split=generator.get('custom_split', None),
+            shuffle_train_dev=generator.get('shuffle_train_dev', False),
+        )
+        selected_event_ids.append(cur_selected_event_ids)
+        event_metadata_train.append(split_event_metadata['train'])
+        event_metadata_dev.append(split_event_metadata['dev'])
+        event_metadata_test.append(split_event_metadata['test'])
+
+    return event_metadata_train, event_metadata_dev, event_metadata_test, selected_event_ids
+
+
+def count_unique_events(event_metadata):
+    if event_metadata is None or len(event_metadata) == 0:
+        return 0
+    event_key = loader.detect_event_key(event_metadata.columns)
+    return len(event_metadata.drop_duplicates(subset=event_key, keep='first'))
+
+
 def _event_columns_for_export(df):
     preferred = [
         'EVENT', 'Latitude', 'Longitude', 'DEPTH', 'Magnitude',
@@ -736,7 +800,7 @@ if __name__ == '__main__':
     parser.add_argument('--diting_config', type=str, required=True)
     parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--test_run', action='store_true')  # Test run with less data
-    parser.add_argument('--overfit_n', type=int, default=0)  # Use the same tiny subset for train/val
+    parser.add_argument('--overfit_n', type=int, default=0)  # Select a tiny subset, then re-split it for train/dev/test
     parser.add_argument('--no_multiprocessing', action='store_true')  # Prevents certain deadlocks
     parser.add_argument('--continue_ensemble', action='store_true')  # Continues a stopped ensemble training
     args = parser.parse_args()
@@ -831,18 +895,8 @@ if __name__ == '__main__':
                                             decimate_events=generator.get('decimate_events', None),
                                             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
                          for data_path, generator in zip(training_params['data_path'], generator_params)]
-        selected_event_ids = [
-            select_diverse_event_ids(all_meta[0], args.overfit_n, mag_key=generator.get('key', 'MA'))
-            for all_meta, generator in zip(full_data_all, generator_params)
-        ]
-        event_metadata_train = [
-            subset_events(meta, args.overfit_n, generator.get('key', 'MA'), selected_ids)
-            for meta, generator, selected_ids in zip(event_metadata_train, generator_params, selected_event_ids)
-        ]
-        event_metadata_dev = [
-            subset_events(meta, args.overfit_n, generator.get('key', 'MA'), selected_ids)
-            for meta, generator, selected_ids in zip(event_metadata_dev, generator_params, selected_event_ids)
-        ]
+        event_metadata_train, event_metadata_dev, event_metadata_test, selected_event_ids = \
+            build_overfit_event_metadata_splits(full_data_all, generator_params, args.overfit_n)
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for generator_param in generator_params:
             fixed_cutout = generator_param.get('cutout_end', generator_param.get('cutout_start', 0))
@@ -854,7 +908,16 @@ if __name__ == '__main__':
             generator_param['cutout_start'] = fixed_cutout
             generator_param['cutout_end'] = fixed_cutout
         if (not is_dist) or (is_dist and (rank == 0)):
-            print(f'Overfit mode enabled: using {args.overfit_n} diverse events for both train and val')
+            split_counts = [
+                (
+                    count_unique_events(df_train),
+                    count_unique_events(df_dev),
+                    count_unique_events(df_test),
+                )
+                for df_train, df_dev, df_test in zip(event_metadata_train, event_metadata_dev, event_metadata_test)
+            ]
+            print(f'Overfit mode enabled: selected {args.overfit_n} diverse events and re-split them for train/dev/test')
+            print(f'Overfit split event counts (train/dev/test): {split_counts}')
             print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, earliest-trigger station/target selection, no train/dev split shuffling')
 
     if (not is_dist) or (is_dist and (rank == 0)):

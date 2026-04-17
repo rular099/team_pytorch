@@ -26,8 +26,8 @@ import gemini_models as models
 import gemini_util_light as util
 import loader_light as loader
 
-# Reuse the same build_diting_args / subset_events from train_light.py
-from train_light import build_diting_args as load_diting_args, subset_events, select_diverse_event_ids
+# Reuse the same build_diting_args / overfit split logic from train_light.py
+from train_light import build_diting_args as load_diting_args, build_overfit_event_metadata_splits
 
 
 def shifted_p_picks_array(p_picks):
@@ -106,18 +106,9 @@ def build_datasets(config, overfit_n=0):
             decimate_events=g.get('decimate_events', None),
             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
             for data_path, g in zip(training_params['data_path'], generator_params)]
-        selected_event_ids = [
-            select_diverse_event_ids(all_meta[0], overfit_n, mag_key=g.get('key', 'MA'))
-            for all_meta, g in zip(full_data_all, generator_params)
-        ]
-        event_metadata_train = [
-            subset_events(meta, overfit_n, g.get('key', 'MA'), selected_ids)
-            for meta, g, selected_ids in zip(event_metadata_train, generator_params, selected_event_ids)
-        ]
-        event_metadata_dev = [
-            subset_events(meta, overfit_n, g.get('key', 'MA'), selected_ids)
-            for meta, g, selected_ids in zip(event_metadata_dev, generator_params, selected_event_ids)
-        ]
+        event_metadata_train, event_metadata_dev, _, _ = build_overfit_event_metadata_splits(
+            full_data_all, generator_params, overfit_n
+        )
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for gp in generator_params:
             fixed_cutout = gp.get('cutout_end', gp.get('cutout_start', 0))
