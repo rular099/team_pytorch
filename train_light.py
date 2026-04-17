@@ -34,7 +34,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def _normalize_optional_path(path):
     if not path:
         return path
-    return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
+    expanded = os.path.expanduser(os.path.expandvars(path))
+    if "$" in expanded:
+        raise ValueError(
+            f"Unresolved environment variable in path: {path}. "
+            "Set the required environment variable before running."
+        )
+    return os.path.abspath(expanded)
 
 
 def build_diting_args(diting_config_path, device='cpu', distributed=False, pretrained_override=None, resume_override=None):

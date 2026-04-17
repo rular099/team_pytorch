@@ -5,7 +5,7 @@
 pretrain_method: mae
 pretrained_load_mode: backbone
 eval_type: linear_probe
-pretrained: /run/media/zhangb/b2e6d03e-e00d-43d1-a516-0569ae637c93/sdw/DiTingCKPT/pretrain_1.2B/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt
+pretrained: ${DITING_PRETRAINED}
 
 # muP hyperparameters
 hps: modelsize1792_lr0.003_wd5e-06_mr0.75_init-std0.16_attn-mult32.0_input-mult10.0_output-mult16.0
