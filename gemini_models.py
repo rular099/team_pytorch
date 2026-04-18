@@ -904,6 +904,7 @@ class FullModel(nn.Module):
                 'use_coords_rel_abs_fusion requires positional coordinate embeddings; '
                 'it is incompatible with alternative_coords_embedding=True.'
             )
+        self.loc_target_mode = 'abs' if self.use_coords_abs else 'rel'
 
         if self.n_pga_targets > 0:
             self.att_masking = True

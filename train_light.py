@@ -1086,6 +1086,9 @@ if __name__ == '__main__':
                 max_stations=max_stations,
                 sampling_rate=sampling_rate,
                 no_event_token=no_event_token,
+                use_coords_rel=config['model_params'].get('use_coords_rel', False),
+                use_coords_abs=config['model_params'].get('use_coords_abs', True),
+                use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
             )
             # Config wins: overlay generator_param_set on top of defaults.
             merged = {**defaults, **generator_param_set}

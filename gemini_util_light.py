@@ -224,7 +224,9 @@ class PreloadedEventGenerator(Dataset):
                  integrate=False, sampling_rate=100.,
                  select_first=False, fake_borehole=False, scale_metadata=True, pga_key='pga',
                  pga_mode=False, p_pick_limit=5000, coord_keys=None, upsample_high_station_events=None,
-                 no_event_token=False, pga_selection_skew=None, **kwargs):
+                 no_event_token=False, pga_selection_skew=None,
+                 use_coords_rel=False, use_coords_abs=True,
+                 use_coords_rel_abs_fusion=False, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -288,6 +290,18 @@ class PreloadedEventGenerator(Dataset):
         self.scale_metadata = scale_metadata
         self.upsample_high_station_events = upsample_high_station_events
         self.no_event_token = no_event_token
+        self.use_coords_rel = use_coords_rel
+        self.use_coords_abs = use_coords_abs
+        self.use_coords_rel_abs_fusion = use_coords_rel_abs_fusion
+        active_coord_modes = sum(bool(flag) for flag in (
+            self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
+        ))
+        if active_coord_modes != 1:
+            raise ValueError(
+                'Exactly one of use_coords_rel / use_coords_abs / '
+                'use_coords_rel_abs_fusion must be True.'
+            )
+        self.loc_target_mode = 'abs' if self.use_coords_abs else 'rel'
 
 #        if 'p_picks' in data:
 #            self.triggers = data['p_picks']
@@ -666,6 +680,14 @@ class PreloadedEventGenerator(Dataset):
             metadata_new[:, :, 3] = metadata[:, :, 2]
             metadata = metadata_new
 
+        loc_target_abs = None
+        loc_center = None
+        if self.coords_target and target is not None:
+            coords3 = self._coords3_from_metadata(metadata)
+            loc_center = self._masked_coord_center(coords3, station_valid)
+            loc_target_abs = target.copy()
+            target = self._finalize_loc_target(target, metadata, station_valid)
+
         # Convert to Torch tensors
         waveforms = torch.from_numpy(np.swapaxes(waveforms[0],1,2)).float() # shape (nstation, channel, length)
         metadata = torch.from_numpy(metadata[0]).float()
@@ -694,7 +716,30 @@ class PreloadedEventGenerator(Dataset):
             'raw': torch.from_numpy(raw_p_picks[0]).float(),
             'shift': torch.tensor(float(shift), dtype=torch.float32),
         }
+        if loc_target_abs is not None:
+            p_pick_info['loc_target_abs'] = torch.from_numpy(loc_target_abs[0]).float()
+            p_pick_info['loc_center'] = torch.from_numpy(loc_center[0, 0]).float()
+            p_pick_info['loc_target_mode'] = self.loc_target_mode
         return inputs, outputs, p_pick_info
+
+    @staticmethod
+    def _coords3_from_metadata(metadata):
+        if metadata.shape[-1] == 4:
+            return metadata[:, :, (0, 1, 3)]
+        return metadata[:, :, :3]
+
+    @staticmethod
+    def _masked_coord_center(coords, station_valid):
+        weights = station_valid[..., None].astype(coords.dtype)
+        denom = np.clip(weights.sum(axis=1, keepdims=True), a_min=1.0, a_max=None)
+        return (coords * weights).sum(axis=1, keepdims=True) / denom
+
+    def _finalize_loc_target(self, target_abs, metadata, station_valid):
+        if self.loc_target_mode == 'abs':
+            return target_abs
+        coords3 = self._coords3_from_metadata(metadata)
+        center = self._masked_coord_center(coords3, station_valid)
+        return target_abs - center[:, 0, :]
 
     def on_epoch_end(self):
         self.indexes = np.repeat(self.base_indexes.copy(), self.oversample, axis=0)
@@ -977,6 +1022,9 @@ def generator_from_config(config, data, event_metadata, time, batch_size=64, sam
     generator_params['batch_size'] = batch_size
     generator_params['transform_target_only'] = generator_params.get('transform_target_only', True)
     generator_params['upsample_high_station_events'] = None
+    generator_params['use_coords_rel'] = config['model_params'].get('use_coords_rel', False)
+    generator_params['use_coords_abs'] = config['model_params'].get('use_coords_abs', True)
+    generator_params['use_coords_rel_abs_fusion'] = config['model_params'].get('use_coords_rel_abs_fusion', False)
     if generator_params.get('coord_keys', None) is not None:
         raise NotImplementedError('Fixed coordinate keys are not implemented in location evaluation')
     generator_params['translate'] = False

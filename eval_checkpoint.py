@@ -37,6 +37,12 @@ def shifted_p_picks_array(p_picks):
     return p_picks.numpy() if isinstance(p_picks, torch.Tensor) else np.array(p_picks)
 
 
+def _to_numpy(value):
+    if isinstance(value, torch.Tensor):
+        return value.numpy()
+    return np.array(value)
+
+
 def build_model_and_load(config, diting_args, checkpoint_path, device):
     """Build model and load checkpoint."""
     full_model = models.build_transformer_model(
@@ -143,6 +149,9 @@ def build_datasets(config, overfit_n=0):
                 coords_target=True, label_smoothing=False, station_blinding=False,
                 cutout=cutout, pga_targets=n_pga_targets, max_stations=max_stations,
                 sampling_rate=sampling_rate, no_event_token=no_event_token,
+                use_coords_rel=config['model_params'].get('use_coords_rel', False),
+                use_coords_abs=config['model_params'].get('use_coords_abs', True),
+                use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
                 shuffle=False,  # deterministic eval order
             )
             merged = {**defaults, **gp_copy}
@@ -353,7 +362,8 @@ def diagnose_embedding_scales(model, dataset, device):
 
     waveform_norm = raw_model._normalize(waveform_inp, mode='std', axis=3)
     waveforms_masked = waveform_norm * station_valid[:, :, None, None].float()
-    coords_masked = metadata_inp * station_valid[:, :, None].float()
+    coords_abs = metadata_inp * station_valid[:, :, None].float()
+    coords_rel, _ = raw_model._make_relative_coords(coords_abs, station_valid.bool())
 
     waveforms_emb = torch.stack(
         [raw_model.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])],
@@ -373,10 +383,14 @@ def diagnose_embedding_scales(model, dataset, device):
     wave_plus_scale = raw_model.layernorm(wave_plus_scale)
     wave_plus_scale_valid = wave_plus_scale[0, valid_idx]
 
-    coords_emb = raw_model.position_embedding(coords_masked)
-    coords_emb_valid = coords_emb[0, valid_idx]
+    coords_feat, coords_emb = raw_model._station_coord_features(coords_abs, coords_rel, station_valid.bool())
+    coords_feat_valid = coords_feat[0, valid_idx]
+    coords_emb_valid = None if coords_emb is None else coords_emb[0, valid_idx]
 
-    station_emb = wave_plus_scale + coords_emb
+    if raw_model.alternative_coords_embedding:
+        station_emb = torch.cat([wave_plus_scale, coords_feat], dim=-1)
+    else:
+        station_emb = wave_plus_scale + coords_feat
     station_emb_valid = station_emb[0, valid_idx]
 
     def mean_norm(x):
@@ -392,7 +406,10 @@ def diagnose_embedding_scales(model, dataset, device):
         print(f'  waveform_scale_gain: {raw_model.waveform_scale_gain:.4f}')
         print(f'  mean ||gain*scale_emb||: {(raw_model.waveform_scale_gain * scale_emb_valid.norm(dim=-1)).mean().item():.4f}')
     print(f'  mean ||layernorm(wave+scale)||: {mean_norm(wave_plus_scale_valid):.4f}')
-    print(f'  mean ||coords_emb||: {mean_norm(coords_emb_valid):.4f}')
+    if coords_emb_valid is not None:
+        print(f'  mean ||coords_emb||: {mean_norm(coords_emb_valid):.4f}')
+    else:
+        print(f'  mean ||coords_feat||: {mean_norm(coords_feat_valid):.4f}')
     print(f'  mean ||station_emb before transformer||: {mean_norm(station_emb_valid):.4f}')
     print()
 
@@ -416,6 +433,11 @@ def run_inference(model, dataset, device):
             ptv = inputs[4]
             ptv_np = ptv.numpy() if isinstance(ptv, torch.Tensor) else np.array(ptv)
             results['pga_target_valid'].append(ptv_np)
+        if isinstance(p_picks, dict):
+            if 'loc_target_abs' in p_picks:
+                results['loc_label_abs'].append(_to_numpy(p_picks['loc_target_abs']))
+            if 'loc_center' in p_picks:
+                results['loc_center'].append(_to_numpy(p_picks['loc_center']))
 
         # Parse outputs using model.output_layout
         for i, name in enumerate(head_names):
@@ -444,7 +466,13 @@ def run_inference(model, dataset, device):
                     alpha = out_np[:, 0]
                     mu = out_np[:, 1:1+d]
                     best = np.argmax(alpha)
-                    results[f'{name}_mu_best'].append(mu[best])
+                    mu_best = mu[best]
+                    results[f'{name}_mu_best'].append(mu_best)
+                    if name == 'loc' and raw_model.loc_target_mode == 'rel' and 'loc_center' in results:
+                        center = results['loc_center'][-1]
+                        results['loc_mu_best_abs'].append(mu_best + center)
+                    elif name == 'loc':
+                        results['loc_mu_best_abs'].append(mu_best)
 
         results['p_picks'].append(shifted_p_picks_array(p_picks))
 
@@ -480,6 +508,8 @@ def print_summary(results, split_name):
             print(f'  MAE={np.mean(np.abs(residuals)):.4f}, RMSE={np.sqrt(np.mean(residuals**2)):.4f}')
 
         elif name == 'loc':
+            abs_labels = np.array(results.get('loc_label_abs', labels))
+            abs_preds = np.array(results.get('loc_mu_best_abs', mu_best))
             for i in range(min(len(labels), 16)):
                 l = labels[i]
                 p = mu_best[i]
@@ -487,6 +517,15 @@ def print_summary(results, split_name):
                       f'pred=[{p[0]:.2f}, {p[1]:.2f}, {p[2]:.2f}]')
             residuals = mu_best - labels
             print(f'  MAE per dim: {np.mean(np.abs(residuals), axis=0)}')
+            if 'loc_label_abs' in results:
+                print('  absolute-coordinate view:')
+                for i in range(min(len(abs_labels), 16)):
+                    l = abs_labels[i]
+                    p = abs_preds[i]
+                    print(f'  [{i:2d}] label_abs=[{l[0]:.2f}, {l[1]:.2f}, {l[2]:.2f}], '
+                          f'pred_abs=[{p[0]:.2f}, {p[1]:.2f}, {p[2]:.2f}]')
+                abs_residuals = abs_preds - abs_labels
+                print(f'  ABS MAE per dim: {np.mean(np.abs(abs_residuals), axis=0)}')
 
         elif name == 'pga':
             # Mask invalid targets using pga_target_valid
