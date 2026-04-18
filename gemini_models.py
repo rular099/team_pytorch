@@ -861,7 +861,7 @@ class FullModel(nn.Module):
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                  metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                  add_constant_to_mixture, n_datasets, waveform_scale_proj=None, waveform_scale_gain=1.0,
-                 disable_waveform_scale=False, use_coords_rel=False, use_coords_abs=True,
+                 disable_waveform_scale=False, use_amplitude_info=None, use_coords_rel=False, use_coords_abs=True,
                  use_coords_rel_abs_fusion=False, coords_abs_weight=0.1):
         super().__init__()
         self.waveform_model = waveform_model
@@ -885,7 +885,10 @@ class FullModel(nn.Module):
         self.n_datasets = n_datasets
         self.waveform_scale_proj = waveform_scale_proj
         self.waveform_scale_gain = waveform_scale_gain
-        self.disable_waveform_scale = disable_waveform_scale
+        if use_amplitude_info is None:
+            use_amplitude_info = not disable_waveform_scale
+        self.use_amplitude_info = bool(use_amplitude_info)
+        self.disable_waveform_scale = not self.use_amplitude_info
         self.use_coords_rel = use_coords_rel
         self.use_coords_abs = use_coords_abs
         self.use_coords_rel_abs_fusion = use_coords_rel_abs_fusion
@@ -1047,7 +1050,7 @@ class FullModel(nn.Module):
         raw_station_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
         scale_emb = None
         preln_wave_emb = raw_station_emb
-        if self.waveform_scale_proj is not None and not self.disable_waveform_scale:
+        if self.waveform_scale_proj is not None and self.use_amplitude_info:
             scale_emb = self.waveform_scale_proj(self._extract_scale(raw_waveform))
             gain_scale_emb = self.waveform_scale_gain * scale_emb
             preln_wave_emb = preln_wave_emb + gain_scale_emb
@@ -1281,6 +1284,7 @@ def build_transformer_model(max_stations,
                             alternative_coords_embedding=False,
                             waveform_scale_gain=1.0,
                             disable_waveform_scale=False,
+                            use_amplitude_info=None,
                             use_coords_rel=False,
                             use_coords_abs=True,
                             use_coords_rel_abs_fusion=False,
@@ -1358,6 +1362,7 @@ def build_transformer_model(max_stations,
                              add_constant_to_mixture, n_datasets, waveform_scale_proj=full_waveform_scale_proj,
                              waveform_scale_gain=waveform_scale_gain,
                              disable_waveform_scale=disable_waveform_scale,
+                             use_amplitude_info=use_amplitude_info,
                              use_coords_rel=use_coords_rel,
                              use_coords_abs=use_coords_abs,
                              use_coords_rel_abs_fusion=use_coords_rel_abs_fusion,

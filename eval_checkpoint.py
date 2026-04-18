@@ -124,7 +124,7 @@ def build_datasets(config, overfit_n=0):
             gp['selection_skew'] = None
             gp['oversample'] = 1
             gp['magnitude_resampling'] = 1.0
-            gp['select_first'] = True
+            gp['select_first'] = False
             gp['cutout_start'] = fixed_cutout
             gp['cutout_end'] = fixed_cutout
 
@@ -282,6 +282,12 @@ def diagnose_diting_features(model, dataset, device):
 @torch.no_grad()
 def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0)):
     raw_model = model.module if hasattr(model, 'module') else model
+    if not getattr(raw_model, 'use_amplitude_info', True):
+        print(f'{"="*60}')
+        print('  Amplitude sensitivity diagnostics skipped: amplitude path disabled')
+        print(f'{"="*60}')
+        print()
+        return
     inputs, labels, _ = dataset[0]
 
     waveform_inp = inputs[0].unsqueeze(0).to(device)
@@ -311,7 +317,7 @@ def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0
 
         scale_norm = 0.0
         ratio = 0.0
-        if raw_model.waveform_scale_proj is not None:
+        if raw_model.waveform_scale_proj is not None and getattr(raw_model, 'use_amplitude_info', True):
             scale_emb = raw_model.waveform_scale_proj(raw_model._extract_scale(scaled_waveform))
             scale_valid = scale_emb[0, valid_idx]
             scale_norm = scale_valid.norm(dim=-1).mean().item()
@@ -373,12 +379,12 @@ def diagnose_embedding_scales(model, dataset, device):
 
     scale_emb = None
     scale_emb_valid = None
-    if raw_model.waveform_scale_proj is not None:
+    if raw_model.waveform_scale_proj is not None and getattr(raw_model, 'use_amplitude_info', True):
         scale_emb = raw_model.waveform_scale_proj(raw_model._extract_scale(waveform_inp))
         scale_emb_valid = scale_emb[0, valid_idx]
 
     wave_plus_scale = waveforms_emb
-    if scale_emb is not None:
+    if scale_emb is not None and getattr(raw_model, 'use_amplitude_info', True):
         wave_plus_scale = wave_plus_scale + raw_model.waveform_scale_gain * scale_emb
     wave_plus_scale = raw_model.layernorm(wave_plus_scale)
     wave_plus_scale_valid = wave_plus_scale[0, valid_idx]

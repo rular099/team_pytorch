@@ -44,6 +44,7 @@
         "event_token_init_range": 0.02,
         "no_event_token": false,
         "waveform_scale_gain": 1.0,
+        "use_amplitude_info": false,
         "disable_waveform_scale": true,
         "use_coords_rel": false,
         "use_coords_abs": true,
