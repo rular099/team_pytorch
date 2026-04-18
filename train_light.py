@@ -98,6 +98,70 @@ def build_diting_args(diting_config_path, device='cpu', distributed=False, pretr
     return diting_args
 
 
+def _iter_trainable_params(module):
+    for param in module.parameters():
+        if param.requires_grad:
+            yield param
+
+
+def build_optimizer_with_groups(model, training_params, is_dist=False):
+    raw_model = model.module if is_dist else model
+
+    base_lr = training_params['lr']
+    adapter_lr = training_params.get('lr_adapter', base_lr)
+    team_lr = training_params.get('lr_team', base_lr)
+    encoder_lr = training_params.get('lr_encoder', None)
+
+    encoder_params = list(_iter_trainable_params(raw_model.waveform_model[0]))
+    adapter_params = list(_iter_trainable_params(raw_model.waveform_model[1]))
+    adapter_param_ids = {id(p) for p in adapter_params}
+    encoder_param_ids = {id(p) for p in encoder_params}
+
+    team_params = []
+    for param in _iter_trainable_params(raw_model):
+        pid = id(param)
+        if pid in adapter_param_ids or pid in encoder_param_ids:
+            continue
+        team_params.append(param)
+
+    param_groups = []
+    if adapter_params:
+        param_groups.append({
+            'params': adapter_params,
+            'lr': adapter_lr,
+            'name': 'adapter',
+        })
+    if team_params:
+        param_groups.append({
+            'params': team_params,
+            'lr': team_lr,
+            'name': 'team',
+        })
+    if encoder_params:
+        if encoder_lr is None:
+            raise ValueError(
+                'Found trainable encoder parameters, but training_params.lr_encoder is not set.'
+            )
+        param_groups.append({
+            'params': encoder_params,
+            'lr': encoder_lr,
+            'name': 'encoder',
+        })
+
+    if not param_groups:
+        raise ValueError('No trainable parameters found for optimizer.')
+
+    optimizer = optim.Adam(param_groups)
+    group_summary = {
+        group['name']: {
+            'lr': group['lr'],
+            'n_params': sum(p.numel() for p in group['params']),
+        }
+        for group in param_groups
+    }
+    return optimizer, group_summary
+
+
 def select_diverse_event_ids(event_metadata, n, mag_key=None):
     if n is None:
         return None
@@ -555,6 +619,10 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             if global_step % 100 == 0:
                 if (not is_dist) or (is_dist and (rank == 0)):
                     writer.add_scalar('train/lr', optimizer.param_groups[0]['lr'], global_step)
+                    for group in optimizer.param_groups:
+                        group_name = group.get('name')
+                        if group_name is not None:
+                            writer.add_scalar(f'train/lr_{group_name}', group['lr'], global_step)
             global_step += 1
         if is_dist:
             train_stats = torch.tensor([running_loss, float(num_train_batches)], device=device)
@@ -1060,7 +1128,15 @@ if __name__ == '__main__':
                 print('Kept current station adapter initialization')
 
         no_event_token = config['model_params'].get('no_event_token', False)
-        optimizer = optim.Adam(filter(lambda p: p.requires_grad, full_model.parameters()), lr=training_params['lr'])
+        optimizer, optimizer_group_summary = build_optimizer_with_groups(
+            full_model, training_params, is_dist=is_dist
+        )
+        if rank == 0:
+            for group_name, info in optimizer_group_summary.items():
+                print(
+                    f'Optimizer group {group_name}: '
+                    f'lr={info["lr"]:.6g}, n_params={info["n_params"]}'
+                )
 
         n_pga_targets = config['model_params'].get('n_pga_targets', 0)
 

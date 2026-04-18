@@ -53,6 +53,8 @@
     },
     "training_params": {
         "lr": 0.001,
+        "lr_adapter": 0.001,
+        "lr_team": 0.001,
         "clipnorm": 1.0,
         "epoch_sanity": true,
         "epochs_full_model": 300,
