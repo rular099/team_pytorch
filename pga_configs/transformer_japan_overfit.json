@@ -45,6 +45,10 @@
         "no_event_token": false,
         "waveform_scale_gain": 1.0,
         "disable_waveform_scale": true,
+        "use_coords_rel": false,
+        "use_coords_abs": true,
+        "use_coords_rel_abs_fusion": false,
+        "coords_abs_weight": 0.1,
         "rotation_anchor": [37, 140]
     },
     "training_params": {

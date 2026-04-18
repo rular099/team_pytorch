@@ -861,7 +861,8 @@ class FullModel(nn.Module):
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                  metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                  add_constant_to_mixture, n_datasets, waveform_scale_proj=None, waveform_scale_gain=1.0,
-                 disable_waveform_scale=False):
+                 disable_waveform_scale=False, use_coords_rel=False, use_coords_abs=True,
+                 use_coords_rel_abs_fusion=False, coords_abs_weight=0.1):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -885,6 +886,24 @@ class FullModel(nn.Module):
         self.waveform_scale_proj = waveform_scale_proj
         self.waveform_scale_gain = waveform_scale_gain
         self.disable_waveform_scale = disable_waveform_scale
+        self.use_coords_rel = use_coords_rel
+        self.use_coords_abs = use_coords_abs
+        self.use_coords_rel_abs_fusion = use_coords_rel_abs_fusion
+        self.coords_abs_weight = coords_abs_weight
+
+        active_coord_modes = sum(bool(flag) for flag in (
+            self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
+        ))
+        if active_coord_modes != 1:
+            raise ValueError(
+                'Exactly one of use_coords_rel / use_coords_abs / '
+                'use_coords_rel_abs_fusion must be True.'
+            )
+        if self.alternative_coords_embedding and self.use_coords_rel_abs_fusion:
+            raise ValueError(
+                'use_coords_rel_abs_fusion requires positional coordinate embeddings; '
+                'it is incompatible with alternative_coords_embedding=True.'
+            )
 
         if self.n_pga_targets > 0:
             self.att_masking = True
@@ -969,6 +988,44 @@ class FullModel(nn.Module):
             raise ValueError(f"Supported mode: 'max','std', got '{mode}'")
         return data
 
+    @staticmethod
+    def _masked_coord_center(coords, valid_mask):
+        weights = valid_mask.unsqueeze(-1).to(coords.dtype)
+        denom = weights.sum(dim=1, keepdim=True).clamp_min(1.0)
+        return (coords * weights).sum(dim=1, keepdim=True) / denom
+
+    def _make_relative_coords(self, coords, valid_mask):
+        center = self._masked_coord_center(coords, valid_mask)
+        rel = coords - center
+        return rel * valid_mask.unsqueeze(-1).to(coords.dtype), center
+
+    def _station_coord_features(self, coords_abs, coords_rel, valid_mask):
+        if self.alternative_coords_embedding:
+            coords_used = coords_rel if self.use_coords_rel else coords_abs
+            return coords_used, None
+
+        coords_abs_emb = self.position_embedding(coords_abs, mask=valid_mask)
+        if self.use_coords_abs:
+            return coords_abs_emb, coords_abs_emb
+
+        coords_rel_emb = self.position_embedding(coords_rel, mask=valid_mask)
+        if self.use_coords_rel:
+            return coords_rel_emb, coords_rel_emb
+
+        coords_emb = coords_rel_emb + self.coords_abs_weight * coords_abs_emb
+        return coords_emb, coords_emb
+
+    def _pga_coord_embedding(self, coords_abs, coords_rel, valid_mask):
+        coords_abs_emb = self.position_embedding(coords_abs, mask=valid_mask)
+        if self.use_coords_abs:
+            return coords_abs_emb
+
+        coords_rel_emb = self.position_embedding(coords_rel, mask=valid_mask)
+        if self.use_coords_rel:
+            return coords_rel_emb
+
+        return coords_rel_emb + self.coords_abs_weight * coords_abs_emb
+
 
     def _extract_scale(self, waveform):
         scale = torch.log(torch.amax(torch.abs(waveform), dim=(2, 3)) + 1e-6)
@@ -983,7 +1040,8 @@ class FullModel(nn.Module):
         # station_valid: (B, S) bool. pga_target_valid: (B, n_pga) bool.
         sv = station_valid.bool()
         waveforms_masked = waveform_inp * sv[:, :, None, None].float()
-        coords_masked = metadata_inp * sv[:, :, None].float()
+        coords_abs = metadata_inp * sv[:, :, None].float()
+        coords_rel, coords_center = self._make_relative_coords(coords_abs, sv)
 
         raw_station_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
         scale_emb = None
@@ -996,11 +1054,11 @@ class FullModel(nn.Module):
             gain_scale_emb = None
         waveforms_emb = self.layernorm(preln_wave_emb)
 
+        coords_feat, coords_emb = self._station_coord_features(coords_abs, coords_rel, sv)
         if not self.alternative_coords_embedding:
-            coords_emb = self.position_embedding(coords_masked)
-            emb = waveforms_emb + coords_emb
+            emb = waveforms_emb + coords_feat
         else:
-            emb = torch.cat([waveforms_emb, coords_masked], dim=-1)
+            emb = torch.cat([waveforms_emb, coords_feat], dim=-1)
 
         self._last_diag = {
             'station_adapter_raw_norm': self._mean_token_norm(raw_station_emb).detach(),
@@ -1008,6 +1066,9 @@ class FullModel(nn.Module):
             'wave_emb_norm': self._mean_token_norm(waveforms_emb).detach(),
             'station_emb_norm': self._mean_token_norm(emb).detach(),
             'station_emb_cosine_mean': self._masked_pairwise_cosine_mean(emb, sv).detach(),
+            'coords_center_abs_mean': coords_center.abs().mean().detach(),
+            'coords_abs_mean': coords_abs.abs().mean().detach(),
+            'coords_rel_mean': coords_rel.abs().mean().detach(),
         }
         if scale_emb is not None:
             scale_norm = self._mean_token_norm(scale_emb)
@@ -1033,8 +1094,9 @@ class FullModel(nn.Module):
             assert pga_target_valid is not None, \
                 'pga_target_valid must be provided when n_pga_targets > 0'
             ptv = pga_target_valid.bool()
-            pga_targets_masked = pga_targets_inp * ptv[:, :, None].float()
-            pga_emb = self.position_embedding(pga_targets_masked)
+            pga_targets_abs = pga_targets_inp * ptv[:, :, None].float()
+            pga_targets_rel = (pga_targets_abs - coords_center) * ptv[:, :, None].float()
+            pga_emb = self._pga_coord_embedding(pga_targets_abs, pga_targets_rel, ptv)
             emb = torch.cat([emb, pga_emb], dim=1)
 
             n_pga = pga_emb.shape[1]
@@ -1218,6 +1280,10 @@ def build_transformer_model(max_stations,
                             alternative_coords_embedding=False,
                             waveform_scale_gain=1.0,
                             disable_waveform_scale=False,
+                            use_coords_rel=False,
+                            use_coords_abs=True,
+                            use_coords_rel_abs_fusion=False,
+                            coords_abs_weight=0.1,
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -1290,7 +1356,11 @@ def build_transformer_model(max_stations,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                              add_constant_to_mixture, n_datasets, waveform_scale_proj=full_waveform_scale_proj,
                              waveform_scale_gain=waveform_scale_gain,
-                             disable_waveform_scale=disable_waveform_scale)
+                             disable_waveform_scale=disable_waveform_scale,
+                             use_coords_rel=use_coords_rel,
+                             use_coords_abs=use_coords_abs,
+                             use_coords_rel_abs_fusion=use_coords_rel_abs_fusion,
+                             coords_abs_weight=coords_abs_weight)
     return full_model
 
 
