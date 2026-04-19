@@ -33,7 +33,7 @@
         "activation": "relu",
         "n_pga_targets": 15,
         "location_mixture": 15,
-        "pga_mixture": 5,
+        "pga_mixture": 1,
         "magnitude_mixture": 5,
         "borehole": false,
         "max_stations": 25,

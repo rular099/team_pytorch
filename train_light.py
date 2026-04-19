@@ -406,19 +406,41 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
     alpha_logits = pga_pred[..., 0]
     mu = pga_pred[..., 1]
     sigma = pga_pred[..., 2]
+    alpha_probs = torch.softmax(alpha_logits, dim=-1)
     best_idx = alpha_logits.argmax(dim=-1, keepdim=True)
     mu_best = mu.gather(-1, best_idx).squeeze(-1)
+    sigma_best = sigma.gather(-1, best_idx).squeeze(-1)
 
     stats = {
         'diag/pga_alpha_logits_mean': alpha_logits.mean().detach(),
         'diag/pga_alpha_logits_std': alpha_logits.std(unbiased=False).detach(),
+        'diag/pga_alpha_prob_mean': alpha_probs.mean().detach(),
+        'diag/pga_alpha_prob_std': alpha_probs.std(unbiased=False).detach(),
+        'diag/pga_alpha_entropy': (-(alpha_probs * torch.log(alpha_probs.clamp_min(1e-8))).sum(dim=-1)).mean().detach(),
         'diag/pga_mu_mean': mu.mean().detach(),
         'diag/pga_mu_std': mu.std(unbiased=False).detach(),
         'diag/pga_sigma_mean': sigma.mean().detach(),
         'diag/pga_sigma_std': sigma.std(unbiased=False).detach(),
         'diag/pga_mu_best_mean': mu_best.mean().detach(),
         'diag/pga_mu_best_std': mu_best.std(unbiased=False).detach(),
+        'diag/pga_sigma_best_mean': sigma_best.mean().detach(),
+        'diag/pga_sigma_best_std': sigma_best.std(unbiased=False).detach(),
     }
+    num_components = alpha_logits.shape[-1]
+    best_component = best_idx.squeeze(-1)
+    for comp_idx in range(num_components):
+        comp_mask = best_component == comp_idx
+        stats.update({
+            f'diag/pga_alpha_logit_{comp_idx}_mean': alpha_logits[..., comp_idx].mean().detach(),
+            f'diag/pga_alpha_logit_{comp_idx}_std': alpha_logits[..., comp_idx].std(unbiased=False).detach(),
+            f'diag/pga_alpha_prob_{comp_idx}_mean': alpha_probs[..., comp_idx].mean().detach(),
+            f'diag/pga_alpha_prob_{comp_idx}_std': alpha_probs[..., comp_idx].std(unbiased=False).detach(),
+            f'diag/pga_mu_{comp_idx}_mean': mu[..., comp_idx].mean().detach(),
+            f'diag/pga_mu_{comp_idx}_std': mu[..., comp_idx].std(unbiased=False).detach(),
+            f'diag/pga_sigma_{comp_idx}_mean': sigma[..., comp_idx].mean().detach(),
+            f'diag/pga_sigma_{comp_idx}_std': sigma[..., comp_idx].std(unbiased=False).detach(),
+            f'diag/pga_best_component_frac_{comp_idx}': comp_mask.float().mean().detach(),
+        })
     if pga_target_valid is not None:
         mask = pga_target_valid.bool()
         if mask.any():
@@ -427,10 +449,19 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
             stats.update({
                 'diag/pga_target_mean': valid_true.mean().detach(),
                 'diag/pga_target_std': valid_true.std(unbiased=False).detach(),
+                'diag/pga_mu_best_valid_mean': valid_pred.mean().detach(),
+                'diag/pga_mu_best_valid_std': valid_pred.std(unbiased=False).detach(),
                 'diag/pga_pred_target_mean_gap': (valid_pred.mean() - valid_true.mean()).detach(),
                 'diag/pga_pred_target_std_gap': (valid_pred.std(unbiased=False) - valid_true.std(unbiased=False)).detach(),
                 'diag/pga_valid_target_count': mask.sum().detach().float(),
             })
+            for comp_idx in range(num_components):
+                stats.update({
+                    f'diag/pga_mu_{comp_idx}_valid_mean': mu[..., comp_idx][mask].mean().detach(),
+                    f'diag/pga_mu_{comp_idx}_valid_std': mu[..., comp_idx][mask].std(unbiased=False).detach(),
+                    f'diag/pga_sigma_{comp_idx}_valid_mean': sigma[..., comp_idx][mask].mean().detach(),
+                    f'diag/pga_sigma_{comp_idx}_valid_std': sigma[..., comp_idx][mask].std(unbiased=False).detach(),
+                })
     return stats
 
 
@@ -872,14 +903,41 @@ def run_sanity_check(model, data_loader, device, name='sanity', max_batches=1):
                     last_dim = out.shape[-1]
                     d = (last_dim - 1) // 2
                     alpha_logits = out[..., 0]
+                    alpha_probs = torch.softmax(alpha_logits, dim=-1)
+                    best_idx = alpha_logits.argmax(dim=-1)
                     print(f'    alpha_logits: mean={alpha_logits.mean().item():.4f}, std={alpha_logits.std().item():.4f}')
+                    print(f'    alpha_probs: mean={alpha_probs.mean().item():.4f}, std={alpha_probs.std().item():.4f}, entropy={(-(alpha_probs * torch.log(alpha_probs.clamp_min(1e-8))).sum(dim=-1)).mean().item():.4f}')
                     dim_names = ['lat', 'lon', 'depth'] if d == 3 else [str(j) for j in range(d)]
+                    num_components = out.shape[-2]
+                    component_names = range(min(num_components, 5))
+                    for comp_idx in component_names:
+                        comp_frac = (best_idx == comp_idx).float().mean().item()
+                        print(
+                            f'    comp[{comp_idx}]: '
+                            f'logit_mean={alpha_logits[..., comp_idx].mean().item():.4f}, '
+                            f'prob_mean={alpha_probs[..., comp_idx].mean().item():.4f}, '
+                            f'best_frac={comp_frac:.4f}'
+                        )
                     for j in range(d):
-                        mu_j = out[..., 1 + j]
-                        sigma_j = out[..., 1 + d + j]
+                        mu_j = out[..., :, 1 + j]
+                        sigma_j = out[..., :, 1 + d + j]
                         name_j = dim_names[j] if j < len(dim_names) else str(j)
                         print(f'    mu_{name_j}: mean={mu_j.mean().item():.4f}, std={mu_j.std().item():.4f}')
                         print(f'    sigma_{name_j}: mean={sigma_j.mean().item():.4f}, std={sigma_j.std().item():.4f}')
+                        for comp_idx in component_names:
+                            print(
+                                f'      comp[{comp_idx}] mu_{name_j}: mean={mu_j[..., comp_idx].mean().item():.4f}, std={mu_j[..., comp_idx].std().item():.4f}'
+                            )
+                            print(
+                                f'      comp[{comp_idx}] sigma_{name_j}: mean={sigma_j[..., comp_idx].mean().item():.4f}, std={sigma_j[..., comp_idx].std().item():.4f}'
+                            )
+                        if d == 1:
+                            mu_best = mu_j.gather(-1, best_idx.unsqueeze(-1)).squeeze(-1)
+                            sigma_best = sigma_j.gather(-1, best_idx.unsqueeze(-1)).squeeze(-1)
+                            print(f'    mu_best: mean={mu_best.mean().item():.4f}, std={mu_best.std().item():.4f}')
+                            print(f'    sigma_best: mean={sigma_best.mean().item():.4f}, std={sigma_best.std().item():.4f}')
+                    if num_components > 5:
+                        print(f'    ... skipped remaining {num_components - 5} mixture components')
     model.train()
 
 if __name__ == '__main__':
