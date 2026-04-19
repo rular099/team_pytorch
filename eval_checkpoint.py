@@ -125,6 +125,8 @@ def build_datasets(config, overfit_n=0):
             gp['oversample'] = 1
             gp['magnitude_resampling'] = 1.0
             gp['select_first'] = False
+            gp['select_first_inputs'] = False
+            gp['select_first_pga_targets'] = False
             gp['cutout_start'] = fixed_cutout
             gp['cutout_end'] = fixed_cutout
 

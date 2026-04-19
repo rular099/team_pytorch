@@ -222,7 +222,8 @@ class PreloadedEventGenerator(Dataset):
                  max_stations=None, trigger_based=None, min_upsample_magnitude=2,
                  disable_station_foreshadowing=False, selection_skew=None, pga_from_inactive=False,
                  integrate=False, sampling_rate=100.,
-                 select_first=False, fake_borehole=False, scale_metadata=True, pga_key='pga',
+                 select_first=False, select_first_inputs=None, select_first_pga_targets=None,
+                 fake_borehole=False, scale_metadata=True, pga_key='pga',
                  pga_mode=False, p_pick_limit=5000, coord_keys=None, upsample_high_station_events=None,
                  no_event_token=False, pga_selection_skew=None,
                  use_coords_rel=False, use_coords_abs=True,
@@ -286,6 +287,10 @@ class PreloadedEventGenerator(Dataset):
         self.integrate = integrate
         self.sampling_rate = sampling_rate
         self.select_first = select_first
+        self.select_first_inputs = select_first if select_first_inputs is None else select_first_inputs
+        self.select_first_pga_targets = (
+            select_first if select_first_pga_targets is None else select_first_pga_targets
+        )
         self.fake_borehole = fake_borehole
         self.scale_metadata = scale_metadata
         self.upsample_high_station_events = upsample_high_station_events
@@ -474,7 +479,7 @@ class PreloadedEventGenerator(Dataset):
                     coeffs[self.triggers > self.waveforms.shape[1]] = 0
                     selection = np.argsort(-coeffs)
 
-                if self.select_first: # pick_time
+                if self.select_first_inputs: # pick_time
                     selection = np.argsort(self.triggers)
 
                 selection = selection[:true_max_stations_in_batch] # len tms
@@ -609,7 +614,7 @@ class PreloadedEventGenerator(Dataset):
                     active = np.where(valid_pos)[0]
                     if len(active) == 0:
                         raise ValueError(f'Found event without PGA idx={indexes[i]}')
-                    if self.select_first:
+                    if self.select_first_pga_targets:
                         active_p_picks = full_p_picks[i, active].copy()
                         bad = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
                         active_p_picks[bad] = min(np.max(active_p_picks), self.p_pick_limit)
@@ -1025,6 +1030,12 @@ def generator_from_config(config, data, event_metadata, time, batch_size=64, sam
     generator_params['use_coords_rel'] = config['model_params'].get('use_coords_rel', False)
     generator_params['use_coords_abs'] = config['model_params'].get('use_coords_abs', True)
     generator_params['use_coords_rel_abs_fusion'] = config['model_params'].get('use_coords_rel_abs_fusion', False)
+    generator_params['select_first_inputs'] = generator_params.get(
+        'select_first_inputs', generator_params.get('select_first', True)
+    )
+    generator_params['select_first_pga_targets'] = generator_params.get(
+        'select_first_pga_targets', generator_params.get('select_first', True)
+    )
     if generator_params.get('coord_keys', None) is not None:
         raise NotImplementedError('Fixed coordinate keys are not implemented in location evaluation')
     generator_params['translate'] = False
@@ -1035,7 +1046,6 @@ def generator_from_config(config, data, event_metadata, time, batch_size=64, sam
                                         pga_targets=n_pga_targets,
                                         max_stations=max_stations,
                                         sampling_rate=sampling_rate,
-                                        select_first=True,
                                         shuffle=False,
                                         pga_mode=pga,
                                         **generator_params)

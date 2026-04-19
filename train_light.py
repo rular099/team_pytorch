@@ -1057,6 +1057,8 @@ if __name__ == '__main__':
             generator_param['shuffle_train_dev'] = False
             generator_param['oversample'] = 1
             generator_param['select_first'] = False
+            generator_param['select_first_inputs'] = False
+            generator_param['select_first_pga_targets'] = False
             generator_param['cutout_start'] = fixed_cutout
             generator_param['cutout_end'] = fixed_cutout
         if (not is_dist) or (is_dist and (rank == 0)):
