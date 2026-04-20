@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import sys
+from collections import defaultdict
 sys.path.insert(0, './diting')
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'ditingbench'))
 import yaml
@@ -568,10 +569,59 @@ def collect_input_stats(inputs, labels, p_picks):
 
     return stats
 
+
+def _scalar_to_float(value):
+    if torch.is_tensor(value):
+        value = value.detach()
+        if value.numel() != 1:
+            raise ValueError(f'Expected scalar tensor, got shape {tuple(value.shape)}')
+        value = value.item()
+    return float(value)
+
+
+def _record_scalar(writer, scalar_history, tag, value, step):
+    scalar_value = _scalar_to_float(value)
+    if writer is not None:
+        writer.add_scalar(tag, scalar_value, step)
+    scalar_history[tag].append({
+        'step': int(step),
+        'value': scalar_value,
+    })
+
+
+def _sanitize_scalar_tag(tag):
+    return tag.replace('/', '_')
+
+
+def export_scalar_history(scalar_history, export_dir):
+    os.makedirs(export_dir, exist_ok=True)
+    for name in os.listdir(export_dir):
+        if name.endswith('.csv') or name == 'manifest.json':
+            os.remove(os.path.join(export_dir, name))
+    manifest = []
+    for tag in sorted(scalar_history.keys()):
+        entries = scalar_history[tag]
+        if not entries:
+            continue
+        safe_name = _sanitize_scalar_tag(tag)
+        path = os.path.join(export_dir, f'{safe_name}.csv')
+        pd.DataFrame(entries, columns=['step', 'value']).to_csv(path, index=False)
+        manifest.append({
+            'tag': tag,
+            'file': os.path.basename(path),
+            'count': len(entries),
+        })
+    manifest_path = os.path.join(export_dir, 'manifest.json')
+    with open(manifest_path, 'w') as f:
+        json.dump(manifest, f, indent=2)
+    return export_dir, manifest_path
+
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val'):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
+    scalar_history = defaultdict(list)
+    writer = None
     if (not is_dist) or (is_dist and (rank == 0)):
         os.makedirs(tb_path, exist_ok=True)
         writer = SummaryWriter(log_dir = tb_path)
@@ -581,152 +631,158 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
         device = 'cpu'
     global_step = 0
     steps_per_epoch = 0
-    for epoch in range(num_epochs):
-        if is_dist and train_sampler is not None:
-            train_sampler.set_epoch(epoch)
-        model.train()
-        running_loss = 0.0
-        num_train_batches = 0
-        first_batch_logged = False
-        for inputs, labels, p_picks in train_loader:
-            if isinstance(inputs, list):
-                inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
-            else:
-                inputs, labels = inputs.to(device), labels.to(device)
-            optimizer.zero_grad()
-            if isinstance(inputs, list):
-                outputs = model(*inputs)
-            else:
-                outputs = model(inputs)
-            # Layout when n_pga_targets > 0:
-            #   inputs = [waveforms, metadata, station_valid, pga_targets, pga_target_valid, (dataset_id?)]
-            pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
-            sel_pred, sel_true = models.select_loss_components(
-                outputs, labels, eval_model.output_layout, res_comps)
-            loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
-                                                    pga_target_valid=pga_target_valid)
-            loss.backward()
-            pre_clip_global_grad = global_grad_norm(model.parameters())
-            if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
-                diag_scalars = {}
-                forward_diag = getattr(eval_model, '_last_diag', {})
-                for key, value in forward_diag.items():
-                    if torch.is_tensor(value):
-                        if torch.isnan(value).any():
-                            continue
-                        diag_scalars[f'diag/{key}'] = value.detach()
-                diag_scalars.update(collect_input_stats(inputs, labels, p_picks))
-                diag_scalars.update(collect_pga_output_stats(outputs, labels, eval_model.output_layout, pga_target_valid))
-
-                grad_targets = {
-                    'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
-                    'grad_rms/station_adapter': module_grad_rms(eval_model.waveform_model[1]),
-                    'grad/mlp_pga': module_grad_norm(eval_model.mlp_pga),
-                    'grad_rms/mlp_pga': module_grad_rms(eval_model.mlp_pga),
-                    'grad/output_model_pga': module_grad_norm(eval_model.output_model_pga),
-                    'grad_rms/output_model_pga': module_grad_rms(eval_model.output_model_pga),
-                }
-                if pre_clip_global_grad is not None and not torch.isnan(pre_clip_global_grad).any():
-                    diag_scalars['grad/global_pre_clip_norm'] = pre_clip_global_grad.detach()
-                for key, value in grad_targets.items():
-                    if value is not None and not torch.isnan(value).any():
-                        diag_scalars[key] = value.detach()
-            if (not is_dist) or (is_dist and (rank == 0)):
-                writer.add_scalar('train/loss', loss.item(), global_step)
-                step_in_ep = global_step - steps_per_epoch * epoch
-                print(f'Step/Epoch {step_in_ep}/{epoch}, Loss: {loss.item():.4f}')
-            if clipnorm is not None:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
-            post_clip_global_grad = global_grad_norm(model.parameters())
-            if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
-                if post_clip_global_grad is not None and not torch.isnan(post_clip_global_grad).any():
-                    diag_scalars['grad/global_post_clip_norm'] = post_clip_global_grad.detach()
-                for key, value in diag_scalars.items():
-                    writer.add_scalar(key, value.item(), epoch)
-                first_batch_logged = True
-            optimizer.step()
-            running_loss += loss.item()
-            num_train_batches += 1
-            if global_step % 100 == 0:
-                if (not is_dist) or (is_dist and (rank == 0)):
-                    writer.add_scalar('train/lr', optimizer.param_groups[0]['lr'], global_step)
-                    for group in optimizer.param_groups:
-                        group_name = group.get('name')
-                        if group_name is not None:
-                            writer.add_scalar(f'train/lr_{group_name}', group['lr'], global_step)
-            global_step += 1
-        if is_dist:
-            train_stats = torch.tensor([running_loss, float(num_train_batches)], device=device)
-            dist.all_reduce(train_stats, op=dist.ReduceOp.SUM)
-            epoch_loss = (train_stats[0] / train_stats[1]).item()
-        else:
-            epoch_loss = running_loss / max(num_train_batches, 1)
-        if steps_per_epoch == 0:
-            steps_per_epoch = global_step
-        if (not is_dist) or (is_dist and (rank == 0)):
-            writer.add_scalar('train/epoch_loss',epoch_loss, epoch)
-            print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}')
-
-        # Validation step
-        eval_model.eval()
-        val_running_loss = 0.0
-        num_val_batches = 0
-        with torch.no_grad():
-            for inputs, labels, _ in val_loader:
+    export_dir = os.path.join('logs', training_params['weight_path'])
+    try:
+        for epoch in range(num_epochs):
+            if is_dist and train_sampler is not None:
+                train_sampler.set_epoch(epoch)
+            model.train()
+            running_loss = 0.0
+            num_train_batches = 0
+            first_batch_logged = False
+            for inputs, labels, p_picks in train_loader:
                 if isinstance(inputs, list):
                     inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
                 else:
                     inputs, labels = inputs.to(device), labels.to(device)
+                optimizer.zero_grad()
                 if isinstance(inputs, list):
-                    outputs = eval_model(*inputs)
+                    outputs = model(*inputs)
                 else:
-                    outputs = eval_model(inputs)
+                    outputs = model(inputs)
+                # Layout when n_pga_targets > 0:
+                #   inputs = [waveforms, metadata, station_valid, pga_targets, pga_target_valid, (dataset_id?)]
                 pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
                 sel_pred, sel_true = models.select_loss_components(
                     outputs, labels, eval_model.output_layout, res_comps)
                 loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
                                                         pga_target_valid=pga_target_valid)
-                val_running_loss += loss.item()
-                num_val_batches += 1
+                loss.backward()
+                pre_clip_global_grad = global_grad_norm(model.parameters())
+                if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
+                    diag_scalars = {}
+                    forward_diag = getattr(eval_model, '_last_diag', {})
+                    for key, value in forward_diag.items():
+                        if torch.is_tensor(value):
+                            if torch.isnan(value).any():
+                                continue
+                            diag_scalars[f'diag/{key}'] = value.detach()
+                    diag_scalars.update(collect_input_stats(inputs, labels, p_picks))
+                    diag_scalars.update(collect_pga_output_stats(outputs, labels, eval_model.output_layout, pga_target_valid))
 
-        if is_dist:
-            val_stats = torch.tensor([val_running_loss, float(num_val_batches)], device=device)
-            dist.all_reduce(val_stats, op=dist.ReduceOp.SUM)
-            val_loss = (val_stats[0] / val_stats[1]).item()
-        else:
-            val_loss = val_running_loss / max(num_val_batches, 1)
+                    grad_targets = {
+                        'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
+                        'grad_rms/station_adapter': module_grad_rms(eval_model.waveform_model[1]),
+                        'grad/mlp_pga': module_grad_norm(eval_model.mlp_pga),
+                        'grad_rms/mlp_pga': module_grad_rms(eval_model.mlp_pga),
+                        'grad/output_model_pga': module_grad_norm(eval_model.output_model_pga),
+                        'grad_rms/output_model_pga': module_grad_rms(eval_model.output_model_pga),
+                    }
+                    if pre_clip_global_grad is not None and not torch.isnan(pre_clip_global_grad).any():
+                        diag_scalars['grad/global_pre_clip_norm'] = pre_clip_global_grad.detach()
+                    for key, value in grad_targets.items():
+                        if value is not None and not torch.isnan(value).any():
+                            diag_scalars[key] = value.detach()
+                if (not is_dist) or (is_dist and (rank == 0)):
+                    _record_scalar(writer, scalar_history, 'train/loss', loss.item(), global_step)
+                    step_in_ep = global_step - steps_per_epoch * epoch
+                    print(f'Step/Epoch {step_in_ep}/{epoch}, Loss: {loss.item():.4f}')
+                if clipnorm is not None:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
+                post_clip_global_grad = global_grad_norm(model.parameters())
+                if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
+                    if post_clip_global_grad is not None and not torch.isnan(post_clip_global_grad).any():
+                        diag_scalars['grad/global_post_clip_norm'] = post_clip_global_grad.detach()
+                    for key, value in diag_scalars.items():
+                        _record_scalar(writer, scalar_history, key, value, epoch)
+                    first_batch_logged = True
+                optimizer.step()
+                running_loss += loss.item()
+                num_train_batches += 1
+                if global_step % 100 == 0:
+                    if (not is_dist) or (is_dist and (rank == 0)):
+                        _record_scalar(writer, scalar_history, 'train/lr', optimizer.param_groups[0]['lr'], global_step)
+                        for group in optimizer.param_groups:
+                            group_name = group.get('name')
+                            if group_name is not None:
+                                _record_scalar(writer, scalar_history, f'train/lr_{group_name}', group['lr'], global_step)
+                global_step += 1
+            if is_dist:
+                train_stats = torch.tensor([running_loss, float(num_train_batches)], device=device)
+                dist.all_reduce(train_stats, op=dist.ReduceOp.SUM)
+                epoch_loss = (train_stats[0] / train_stats[1]).item()
+            else:
+                epoch_loss = running_loss / max(num_train_batches, 1)
+            if steps_per_epoch == 0:
+                steps_per_epoch = global_step
+            if (not is_dist) or (is_dist and (rank == 0)):
+                _record_scalar(writer, scalar_history, 'train/epoch_loss', epoch_loss, epoch)
+                print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}')
 
+            # Validation step
+            eval_model.eval()
+            val_running_loss = 0.0
+            num_val_batches = 0
+            with torch.no_grad():
+                for inputs, labels, _ in val_loader:
+                    if isinstance(inputs, list):
+                        inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
+                    else:
+                        inputs, labels = inputs.to(device), labels.to(device)
+                    if isinstance(inputs, list):
+                        outputs = eval_model(*inputs)
+                    else:
+                        outputs = eval_model(inputs)
+                    pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
+                    sel_pred, sel_true = models.select_loss_components(
+                        outputs, labels, eval_model.output_layout, res_comps)
+                    loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
+                                                            pga_target_valid=pga_target_valid)
+                    val_running_loss += loss.item()
+                    num_val_batches += 1
+
+            if is_dist:
+                val_stats = torch.tensor([val_running_loss, float(num_val_batches)], device=device)
+                dist.all_reduce(val_stats, op=dist.ReduceOp.SUM)
+                val_loss = (val_stats[0] / val_stats[1]).item()
+            else:
+                val_loss = val_running_loss / max(num_val_batches, 1)
+
+            if (not is_dist) or (is_dist and (rank == 0)):
+                _record_scalar(writer, scalar_history, 'val/epoch_loss', val_loss, epoch)
+                print(f'Validation Loss: {val_loss:.4f}')
+
+                # Save checkpoint
+                filepath = os.path.join(training_params['weight_path'], f'{save_name}_{epoch+1}.pth')
+                state_dict = eval_model.state_dict()
+
+                if epoch % 10 == 0:
+                    torch.save({
+                        'epoch': epoch+1,
+                        'model_state_dict': state_dict,
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'scheduler_state_dict': scheduler.state_dict(),
+                        'loss': val_loss,
+                    }, filepath)
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
+                scheduler.step(monitor_loss)
+            else:
+                scheduler.step()
+            if is_dist:
+                dist.barrier()
+            if epoch_sanity and ((not is_dist) or (is_dist and (rank == 0))):
+                run_sanity_check(eval_model, train_loader, device, name=f'{save_name}_train_epoch_{epoch+1}')
+                run_sanity_check(eval_model, val_loader, device, name=f'{save_name}_val_epoch_{epoch+1}')
+        if post_train_sanity and ((not is_dist) or (is_dist and (rank == 0))):
+            run_sanity_check(eval_model, train_loader, device, name=f'{save_name}_train_post')
+            run_sanity_check(eval_model, val_loader, device, name=f'{save_name}_val_post')
+    finally:
         if (not is_dist) or (is_dist and (rank == 0)):
-            writer.add_scalar('val/epoch_loss',val_loss, epoch)
-            print(f'Validation Loss: {val_loss:.4f}')
-
-            # Save checkpoint
-            filepath = os.path.join(training_params['weight_path'], f'{save_name}_{epoch+1}.pth')
-            state_dict = eval_model.state_dict()
-
-            if epoch % 10 == 0:
-                torch.save({
-                    'epoch': epoch+1,
-                    'model_state_dict': state_dict,
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'scheduler_state_dict': scheduler.state_dict(),
-                    'loss': val_loss,
-                }, filepath)
-        if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-            monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
-            scheduler.step(monitor_loss)
-        else:
-            scheduler.step()
-        if is_dist:
-            dist.barrier()
-        if epoch_sanity and ((not is_dist) or (is_dist and (rank == 0))):
-            run_sanity_check(eval_model, train_loader, device, name=f'{save_name}_train_epoch_{epoch+1}')
-            run_sanity_check(eval_model, val_loader, device, name=f'{save_name}_val_epoch_{epoch+1}')
-    if post_train_sanity and ((not is_dist) or (is_dist and (rank == 0))):
-        run_sanity_check(eval_model, train_loader, device, name=f'{save_name}_train_post')
-        run_sanity_check(eval_model, val_loader, device, name=f'{save_name}_val_post')
-    if (not is_dist) or (is_dist and (rank == 0)):
-        writer.close()
+            export_path, manifest_path = export_scalar_history(scalar_history, export_dir)
+            print(f'Exported scalar history to {export_path} (manifest: {manifest_path})')
+            if writer is not None:
+                writer.close()
 
 def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dist=False, rank=0):
     checkpoint = None
