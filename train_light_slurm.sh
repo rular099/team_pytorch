@@ -87,6 +87,16 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
     mkdir -p "$SLURM_LOG_DIR"
     echo "[INFO] submitting to Slurm"
     echo "[INFO] job_name=$JOB_NAME partition=$SLURM_PARTITION nodes=$SLURM_NODES gpus_per_node=$SLURM_GPUS_PER_NODE"
+    EXPORT_VARS=(
+        "WORKDIR=$WORKDIR"
+        "REPO_ROOT=$REPO_ROOT"
+        "SLURM_LOG_DIR=$SLURM_LOG_DIR"
+        "DITING_CONFIG=$DITING_CONFIG"
+        "CONFIG_INPUT=$CONFIG"
+    )
+    if [[ -n "${DITING_PRETRAINED:-}" ]]; then
+        EXPORT_VARS+=("DITING_PRETRAINED=$DITING_PRETRAINED")
+    fi
     exec sbatch \
         --job-name="$JOB_NAME" \
         --partition="$SLURM_PARTITION" \
@@ -98,7 +108,7 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
         --chdir="$WORKDIR" \
         --output="$SLURM_LOG_DIR/%x-%j.out" \
         --error="$SLURM_LOG_DIR/%x-%j.err" \
-        --export=ALL \
+        --export="$(IFS=,; echo "ALL,${EXPORT_VARS[*]}")" \
         "$0" "$CONFIG" "${EXTRA_ARGS[@]}"
 fi
 
