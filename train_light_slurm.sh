@@ -23,7 +23,8 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=${REPO_ROOT:-"$SCRIPT_DIR"}
+SUBMIT_DIR=${SLURM_SUBMIT_DIR:-$PWD}
+REPO_ROOT=${REPO_ROOT:-"$SUBMIT_DIR"}
 WORKDIR=${WORKDIR:-"$REPO_ROOT"}
 
 CONFIG_INPUT=${1:?Usage: bash train_light_slurm.sh <config.json> [train_light.py extra args...]}
@@ -57,6 +58,24 @@ if [[ -n "${DITING_PRETRAINED:-}" ]]; then
     DITING_PRETRAINED=$(resolve_path "$DITING_PRETRAINED" "$PWD")
 fi
 
+if [[ ! -f "$WORKDIR/train_light.py" ]]; then
+    echo "WORKDIR does not look like team_pytorch repo root: $WORKDIR" >&2
+    echo "Expected file not found: $WORKDIR/train_light.py" >&2
+    echo "Set WORKDIR=/abs/path/to/team_pytorch when submitting." >&2
+    exit 1
+fi
+
+if [[ ! -f "$CONFIG" ]]; then
+    echo "Config file not found: $CONFIG" >&2
+    exit 1
+fi
+
+if [[ ! -f "$DITING_CONFIG" ]]; then
+    echo "DITING config file not found: $DITING_CONFIG" >&2
+    echo "Set DITING_CONFIG to an absolute path or a path relative to WORKDIR=$WORKDIR." >&2
+    exit 1
+fi
+
 if grep -q '\${DITING_PRETRAINED}' "$DITING_CONFIG"; then
     if [[ -z "${DITING_PRETRAINED:-}" ]]; then
         echo "DITING_CONFIG expects \${DITING_PRETRAINED}, but DITING_PRETRAINED is unset." >&2
@@ -76,6 +95,7 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
         --cpus-per-task="$SLURM_CPUS_PER_TASK" \
         --gres="dcu:${SLURM_GPUS_PER_NODE}" \
         --time="$SLURM_TIME" \
+        --chdir="$WORKDIR" \
         --output="$SLURM_LOG_DIR/%x-%j.out" \
         --error="$SLURM_LOG_DIR/%x-%j.err" \
         --export=ALL \
