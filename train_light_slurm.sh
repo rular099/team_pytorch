@@ -39,9 +39,9 @@ SLURM_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK:-8}
 SLURM_TIME=${SLURM_TIME:-24:00:00}
 SLURM_LOG_DIR=${SLURM_LOG_DIR:-"$WORKDIR/logs/slurm"}
 DITING_CONFIG=${DITING_CONFIG:-./diting/config/diting_1200m_backbone_attnpool.yml}
-CONDA_ENV=${CONDA_ENV:-}
+CONDA_ENV=${CONDA_ENV:-lsm_env}
 MODULE_UNLOAD=${MODULE_UNLOAD:-compiler/rocm/2.9}
-MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04.1 apps/miniconda/3"}
+MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04 apps/miniconda/3"}
 
 resolve_path() {
     local p=$1
@@ -119,13 +119,25 @@ echo "[INFO] diting_config: $DITING_CONFIG"
 echo "[INFO] diting_pretrained: ${DITING_PRETRAINED:-<unset>}"
 echo "[INFO] extra args: ${EXTRA_ARGS[*]:-<none>}"
 
-if command -v module >/dev/null 2>&1; then
+if [[ -f /etc/profile ]]; then
+    # Many HPC sites define the module function in /etc/profile for batch shells.
+    # shellcheck disable=SC1091
+    source /etc/profile
+fi
+if [[ -f /etc/profile.d/modules.sh ]]; then
+    # shellcheck disable=SC1091
+    source /etc/profile.d/modules.sh
+fi
+
+if command -v module >/dev/null 2>&1 || declare -F module >/dev/null 2>&1; then
     if [[ -n "${MODULE_UNLOAD:-}" ]]; then
         module unload "$MODULE_UNLOAD" || true
     fi
     for mod in $MODULE_LOADS; do
         module load "$mod"
     done
+else
+    echo "[WARN] module command is unavailable; skipping module load." >&2
 fi
 
 if [[ -n "${CONDA_ENV:-}" ]]; then
@@ -136,6 +148,18 @@ if [[ -n "${CONDA_ENV:-}" ]]; then
         source activate "$CONDA_ENV"
     fi
 fi
+
+if command -v torchrun >/dev/null 2>&1; then
+    TORCHRUN_BIN=(torchrun)
+elif command -v python >/dev/null 2>&1; then
+    TORCHRUN_BIN=(python -m torch.distributed.run)
+else
+    echo "Neither torchrun nor python is available after environment setup." >&2
+    exit 1
+fi
+
+echo "[INFO] python: $(command -v python || echo '<missing>')"
+echo "[INFO] torchrun: $(command -v torchrun || echo '<python -m torch.distributed.run>')"
 
 mkdir -p "$SLURM_LOG_DIR"
 
@@ -149,7 +173,7 @@ else
 fi
 
 TRAIN_CMD=(
-    torchrun
+    "${TORCHRUN_BIN[@]}"
     --nnodes="$TORCHRUN_NNODES"
     --nproc_per_node="$SLURM_GPUS_PER_NODE"
     --rdzv_backend=c10d
@@ -175,7 +199,7 @@ if [[ -n "${SLURM_JOB_ID:-}" ]]; then
 else
     # Direct fallback for local smoke tests.
     DIRECT_CMD=(
-        torchrun
+        "${TORCHRUN_BIN[@]}"
         --standalone
         --nproc_per_node="$SLURM_GPUS_PER_NODE"
         train_light.py
