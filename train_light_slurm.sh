@@ -119,6 +119,13 @@ echo "[INFO] diting_config: $DITING_CONFIG"
 echo "[INFO] diting_pretrained: ${DITING_PRETRAINED:-<unset>}"
 echo "[INFO] extra args: ${EXTRA_ARGS[*]:-<none>}"
 
+export COLORTERM=${COLORTERM:-truecolor}
+
+restore_nounset=0
+if [[ $- == *u* ]]; then
+    restore_nounset=1
+    set +u
+fi
 if [[ -f /etc/profile ]]; then
     # Many HPC sites define the module function in /etc/profile for batch shells.
     # shellcheck disable=SC1091
@@ -127,6 +134,9 @@ fi
 if [[ -f /etc/profile.d/modules.sh ]]; then
     # shellcheck disable=SC1091
     source /etc/profile.d/modules.sh
+fi
+if [[ "$restore_nounset" -eq 1 ]]; then
+    set -u
 fi
 
 if command -v module >/dev/null 2>&1 || declare -F module >/dev/null 2>&1; then
