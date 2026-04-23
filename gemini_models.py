@@ -311,9 +311,12 @@ class PositionEmbedding(nn.Module):
         if borehole:
             depth_dim = emb_dim // 20
 
-        self.lat_coeff = 2 * np.pi * 1. / min_lat * ((min_lat / max_lat) ** (np.arange(lat_dim) / lat_dim))
-        self.lon_coeff = 2 * np.pi * 1. / min_lon * ((min_lon / max_lon) ** (np.arange(lon_dim) / lon_dim))
-        self.depth_coeff = 2 * np.pi * 1. / min_depth * ((min_depth / max_depth) ** (np.arange(depth_dim) / depth_dim))
+        lat_coeff = 2 * np.pi * 1. / min_lat * ((min_lat / max_lat) ** (np.arange(lat_dim) / lat_dim))
+        lon_coeff = 2 * np.pi * 1. / min_lon * ((min_lon / max_lon) ** (np.arange(lon_dim) / lon_dim))
+        depth_coeff = 2 * np.pi * 1. / min_depth * ((min_depth / max_depth) ** (np.arange(depth_dim) / depth_dim))
+        self.register_buffer('lat_coeff', torch.tensor(lat_coeff, dtype=torch.float32))
+        self.register_buffer('lon_coeff', torch.tensor(lon_coeff, dtype=torch.float32))
+        self.register_buffer('depth_coeff', torch.tensor(depth_coeff, dtype=torch.float32))
 
         lat_sin_mask = np.arange(emb_dim) % 5 == 0
         lat_cos_mask = np.arange(emb_dim) % 5 == 1
@@ -347,21 +350,27 @@ class PositionEmbedding(nn.Module):
             latlon = torch.stack([lat_base, lon_base], dim=-1)
             rotated = latlon @ self.rotation_matrix
 
-            lat_base = rotated[:, :, 0:1] * torch.tensor(self.lat_coeff, device=x.device)  # Move coefficients to device
-            lon_base = rotated[:, :, 1:2] * torch.tensor(self.lon_coeff, device=x.device)  # Move coefficients to device
-            depth_base = x[:, :, 2:3] * torch.tensor(self.depth_coeff, device=x.device)  # Move coefficients to device
+            lat_coeff = self.lat_coeff.to(device=x.device, dtype=x.dtype)
+            lon_coeff = self.lon_coeff.to(device=x.device, dtype=x.dtype)
+            depth_coeff = self.depth_coeff.to(device=x.device, dtype=x.dtype)
+            lat_base = rotated[:, :, 0:1] * lat_coeff
+            lon_base = rotated[:, :, 1:2] * lon_coeff
+            depth_base = x[:, :, 2:3] * depth_coeff
         else:
-            lat_base = x[:, :, 0:1] * torch.tensor(self.lat_coeff, device=x.device)  # Move coefficients to device
-            lon_base = x[:, :, 1:2] * torch.tensor(self.lon_coeff, device=x.device)  # Move coefficients to device
-            depth_base = x[:, :, 2:3] * torch.tensor(self.depth_coeff, device=x.device)  # Move coefficients to device
+            lat_coeff = self.lat_coeff.to(device=x.device, dtype=x.dtype)
+            lon_coeff = self.lon_coeff.to(device=x.device, dtype=x.dtype)
+            depth_coeff = self.depth_coeff.to(device=x.device, dtype=x.dtype)
+            lat_base = x[:, :, 0:1] * lat_coeff
+            lon_base = x[:, :, 1:2] * lon_coeff
+            depth_base = x[:, :, 2:3] * depth_coeff
 
         if self.borehole:
             if self.fake_borehole:
                 # Use third value for the depth of the top station and 0 for the borehole depth
-                depth_base = x[:, :, 2:3] * torch.tensor(self.depth_coeff, device=x.device) * 0
-                depth2_base = x[:, :, 2:3] * torch.tensor(self.depth_coeff, device=x.device)  # Move coefficients to device
+                depth_base = x[:, :, 2:3] * depth_coeff * 0
+                depth2_base = x[:, :, 2:3] * depth_coeff
             else:
-                depth2_base = x[:, :, 3:4] * torch.tensor(self.depth_coeff, device=x.device)  # Move coefficients to device
+                depth2_base = x[:, :, 3:4] * depth_coeff
 
             output = torch.cat([torch.sin(lat_base), torch.cos(lat_base),
                                 torch.sin(lon_base), torch.cos(lon_base),
