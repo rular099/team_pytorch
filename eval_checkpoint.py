@@ -158,6 +158,7 @@ def build_datasets(config, overfit_n=0):
                 f'[generator/{split_name}/{i}] '
                 f'select_first_inputs={merged.get("select_first_inputs", merged.get("select_first"))}, '
                 f'select_first_pga_targets={merged.get("select_first_pga_targets", merged.get("select_first"))}, '
+                f'integrate={merged.get("integrate", False)}, '
                 f'selection_skew={merged.get("selection_skew")}, '
                 f'pga_selection_skew={merged.get("pga_selection_skew")}, '
                 f'max_stations={merged.get("max_stations")}, '

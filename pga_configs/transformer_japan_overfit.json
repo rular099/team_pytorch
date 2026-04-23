@@ -85,6 +85,7 @@
                 "trigger_based": false,
                 "select_first_inputs": false,
                 "select_first_pga_targets": false,
+                "integrate": false,
                 "scale_metadata": false,
                 "transform_target_only": false,
                 "pga_selection_skew": null,
