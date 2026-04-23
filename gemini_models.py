@@ -862,7 +862,7 @@ class FullModel(nn.Module):
                  metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                  add_constant_to_mixture, n_datasets, waveform_scale_proj=None, waveform_scale_gain=1.0,
                  disable_waveform_scale=False, use_amplitude_info=None, use_coords_rel=False, use_coords_abs=True,
-                 use_coords_rel_abs_fusion=False, coords_abs_weight=0.1):
+                 use_coords_rel_abs_fusion=False, coords_abs_weight=0.1, coord_fusion_mode='add'):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -893,6 +893,7 @@ class FullModel(nn.Module):
         self.use_coords_abs = use_coords_abs
         self.use_coords_rel_abs_fusion = use_coords_rel_abs_fusion
         self.coords_abs_weight = coords_abs_weight
+        self.coord_fusion_mode = coord_fusion_mode
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -906,6 +907,15 @@ class FullModel(nn.Module):
             raise ValueError(
                 'use_coords_rel_abs_fusion requires positional coordinate embeddings; '
                 'it is incompatible with alternative_coords_embedding=True.'
+            )
+        if self.coord_fusion_mode not in ('add', 'concat'):
+            raise ValueError(
+                f"coord_fusion_mode must be 'add' or 'concat', got {self.coord_fusion_mode!r}."
+            )
+        if self.alternative_coords_embedding and self.coord_fusion_mode != 'add':
+            raise ValueError(
+                'coord_fusion_mode=concat is only supported with positional coordinate '
+                'embeddings (alternative_coords_embedding=False).'
             )
         self.loc_target_mode = 'abs' if self.use_coords_abs else 'rel'
 
@@ -930,6 +940,12 @@ class FullModel(nn.Module):
         self.Masking_nd_0_2 = Masking_nd(0, axis=2, nodim=True)
 #        self.layernorm = LayerNormalization()
         self.layernorm = nn.LayerNorm(emb_dim)
+        if not self.alternative_coords_embedding and self.coord_fusion_mode == 'concat':
+            self.coord_fusion_proj = nn.Linear(2 * emb_dim, emb_dim)
+            self.coord_fusion_norm = nn.LayerNorm(emb_dim)
+        else:
+            self.coord_fusion_proj = None
+            self.coord_fusion_norm = None
         if self.skip_transformer:
             mlp_input_length = self.emb_dim
             if self.alternative_coords_embedding:
@@ -1060,7 +1076,12 @@ class FullModel(nn.Module):
 
         coords_feat, coords_emb = self._station_coord_features(coords_abs, coords_rel, sv)
         if not self.alternative_coords_embedding:
-            emb = waveforms_emb + coords_feat
+            if self.coord_fusion_mode == 'add':
+                emb = waveforms_emb + coords_feat
+            else:
+                fused = torch.cat([waveforms_emb, coords_feat], dim=-1)
+                emb = self.coord_fusion_proj(fused)
+                emb = self.coord_fusion_norm(emb)
         else:
             emb = torch.cat([waveforms_emb, coords_feat], dim=-1)
 
@@ -1073,6 +1094,7 @@ class FullModel(nn.Module):
             'coords_center_abs_mean': coords_center.abs().mean().detach(),
             'coords_abs_mean': coords_abs.abs().mean().detach(),
             'coords_rel_mean': coords_rel.abs().mean().detach(),
+            'coord_fusion_mode': 0.0 if self.coord_fusion_mode == 'add' else 1.0,
         }
         if scale_emb is not None:
             scale_norm = self._mean_token_norm(scale_emb)
@@ -1289,6 +1311,7 @@ def build_transformer_model(max_stations,
                             use_coords_abs=True,
                             use_coords_rel_abs_fusion=False,
                             coords_abs_weight=0.1,
+                            coord_fusion_mode='add',
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -1366,7 +1389,8 @@ def build_transformer_model(max_stations,
                              use_coords_rel=use_coords_rel,
                              use_coords_abs=use_coords_abs,
                              use_coords_rel_abs_fusion=use_coords_rel_abs_fusion,
-                             coords_abs_weight=coords_abs_weight)
+                             coords_abs_weight=coords_abs_weight,
+                             coord_fusion_mode=coord_fusion_mode)
     return full_model
 
 

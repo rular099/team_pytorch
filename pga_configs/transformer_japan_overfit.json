@@ -50,6 +50,7 @@
         "use_coords_abs": true,
         "use_coords_rel_abs_fusion": false,
         "coords_abs_weight": 0.1,
+        "coord_fusion_mode": "add",
         "rotation_anchor": [37, 140]
     },
     "training_params": {
