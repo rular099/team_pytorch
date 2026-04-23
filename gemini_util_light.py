@@ -772,15 +772,15 @@ class PreloadedEventGenerator(Dataset):
         # Coordinates to kilometers (assuming a flat earth, which is okay close to equator)
         if self.scale_metadata:
             metadata[:, :, :2] *= D2KM
-        if target is not None:
-            target[:, :2] *= D2KM
+            if target is not None:
+                target[:, :2] *= D2KM
 
         metadata[mask] = 0
 
         if self.scale_metadata:
             metadata /= 100
-        if target is not None:
-            target /= 100
+            if target is not None:
+                target /= 100
 
         if transform_target_only:
             metadata = metadata_old
