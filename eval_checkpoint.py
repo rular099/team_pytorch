@@ -124,9 +124,6 @@ def build_datasets(config, overfit_n=0):
             gp['selection_skew'] = None
             gp['oversample'] = 1
             gp['magnitude_resampling'] = 1.0
-            gp['select_first'] = False
-            gp['select_first_inputs'] = False
-            gp['select_first_pga_targets'] = False
             gp['cutout_start'] = fixed_cutout
             gp['cutout_end'] = fixed_cutout
 
@@ -157,6 +154,15 @@ def build_datasets(config, overfit_n=0):
                 shuffle=False,  # deterministic eval order
             )
             merged = {**defaults, **gp_copy}
+            print(
+                f'[generator/{split_name}/{i}] '
+                f'select_first_inputs={merged.get("select_first_inputs", merged.get("select_first"))}, '
+                f'select_first_pga_targets={merged.get("select_first_pga_targets", merged.get("select_first"))}, '
+                f'selection_skew={merged.get("selection_skew")}, '
+                f'pga_selection_skew={merged.get("pga_selection_skew")}, '
+                f'max_stations={merged.get("max_stations")}, '
+                f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
+            )
             generators.append(util.PreloadedEventGenerator(
                 event_metadata=em_list[i], metadata=meta_list[i],
                 data_path=training_params['data_path'][i],

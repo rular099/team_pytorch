@@ -1112,9 +1112,6 @@ if __name__ == '__main__':
             generator_param['disable_station_foreshadowing'] = False
             generator_param['shuffle_train_dev'] = False
             generator_param['oversample'] = 1
-            generator_param['select_first'] = False
-            generator_param['select_first_inputs'] = False
-            generator_param['select_first_pga_targets'] = False
             generator_param['cutout_start'] = fixed_cutout
             generator_param['cutout_end'] = fixed_cutout
         if (not is_dist) or (is_dist and (rank == 0)):
@@ -1128,7 +1125,7 @@ if __name__ == '__main__':
             ]
             print(f'Overfit mode enabled: selected {args.overfit_n} diverse events and re-split them for train/dev/test')
             print(f'Overfit split event counts (train/dev/test): {split_counts}')
-            print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, earliest-trigger station/target selection, no train/dev split shuffling')
+            print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, no train/dev split shuffling; input/target station selection follows config')
 
     if (not is_dist) or (is_dist and (rank == 0)):
         export_split_metadata(training_params['weight_path'],
@@ -1284,6 +1281,16 @@ if __name__ == '__main__':
             )
             # Config wins: overlay generator_param_set on top of defaults.
             merged = {**defaults, **generator_param_set}
+            if rank == 0:
+                print(
+                    f'[generator/train/{i}] '
+                    f'select_first_inputs={merged.get("select_first_inputs", merged.get("select_first"))}, '
+                    f'select_first_pga_targets={merged.get("select_first_pga_targets", merged.get("select_first"))}, '
+                    f'selection_skew={merged.get("selection_skew")}, '
+                    f'pga_selection_skew={merged.get("pga_selection_skew")}, '
+                    f'max_stations={merged.get("max_stations")}, '
+                    f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
+                )
 
             train_generators += [util.PreloadedEventGenerator(event_metadata=event_metadata_train[i],
                                                               metadata=metadata_train[i],
@@ -1294,6 +1301,16 @@ if __name__ == '__main__':
             old_oversample = generator_param_set.get('oversample', 1)
             generator_param_set['oversample'] = 1 if overfit_mode else 4
             merged_val = {**defaults, **generator_param_set}
+            if rank == 0:
+                print(
+                    f'[generator/val/{i}] '
+                    f'select_first_inputs={merged_val.get("select_first_inputs", merged_val.get("select_first"))}, '
+                    f'select_first_pga_targets={merged_val.get("select_first_pga_targets", merged_val.get("select_first"))}, '
+                    f'selection_skew={merged_val.get("selection_skew")}, '
+                    f'pga_selection_skew={merged_val.get("pga_selection_skew")}, '
+                    f'max_stations={merged_val.get("max_stations")}, '
+                    f'cutout=({merged_val["cutout"][0]}, {merged_val["cutout"][1]})'
+                )
             validation_generators += [util.PreloadedEventGenerator(event_metadata=event_metadata_dev[i],
                                                                    metadata=metadata_dev[i],
                                                                    data_path=training_params['data_path'][i],
