@@ -70,6 +70,12 @@
         "reinit_fpn": true,
         "lr_monitor": "train",
         "ensemble_rotation": false,
+        "model_input_dump": {
+            "enabled": false,
+            "epochs": [1, 2, 3],
+            "include_val": true,
+            "max_batches_per_epoch": null
+        },
         "generator_params": [
             {
                 "key": "Magnitude",

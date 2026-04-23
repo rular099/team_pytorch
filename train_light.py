@@ -616,8 +616,81 @@ def export_scalar_history(scalar_history, export_dir):
         json.dump(manifest, f, indent=2)
     return export_dir, manifest_path
 
+def _to_cpu_dumpable(obj):
+    if torch.is_tensor(obj):
+        return obj.detach().cpu()
+    if isinstance(obj, dict):
+        return {k: _to_cpu_dumpable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_cpu_dumpable(v) for v in obj]
+    return obj
+
+
+def prepare_input_dump_config(training_params):
+    cfg = training_params.get('model_input_dump', None)
+    if cfg is None:
+        cfg = {}
+    enabled = bool(cfg.get('enabled', False))
+    epochs = sorted({int(e) for e in cfg.get('epochs', [])})
+    include_val = bool(cfg.get('include_val', False))
+    max_batches = cfg.get('max_batches_per_epoch', None)
+    if max_batches is not None:
+        max_batches = int(max_batches)
+    dump_root = os.path.join(training_params['weight_path'], 'model_input_dumps')
+    return {
+        'enabled': enabled,
+        'epochs': epochs,
+        'include_val': include_val,
+        'max_batches_per_epoch': max_batches,
+        'dump_root': dump_root,
+    }
+
+
+def initialize_input_dump(input_dump_config):
+    if not input_dump_config['enabled']:
+        return
+    dump_root = input_dump_config['dump_root']
+    os.makedirs(dump_root, exist_ok=True)
+    manifest_path = os.path.join(dump_root, 'manifest.json')
+    with open(manifest_path, 'w') as f:
+        json.dump({
+            'epochs': input_dump_config['epochs'],
+            'include_val': input_dump_config['include_val'],
+            'max_batches_per_epoch': input_dump_config['max_batches_per_epoch'],
+        }, f, indent=2)
+
+
+def maybe_dump_model_batch(input_dump_config, split_name, epoch_idx, batch_idx, global_step, inputs, labels, p_picks):
+    if not input_dump_config['enabled']:
+        return
+    epoch_num = epoch_idx + 1
+    if epoch_num not in input_dump_config['epochs']:
+        return
+    max_batches = input_dump_config['max_batches_per_epoch']
+    if max_batches is not None and batch_idx >= max_batches:
+        return
+    epoch_dir = os.path.join(
+        input_dump_config['dump_root'],
+        split_name,
+        f'epoch_{epoch_num:03d}',
+    )
+    os.makedirs(epoch_dir, exist_ok=True)
+    path = os.path.join(epoch_dir, f'batch_{batch_idx:04d}.pt')
+    payload = {
+        'epoch': epoch_num,
+        'split': split_name,
+        'batch_idx': int(batch_idx),
+        'global_step': int(global_step),
+        'inputs': _to_cpu_dumpable(inputs),
+        'labels': _to_cpu_dumpable(labels),
+        'p_pick_info': _to_cpu_dumpable(p_picks),
+    }
+    torch.save(payload, path)
+
+
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
-                res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val'):
+                res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val',
+                input_dump_config=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -625,6 +698,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
     if (not is_dist) or (is_dist and (rank == 0)):
         os.makedirs(tb_path, exist_ok=True)
         writer = SummaryWriter(log_dir = tb_path)
+        if input_dump_config is not None:
+            initialize_input_dump(input_dump_config)
     try:
         device = next(model.parameters()).device
     except:
@@ -640,7 +715,11 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             running_loss = 0.0
             num_train_batches = 0
             first_batch_logged = False
-            for inputs, labels, p_picks in train_loader:
+            for batch_idx, (inputs, labels, p_picks) in enumerate(train_loader):
+                if ((not is_dist) or (is_dist and (rank == 0))) and input_dump_config is not None:
+                    maybe_dump_model_batch(
+                        input_dump_config, 'train', epoch, batch_idx, global_step, inputs, labels, p_picks
+                    )
                 if isinstance(inputs, list):
                     inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
                 else:
@@ -724,7 +803,11 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             val_running_loss = 0.0
             num_val_batches = 0
             with torch.no_grad():
-                for inputs, labels, _ in val_loader:
+                for batch_idx, (inputs, labels, p_picks) in enumerate(val_loader):
+                    if ((not is_dist) or (is_dist and (rank == 0))) and input_dump_config is not None and input_dump_config['include_val']:
+                        maybe_dump_model_batch(
+                            input_dump_config, 'val', epoch, batch_idx, global_step, inputs, labels, p_picks
+                        )
                     if isinstance(inputs, list):
                         inputs, labels = [i.to(device) for i in inputs], [l.to(device) for l in labels]
                     else:
@@ -1052,6 +1135,14 @@ if __name__ == '__main__':
 
     overwrite_sampling_rate = training_params.get('overwrite_sampling_rate', None)
     min_stalta_ratio_at_pick = training_params.get('min_stalta_ratio_at_pick', 0.1)
+    input_dump_config = prepare_input_dump_config(training_params)
+    if ((not is_dist) or (is_dist and (rank == 0))) and input_dump_config['enabled']:
+        print(
+            f'[model_input_dump] enabled epochs={input_dump_config["epochs"]}, '
+            f'include_val={input_dump_config["include_val"]}, '
+            f'max_batches_per_epoch={input_dump_config["max_batches_per_epoch"]}, '
+            f'root={input_dump_config["dump_root"]}'
+        )
 
     full_data_train = [loader.load_events(data_path, event_metadata_path='train_ev.csv',limit=limit,
                                           parts=(True, False, False),
@@ -1275,6 +1366,7 @@ if __name__ == '__main__':
                 max_stations=max_stations,
                 sampling_rate=sampling_rate,
                 no_event_token=no_event_token,
+                dump_debug_snapshot=input_dump_config['enabled'],
                 use_coords_rel=config['model_params'].get('use_coords_rel', False),
                 use_coords_abs=config['model_params'].get('use_coords_abs', True),
                 use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
@@ -1384,6 +1476,7 @@ if __name__ == '__main__':
             epoch_sanity=training_params.get('epoch_sanity', False),
             train_sampler=train_sampler,
             lr_monitor=lr_monitor,
+            input_dump_config=input_dump_config,
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,

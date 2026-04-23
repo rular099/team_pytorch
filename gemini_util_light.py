@@ -226,6 +226,7 @@ class PreloadedEventGenerator(Dataset):
                  fake_borehole=False, scale_metadata=True, pga_key='pga',
                  pga_mode=False, p_pick_limit=5000, coord_keys=None, upsample_high_station_events=None,
                  no_event_token=False, pga_selection_skew=None,
+                 dump_debug_snapshot=False,
                  use_coords_rel=False, use_coords_abs=True,
                  use_coords_rel_abs_fusion=False, **kwargs):
         if kwargs:
@@ -295,6 +296,7 @@ class PreloadedEventGenerator(Dataset):
         self.scale_metadata = scale_metadata
         self.upsample_high_station_events = upsample_high_station_events
         self.no_event_token = no_event_token
+        self.dump_debug_snapshot = dump_debug_snapshot
         self.use_coords_rel = use_coords_rel
         self.use_coords_abs = use_coords_abs
         self.use_coords_rel_abs_fusion = use_coords_rel_abs_fusion
@@ -450,6 +452,7 @@ class PreloadedEventGenerator(Dataset):
         pga = np.full((true_batch_size, true_max_stations_in_batch), np.nan)  # shape (1, tms)
         full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1, tms)
         p_picks = np.zeros((true_batch_size, self.max_stations)) # shape (1, 25)
+        selected_input_indices = -np.ones((true_batch_size, self.max_stations), dtype=np.int64)
         # station_valid: True for slots that hold a real station (not padding).
         # Will be tightened later by cutout/blinding/etc.
         station_valid_full = np.zeros((true_batch_size, true_max_stations_in_batch), dtype=bool) # shape (1, tms)
@@ -463,6 +466,7 @@ class PreloadedEventGenerator(Dataset):
                 pga[i, :len(self.pga)] = self.pga
                 p_picks[i, :len(self.triggers)] = self.triggers
                 full_p_picks[i, :len(self.triggers)] = self.triggers
+                selected_input_indices[i, :len(X)] = np.arange(len(X), dtype=np.int64)
                 station_valid_full[i, :len(self.metadata)] = True # all stations init to True
                 reverse_selections += [[]]
             else:
@@ -494,8 +498,16 @@ class PreloadedEventGenerator(Dataset):
                 reverse_selections += [tmp_reverse_selection]
 
                 selection = selection[:self.max_stations]
+                selected_input_indices[i, :len(selection)] = selection
                 waveforms[i] = self.waveforms[selection]
                 p_picks[i] = self.triggers[selection]
+
+        if self.dump_debug_snapshot:
+            debug_raw_waveforms = waveforms.copy()
+            debug_raw_metadata = metadata[:, :self.max_stations].copy()
+            debug_raw_station_valid = station_valid_full[:, :self.max_stations].copy()
+            debug_raw_pga = pga[:, :self.max_stations].copy()
+            debug_raw_full_p_picks = full_p_picks[:, :self.max_stations].copy()
 
         # Defensive: mark stations with NaN/Inf coordinates as invalid. Current
         # KiK-Net data is clean, but this guards the model against upstream
@@ -720,7 +732,17 @@ class PreloadedEventGenerator(Dataset):
             'shifted': torch.from_numpy(p_picks[0]).float(),
             'raw': torch.from_numpy(raw_p_picks[0]).float(),
             'shift': torch.tensor(float(shift), dtype=torch.float32),
+            'event_id': str(ith_event),
+            'selected_input_indices': torch.from_numpy(selected_input_indices[0]).long(),
         }
+        if self.dump_debug_snapshot:
+            raw_pga_valid = ~(np.isnan(debug_raw_pga[0]) | np.isinf(debug_raw_pga[0]))
+            p_pick_info['debug_raw_waveforms'] = torch.from_numpy(np.swapaxes(debug_raw_waveforms[0], 1, 2)).float()
+            p_pick_info['debug_raw_metadata'] = torch.from_numpy(debug_raw_metadata[0]).float()
+            p_pick_info['debug_raw_station_valid'] = torch.from_numpy(debug_raw_station_valid[0]).bool()
+            p_pick_info['debug_raw_pga'] = torch.from_numpy(np.where(raw_pga_valid, debug_raw_pga[0], 0.0)).float()
+            p_pick_info['debug_raw_pga_valid'] = torch.from_numpy(raw_pga_valid).bool()
+            p_pick_info['debug_raw_full_p_picks'] = torch.from_numpy(debug_raw_full_p_picks[0]).float()
         if loc_target_abs is not None:
             p_pick_info['loc_target_abs'] = torch.from_numpy(loc_target_abs[0]).float()
             p_pick_info['loc_center'] = torch.from_numpy(loc_center[0, 0]).float()
