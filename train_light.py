@@ -1018,7 +1018,7 @@ def run_sanity_check(model, data_loader, device, name='sanity', max_batches=1):
             if amp is not None:
                 print(f'  waveform log-scale: mean={amp.mean().item():.4f}, std={amp.std().item():.4f}, min={amp.min().item():.4f}, max={amp.max().item():.4f}')
                 if wave.ndim == 4:
-                    station_has_signal = (torch.abs(wave) > 1e-7).any(dim=(2, 3))
+                    station_has_signal = (torch.abs(wave) > 1e-7).flatten(2).any(dim=2)
                     signal_frac = (torch.abs(wave) > 1e-7).float().mean(dim=(1, 2, 3))
                     print(f'  active stations/sample: {station_has_signal.sum(dim=1).tolist()}')
                     print(f'  nonzero waveform fraction/sample: {[round(float(x), 4) for x in signal_frac]}')
