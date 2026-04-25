@@ -598,6 +598,50 @@ class StatPool1d(nn.Module):
         return self.proj(out).unsqueeze(-1)      # (B, C, 1) — same shape as GAP output
 
 
+class WaveformScaleEmbedding(nn.Module):
+    """Embed per-station amplitude statistics without erasing absolute scale."""
+
+    def __init__(self, input_dim, emb_dim, hidden_dim=None, log_divisor=10.0):
+        super().__init__()
+        if hidden_dim is None:
+            hidden_dim = min(emb_dim, max(32, input_dim * 4))
+        self.log_divisor = float(log_divisor)
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, emb_dim),
+        )
+        nn.init.normal_(self.net[-1].weight, mean=0.0, std=1e-2)
+        nn.init.zeros_(self.net[-1].bias)
+
+    def forward(self, features):
+        return self.net(features / self.log_divisor)
+
+
+class AuxiliaryMagnitudeHead(nn.Module):
+    """Few-shot-style event magnitude head wrapped as a one-component mixture."""
+
+    def __init__(self, emb_dim, hidden_dim=None, sigma_init=0.3):
+        super().__init__()
+        if hidden_dim is None:
+            hidden_dim = emb_dim
+        self.net = nn.Sequential(
+            nn.Linear(emb_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, 1),
+        )
+        self.log_sigma = nn.Parameter(torch.tensor(float(math.log(math.expm1(sigma_init)))))
+
+    def forward(self, station_emb, station_valid):
+        weights = station_valid.unsqueeze(-1).to(station_emb.dtype)
+        denom = weights.sum(dim=1).clamp_min(1.0)
+        pooled = (station_emb * weights).sum(dim=1) / denom
+        mu = torch.sigmoid(self.net(pooled)).unsqueeze(1) * 9.0
+        alpha_logits = torch.zeros_like(mu)
+        sigma = F.softplus(self.log_sigma).to(mu.dtype).expand_as(mu) + 1e-4
+        return torch.cat([alpha_logits, mu, sigma], dim=-1)
+
+
 class DitingStationAdapter(nn.Module):
     """Light multi-scale adapter from ViTAdapter features to station embeddings."""
     def __init__(self, encoder_dim, hidden_channels, output_dim):
@@ -792,15 +836,26 @@ def select_loss_components(outputs, labels, output_layout, res_comps):
     user asks to train 'loc' but the model was built with no_event_token=True.
     """
     name_to_idx = {n: i for i, n in enumerate(output_layout)}
+    label_layout = [n for n in output_layout if n in ('mag', 'loc', 'pga')]
+    label_name_alias = {'mag_aux': 'mag'}
     missing = [c for c in res_comps if c not in name_to_idx]
+    missing_labels = [
+        label_name_alias.get(c, c)
+        for c in res_comps
+        if label_name_alias.get(c, c) not in label_layout
+    ]
     if missing:
         raise ValueError(
             f'res_comps {missing} not in model output_layout {output_layout}. '
             f'Enable the corresponding heads in the model config or remove '
             f'them from res_comps.'
         )
+    if missing_labels:
+        raise ValueError(
+            f'res_comps require labels {missing_labels}, but available label layout is {label_layout}.'
+        )
     sel_pred = [outputs[name_to_idx[c]] for c in res_comps]
-    sel_true = [labels[name_to_idx[c]] for c in res_comps]
+    sel_true = [labels[label_layout.index(label_name_alias.get(c, c))] for c in res_comps]
     return sel_pred, sel_true
 
 
@@ -870,8 +925,9 @@ class FullModel(nn.Module):
                  output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                  metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                  add_constant_to_mixture, n_datasets, waveform_scale_proj=None, waveform_scale_gain=1.0,
-                 disable_waveform_scale=False, use_amplitude_info=None, use_coords_rel=False, use_coords_abs=True,
-                 use_coords_rel_abs_fusion=False, coords_abs_weight=0.1, coord_fusion_mode='add'):
+                 waveform_scale_init_gate=0.1, disable_waveform_scale=False, use_amplitude_info=None,
+                 use_coords_rel=False, use_coords_abs=True, use_coords_rel_abs_fusion=False,
+                 coords_abs_weight=0.1, coord_fusion_mode='add', aux_mag_head=None):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -894,6 +950,7 @@ class FullModel(nn.Module):
         self.n_datasets = n_datasets
         self.waveform_scale_proj = waveform_scale_proj
         self.waveform_scale_gain = waveform_scale_gain
+        self.waveform_scale_gate = nn.Parameter(torch.tensor(float(waveform_scale_init_gate)))
         if use_amplitude_info is None:
             use_amplitude_info = not disable_waveform_scale
         self.use_amplitude_info = bool(use_amplitude_info)
@@ -903,6 +960,7 @@ class FullModel(nn.Module):
         self.use_coords_rel_abs_fusion = use_coords_rel_abs_fusion
         self.coords_abs_weight = coords_abs_weight
         self.coord_fusion_mode = coord_fusion_mode
+        self.aux_mag_head = aux_mag_head
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -940,6 +998,8 @@ class FullModel(nn.Module):
         self.output_layout = []
         if not self.no_event_token:
             self.output_layout += ['mag', 'loc']
+        if self.aux_mag_head is not None:
+            self.output_layout += ['mag_aux']
         if self.n_pga_targets > 0:
             self.output_layout += ['pga']
 
@@ -1056,9 +1116,21 @@ class FullModel(nn.Module):
         return coords_rel_emb + self.coords_abs_weight * coords_abs_emb
 
 
-    def _extract_scale(self, waveform):
-        scale = torch.log(torch.amax(torch.abs(waveform), dim=(2, 3)) + 1e-6)
-        return scale.unsqueeze(-1)
+    def _extract_scale_features(self, waveform):
+        # waveform: (B, S, C, T). Match the per-channel time-axis normalization
+        # by retaining channel-wise std/rms/peak plus station-level summaries.
+        eps = 1e-6
+        waveform_f = waveform.float()
+        abs_waveform = torch.abs(waveform_f)
+        log_std_ch = torch.log(torch.std(waveform_f, dim=3, unbiased=False).clamp_min(eps))
+        log_rms_ch = torch.log(torch.sqrt(torch.mean(waveform_f ** 2, dim=3).clamp_min(eps ** 2)))
+        log_peak_ch = torch.log(torch.amax(abs_waveform, dim=3).clamp_min(eps))
+        log_rms_all = torch.log(torch.sqrt(torch.mean(waveform_f ** 2, dim=(2, 3)).clamp_min(eps ** 2)))
+        log_peak_all = torch.log(torch.amax(abs_waveform, dim=(2, 3)).clamp_min(eps))
+        return torch.cat(
+            [log_std_ch, log_rms_ch, log_peak_ch, log_rms_all.unsqueeze(-1), log_peak_all.unsqueeze(-1)],
+            dim=-1,
+        )
 
     def forward(self, waveform_inp, metadata_inp, station_valid,
                 pga_targets_inp=None, pga_target_valid=None,
@@ -1075,13 +1147,21 @@ class FullModel(nn.Module):
         raw_station_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
         scale_emb = None
         preln_wave_emb = raw_station_emb
-        if self.waveform_scale_proj is not None and self.use_amplitude_info:
-            scale_emb = self.waveform_scale_proj(self._extract_scale(raw_waveform))
-            gain_scale_emb = self.waveform_scale_gain * scale_emb
-            preln_wave_emb = preln_wave_emb + gain_scale_emb
-        else:
-            gain_scale_emb = None
         waveforms_emb = self.layernorm(preln_wave_emb)
+        base_waveforms_emb = waveforms_emb
+        if self.waveform_scale_proj is not None and self.use_amplitude_info:
+            scale_features = self._extract_scale_features(raw_waveform)
+            scale_emb = self.waveform_scale_proj(scale_features)
+            gain_scale_emb = (
+                self.waveform_scale_gain
+                * self.waveform_scale_gate
+                * scale_emb
+                * sv[:, :, None].float()
+            )
+            waveforms_emb = waveforms_emb + gain_scale_emb
+        else:
+            scale_features = None
+            gain_scale_emb = None
 
         coords_feat, coords_emb = self._station_coord_features(coords_abs, coords_rel, sv)
         if not self.alternative_coords_embedding:
@@ -1109,11 +1189,14 @@ class FullModel(nn.Module):
             scale_norm = self._mean_token_norm(scale_emb)
             self._last_diag['scale_emb_norm'] = scale_norm.detach()
             gain_scale_norm = self._mean_token_norm(gain_scale_emb)
-            raw_trunk_norm = self._mean_token_norm(raw_station_emb)
+            raw_trunk_norm = self._mean_token_norm(base_waveforms_emb)
             self._last_diag['gain_scale_emb_norm'] = gain_scale_norm.detach()
             self._last_diag['scale_trunk_ratio'] = (gain_scale_norm / (raw_trunk_norm + 1e-8)).detach()
+            self._last_diag['scale_gate'] = self.waveform_scale_gate.detach()
+            self._last_diag['scale_feature_mean'] = scale_features[sv].mean().detach() if sv.any() else scale_features.mean().detach()
+            self._last_diag['scale_feature_std'] = scale_features[sv].std(unbiased=False).detach() if sv.any() else scale_features.std(unbiased=False).detach()
             self._last_diag['raw_trunk_scale_cosine'] = self._masked_pairwise_cosine_between(
-                raw_station_emb, gain_scale_emb, sv
+                base_waveforms_emb, gain_scale_emb, sv
             ).detach()
         if not self.alternative_coords_embedding:
             self._last_diag['coords_emb_norm'] = self._mean_token_norm(coords_emb).detach()
@@ -1183,6 +1266,9 @@ class FullModel(nn.Module):
 
             outputs.append(out_mag)
             outputs.append(out_loc)
+
+        if self.aux_mag_head is not None:
+            outputs.append(self.aux_mag_head(base_waveforms_emb, sv))
 
         if self.n_pga_targets:
             pga_emb = emb[:, -self.n_pga_targets:, :]  # Select embeddings for pga
@@ -1314,6 +1400,9 @@ def build_transformer_model(max_stations,
                             skip_transformer=False,
                             alternative_coords_embedding=False,
                             waveform_scale_gain=1.0,
+                            waveform_scale_hidden_dim=None,
+                            waveform_scale_log_divisor=10.0,
+                            waveform_scale_init_gate=0.1,
                             disable_waveform_scale=False,
                             use_amplitude_info=None,
                             use_coords_rel=False,
@@ -1321,6 +1410,9 @@ def build_transformer_model(max_stations,
                             use_coords_rel_abs_fusion=False,
                             coords_abs_weight=0.1,
                             coord_fusion_mode='add',
+                            aux_mag_head=False,
+                            aux_mag_hidden_dim=None,
+                            aux_mag_sigma=0.3,
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -1387,19 +1479,32 @@ def build_transformer_model(max_stations,
     else:
         add_constant_to_mixture = None
 
-    full_waveform_scale_proj = nn.Linear(1, emb_dim)
+    scale_feature_dim = 3 * input_shape[-1] + 2
+    full_waveform_scale_proj = WaveformScaleEmbedding(
+        scale_feature_dim,
+        emb_dim,
+        hidden_dim=waveform_scale_hidden_dim,
+        log_divisor=waveform_scale_log_divisor,
+    )
+    aux_mag_module = AuxiliaryMagnitudeHead(
+        emb_dim,
+        hidden_dim=aux_mag_hidden_dim,
+        sigma_init=aux_mag_sigma,
+    ) if aux_mag_head else None
     full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                              add_constant_to_mixture, n_datasets, waveform_scale_proj=full_waveform_scale_proj,
                              waveform_scale_gain=waveform_scale_gain,
+                             waveform_scale_init_gate=waveform_scale_init_gate,
                              disable_waveform_scale=disable_waveform_scale,
                              use_amplitude_info=use_amplitude_info,
                              use_coords_rel=use_coords_rel,
                              use_coords_abs=use_coords_abs,
                              use_coords_rel_abs_fusion=use_coords_rel_abs_fusion,
                              coords_abs_weight=coords_abs_weight,
-                             coord_fusion_mode=coord_fusion_mode)
+                             coord_fusion_mode=coord_fusion_mode,
+                             aux_mag_head=aux_mag_module)
     return full_model
 
 
