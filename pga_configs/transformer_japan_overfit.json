@@ -4,9 +4,9 @@
     "ensemble": 1,
     "model_params": {
         "waveform_model_dims": [
-            500,
-            500,
-            500
+            1000,
+            1000,
+            1000
         ],
         "output_mlp_dims": [
             64
@@ -26,7 +26,7 @@
             "initializer_range": 0.02
         },
         "ffn_params": {
-            "hidden_dim": 1000
+            "hidden_dim": 2000
         },
         "transformer_layers": 2,
         "hidden_dropout": 0.0,
@@ -43,6 +43,9 @@
         "bias_loc_sigma": 2,
         "event_token_init_range": 0.02,
         "no_event_token": false,
+        "diting_station_pool_queries": 4,
+        "diting_station_pool_temperature": 1.0,
+        "diting_station_pool_dropout": 0.0,
         "waveform_scale_gain": 1.0,
         "waveform_scale_log_divisor": 10.0,
         "waveform_scale_init_gate": 0.1,

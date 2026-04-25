@@ -583,19 +583,43 @@ class StripMask(nn.Module):
 
 
 
-class StatPool1d(nn.Module):
-    """Replace GAP with mean+max+std pooling, then project back to original dim."""
-    def __init__(self, channels):
+class AttentionPool1d(nn.Module):
+    """Learned multi-query attention pooling over temporal/token features."""
+
+    def __init__(self, channels, num_queries=4, temperature=1.0, dropout=0.0):
         super().__init__()
-        self.proj = nn.Linear(channels * 3, channels)
+        if num_queries < 1:
+            raise ValueError(f"num_queries must be >= 1, got {num_queries}")
+        self.channels = channels
+        self.num_queries = num_queries
+        self.temperature = float(temperature)
+        self.dropout = float(dropout)
+        self.query = nn.Parameter(torch.empty(num_queries, channels))
+        self.key_norm = nn.LayerNorm(channels)
+        self.out_norm = nn.LayerNorm(channels)
+        self._last_attention = None
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.normal_(self.query, mean=0.0, std=0.02)
+        nn.init.ones_(self.key_norm.weight)
+        nn.init.zeros_(self.key_norm.bias)
+        nn.init.ones_(self.out_norm.weight)
+        nn.init.zeros_(self.out_norm.bias)
 
     def forward(self, x):
-        # x: (B, C, T)
-        mean_pool = x.mean(dim=-1)              # (B, C)
-        max_pool = x.max(dim=-1).values         # (B, C)
-        std_pool = x.std(dim=-1)                # (B, C)
-        out = torch.cat([mean_pool, max_pool, std_pool], dim=-1)  # (B, 3C)
-        return self.proj(out).unsqueeze(-1)      # (B, C, 1) — same shape as GAP output
+        # x: (B, C, T). Return Q pooled vectors flattened to (B, Q*C).
+        tokens = x.transpose(1, 2).contiguous().float()  # (B, T, C)
+        keys = self.key_norm(tokens)
+        scores = torch.einsum('btc,qc->btq', keys, self.query)
+        scores = scores / max(self.temperature, 1e-6)
+        weights = torch.softmax(scores, dim=1)
+        if self.dropout > 0:
+            weights = F.dropout(weights, p=self.dropout, training=self.training)
+        context = torch.einsum('btq,btc->bqc', weights, tokens)
+        context = self.out_norm(context)
+        self._last_attention = weights.detach()
+        return context.reshape(context.shape[0], self.num_queries * self.channels)
 
 
 class WaveformScaleEmbedding(nn.Module):
@@ -644,11 +668,19 @@ class AuxiliaryMagnitudeHead(nn.Module):
 
 class DitingStationAdapter(nn.Module):
     """Light multi-scale adapter from ViTAdapter features to station embeddings."""
-    def __init__(self, encoder_dim, hidden_channels, output_dim):
+    def __init__(self, encoder_dim, hidden_channels, output_dim,
+                 pool_queries=4, pool_temperature=1.0, pool_dropout=0.0):
         super().__init__()
         self.hidden_channels = hidden_channels
         self.output_dim = output_dim
-        self.base_proj = MuReadout(encoder_dim, output_dim, bias=False)
+        self.pool_queries = pool_queries
+        self.base_pool = AttentionPool1d(
+            encoder_dim,
+            num_queries=pool_queries,
+            temperature=pool_temperature,
+            dropout=pool_dropout,
+        )
+        self.base_proj = MuReadout(encoder_dim * pool_queries, output_dim, bias=False)
         self.proj_f2 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.proj_f3 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
         self.proj_f4 = nn.Conv1d(encoder_dim, hidden_channels, kernel_size=1)
@@ -669,11 +701,11 @@ class DitingStationAdapter(nn.Module):
             nn.Conv1d(hidden_channels, hidden_channels, kernel_size=3, padding=1),
             nn.GELU(),
         )
-        self.pool_f2 = StatPool1d(hidden_channels)
-        self.pool_f3 = StatPool1d(hidden_channels)
-        self.pool_f4 = StatPool1d(hidden_channels)
-        self.pool_x = StatPool1d(hidden_channels)
-        self.proj_out = nn.Linear(hidden_channels * 4, output_dim)
+        self.pool_f2 = AttentionPool1d(hidden_channels, pool_queries, pool_temperature, pool_dropout)
+        self.pool_f3 = AttentionPool1d(hidden_channels, pool_queries, pool_temperature, pool_dropout)
+        self.pool_f4 = AttentionPool1d(hidden_channels, pool_queries, pool_temperature, pool_dropout)
+        self.pool_x = AttentionPool1d(hidden_channels, pool_queries, pool_temperature, pool_dropout)
+        self.proj_out = nn.Linear(hidden_channels * pool_queries * 4, output_dim)
         self.delta_scale = nn.Parameter(torch.tensor(0.1, dtype=torch.float32))
         self.norm = nn.LayerNorm(output_dim)
         self._init_preserving_path()
@@ -688,6 +720,7 @@ class DitingStationAdapter(nn.Module):
 
     def reset_parameters(self):
         self._init_preserving_path()
+        self.base_pool.reset_parameters()
         for module in (self.proj_f2, self.proj_f3, self.proj_f4, self.proj_x):
             nn.init.kaiming_normal_(module.weight, nonlinearity='linear')
             if module.bias is not None:
@@ -698,21 +731,19 @@ class DitingStationAdapter(nn.Module):
             if conv.bias is not None:
                 nn.init.zeros_(conv.bias)
         for pool in (self.pool_f2, self.pool_f3, self.pool_f4, self.pool_x):
-            nn.init.kaiming_normal_(pool.proj.weight, nonlinearity='linear')
-            if pool.proj.bias is not None:
-                nn.init.zeros_(pool.proj.bias)
+            pool.reset_parameters()
         nn.init.ones_(self.norm.weight)
         nn.init.zeros_(self.norm.bias)
 
     def forward(self, inputs):
         f2, f3, f4, x = inputs
         x = x.transpose(1, 2).contiguous()
-        base = self.base_proj(x.mean(dim=-1).float())
+        base = self.base_proj(self.base_pool(x))
 
-        branch_f2 = self.pool_f2(self.refine_f2(self.proj_f2(f2))).squeeze(-1)
-        branch_f3 = self.pool_f3(self.refine_f3(self.proj_f3(f3))).squeeze(-1)
-        branch_f4 = self.pool_f4(self.refine_f4(self.proj_f4(f4))).squeeze(-1)
-        branch_x = self.pool_x(self.refine_x(self.proj_x(x))).squeeze(-1)
+        branch_f2 = self.pool_f2(self.refine_f2(self.proj_f2(f2)))
+        branch_f3 = self.pool_f3(self.refine_f3(self.proj_f3(f3)))
+        branch_f4 = self.pool_f4(self.refine_f4(self.proj_f4(f4)))
+        branch_x = self.pool_x(self.refine_x(self.proj_x(x)))
 
         pooled = torch.cat([branch_f2, branch_f3, branch_f4, branch_x], dim=-1)
         delta = self.proj_out(pooled.float())
@@ -1316,6 +1347,9 @@ def get_diting_model(args, station_emb_dim):
                 encoder_dim=encoder.backbone.d_model,
                 hidden_channels=args.out_channels,
                 output_dim=station_emb_dim,
+                pool_queries=getattr(args, 'diting_station_pool_queries', 4),
+                pool_temperature=getattr(args, 'diting_station_pool_temperature', 1.0),
+                pool_dropout=getattr(args, 'diting_station_pool_dropout', 0.0),
             )
             backbone_module = encoder.backbone
         elif frontend == 'backbone_attn_pool':
@@ -1399,6 +1433,9 @@ def build_transformer_model(max_stations,
                             rotation_anchor=None,
                             skip_transformer=False,
                             alternative_coords_embedding=False,
+                            diting_station_pool_queries=4,
+                            diting_station_pool_temperature=1.0,
+                            diting_station_pool_dropout=0.0,
                             waveform_scale_gain=1.0,
                             waveform_scale_hidden_dim=None,
                             waveform_scale_log_divisor=10.0,
@@ -1434,6 +1471,10 @@ def build_transformer_model(max_stations,
 #    waveform_model = NormalizedScaleEmbedding(input_shape, downsample=downsample, activation=activation,
 #                                              mlp_dims=waveform_model_dims)
 #    mlp_mag_single_station = MLP((waveform_model.mlp.mlp[-1].out_features,), output_mlp_dims, activation=activation) #Modified line
+    if diting_args is not None:
+        diting_args.diting_station_pool_queries = diting_station_pool_queries
+        diting_args.diting_station_pool_temperature = diting_station_pool_temperature
+        diting_args.diting_station_pool_dropout = diting_station_pool_dropout
     waveform_model = get_diting_model(diting_args, station_emb_dim=waveform_model_dims[-1])
 
     #   Event model
