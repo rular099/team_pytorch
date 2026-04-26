@@ -776,6 +776,29 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
         return {}
     pga_idx = output_layout.index('pga')
     pga_pred = outputs[pga_idx]
+    if pga_pred.shape[-1] == 1:
+        mu = pga_pred[..., 0]
+        stats = {
+            'diag/pga_point_mu_mean': mu.mean().detach(),
+            'diag/pga_point_mu_std': mu.std(unbiased=False).detach(),
+        }
+        if pga_target_valid is not None:
+            mask = pga_target_valid.bool()
+            if mask.any():
+                pga_true = labels[pga_idx]
+                valid_pred = mu[mask]
+                valid_true = pga_true[..., 0][mask]
+                stats.update({
+                    'diag/pga_target_mean': valid_true.mean().detach(),
+                    'diag/pga_target_std': valid_true.std(unbiased=False).detach(),
+                    'diag/pga_mu_best_valid_mean': valid_pred.mean().detach(),
+                    'diag/pga_mu_best_valid_std': valid_pred.std(unbiased=False).detach(),
+                    'diag/pga_pred_target_mean_gap': (valid_pred.mean() - valid_true.mean()).detach(),
+                    'diag/pga_pred_target_std_gap': (valid_pred.std(unbiased=False) - valid_true.std(unbiased=False)).detach(),
+                    'diag/pga_valid_target_count': mask.sum().detach().float(),
+                })
+        return stats
+
     pga_true = labels[pga_idx]
     alpha_logits = pga_pred[..., 0]
     mu = pga_pred[..., 1]
@@ -1063,7 +1086,7 @@ def maybe_dump_model_batch(input_dump_config, split_name, epoch_idx, batch_idx, 
 
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val',
-                input_dump_config=None):
+                input_dump_config=None, loss_type='mdn', huber_delta=1.0):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1107,8 +1130,15 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
                 sel_pred, sel_true = models.select_loss_components(
                     outputs, labels, eval_model.output_layout, res_comps)
-                loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
-                                                        pga_target_valid=pga_target_valid)
+                if loss_type in ('mdn', 'gaussian', 'gaussian_nll'):
+                    loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
+                                                            pga_target_valid=pga_target_valid)
+                else:
+                    loss = models.point_regression_loss_full(
+                        sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
+                        pga_target_valid=pga_target_valid, loss_type=loss_type,
+                        huber_delta=huber_delta,
+                    )
                 loss.backward()
                 pre_clip_global_grad = global_grad_norm(model.parameters())
                 if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
@@ -1192,8 +1222,15 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
                     sel_pred, sel_true = models.select_loss_components(
                         outputs, labels, eval_model.output_layout, res_comps)
-                    loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
-                                                            pga_target_valid=pga_target_valid)
+                    if loss_type in ('mdn', 'gaussian', 'gaussian_nll'):
+                        loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
+                                                                pga_target_valid=pga_target_valid)
+                    else:
+                        loss = models.point_regression_loss_full(
+                            sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
+                            pga_target_valid=pga_target_valid, loss_type=loss_type,
+                            huber_delta=huber_delta,
+                        )
                     val_running_loss += loss.item()
                     num_val_batches += 1
 
@@ -1409,7 +1446,10 @@ def run_sanity_check(model, data_loader, device, name='sanity', max_batches=1):
             for i, out in enumerate(outputs):
                 outf = out.float()
                 print(f'  output[{i}]: shape={tuple(out.shape)}, mean={outf.mean().item():.4f}, std={outf.std().item():.4f}, min={outf.min().item():.4f}, max={outf.max().item():.4f}')
-                if out.ndim >= 3:
+                if out.ndim >= 3 and out.shape[-1] == 1:
+                    mu_point = out[..., 0]
+                    print(f'    point_mu: mean={mu_point.mean().item():.4f}, std={mu_point.std(unbiased=False).item():.4f}')
+                elif out.ndim >= 3:
                     # Determine d (number of mu/sigma dimensions) from output shape
                     # Layout: [alpha, mu_1..mu_d, sigma_1..sigma_d] → total = 1 + 2d
                     last_dim = out.shape[-1]
@@ -2043,8 +2083,12 @@ if __name__ == '__main__':
         assert len(res_comps_cfg) == len(res_weight_cfg), \
             f'res_comps ({len(res_comps_cfg)}) and res_weight ({len(res_weight_cfg)}) length mismatch'
         lr_monitor = training_params.get('lr_monitor', 'val')
+        default_full_loss = 'huber' if config['model_params'].get('output_distribution', 'mdn') == 'point' else 'mdn'
+        full_loss_type = training_params.get('full_model_loss', training_params.get('loss', default_full_loss))
+        full_huber_delta = float(training_params.get('full_model_huber_delta', 1.0))
         if (not is_dist) or local_rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
+            print(f'[loss] full_model_loss={full_loss_type}, huber_delta={full_huber_delta}')
             print(f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss')
         train_model(
             full_model,
@@ -2064,6 +2108,8 @@ if __name__ == '__main__':
             train_sampler=train_sampler,
             lr_monitor=lr_monitor,
             input_dump_config=input_dump_config,
+            loss_type=full_loss_type,
+            huber_delta=full_huber_delta,
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,

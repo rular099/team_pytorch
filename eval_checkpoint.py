@@ -6,6 +6,7 @@ Usage:
         --diting_config ./diting/config/conf_reg.yml \
         --checkpoint weights_japan_overfit/full_model_200.pth \
         --output eval_results.npz \
+        [--single_station_checkpoint weights_japan_overfit/single_station_best.pth] \
         [--overfit_n 16] [--device cuda:0]
 """
 
@@ -27,7 +28,11 @@ import gemini_util_light as util
 import loader_light as loader
 
 # Reuse the same build_diting_args / overfit split logic from train_light.py
-from train_light import build_diting_args as load_diting_args, build_overfit_event_metadata_splits
+from train_light import (
+    SingleStationTaskDataset,
+    build_diting_args as load_diting_args,
+    build_overfit_event_metadata_splits,
+)
 
 
 def shifted_p_picks_array(p_picks):
@@ -41,6 +46,16 @@ def _to_numpy(value):
     if isinstance(value, torch.Tensor):
         return value.numpy()
     return np.array(value)
+
+
+def _is_point_output(out_np):
+    return out_np.ndim <= 1 or (out_np.ndim >= 2 and out_np.shape[-1] == 1)
+
+
+def _point_mu_from_output(name, out_np):
+    if name == 'pga':
+        return np.asarray(out_np)[..., 0]
+    return np.asarray(out_np).reshape(-1)
 
 
 def build_model_and_load(config, diting_args, checkpoint_path, device):
@@ -61,6 +76,48 @@ def build_model_and_load(config, diting_args, checkpoint_path, device):
     epoch = checkpoint.get('epoch', '?')
     print(f'Loaded checkpoint: {checkpoint_path} (epoch {epoch})')
     return full_model
+
+
+def _load_checkpoint_state(checkpoint_path, device):
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    state_dict = checkpoint['model_state_dict'] if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint else checkpoint
+    if list(state_dict.keys())[0].startswith('module.'):
+        from collections import OrderedDict
+        state_dict = OrderedDict((k.replace('module.', '', 1), v) for k, v in state_dict.items())
+    return checkpoint, state_dict
+
+
+def build_single_station_model_and_load(config, diting_args, checkpoint_path, device):
+    checkpoint, state_dict = _load_checkpoint_state(checkpoint_path, device)
+    pretrain_params = config['training_params'].get('single_station_pretrain', {})
+    model_params = copy.deepcopy(config['model_params'])
+    model_params['single_station_tasks'] = checkpoint.get(
+        'tasks',
+        pretrain_params.get('tasks', ['mag', 'epidist', 'pga']),
+    )
+    model_params['single_station_hidden_dim'] = pretrain_params.get(
+        'hidden_dim', model_params.get('single_station_hidden_dim', None)
+    )
+    model_params['single_station_task_output_init'] = pretrain_params.get('task_output_init', None)
+    model_params['single_station_task_sigma_init'] = pretrain_params.get('task_sigma_init', None)
+
+    single_model = models.build_single_station_model(
+        **model_params,
+        trace_length=10000,
+        diting_args=diting_args,
+    )
+    missing, unexpected = single_model.load_state_dict(state_dict, strict=False)
+    single_model = single_model.to(device)
+    single_model.eval()
+
+    epoch = checkpoint.get('epoch', '?') if isinstance(checkpoint, dict) else '?'
+    print(f'Loaded single-station checkpoint: {checkpoint_path} (epoch {epoch})')
+    print(f'  single tasks: {single_model.tasks}')
+    if missing:
+        print(f'  missing tensors: {len(missing)}')
+    if unexpected:
+        print(f'  unexpected tensors: {len(unexpected)}')
+    return single_model
 
 
 def build_datasets(config, overfit_n=0):
@@ -327,9 +384,12 @@ def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0
         scale_norm = 0.0
         ratio = 0.0
         if raw_model.waveform_scale_proj is not None and getattr(raw_model, 'use_amplitude_info', True):
-            scale_emb = raw_model.waveform_scale_proj(raw_model._extract_scale(scaled_waveform))
+            scale_features = raw_model._extract_scale_features(scaled_waveform)
+            scale_emb = raw_model.waveform_scale_proj(scale_features)
             scale_valid = scale_emb[0, valid_idx]
-            scale_norm = scale_valid.norm(dim=-1).mean().item()
+            gain_scale_emb = raw_model.waveform_scale_gain * raw_model.waveform_scale_gate * scale_emb
+            gain_scale_valid = gain_scale_emb[0, valid_idx]
+            scale_norm = gain_scale_valid.norm(dim=-1).mean().item()
             ratio = scale_norm / max(trunk_norm, 1e-8)
         else:
             scale_emb = None
@@ -337,8 +397,8 @@ def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0
         print(f'\n--- waveform x{scale:.1f} ---')
         print(f'  valid stations: {len(valid_idx)}')
         print(f'  mean ||waveforms_emb||: {trunk_norm:.4f}')
-        print(f'  mean ||waveform_scale_proj(scale)||: {scale_norm:.4f}')
-        print(f'  scale/trunk norm ratio: {ratio:.4f}')
+        print(f'  mean ||gain*gate*waveform_scale_proj(scale)||: {scale_norm:.4f}')
+        print(f'  injected scale/trunk norm ratio: {ratio:.4f}')
 
         if base_emb is None:
             base_emb = trunk_valid
@@ -352,10 +412,13 @@ def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0
         )
         if raw_model.n_pga_targets > 0:
             pga_out = outputs[-1][0].detach().cpu().numpy()
-            alpha = pga_out[:, :, 0]
-            mu = pga_out[:, :, 1]
-            best = np.argmax(alpha, axis=1)
-            mu_best = mu[np.arange(len(best)), best]
+            if _is_point_output(pga_out):
+                mu_best = pga_out[:, 0]
+            else:
+                alpha = pga_out[:, :, 0]
+                mu = pga_out[:, :, 1]
+                best = np.argmax(alpha, axis=1)
+                mu_best = mu[np.arange(len(best)), best]
             if pga_target_valid is not None:
                 valid_pga = pga_target_valid[0].bool().cpu().numpy()
                 mu_best = mu_best[valid_pga]
@@ -389,13 +452,13 @@ def diagnose_embedding_scales(model, dataset, device):
     scale_emb = None
     scale_emb_valid = None
     if raw_model.waveform_scale_proj is not None and getattr(raw_model, 'use_amplitude_info', True):
-        scale_emb = raw_model.waveform_scale_proj(raw_model._extract_scale(waveform_inp))
+        scale_emb = raw_model.waveform_scale_proj(raw_model._extract_scale_features(waveform_inp))
         scale_emb_valid = scale_emb[0, valid_idx]
 
-    wave_plus_scale = waveforms_emb
+    base_waveforms_emb = raw_model.layernorm(waveforms_emb)
+    wave_plus_scale = base_waveforms_emb
     if scale_emb is not None and getattr(raw_model, 'use_amplitude_info', True):
-        wave_plus_scale = wave_plus_scale + raw_model.waveform_scale_gain * scale_emb
-    wave_plus_scale = raw_model.layernorm(wave_plus_scale)
+        wave_plus_scale = wave_plus_scale + raw_model.waveform_scale_gain * raw_model.waveform_scale_gate * scale_emb
     wave_plus_scale_valid = wave_plus_scale[0, valid_idx]
 
     coords_feat, coords_emb = raw_model._station_coord_features(coords_abs, coords_rel, station_valid.bool())
@@ -415,12 +478,14 @@ def diagnose_embedding_scales(model, dataset, device):
     print('  Embedding scale diagnostics (1 sample)')
     print(f'{"="*60}')
     print(f'  valid stations: {len(valid_idx)}')
-    print(f'  mean ||waveforms_emb||: {mean_norm(waveforms_emb_valid):.4f}')
+    print(f'  mean ||raw waveforms_emb||: {mean_norm(waveforms_emb_valid):.4f}')
+    print(f'  mean ||layernorm(waveforms_emb)||: {mean_norm(base_waveforms_emb[0, valid_idx]):.4f}')
     if scale_emb_valid is not None:
         print(f'  mean ||scale_emb||: {mean_norm(scale_emb_valid):.4f}')
         print(f'  waveform_scale_gain: {raw_model.waveform_scale_gain:.4f}')
-        print(f'  mean ||gain*scale_emb||: {(raw_model.waveform_scale_gain * scale_emb_valid.norm(dim=-1)).mean().item():.4f}')
-    print(f'  mean ||layernorm(wave+scale)||: {mean_norm(wave_plus_scale_valid):.4f}')
+        print(f'  waveform_scale_gate: {float(raw_model.waveform_scale_gate.detach().cpu()):.4f}')
+        print(f'  mean ||gain*gate*scale_emb||: {(raw_model.waveform_scale_gain * raw_model.waveform_scale_gate * scale_emb_valid.norm(dim=-1)).mean().item():.4f}')
+    print(f'  mean ||layernorm(wave)+scale||: {mean_norm(wave_plus_scale_valid):.4f}')
     if coords_emb_valid is not None:
         print(f'  mean ||coords_emb||: {mean_norm(coords_emb_valid):.4f}')
     else:
@@ -467,7 +532,16 @@ def run_inference(model, dataset, device):
         # Extract mu from MDN (best mixture component by alpha)
         for name in head_names:
             out_np = results[f'{name}_pred'][-1]
-            if name == 'pga':
+            if _is_point_output(out_np):
+                mu_best = _point_mu_from_output(name, out_np)
+                results[f'{name}_mu_best'].append(mu_best)
+                if name == 'loc':
+                    if raw_model.loc_target_mode == 'rel' and 'loc_center' in results:
+                        center = results['loc_center'][-1]
+                        results['loc_mu_best_abs'].append(mu_best + center)
+                    else:
+                        results['loc_mu_best_abs'].append(mu_best)
+            elif name == 'pga':
                 # shape: (n_pga_targets, n_mixtures, 3)
                 alpha = out_np[:, :, 0]
                 mu = out_np[:, :, 1]
@@ -492,6 +566,157 @@ def run_inference(model, dataset, device):
         results['p_picks'].append(shifted_p_picks_array(p_picks))
 
     return dict(results)
+
+
+def _single_station_valid_mask(tasks, station_valid, p_picks):
+    valid = station_valid.bool().clone()
+    if 'pga' in tasks:
+        input_pga_valid = p_picks.get('input_pga_valid') if isinstance(p_picks, dict) else None
+        if input_pga_valid is None:
+            raise KeyError(
+                'Single-station PGA eval requires input_pga_valid from PreloadedEventGenerator.'
+            )
+        valid &= input_pga_valid.bool()
+    return valid
+
+
+def _single_station_targets(tasks, metadata, labels, p_picks, station_indices, scale_metadata):
+    targets = {}
+    if 'mag' in tasks:
+        targets['mag'] = np.full(
+            len(station_indices),
+            float(labels[0].float().reshape(-1)[0]),
+            dtype=np.float32,
+        )
+    if 'epidist' in tasks:
+        event_coords = p_picks.get('loc_target_abs') if isinstance(p_picks, dict) else None
+        if event_coords is None:
+            raise KeyError('Single-station epidist eval requires loc_target_abs in p_pick_info.')
+        dist_vals = []
+        for station_idx in station_indices:
+            dist_km = SingleStationTaskDataset._epicentral_distance_km(
+                metadata[station_idx],
+                event_coords,
+                scale_metadata=scale_metadata,
+            )
+            dist_vals.append(float(torch.log1p(dist_km).item()))
+        targets['epidist'] = np.array(dist_vals, dtype=np.float32)
+    if 'pga' in tasks:
+        targets['pga'] = p_picks['input_pga_values'][station_indices].float().numpy()
+    return targets
+
+
+@torch.no_grad()
+def run_single_station_inference(model, dataset, device):
+    """Run the single-station pretrain model on every valid input station."""
+    raw_model = model.module if hasattr(model, 'module') else model
+    tasks = list(raw_model.tasks)
+    results = defaultdict(list)
+
+    for event_idx in range(len(dataset)):
+        inputs, labels, p_picks = dataset[event_idx]
+        waveforms, metadata, station_valid = inputs[:3]
+        valid = _single_station_valid_mask(tasks, station_valid, p_picks)
+        station_indices = torch.nonzero(valid, as_tuple=False).flatten()
+        if station_indices.numel() == 0:
+            continue
+
+        waveforms_dev = waveforms[station_indices].to(device)
+        outputs = raw_model(waveforms_dev)
+        scale_metadata = getattr(dataset, 'scale_metadata', False)
+        targets = _single_station_targets(
+            tasks,
+            metadata,
+            labels,
+            p_picks,
+            station_indices,
+            scale_metadata=scale_metadata,
+        )
+
+        event_id = p_picks.get('event_id', str(event_idx)) if isinstance(p_picks, dict) else str(event_idx)
+        selected_input_indices = p_picks.get('selected_input_indices') if isinstance(p_picks, dict) else None
+        for local_idx, station_idx in enumerate(station_indices):
+            results['event_index'].append(event_idx)
+            results['event_id'].append(event_id)
+            results['station_slot'].append(int(station_idx))
+            if selected_input_indices is not None:
+                results['selected_input_index'].append(int(selected_input_indices[station_idx]))
+
+        for task in tasks:
+            pred = outputs[task].detach().cpu().numpy()
+            results[f'{task}_pred'].append(pred)
+            results[f'{task}_mu'].append(pred[:, 0])
+            results[f'{task}_sigma'].append(pred[:, 1])
+            results[f'{task}_label'].append(targets[task])
+
+        embedding = outputs.get('embedding')
+        if embedding is not None:
+            emb = embedding.detach().cpu()
+            results['embedding_norm'].append(emb.norm(dim=-1).numpy())
+
+    packed = {}
+    for key, values in results.items():
+        if not values:
+            packed[key] = np.array([])
+        elif isinstance(values[0], np.ndarray):
+            packed[key] = np.concatenate(values, axis=0)
+        else:
+            packed[key] = np.array(values)
+    return packed
+
+
+def print_single_station_summary(results, split_name):
+    n_samples = len(results.get('event_index', []))
+    print(f'\n{"="*60}')
+    print(f'  SINGLE-STATION {split_name.upper()} set: {n_samples} station samples')
+    print(f'{"="*60}')
+    if n_samples == 0:
+        return
+
+    for task in ['mag', 'epidist', 'pga']:
+        label_key = f'{task}_label'
+        mu_key = f'{task}_mu'
+        if label_key not in results or mu_key not in results:
+            continue
+        labels = np.asarray(results[label_key]).reshape(-1)
+        preds = np.asarray(results[mu_key]).reshape(-1)
+        residuals = preds - labels
+        print(f'\n--- single/{task} ---')
+        for i in range(min(len(labels), 12)):
+            print(f'  [{i:2d}] label={labels[i]:.4f}, pred={preds[i]:.4f}')
+        print(f'  MAE={np.mean(np.abs(residuals)):.4f}, RMSE={np.sqrt(np.mean(residuals**2)):.4f}')
+        if len(labels) > 1:
+            corr = np.corrcoef(labels, preds)[0, 1]
+            print(f'  Correlation: {corr:.4f}')
+
+    if 'embedding_norm' in results and len(results['embedding_norm']) > 0:
+        norms = np.asarray(results['embedding_norm']).reshape(-1)
+        print(f'\n--- single/embedding ---')
+        print(f'  norm mean={norms.mean():.4f}, std={norms.std():.4f}, min={norms.min():.4f}, max={norms.max():.4f}')
+
+
+def resolve_single_station_checkpoint(config, explicit_path=None):
+    if explicit_path:
+        return explicit_path if os.path.exists(explicit_path) else None
+
+    training_params = config['training_params']
+    configured = training_params.get('single_station_checkpoint', None)
+    if configured:
+        return configured if os.path.exists(configured) else None
+
+    pretrain_params = training_params.get('single_station_pretrain', {})
+    if not pretrain_params.get('enabled', False):
+        return None
+
+    weight_path = training_params.get('weight_path', '')
+    candidates = [
+        os.path.join(weight_path, 'single_station_best.pth'),
+        os.path.join(weight_path, 'single_station_final.pth'),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    return None
 
 
 def print_summary(results, split_name):
@@ -589,6 +814,10 @@ def main():
     parser.add_argument('--diting_config', default='./diting/config/conf_reg.yml')
     parser.add_argument('--diting_pretrained', default=None)
     parser.add_argument('--checkpoint', required=True, help='Path to .pth checkpoint')
+    parser.add_argument('--single_station_checkpoint', default=None,
+                        help='Optional single_station_best.pth checkpoint; defaults to weight_path/single_station_best.pth when present')
+    parser.add_argument('--skip_single_station', action='store_true',
+                        help='Disable single-station checkpoint evaluation')
     parser.add_argument('--output', default='eval_results.npz', help='Output file for results')
     parser.add_argument('--overfit_n', type=int, default=0)
     parser.add_argument('--device', default='cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -617,6 +846,26 @@ def main():
     print('Building datasets...')
     datasets = build_datasets(config, overfit_n=args.overfit_n)
 
+    single_station_model = None
+    if not args.skip_single_station:
+        single_station_checkpoint = resolve_single_station_checkpoint(
+            config,
+            explicit_path=args.single_station_checkpoint,
+        )
+        if single_station_checkpoint is None:
+            if args.single_station_checkpoint:
+                print(f'Single-station checkpoint not found: {args.single_station_checkpoint}')
+            else:
+                print('No single-station checkpoint found; skipping single-station eval')
+        else:
+            print('Building single-station model...')
+            single_station_model = build_single_station_model_and_load(
+                config,
+                diting_args,
+                single_station_checkpoint,
+                device,
+            )
+
     # Diagnose diting features on first available dataset
     first_dataset = next(iter(datasets.values()))
     diagnose_diting_features(model, first_dataset, device)
@@ -631,6 +880,13 @@ def main():
         # Prefix keys with split name for saving
         for k, v in results.items():
             all_results[f'{split_name}_{k}'] = np.array(v, dtype=object)
+
+        if single_station_model is not None:
+            print(f'\nRunning single-station inference on {split_name} set ({len(dataset)} events)...')
+            single_results = run_single_station_inference(single_station_model, dataset, device)
+            print_single_station_summary(single_results, split_name)
+            for k, v in single_results.items():
+                all_results[f'single_{split_name}_{k}'] = np.array(v, dtype=object)
 
     np.savez(args.output, **all_results)
     print(f'\nResults saved to {args.output}')

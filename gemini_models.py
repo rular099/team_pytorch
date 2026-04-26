@@ -182,6 +182,26 @@ class MixtureOutput(nn.Module):
 
 
 
+class PointOutput(nn.Module):
+    """Deterministic regression output head for full-model point targets."""
+
+    def __init__(self, input_shape, d=1, bias_mu=0.0, activation=None):
+        super().__init__()
+        self.d = d
+        self.activation = activation
+        if activation is not None:
+            self.activation_fun = get_activation(activation)
+        self.mu = nn.Linear(input_shape[-1], d)
+        nn.init.normal_(self.mu.weight, mean=0.0, std=1e-3)
+        nn.init.constant_(self.mu.bias, float(bias_mu))
+
+    def forward(self, x):
+        mu = self.mu(x)
+        if self.activation is not None:
+            mu = self.activation_fun(mu)
+        return mu
+
+
 class NormalizedScaleEmbedding(nn.Module):
     def __init__(self, input_shape, activation='relu', downsample=1, mlp_dims=(500, 300, 200, 150), eps=1e-8):
         super().__init__()
@@ -1080,6 +1100,52 @@ def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_sh
     return loss
 
 
+def _point_target_for_loss(y_true, y_pred, d):
+    if d == 1:
+        if y_pred.ndim >= 3:
+            return y_true[..., :1].reshape_as(y_pred)
+        return y_true.reshape(y_true.shape[0], -1)[:, :1].reshape_as(y_pred)
+    return y_true.reshape(y_true.shape[0], -1, d)[:, 0, :].reshape_as(y_pred)
+
+
+def point_regression_loss_full(y_pred, y_true, res_comps=None, res_weight=None,
+                               pga_target_valid=None, loss_type='huber',
+                               huber_delta=1.0):
+    if res_comps is None:
+        res_comps = ['mag', 'loc', 'pga']
+        res_weight = np.array([1., 1., 1.])
+    res_weight = np.asarray(res_weight, dtype=float)
+    res_weight = res_weight / np.sum(res_weight)
+    total_loss = 0.0
+    for i, res_comp in enumerate(res_comps):
+        pred = y_pred[i]
+        if res_comp == 'loc':
+            d = 3
+        else:
+            d = 1
+        target = _point_target_for_loss(y_true[i], pred, d).to(pred.device, dtype=pred.dtype)
+        if loss_type == 'huber':
+            per_elem = F.smooth_l1_loss(pred, target, beta=huber_delta, reduction='none')
+        elif loss_type == 'l1':
+            per_elem = torch.abs(pred - target)
+        elif loss_type == 'mse':
+            per_elem = (pred - target) ** 2
+        else:
+            raise ValueError(f"Unsupported point regression loss {loss_type!r}")
+
+        if res_comp == 'pga' and pga_target_valid is not None:
+            mask = pga_target_valid.to(pred.device).bool()
+            while mask.ndim < per_elem.ndim:
+                mask = mask.unsqueeze(-1)
+            mask_f = mask.to(per_elem.dtype)
+            denom = mask_f.sum().clamp_min(1.0)
+            comp_loss = (per_elem * mask_f).sum() / denom
+        else:
+            comp_loss = per_elem.mean()
+        total_loss = total_loss + float(res_weight[i]) * comp_loss
+    return total_loss
+
+
 def clip_magnitude_mixture(mixture_output, mag_min=-2.0, mag_max=10.0):
     if isinstance(mixture_output, torch.Tensor):
         clipped = mixture_output.clone()
@@ -1112,7 +1178,8 @@ class FullModel(nn.Module):
                  add_constant_to_mixture, n_datasets, waveform_scale_proj=None, waveform_scale_gain=1.0,
                  waveform_scale_init_gate=0.1, disable_waveform_scale=False, use_amplitude_info=None,
                  use_coords_rel=False, use_coords_abs=True, use_coords_rel_abs_fusion=False,
-                 coords_abs_weight=0.1, coord_fusion_mode='add', aux_mag_head=None):
+                 coords_abs_weight=0.1, coord_fusion_mode='add', aux_mag_head=None,
+                 output_distribution='mdn'):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1146,6 +1213,11 @@ class FullModel(nn.Module):
         self.coords_abs_weight = coords_abs_weight
         self.coord_fusion_mode = coord_fusion_mode
         self.aux_mag_head = aux_mag_head
+        self.output_distribution = output_distribution
+        if self.output_distribution not in ('mdn', 'point'):
+            raise ValueError(
+                f"output_distribution must be 'mdn' or 'point', got {self.output_distribution!r}."
+            )
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -1429,14 +1501,18 @@ class FullModel(nn.Module):
                 event_emb = emb[:, 0, :]  # Select event embedding
 
             mag_embedding = self.mlp_mag(event_emb)
-            #out_mag = self.output_model_mag(mag_embedding)
-            alpha_logits, mu, sigma = self.output_model_mag(mag_embedding)
-            out_mag = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
+            if self.output_distribution == 'point':
+                out_mag = self.output_model_mag(mag_embedding)
+            else:
+                alpha_logits, mu, sigma = self.output_model_mag(mag_embedding)
+                out_mag = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
 
             loc_embedding = self.mlp_loc(event_emb)
-            #out_loc = self.output_model_loc(loc_embedding)
-            alpha_logits, mu, sigma = self.output_model_loc(loc_embedding)
-            out_loc = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
+            if self.output_distribution == 'point':
+                out_loc = self.output_model_loc(loc_embedding)
+            else:
+                alpha_logits, mu, sigma = self.output_model_loc(loc_embedding)
+                out_loc = torch.cat([alpha_logits, mu, sigma], dim=-1)  # (batch, n, 1+d+d)
 
             outputs.append(out_mag)
             outputs.append(out_loc)
@@ -1447,15 +1523,19 @@ class FullModel(nn.Module):
         if self.n_pga_targets:
             pga_emb = emb[:, -self.n_pga_targets:, :]  # Select embeddings for pga
             pga_emb = torch.stack([self.mlp_pga(pga_emb[:, i, :]) for i in range(pga_emb.shape[1])], dim=1)
-            #output_pga = torch.stack([self.output_model_pga(pga_emb[:, i, :]) for i in range(pga_emb.shape[1])], dim=1)
             pga_out_tmp = []
             for i in range(pga_emb.shape[1]):
-                alpha_logits, mu, sigma = self.output_model_pga(pga_emb[:, i, :])
-                pga_out_tmp.append(torch.cat([alpha_logits, mu, sigma], dim=-1))
+                if self.output_distribution == 'point':
+                    pga_out_tmp.append(self.output_model_pga(pga_emb[:, i, :]))
+                else:
+                    alpha_logits, mu, sigma = self.output_model_pga(pga_emb[:, i, :])
+                    pga_out_tmp.append(torch.cat([alpha_logits, mu, sigma], dim=-1))
             output_pga = torch.stack(pga_out_tmp, dim=1)
             outputs.append(output_pga)
 
         if self.dataset_bias:
+            if self.output_distribution == 'point':
+                raise NotImplementedError('dataset_bias is only implemented for mdn outputs.')
             assert self.n_datasets is not None
             dataset_bias_term = self.dataset_embedding(dataset).squeeze(-1)
             outputs[0] = self.add_constant_to_mixture(outputs[0], dataset_bias_term)
@@ -1643,6 +1723,7 @@ def build_transformer_model(max_stations,
                             aux_mag_head=False,
                             aux_mag_hidden_dim=None,
                             aux_mag_sigma=0.3,
+                            output_distribution='mdn',
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -1689,16 +1770,28 @@ def build_transformer_model(max_stations,
     else:
         transformer = None
 
+    if output_distribution not in ('mdn', 'point'):
+        raise ValueError(f"output_distribution must be 'mdn' or 'point', got {output_distribution!r}.")
+
     mlp_mag = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation='relu',
-                                 bias_sigma=bias_mag_sigma)
+    if output_distribution == 'point':
+        output_model_mag = PointOutput((output_mlp_dims[-1],), d=1, bias_mu=bias_mag_mu, activation=None)
+    else:
+        output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation='relu',
+                                     bias_sigma=bias_mag_sigma)
 
     mlp_loc = MLP((emb_dim,), output_location_dims, activation=activation)
-    output_model_loc = MixtureOutput((output_location_dims[-1],), n=location_mixture, d=3, bias_mu=bias_loc_mu,activation=None,
-                                     bias_sigma=bias_loc_sigma)
+    if output_distribution == 'point':
+        output_model_loc = PointOutput((output_location_dims[-1],), d=3, bias_mu=bias_loc_mu, activation=None)
+    else:
+        output_model_loc = MixtureOutput((output_location_dims[-1],), n=location_mixture, d=3, bias_mu=bias_loc_mu,activation=None,
+                                         bias_sigma=bias_loc_sigma)
 
     mlp_pga = MLP((emb_dim,), output_mlp_dims, activation=activation)
-    output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_mixture, bias_mu=0, bias_sigma=1, activation=None)
+    if output_distribution == 'point':
+        output_model_pga = PointOutput((output_mlp_dims[-1],), d=1, bias_mu=0, activation=None)
+    else:
+        output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_mixture, bias_mu=0, bias_sigma=1, activation=None)
 
     # Module instantiation
     position_embedding = PositionEmbedding(wavelengths=wavelength, emb_dim=emb_dim, borehole=borehole, rotation=rotation, rotation_anchor=rotation_anchor)
@@ -1738,7 +1831,8 @@ def build_transformer_model(max_stations,
                              use_coords_rel_abs_fusion=use_coords_rel_abs_fusion,
                              coords_abs_weight=coords_abs_weight,
                              coord_fusion_mode=coord_fusion_mode,
-                             aux_mag_head=aux_mag_module)
+                             aux_mag_head=aux_mag_module,
+                             output_distribution=output_distribution)
     return full_model
 
 
