@@ -417,7 +417,8 @@ class PreloadedEventGenerator(Dataset):
         self.metadata = np.concatenate(data['coords'], axis=0) # coords of stations (lat, lon, elev)
         self.waveforms = X
 
-        if self.pga_key in data:
+        has_pga_values = self.pga_key in data
+        if has_pga_values:
             self.pga = np.concatenate(data[self.pga_key], axis=0)
         else:
             print('Found no PGA values')
@@ -677,6 +678,14 @@ class PreloadedEventGenerator(Dataset):
             # Note: metadata is intentionally NOT zeroed at blinded positions —
             # the model uses station_valid for masking, not the value.
 
+        input_pga_values = None
+        input_pga_valid = None
+        if has_pga_values:
+            input_pga = pga[:, :self.max_stations]
+            input_pga_valid = ~(np.isnan(input_pga) | np.isinf(input_pga))
+            input_pga_valid &= station_valid
+            input_pga_values = np.where(input_pga_valid, input_pga, 0.0)
+
         # Sanity check: at least one station must have a real waveform to avoid
         # degenerate forward passes (all-zero input → NaN in energy loss).
         # If violated, skip to the next sample.
@@ -735,6 +744,9 @@ class PreloadedEventGenerator(Dataset):
             'event_id': str(ith_event),
             'selected_input_indices': torch.from_numpy(selected_input_indices[0]).long(),
         }
+        if input_pga_values is not None:
+            p_pick_info['input_pga_values'] = torch.from_numpy(input_pga_values[0]).float()
+            p_pick_info['input_pga_valid'] = torch.from_numpy(input_pga_valid[0]).bool()
         if self.dump_debug_snapshot:
             raw_pga_valid = ~(np.isnan(debug_raw_pga[0]) | np.isinf(debug_raw_pga[0]))
             p_pick_info['debug_raw_waveforms'] = torch.from_numpy(np.swapaxes(debug_raw_waveforms[0], 1, 2)).float()

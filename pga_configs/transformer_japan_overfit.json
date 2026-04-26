@@ -70,9 +70,9 @@
         ],
         "workers": 0,
         "weight_path": "weights_japan_overfit",
-        "res_comps": ["pga"],
-        "res_weight": [1.0],
-        "reinit_fpn": true,
+        "res_comps": ["mag", "loc", "pga"],
+        "res_weight": [0.2, 0.2, 1.0],
+        "reinit_fpn": false,
         "lr_monitor": "train",
         "ensemble_rotation": false,
         "model_input_dump": {
@@ -80,6 +80,28 @@
             "epochs": [1, 2, 3],
             "include_val": true,
             "max_batches_per_epoch": null
+        },
+        "single_station_pretrain": {
+            "enabled": true,
+            "epochs": 80,
+            "batch_size": 64,
+            "samples_per_event": 4,
+            "tasks": ["mag", "epidist", "pga"],
+            "task_weights": {
+                "mag": 0.3,
+                "epidist": 0.3,
+                "pga": 0.4
+            },
+            "loss": "huber",
+            "huber_delta": 1.0,
+            "freeze_encoder": true,
+            "reinit_adapter": true,
+            "lr": 0.001,
+            "lr_adapter": 0.001,
+            "lr_head": 0.001,
+            "clipnorm": 1.0,
+            "lr_monitor": "train",
+            "station_sampling": "random"
         },
         "generator_params": [
             {

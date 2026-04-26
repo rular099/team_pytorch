@@ -17,10 +17,11 @@ import time
 import torch
 import torch.optim as optim
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.nn.utils as nn_utils
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.data import DataLoader, TensorDataset, DistributedSampler
+from torch.utils.data import DataLoader, TensorDataset, DistributedSampler, ConcatDataset
 from torch.utils.tensorboard import SummaryWriter
 
 import gemini_util_light as util
@@ -161,6 +162,378 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
         for group in param_groups
     }
     return optimizer, group_summary
+
+
+class SingleStationTaskDataset(torch.utils.data.Dataset):
+    """Flatten event samples to one randomly selected valid station per item."""
+
+    def __init__(self, event_dataset, tasks=('mag', 'epidist', 'pga'), samples_per_event=1,
+                 station_sampling='random'):
+        self.event_dataset = event_dataset
+        self.tasks = tuple(tasks)
+        self.samples_per_event = max(1, int(samples_per_event))
+        self.station_sampling = station_sampling
+
+    def __len__(self):
+        return len(self.event_dataset) * self.samples_per_event
+
+    def __getitem__(self, index):
+        n_events = len(self.event_dataset)
+        start = (index // self.samples_per_event) % n_events
+        for offset in range(n_events):
+            event_index = (start + offset) % n_events
+            inputs, labels, info = self.event_dataset[event_index]
+            sample = self._make_station_sample(inputs, labels, info)
+            if sample is not None:
+                return sample
+        raise RuntimeError('No valid single-station sample found in dataset.')
+
+    def _select_station(self, valid):
+        active = torch.nonzero(valid, as_tuple=False).flatten()
+        if active.numel() == 0:
+            return None
+        if self.station_sampling == 'first':
+            return active[0]
+        pick = np.random.randint(0, active.numel())
+        return active[pick]
+
+    @staticmethod
+    def _epicentral_distance_km(station_coords, event_coords, scale_metadata):
+        delta_xy = station_coords[:2].float() - event_coords[:2].float()
+        if scale_metadata:
+            # location_transformation stores horizontal coordinates as km / 100.
+            delta_xy = delta_xy * 100.0
+        else:
+            # Matches the existing flat-earth conversion used by TEAM.
+            delta_xy = delta_xy * util.D2KM
+        return torch.linalg.norm(delta_xy).clamp_min(0.0)
+
+    def _make_station_sample(self, inputs, labels, info):
+        waveforms, metadata, station_valid = inputs[:3]
+        valid = station_valid.bool().clone()
+        if 'pga' in self.tasks:
+            input_pga_valid = info.get('input_pga_valid')
+            if input_pga_valid is None:
+                raise KeyError(
+                    'Single-station pga task requires PreloadedEventGenerator '
+                    'to return input_pga_valid.'
+                )
+            valid &= input_pga_valid.bool()
+        station_idx = self._select_station(valid)
+        if station_idx is None:
+            return None
+
+        targets = {}
+        if 'mag' in self.tasks:
+            targets['mag'] = labels[0].float().reshape(-1)[0]
+        if 'epidist' in self.tasks:
+            event_coords = info.get('loc_target_abs')
+            if event_coords is None:
+                raise KeyError('Single-station epidist task requires loc_target_abs in p_pick_info.')
+            dist_km = self._epicentral_distance_km(
+                metadata[station_idx],
+                event_coords,
+                scale_metadata=getattr(self.event_dataset, 'scale_metadata', False),
+            )
+            targets['epidist'] = torch.log1p(dist_km)
+            targets['epidist_km'] = dist_km
+        if 'pga' in self.tasks:
+            targets['pga'] = info['input_pga_values'][station_idx].float()
+
+        sample_info = {
+            'event_id': info.get('event_id', ''),
+            'station_slot': station_idx.long(),
+            'selected_input_index': info['selected_input_indices'][station_idx].long(),
+        }
+        return waveforms[station_idx].float(), targets, sample_info
+
+
+def _state_dict_from_checkpoint(path, device):
+    ckpt = torch.load(path, map_location=device)
+    state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+    clean = {}
+    for key, value in state_dict.items():
+        clean[key.replace('module.', '', 1) if key.startswith('module.') else key] = value
+    return clean
+
+
+def load_station_pretrain_weights(full_model, weights_path, device='cpu',
+                                  load_encoder=False, load_scale=True, load_layernorm=True):
+    """Load representation weights from a single-station pretrain checkpoint."""
+    raw_model = full_model.module if hasattr(full_model, 'module') else full_model
+    state_dict = _state_dict_from_checkpoint(weights_path, device)
+    prefixes = ['waveform_model.1.']
+    if load_encoder:
+        prefixes.append('waveform_model.0.')
+    if load_scale:
+        prefixes.append('waveform_scale_proj.')
+    exact = {'waveform_scale_gate'} if load_scale else set()
+    if load_layernorm:
+        prefixes.append('layernorm.')
+
+    filtered = {
+        key: value
+        for key, value in state_dict.items()
+        if key in exact or any(key.startswith(prefix) for prefix in prefixes)
+    }
+    if not filtered:
+        raise ValueError(f'No station pretrain weights matched expected prefixes in {weights_path}')
+    missing, unexpected = raw_model.load_state_dict(filtered, strict=False)
+    loaded_keys = len(filtered)
+    print(
+        f'Loaded {loaded_keys} station-pretrain tensors from {weights_path}. '
+        f'Missing after partial load: {len(missing)}, unexpected: {len(unexpected)}'
+    )
+    return filtered
+
+
+def configure_single_station_trainability(model, pretrain_params, rank=0):
+    raw_model = model.module if hasattr(model, 'module') else model
+    freeze_encoder = pretrain_params.get('freeze_encoder', True)
+    for param in raw_model.waveform_model[0].parameters():
+        param.requires_grad = not freeze_encoder
+
+    if pretrain_params.get('reinit_adapter', True):
+        station_adapter = raw_model.waveform_model[1]
+        if hasattr(station_adapter, 'reset_parameters'):
+            station_adapter.reset_parameters()
+        if rank == 0:
+            print('Re-initialized station adapter for single-station pretraining')
+
+
+def build_single_station_optimizer(model, training_params, pretrain_params, is_dist=False):
+    raw_model = model.module if is_dist else model
+    base_lr = pretrain_params.get('lr', training_params['lr'])
+    adapter_lr = pretrain_params.get('lr_adapter', training_params.get('lr_adapter', base_lr))
+    head_lr = pretrain_params.get('lr_head', pretrain_params.get('lr_team', training_params.get('lr_team', base_lr)))
+    encoder_lr = pretrain_params.get('lr_encoder', training_params.get('lr_encoder', None))
+
+    encoder_params = list(_iter_trainable_params(raw_model.waveform_model[0]))
+    adapter_params = list(_iter_trainable_params(raw_model.waveform_model[1]))
+    adapter_ids = {id(p) for p in adapter_params}
+    encoder_ids = {id(p) for p in encoder_params}
+    head_params = []
+    for param in _iter_trainable_params(raw_model):
+        pid = id(param)
+        if pid in adapter_ids or pid in encoder_ids:
+            continue
+        head_params.append(param)
+
+    param_groups = []
+    if adapter_params:
+        param_groups.append({'params': adapter_params, 'lr': adapter_lr, 'name': 'adapter'})
+    if head_params:
+        param_groups.append({'params': head_params, 'lr': head_lr, 'name': 'heads'})
+    if encoder_params:
+        if encoder_lr is None:
+            raise ValueError(
+                'Single-station encoder is trainable, but single_station_pretrain.lr_encoder is not set.'
+            )
+        param_groups.append({'params': encoder_params, 'lr': encoder_lr, 'name': 'encoder'})
+    if not param_groups:
+        raise ValueError('No trainable parameters found for single-station optimizer.')
+
+    optimizer_name = pretrain_params.get('optimizer', training_params.get('optimizer', 'adam')).lower()
+    weight_decay = pretrain_params.get('weight_decay', training_params.get('weight_decay', 0.0))
+    if optimizer_name == 'adamw':
+        optimizer = optim.AdamW(param_groups, weight_decay=weight_decay)
+    elif optimizer_name == 'adam':
+        optimizer = optim.Adam(param_groups, weight_decay=weight_decay)
+    else:
+        raise ValueError(f"Unsupported optimizer {optimizer_name!r}; use 'adam' or 'adamw'.")
+
+    group_summary = {
+        group['name']: {
+            'lr': group['lr'],
+            'n_params': sum(p.numel() for p in group['params']),
+        }
+        for group in param_groups
+    }
+    return optimizer, group_summary
+
+
+def single_station_multitask_loss(outputs, targets, tasks, task_weights,
+                                  loss_type='huber', huber_delta=1.0):
+    weights = torch.tensor([float(task_weights[t]) for t in tasks], device=next(iter(outputs.values())).device)
+    weights = weights / weights.sum().clamp_min(1e-8)
+    total = outputs[tasks[0]][:, 0].new_tensor(0.0)
+    metrics = {}
+    for weight, task in zip(weights, tasks):
+        pred = outputs[task]
+        mu = pred[:, 0]
+        sigma = pred[:, 1].clamp_min(1e-4)
+        target = targets[task].float().to(mu.device).reshape_as(mu)
+        if loss_type == 'gaussian_nll':
+            comp = 0.5 * ((target - mu) / sigma) ** 2 + torch.log(sigma)
+            comp_loss = comp.mean()
+        elif loss_type == 'huber':
+            comp_loss = F.smooth_l1_loss(mu, target, beta=huber_delta, reduction='mean')
+        else:
+            raise ValueError(f"Unsupported single-station loss {loss_type!r}")
+        total = total + weight * comp_loss
+        metrics[f'{task}/loss'] = comp_loss.detach()
+        metrics[f'{task}/mae'] = torch.mean(torch.abs(mu - target)).detach()
+        metrics[f'{task}/pred_mean'] = mu.mean().detach()
+        metrics[f'{task}/target_mean'] = target.mean().detach()
+    return total, metrics
+
+
+def train_single_station_model(model, train_loader, val_loader, optimizer, scheduler, pretrain_params,
+                               weight_path, device, is_dist=False, rank=0, train_sampler=None):
+    raw_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
+    tasks = list(pretrain_params.get('tasks', ['mag', 'epidist', 'pga']))
+    task_weights_cfg = pretrain_params.get('task_weights', {task: 1.0 for task in tasks})
+    if isinstance(task_weights_cfg, list):
+        if len(task_weights_cfg) != len(tasks):
+            raise ValueError('single_station_pretrain.task_weights list must match tasks length.')
+        task_weights = dict(zip(tasks, task_weights_cfg))
+    else:
+        task_weights = {task: float(task_weights_cfg.get(task, 1.0)) for task in tasks}
+    loss_type = pretrain_params.get('loss', 'huber')
+    huber_delta = float(pretrain_params.get('huber_delta', 1.0))
+    num_epochs = int(pretrain_params.get('epochs', 1))
+    clipnorm = pretrain_params.get('clipnorm', pretrain_params.get('clip_norm', None))
+    lr_monitor = pretrain_params.get('lr_monitor', 'val')
+
+    scalar_history = defaultdict(list)
+    writer = None
+    if (not is_dist) or rank == 0:
+        writer = SummaryWriter(log_dir=f'runs/{weight_path}/single_station')
+    global_step = 0
+    best_val = float('inf')
+    best_path = os.path.join(weight_path, 'single_station_best.pth')
+    final_path = os.path.join(weight_path, 'single_station_final.pth')
+    try:
+        for epoch in range(num_epochs):
+            if is_dist and train_sampler is not None:
+                train_sampler.set_epoch(epoch)
+            model.train()
+            running_loss = 0.0
+            num_train_batches = 0
+            first_batch_logged = False
+            for batch_idx, (waveforms, targets, _) in enumerate(train_loader):
+                waveforms = waveforms.to(device)
+                targets = {key: value.to(device) for key, value in targets.items() if torch.is_tensor(value)}
+                optimizer.zero_grad()
+                outputs = model(waveforms)
+                loss, metrics = single_station_multitask_loss(
+                    outputs, targets, tasks, task_weights, loss_type=loss_type, huber_delta=huber_delta
+                )
+                loss.backward()
+                pre_clip_global_grad = global_grad_norm(model.parameters())
+                if clipnorm is not None:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
+                post_clip_global_grad = global_grad_norm(model.parameters())
+                optimizer.step()
+
+                if (not is_dist) or rank == 0:
+                    _record_scalar(writer, scalar_history, 'single_station/train_loss', loss.item(), global_step)
+                    if global_step % 50 == 0:
+                        print(f'[single] Step/Epoch {batch_idx}/{epoch}, Loss: {loss.item():.4f}')
+                    if not first_batch_logged:
+                        for key, value in getattr(raw_model, '_last_diag', {}).items():
+                            if torch.is_tensor(value) and not torch.isnan(value).any():
+                                _record_scalar(writer, scalar_history, f'single_station/diag/{key}', value, epoch)
+                        for key, value in metrics.items():
+                            _record_scalar(writer, scalar_history, f'single_station/train_{key}', value, epoch)
+                        if pre_clip_global_grad is not None and not torch.isnan(pre_clip_global_grad).any():
+                            _record_scalar(writer, scalar_history, 'single_station/grad/global_pre_clip_norm', pre_clip_global_grad, epoch)
+                        if post_clip_global_grad is not None and not torch.isnan(post_clip_global_grad).any():
+                            _record_scalar(writer, scalar_history, 'single_station/grad/global_post_clip_norm', post_clip_global_grad, epoch)
+                        first_batch_logged = True
+                    if global_step % 100 == 0:
+                        for group in optimizer.param_groups:
+                            group_name = group.get('name', 'group')
+                            _record_scalar(writer, scalar_history, f'single_station/lr_{group_name}', group['lr'], global_step)
+
+                running_loss += loss.item()
+                num_train_batches += 1
+                global_step += 1
+
+            if is_dist:
+                train_stats = torch.tensor([running_loss, float(num_train_batches)], device=device)
+                dist.all_reduce(train_stats, op=dist.ReduceOp.SUM)
+                epoch_loss = (train_stats[0] / train_stats[1].clamp_min(1.0)).item()
+            else:
+                epoch_loss = running_loss / max(num_train_batches, 1)
+
+            raw_model.eval()
+            val_running_loss = 0.0
+            num_val_batches = 0
+            val_metrics_accum = defaultdict(float)
+            with torch.no_grad():
+                for waveforms, targets, _ in val_loader:
+                    waveforms = waveforms.to(device)
+                    targets = {key: value.to(device) for key, value in targets.items() if torch.is_tensor(value)}
+                    outputs = raw_model(waveforms)
+                    loss, metrics = single_station_multitask_loss(
+                        outputs, targets, tasks, task_weights, loss_type=loss_type, huber_delta=huber_delta
+                    )
+                    val_running_loss += loss.item()
+                    num_val_batches += 1
+                    for key, value in metrics.items():
+                        val_metrics_accum[key] += float(value.item())
+
+            if is_dist:
+                val_stats = torch.tensor([val_running_loss, float(num_val_batches)], device=device)
+                dist.all_reduce(val_stats, op=dist.ReduceOp.SUM)
+                val_loss = (val_stats[0] / val_stats[1].clamp_min(1.0)).item()
+            else:
+                val_loss = val_running_loss / max(num_val_batches, 1)
+
+            if (not is_dist) or rank == 0:
+                _record_scalar(writer, scalar_history, 'single_station/train_epoch_loss', epoch_loss, epoch)
+                _record_scalar(writer, scalar_history, 'single_station/val_epoch_loss', val_loss, epoch)
+                for key, value in val_metrics_accum.items():
+                    _record_scalar(
+                        writer,
+                        scalar_history,
+                        f'single_station/val_{key}',
+                        value / max(num_val_batches, 1),
+                        epoch,
+                    )
+                print(f'[single] Epoch [{epoch+1}/{num_epochs}], train={epoch_loss:.4f}, val={val_loss:.4f}')
+
+                state_dict = raw_model.state_dict()
+                if val_loss < best_val:
+                    best_val = val_loss
+                    torch.save({
+                        'epoch': epoch + 1,
+                        'model_state_dict': state_dict,
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'scheduler_state_dict': scheduler.state_dict(),
+                        'loss': val_loss,
+                        'tasks': tasks,
+                    }, best_path)
+                    print(f'[single] Saved best checkpoint to {best_path}')
+
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(epoch_loss if lr_monitor == 'train' else val_loss)
+            else:
+                scheduler.step()
+            if is_dist:
+                dist.barrier()
+
+        if (not is_dist) or rank == 0:
+            torch.save({
+                'epoch': num_epochs,
+                'model_state_dict': raw_model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'loss': best_val,
+                'tasks': tasks,
+            }, final_path)
+            print(f'[single] Saved final checkpoint to {final_path}')
+    finally:
+        if (not is_dist) or rank == 0:
+            export_path, manifest_path = export_scalar_history(
+                scalar_history,
+                os.path.join('logs', weight_path, 'single_station'),
+            )
+            print(f'[single] Exported scalar history to {export_path} (manifest: {manifest_path})')
+            if writer is not None:
+                writer.close()
+    return best_path if os.path.exists(best_path) else final_path
 
 
 def select_diverse_event_ids(event_metadata, n, mag_key=None):
@@ -1089,6 +1462,8 @@ if __name__ == '__main__':
     parser.add_argument('--overfit_n', type=int, default=0)  # Select a tiny subset, then re-split it for train/dev/test
     parser.add_argument('--no_multiprocessing', action='store_true')  # Prevents certain deadlocks
     parser.add_argument('--continue_ensemble', action='store_true')  # Continues a stopped ensemble training
+    parser.add_argument('--skip_single_station_pretrain', action='store_true')
+    parser.add_argument('--single_station_only', action='store_true')
     args = parser.parse_args()
     config = json.load(open(args.config, 'r'))
     set_seed(config.get('seed', 42))
@@ -1234,6 +1609,200 @@ if __name__ == '__main__':
     max_stations = config['model_params']['max_stations']
 
     config['model_params']['n_datasets'] = len(metadata_train)
+    auto_station_pretrain_path = None
+    single_pretrain_params = training_params.get('single_station_pretrain', {})
+    run_single_pretrain = bool(single_pretrain_params.get('enabled', False)) and not args.skip_single_station_pretrain
+
+    if run_single_pretrain:
+        if rank == 0:
+            print('Building single-station pretraining model')
+        single_model_params = copy.deepcopy(config['model_params'])
+        single_model_params['single_station_tasks'] = single_pretrain_params.get(
+            'tasks', ['mag', 'epidist', 'pga']
+        )
+        single_model_params['single_station_hidden_dim'] = single_pretrain_params.get(
+            'hidden_dim', single_model_params.get('single_station_hidden_dim', None)
+        )
+        single_model_params['single_station_task_output_init'] = single_pretrain_params.get(
+            'task_output_init', None
+        )
+        single_model_params['single_station_task_sigma_init'] = single_pretrain_params.get(
+            'task_sigma_init', None
+        )
+        single_model = models.build_single_station_model(
+            **single_model_params,
+            trace_length=10000,
+            diting_args=diting_args,
+        )
+        single_model.to(device)
+
+        single_load_path = single_pretrain_params.get('load_model_path', None)
+        if single_load_path:
+            if rank == 0:
+                print(f'Loading single-station pretrain checkpoint from {single_load_path}')
+            state_dict = _state_dict_from_checkpoint(single_load_path, device)
+            single_model.load_state_dict(state_dict, strict=False)
+
+        configure_single_station_trainability(single_model, single_pretrain_params, rank=rank)
+        if is_dist:
+            single_model = DDP(
+                single_model,
+                device_ids=[local_rank],
+                output_device=local_rank,
+                find_unused_parameters=True,
+            )
+
+        single_optimizer, single_group_summary = build_single_station_optimizer(
+            single_model, training_params, single_pretrain_params, is_dist=is_dist
+        )
+        if rank == 0:
+            for group_name, info in single_group_summary.items():
+                print(
+                    f'Single optimizer group {group_name}: '
+                    f'lr={info["lr"]:.6g}, n_params={info["n_params"]}'
+                )
+
+        single_train_generators = []
+        single_validation_generators = []
+        single_tasks = single_pretrain_params.get('tasks', ['mag', 'epidist', 'pga'])
+        single_samples_per_event = single_pretrain_params.get('samples_per_event', 1)
+        single_station_sampling = single_pretrain_params.get('station_sampling', 'random')
+
+        for i, generator_param_set_src in enumerate(generator_params):
+            generator_param_set = copy.deepcopy(generator_param_set_src)
+            noise_seconds = generator_param_set.get('noise_seconds', 5)
+            cutout = (
+                int(round(sampling_rate * (noise_seconds + generator_param_set['cutout_start']))),
+                int(round(sampling_rate * (noise_seconds + generator_param_set['cutout_end']))))
+            generator_param_set['transform_target_only'] = False
+            defaults = dict(
+                coords_target=True,
+                label_smoothing=False,
+                station_blinding=False,
+                cutout=cutout,
+                pga_targets=0,
+                max_stations=max_stations,
+                sampling_rate=sampling_rate,
+                no_event_token=False,
+                dump_debug_snapshot=False,
+                use_coords_rel=config['model_params'].get('use_coords_rel', False),
+                use_coords_abs=config['model_params'].get('use_coords_abs', True),
+                use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
+            )
+            merged = {**defaults, **generator_param_set}
+            merged['transform_target_only'] = False
+            merged['pga_targets'] = 0
+            if rank == 0:
+                print(
+                    f'[single/generator/train/{i}] '
+                    f'tasks={single_tasks}, samples_per_event={single_samples_per_event}, '
+                    f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
+                )
+            event_train_generator = util.PreloadedEventGenerator(
+                event_metadata=event_metadata_train[i],
+                metadata=metadata_train[i],
+                data_path=training_params['data_path'][i],
+                generator_params=generator_param_set,
+                **merged,
+            )
+            single_train_generators.append(SingleStationTaskDataset(
+                event_train_generator,
+                tasks=single_tasks,
+                samples_per_event=single_samples_per_event,
+                station_sampling=single_station_sampling,
+            ))
+
+            val_generator_param_set = copy.deepcopy(generator_param_set_src)
+            val_generator_param_set['oversample'] = 1
+            val_generator_param_set['transform_target_only'] = False
+            merged_val = {**defaults, **val_generator_param_set}
+            merged_val['transform_target_only'] = False
+            merged_val['pga_targets'] = 0
+            if rank == 0:
+                print(
+                    f'[single/generator/val/{i}] '
+                    f'tasks={single_tasks}, samples_per_event=1, '
+                    f'cutout=({merged_val["cutout"][0]}, {merged_val["cutout"][1]})'
+                )
+            event_val_generator = util.PreloadedEventGenerator(
+                event_metadata=event_metadata_dev[i],
+                metadata=metadata_dev[i],
+                data_path=training_params['data_path'][i],
+                generator_params=val_generator_param_set,
+                **merged_val,
+            )
+            single_validation_generators.append(SingleStationTaskDataset(
+                event_val_generator,
+                tasks=single_tasks,
+                samples_per_event=1,
+                station_sampling=single_station_sampling,
+            ))
+
+        if len(single_train_generators) == 1:
+            single_train_dataset = single_train_generators[0]
+            single_val_dataset = single_validation_generators[0]
+        else:
+            single_train_dataset = ConcatDataset(single_train_generators)
+            single_val_dataset = ConcatDataset(single_validation_generators)
+
+        if is_dist:
+            single_train_sampler = DistributedSampler(single_train_dataset)
+            single_val_sampler = DistributedSampler(single_val_dataset, shuffle=False)
+        else:
+            single_train_sampler = None
+            single_val_sampler = None
+        single_batch_size = int(single_pretrain_params.get('batch_size', generator_params[0]['batch_size']))
+        single_train_loader = DataLoader(
+            single_train_dataset,
+            batch_size=single_batch_size,
+            sampler=single_train_sampler,
+            shuffle=(single_train_sampler is None),
+        )
+        single_val_loader = DataLoader(
+            single_val_dataset,
+            batch_size=single_batch_size,
+            sampler=single_val_sampler,
+            shuffle=False,
+        )
+
+        single_patience = single_pretrain_params.get(
+            'lr_decay_patience',
+            training_params.get('lr_decay_patience', 6),
+        )
+        single_lr_decay = ReduceLROnPlateau(
+            single_optimizer,
+            mode='min',
+            factor=single_pretrain_params.get('lr_decay_factor', 0.3),
+            patience=single_patience,
+            verbose=1,
+        )
+        if rank == 0:
+            init_path = os.path.join(training_params['weight_path'], 'single_station_init.pth')
+            raw_single = single_model.module if is_dist else single_model
+            torch.save({'epoch': 0, 'model_state_dict': raw_single.state_dict()}, init_path)
+            print(f'Saved single-station initial checkpoint to {init_path}')
+
+        auto_station_pretrain_path = train_single_station_model(
+            single_model,
+            single_train_loader,
+            single_val_loader,
+            single_optimizer,
+            single_lr_decay,
+            single_pretrain_params,
+            training_params['weight_path'],
+            device,
+            is_dist=is_dist,
+            rank=local_rank,
+            train_sampler=single_train_sampler,
+        )
+        if is_dist:
+            dist.barrier()
+        if args.single_station_only:
+            if is_dist:
+                dist.destroy_process_group()
+            sys.exit(0)
+    elif args.single_station_only:
+        raise ValueError('--single_station_only requires training_params.single_station_pretrain.enabled=true')
 
     ensemble = config.get('ensemble', 1)
 
@@ -1305,7 +1874,13 @@ if __name__ == '__main__':
         for param in raw_full.waveform_model[0].parameters():
             param.requires_grad = False
 
+        station_pretrain_path = training_params.get('station_pretrain_path', auto_station_pretrain_path)
+        if station_pretrain_path and 'load_model_path' in training_params and 'station_pretrain_path' not in training_params:
+            station_pretrain_path = None
+
         reinit_fpn = training_params.get('reinit_fpn', True)
+        if station_pretrain_path:
+            reinit_fpn = False
         if reinit_fpn:
             station_adapter = raw_full.waveform_model[1]
             if hasattr(station_adapter, 'reset_parameters'):
@@ -1328,8 +1903,20 @@ if __name__ == '__main__':
         if rank == 0:
             if reinit_fpn:
                 print('Re-initialized station adapter')
+            elif station_pretrain_path:
+                print('Skipped station adapter reinit because station pretrain weights will be loaded')
             else:
                 print('Kept current station adapter initialization')
+
+        if station_pretrain_path:
+            load_station_pretrain_weights(
+                full_model,
+                station_pretrain_path,
+                device=device,
+                load_encoder=training_params.get('station_pretrain_load_encoder', False),
+                load_scale=training_params.get('station_pretrain_load_scale', True),
+                load_layernorm=training_params.get('station_pretrain_load_layernorm', True),
+            )
 
         no_event_token = config['model_params'].get('no_event_token', False)
         optimizer, optimizer_group_summary = build_optimizer_with_groups(

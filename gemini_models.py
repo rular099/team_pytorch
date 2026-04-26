@@ -642,6 +642,34 @@ class WaveformScaleEmbedding(nn.Module):
         return self.net(features / self.log_divisor)
 
 
+def extract_waveform_scale_features(waveform):
+    """Return per-station log-amplitude statistics for (B,C,T) or (B,S,C,T)."""
+    eps = 1e-6
+    squeeze_station_dim = False
+    if waveform.dim() == 3:
+        waveform = waveform.unsqueeze(1)
+        squeeze_station_dim = True
+    elif waveform.dim() != 4:
+        raise ValueError(
+            f"Expected waveform shape (B,C,T) or (B,S,C,T), got {tuple(waveform.shape)}"
+        )
+
+    waveform_f = waveform.float()
+    abs_waveform = torch.abs(waveform_f)
+    log_std_ch = torch.log(torch.std(waveform_f, dim=3, unbiased=False).clamp_min(eps))
+    log_rms_ch = torch.log(torch.sqrt(torch.mean(waveform_f ** 2, dim=3).clamp_min(eps ** 2)))
+    log_peak_ch = torch.log(torch.amax(abs_waveform, dim=3).clamp_min(eps))
+    log_rms_all = torch.log(torch.sqrt(torch.mean(waveform_f ** 2, dim=(2, 3)).clamp_min(eps ** 2)))
+    log_peak_all = torch.log(torch.amax(abs_waveform, dim=(2, 3)).clamp_min(eps))
+    features = torch.cat(
+        [log_std_ch, log_rms_ch, log_peak_ch, log_rms_all.unsqueeze(-1), log_peak_all.unsqueeze(-1)],
+        dim=-1,
+    )
+    if squeeze_station_dim:
+        features = features[:, 0, :]
+    return features
+
+
 class AuxiliaryMagnitudeHead(nn.Module):
     """Few-shot-style event magnitude head wrapped as a one-component mixture."""
 
@@ -664,6 +692,132 @@ class AuxiliaryMagnitudeHead(nn.Module):
         alpha_logits = torch.zeros_like(mu)
         sigma = F.softplus(self.log_sigma).to(mu.dtype).expand_as(mu) + 1e-4
         return torch.cat([alpha_logits, mu, sigma], dim=-1)
+
+
+class SingleStationRegressionHead(nn.Module):
+    """Small point-regression head used only for single-station pretraining."""
+
+    def __init__(self, emb_dim, hidden_dim=None, output_init=0.0, sigma_init=1.0):
+        super().__init__()
+        if hidden_dim is None:
+            hidden_dim = emb_dim
+        self.net = nn.Sequential(
+            nn.Linear(emb_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, 1),
+        )
+        nn.init.normal_(self.net[-1].weight, mean=0.0, std=1e-3)
+        nn.init.constant_(self.net[-1].bias, float(output_init))
+        self.log_sigma = nn.Parameter(torch.tensor(float(math.log(math.expm1(sigma_init)))))
+
+    def forward(self, x):
+        mu = self.net(x).squeeze(-1)
+        sigma = F.softplus(self.log_sigma).to(mu.dtype).expand_as(mu) + 1e-4
+        return torch.stack([mu, sigma], dim=-1)
+
+
+class SingleStationMultiTaskModel(nn.Module):
+    """Pretrain station representations with station-level auxiliary tasks."""
+
+    def __init__(self, waveform_model, emb_dim, input_channels=3, tasks=('mag', 'epidist', 'pga'),
+                 waveform_scale_proj=None, waveform_scale_gain=1.0, waveform_scale_init_gate=0.1,
+                 disable_waveform_scale=False, use_amplitude_info=None, task_hidden_dim=None,
+                 task_output_init=None, task_sigma_init=None):
+        super().__init__()
+        self.waveform_model = waveform_model
+        self.emb_dim = emb_dim
+        self.input_channels = input_channels
+        self.tasks = list(tasks)
+        self.waveform_scale_proj = waveform_scale_proj
+        self.waveform_scale_gain = waveform_scale_gain
+        self.waveform_scale_gate = nn.Parameter(torch.tensor(float(waveform_scale_init_gate)))
+        if use_amplitude_info is None:
+            use_amplitude_info = not disable_waveform_scale
+        self.use_amplitude_info = bool(use_amplitude_info)
+        self.disable_waveform_scale = not self.use_amplitude_info
+        self.layernorm = nn.LayerNorm(emb_dim)
+
+        default_output_init = {
+            'mag': 5.0,
+            'epidist': 4.0,
+            'pga': 0.0,
+        }
+        default_sigma_init = {
+            'mag': 0.5,
+            'epidist': 1.0,
+            'pga': 1.0,
+        }
+        task_output_init = {**default_output_init, **(task_output_init or {})}
+        task_sigma_init = {**default_sigma_init, **(task_sigma_init or {})}
+        self.heads = nn.ModuleDict({
+            task: SingleStationRegressionHead(
+                emb_dim,
+                hidden_dim=task_hidden_dim,
+                output_init=task_output_init.get(task, 0.0),
+                sigma_init=task_sigma_init.get(task, 1.0),
+            )
+            for task in self.tasks
+        })
+        self._last_diag = {}
+
+    def _normalize(self, data, mode='std', axis=2):
+        data = data - torch.mean(data, axis=axis, keepdims=True)
+        if mode == 'std':
+            std_data = torch.std(data, axis=axis, keepdims=True)
+            std_data[std_data == 0] = 1
+            return data / std_data
+        if mode == 'max':
+            max_data = torch.max(torch.abs(data), axis=axis, keepdims=True)[0]
+            max_data[max_data == 0] = 1
+            return data / max_data
+        if mode == '':
+            return data
+        raise ValueError(f"Supported mode: 'max','std', got '{mode}'")
+
+    @staticmethod
+    def _mean_token_norm(x):
+        return x.norm(dim=-1).mean()
+
+    def encode_station(self, waveform):
+        raw_waveform = waveform.clone()
+        waveform = self._normalize(waveform, mode='std', axis=2)
+        raw_station_emb = self.waveform_model(waveform)
+        station_emb = self.layernorm(raw_station_emb)
+        base_station_emb = station_emb
+        if self.waveform_scale_proj is not None and self.use_amplitude_info:
+            scale_features = extract_waveform_scale_features(raw_waveform)
+            scale_emb = self.waveform_scale_proj(scale_features)
+            gain_scale_emb = self.waveform_scale_gain * self.waveform_scale_gate * scale_emb
+            station_emb = station_emb + gain_scale_emb
+        else:
+            scale_features = None
+            scale_emb = None
+            gain_scale_emb = None
+
+        self._last_diag = {
+            'station_adapter_raw_norm': self._mean_token_norm(raw_station_emb).detach(),
+            'wave_emb_norm': self._mean_token_norm(station_emb).detach(),
+        }
+        if scale_emb is not None:
+            scale_norm = self._mean_token_norm(scale_emb)
+            gain_scale_norm = self._mean_token_norm(gain_scale_emb)
+            raw_trunk_norm = self._mean_token_norm(base_station_emb)
+            self._last_diag.update({
+                'scale_emb_norm': scale_norm.detach(),
+                'gain_scale_emb_norm': gain_scale_norm.detach(),
+                'scale_trunk_ratio': (gain_scale_norm / (raw_trunk_norm + 1e-8)).detach(),
+                'scale_gate': self.waveform_scale_gate.detach(),
+                'scale_feature_mean': scale_features.mean().detach(),
+                'scale_feature_std': scale_features.std(unbiased=False).detach(),
+            })
+        return station_emb
+
+    def forward(self, waveform):
+        station_emb = self.encode_station(waveform)
+        outputs = {'embedding': station_emb}
+        for task, head in self.heads.items():
+            outputs[task] = head(station_emb)
+        return outputs
 
 
 class DitingStationAdapter(nn.Module):
@@ -1150,18 +1304,7 @@ class FullModel(nn.Module):
     def _extract_scale_features(self, waveform):
         # waveform: (B, S, C, T). Match the per-channel time-axis normalization
         # by retaining channel-wise std/rms/peak plus station-level summaries.
-        eps = 1e-6
-        waveform_f = waveform.float()
-        abs_waveform = torch.abs(waveform_f)
-        log_std_ch = torch.log(torch.std(waveform_f, dim=3, unbiased=False).clamp_min(eps))
-        log_rms_ch = torch.log(torch.sqrt(torch.mean(waveform_f ** 2, dim=3).clamp_min(eps ** 2)))
-        log_peak_ch = torch.log(torch.amax(abs_waveform, dim=3).clamp_min(eps))
-        log_rms_all = torch.log(torch.sqrt(torch.mean(waveform_f ** 2, dim=(2, 3)).clamp_min(eps ** 2)))
-        log_peak_all = torch.log(torch.amax(abs_waveform, dim=(2, 3)).clamp_min(eps))
-        return torch.cat(
-            [log_std_ch, log_rms_ch, log_peak_ch, log_rms_all.unsqueeze(-1), log_peak_all.unsqueeze(-1)],
-            dim=-1,
-        )
+        return extract_waveform_scale_features(waveform)
 
     def forward(self, waveform_inp, metadata_inp, station_valid,
                 pga_targets_inp=None, pga_target_valid=None,
@@ -1401,6 +1544,56 @@ def get_diting_model(args, station_emb_dim):
 
     model = model.to(args.device)
     return model
+
+
+def build_single_station_model(waveform_model_dims=(500, 500, 500),
+                               borehole=False,
+                               trace_length=3000,
+                               diting_station_pool_queries=4,
+                               diting_station_pool_temperature=1.0,
+                               diting_station_pool_dropout=0.0,
+                               waveform_scale_gain=1.0,
+                               waveform_scale_hidden_dim=None,
+                               waveform_scale_log_divisor=10.0,
+                               waveform_scale_init_gate=0.1,
+                               disable_waveform_scale=False,
+                               use_amplitude_info=None,
+                               single_station_tasks=('mag', 'epidist', 'pga'),
+                               single_station_hidden_dim=None,
+                               single_station_task_output_init=None,
+                               single_station_task_sigma_init=None,
+                               diting_args=None,
+                               **kwargs):
+    """Build a single-station pretraining model sharing the full model adapter path."""
+    emb_dim = waveform_model_dims[-1]
+    input_channels = 6 if borehole else 3
+    if diting_args is not None:
+        diting_args.diting_station_pool_queries = diting_station_pool_queries
+        diting_args.diting_station_pool_temperature = diting_station_pool_temperature
+        diting_args.diting_station_pool_dropout = diting_station_pool_dropout
+    waveform_model = get_diting_model(diting_args, station_emb_dim=emb_dim)
+    scale_feature_dim = 3 * input_channels + 2
+    waveform_scale_proj = WaveformScaleEmbedding(
+        scale_feature_dim,
+        emb_dim,
+        hidden_dim=waveform_scale_hidden_dim,
+        log_divisor=waveform_scale_log_divisor,
+    )
+    return SingleStationMultiTaskModel(
+        waveform_model,
+        emb_dim,
+        input_channels=input_channels,
+        tasks=single_station_tasks,
+        waveform_scale_proj=waveform_scale_proj,
+        waveform_scale_gain=waveform_scale_gain,
+        waveform_scale_init_gate=waveform_scale_init_gate,
+        disable_waveform_scale=disable_waveform_scale,
+        use_amplitude_info=use_amplitude_info,
+        task_hidden_dim=single_station_hidden_dim,
+        task_output_init=single_station_task_output_init,
+        task_sigma_init=single_station_task_sigma_init,
+    )
+
 
 def build_transformer_model(max_stations,
                             waveform_model_dims=(500, 500, 500),
