@@ -663,6 +663,8 @@ class PreloadedEventGenerator(Dataset):
         # all samples and channels; only explicit zeroing produces this state.
         has_signal = (np.abs(waveforms) > self.wave_eps).any(axis=(2, 3))
         station_valid &= has_signal
+        pick_valid = (p_picks > 0) & (p_picks < waveforms.shape[2])
+        station_valid &= pick_valid
 
         if self.station_blinding:
             blind_mask = np.zeros(waveforms.shape[:2], dtype=bool)
