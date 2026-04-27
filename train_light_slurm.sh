@@ -20,6 +20,12 @@
 #   MODULE_UNLOAD      Optional module to unload
 #   MODULE_LOADS       Space-separated modules to load
 #   RESET_WEIGHT_PATH  Delete training_params.weight_path before training when set to 1
+#   RUN_EVAL           Run eval_checkpoint.py after successful training when set to 1
+#   EVAL_CHECKPOINT    Optional checkpoint path; defaults to latest full_model_*.pth
+#   EVAL_SINGLE_STATION_CHECKPOINT Optional single-station checkpoint path; defaults to best/final under weight_path
+#   EVAL_DEVICE        Optional eval device, e.g. cuda:0
+#   EVAL_OUTPUT_TXT    Optional eval stdout/stderr path; defaults to weight_path/eval_results.txt
+#   EVAL_OUTPUT_NPZ    Optional eval npz path; defaults to weight_path/eval_results.npz
 
 set -euo pipefail
 
@@ -45,6 +51,7 @@ CONDA_ENV=${CONDA_ENV:-lsm_env}
 MODULE_UNLOAD=${MODULE_UNLOAD:-compiler/rocm/2.9}
 MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04 apps/miniconda/3"}
 RESET_WEIGHT_PATH=${RESET_WEIGHT_PATH:-1}
+RUN_EVAL=${RUN_EVAL:-1}
 
 resolve_path() {
     local p=$1
@@ -187,6 +194,16 @@ if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then
     rm -rf -- "$WEIGHT_DIR_TO_RESET"
 fi
 
+WEIGHT_PATH=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["training_params"]["weight_path"])' "$CONFIG")
+if [[ -z "$WEIGHT_PATH" || "$WEIGHT_PATH" == "/" || "$WEIGHT_PATH" == "." || "$WEIGHT_PATH" == ".." ]]; then
+    echo "Unsafe weight_path in config: '$WEIGHT_PATH'" >&2
+    exit 1
+fi
+case "$WEIGHT_PATH" in
+    /*) WEIGHT_DIR="$WEIGHT_PATH" ;;
+    *) WEIGHT_DIR="$WORKDIR/$WEIGHT_PATH" ;;
+esac
+
 if command -v torchrun >/dev/null 2>&1; then
     TORCHRUN_BIN=(torchrun)
 elif command -v python >/dev/null 2>&1; then
@@ -249,4 +266,72 @@ else
     fi
     DIRECT_CMD+=("${EXTRA_ARGS[@]}")
     "${DIRECT_CMD[@]}"
+fi
+
+if [[ "$RUN_EVAL" == "1" ]]; then
+    EVAL_CHECKPOINT=${EVAL_CHECKPOINT:-$(python -c 'import glob, os, re, sys
+paths = glob.glob(os.path.join(sys.argv[1], "full_model_*.pth"))
+def epoch(path):
+    m = re.search(r"full_model_(\d+)\.pth$", os.path.basename(path))
+    return int(m.group(1)) if m else -1
+print(max(paths, key=epoch) if paths else "")' "$WEIGHT_DIR")}
+    if [[ -z "$EVAL_CHECKPOINT" || ! -f "$EVAL_CHECKPOINT" ]]; then
+        echo "Eval checkpoint not found under $WEIGHT_DIR" >&2
+        exit 1
+    fi
+    SINGLE_STATION_ENABLED=$(python -c 'import json, sys
+cfg = json.load(open(sys.argv[1]))
+print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enabled", False) else "0")' "$CONFIG")
+    if [[ -z "${EVAL_SINGLE_STATION_CHECKPOINT:-}" && "$SINGLE_STATION_ENABLED" == "1" ]]; then
+        if [[ -f "$WEIGHT_DIR/single_station_best.pth" ]]; then
+            EVAL_SINGLE_STATION_CHECKPOINT="$WEIGHT_DIR/single_station_best.pth"
+        elif [[ -f "$WEIGHT_DIR/single_station_final.pth" ]]; then
+            EVAL_SINGLE_STATION_CHECKPOINT="$WEIGHT_DIR/single_station_final.pth"
+        else
+            echo "Single-station eval checkpoint not found under $WEIGHT_DIR" >&2
+            exit 1
+        fi
+    fi
+
+    EVAL_OUTPUT_NPZ=${EVAL_OUTPUT_NPZ:-"$WEIGHT_DIR/eval_results.npz"}
+    EVAL_OUTPUT_TXT=${EVAL_OUTPUT_TXT:-"$WEIGHT_DIR/eval_results.txt"}
+    mkdir -p "$(dirname "$EVAL_OUTPUT_TXT")" "$(dirname "$EVAL_OUTPUT_NPZ")"
+
+    EVAL_CMD=(
+        python eval_checkpoint.py
+        --config "$CONFIG"
+        --diting_config "$DITING_CONFIG"
+        --checkpoint "$EVAL_CHECKPOINT"
+        --output "$EVAL_OUTPUT_NPZ"
+    )
+    if [[ -n "${DITING_PRETRAINED:-}" ]]; then
+        EVAL_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
+    fi
+    if [[ -n "${EVAL_SINGLE_STATION_CHECKPOINT:-}" ]]; then
+        EVAL_CMD+=(--single_station_checkpoint "$EVAL_SINGLE_STATION_CHECKPOINT")
+    fi
+    if [[ -n "${EVAL_DEVICE:-}" ]]; then
+        EVAL_CMD+=(--device "$EVAL_DEVICE")
+    fi
+    for ((i = 0; i < ${#EXTRA_ARGS[@]}; i++)); do
+        case "${EXTRA_ARGS[$i]}" in
+            --overfit_n)
+                if ((i + 1 < ${#EXTRA_ARGS[@]})); then
+                    EVAL_CMD+=(--overfit_n "${EXTRA_ARGS[$((i + 1))]}")
+                    i=$((i + 1))
+                fi
+                ;;
+            --overfit_n=*)
+                EVAL_CMD+=("${EXTRA_ARGS[$i]}")
+                ;;
+        esac
+    done
+
+    echo "[INFO] running eval: ${EVAL_CMD[*]}"
+    echo "[INFO] eval full checkpoint: $EVAL_CHECKPOINT"
+    echo "[INFO] eval single-station checkpoint: ${EVAL_SINGLE_STATION_CHECKPOINT:-<disabled>}"
+    echo "[INFO] eval txt: $EVAL_OUTPUT_TXT"
+    echo "[INFO] eval npz: $EVAL_OUTPUT_NPZ"
+    "${EVAL_CMD[@]}" >"$EVAL_OUTPUT_TXT" 2>&1
+    echo "[INFO] eval finished; results written to $EVAL_OUTPUT_TXT"
 fi

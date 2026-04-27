@@ -1,0 +1,15 @@
+apex
+einops
+h5py
+matplotlib
+mup
+numpy
+obspy
+pandas
+PyYAML
+scipy
+seisbench
+timm
+torch
+tqdm
+xformers
