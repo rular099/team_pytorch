@@ -16,9 +16,18 @@
             50
         ],
         "wavelength": [
-            [0.01, 15],
-            [0.01, 15],
-            [0.01, 10]
+            [
+                0.01,
+                15
+            ],
+            [
+                0.01,
+                15
+            ],
+            [
+                0.01,
+                10
+            ]
         ],
         "mad_params": {
             "n_heads": 10,
@@ -31,7 +40,7 @@
         "transformer_layers": 2,
         "hidden_dropout": 0.0,
         "activation": "relu",
-        "n_pga_targets": 15,
+        "n_pga_targets": 1,
         "location_mixture": 15,
         "pga_mixture": 1,
         "magnitude_mixture": 5,
@@ -57,7 +66,10 @@
         "coords_abs_weight": 0.1,
         "coord_fusion_mode": "add",
         "output_distribution": "point",
-        "rotation_anchor": [37, 140]
+        "rotation_anchor": [
+            37,
+            140
+        ]
     },
     "training_params": {
         "lr": 0.001,
@@ -70,9 +82,13 @@
             "/opt/zb/data/japan/japan_2024.hdf5"
         ],
         "workers": 0,
-        "weight_path": "weights_japan_overfit",
-        "res_comps": ["mag", "loc", "pga"],
-        "res_weight": [0.2, 0.2, 1.0],
+        "weight_path": "weights_japan_overfit_exp1_single_input_same_station_pga",
+        "res_comps": [
+            "pga"
+        ],
+        "res_weight": [
+            1.0
+        ],
         "full_model_loss": "huber",
         "full_model_huber_delta": 1.0,
         "reinit_fpn": false,
@@ -80,27 +96,41 @@
         "ensemble_rotation": false,
         "model_input_dump": {
             "enabled": false,
-            "epochs": [1, 2, 3],
+            "epochs": [
+                1,
+                2,
+                3
+            ],
             "include_val": true,
             "max_batches_per_epoch": null
         },
         "station_experiment": {
-            "enabled": false,
+            "enabled": true,
             "mode": "single_input_same_station_pga",
             "input_station_count": 1,
             "target_station_count": 1,
             "exclude_input_from_targets": false,
-            "max_input_stations": 25,
+            "max_input_stations": 1,
             "snr_threshold": null,
-            "snr_noise_window_sec": [-5, -1],
-            "snr_signal_window_sec": [0, 5]
+            "snr_noise_window_sec": [
+                -5,
+                -1
+            ],
+            "snr_signal_window_sec": [
+                0,
+                5
+            ]
         },
         "single_station_pretrain": {
             "enabled": true,
             "epochs": 80,
             "batch_size": 64,
             "samples_per_event": 4,
-            "tasks": ["mag", "epidist", "pga"],
+            "tasks": [
+                "mag",
+                "epidist",
+                "pga"
+            ],
             "task_weights": {
                 "mag": 0.3,
                 "epidist": 0.3,

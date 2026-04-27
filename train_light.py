@@ -962,6 +962,15 @@ def collect_input_stats(inputs, labels, p_picks):
                 'data/p_pick_shift_min': shift_values.min().detach(),
                 'data/p_pick_shift_max': shift_values.max().detach(),
             })
+        if isinstance(p_picks, dict) and 'station_snr' in p_picks and station_valid is not None:
+            station_snr = p_picks['station_snr'].to(waveforms.device)
+            if station_valid.any():
+                valid_snr = station_snr[station_valid]
+                stats.update({
+                    'data/station_snr_mean': valid_snr.mean().detach(),
+                    'data/station_snr_min': valid_snr.min().detach(),
+                    'data/station_snr_max': valid_snr.max().detach(),
+                })
 
     return stats
 
@@ -1970,6 +1979,7 @@ if __name__ == '__main__':
                 )
 
         n_pga_targets = config['model_params'].get('n_pga_targets', 0)
+        station_experiment_cfg = training_params.get('station_experiment', None)
 
         train_generators = []
         validation_generators = []
@@ -1997,10 +2007,12 @@ if __name__ == '__main__':
                 use_coords_rel=config['model_params'].get('use_coords_rel', False),
                 use_coords_abs=config['model_params'].get('use_coords_abs', True),
                 use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
+                station_experiment=station_experiment_cfg,
             )
             # Config wins: overlay generator_param_set on top of defaults.
             merged = {**defaults, **generator_param_set}
             if rank == 0:
+                experiment = merged.get('station_experiment') or {}
                 print(
                     f'[generator/train/{i}] '
                     f'select_first_inputs={merged.get("select_first_inputs", merged.get("select_first"))}, '
@@ -2009,6 +2021,7 @@ if __name__ == '__main__':
                     f'selection_skew={merged.get("selection_skew")}, '
                     f'pga_selection_skew={merged.get("pga_selection_skew")}, '
                     f'max_stations={merged.get("max_stations")}, '
+                    f'station_experiment={experiment.get("mode") if experiment.get("enabled") else None}, '
                     f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
                 )
 
@@ -2022,6 +2035,7 @@ if __name__ == '__main__':
             generator_param_set['oversample'] = 1 if overfit_mode else 4
             merged_val = {**defaults, **generator_param_set}
             if rank == 0:
+                experiment_val = merged_val.get('station_experiment') or {}
                 print(
                     f'[generator/val/{i}] '
                     f'select_first_inputs={merged_val.get("select_first_inputs", merged_val.get("select_first"))}, '
@@ -2030,6 +2044,7 @@ if __name__ == '__main__':
                     f'selection_skew={merged_val.get("selection_skew")}, '
                     f'pga_selection_skew={merged_val.get("pga_selection_skew")}, '
                     f'max_stations={merged_val.get("max_stations")}, '
+                    f'station_experiment={experiment_val.get("mode") if experiment_val.get("enabled") else None}, '
                     f'cutout=({merged_val["cutout"][0]}, {merged_val["cutout"][1]})'
                 )
             validation_generators += [util.PreloadedEventGenerator(event_metadata=event_metadata_dev[i],
@@ -2088,6 +2103,9 @@ if __name__ == '__main__':
         full_huber_delta = float(training_params.get('full_model_huber_delta', 1.0))
         if (not is_dist) or local_rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
+            station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
+            if station_experiment_active and res_comps_cfg != ['pga']:
+                print('[tasks] warning: station_experiment is active; set res_comps=["pga"] for PGA-only comparison experiments')
             print(f'[loss] full_model_loss={full_loss_type}, huber_delta={full_huber_delta}')
             print(f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss')
         train_model(

@@ -188,6 +188,7 @@ def build_datasets(config, overfit_n=0):
     max_stations = config['model_params']['max_stations']
     n_pga_targets = config['model_params'].get('n_pga_targets', 0)
     no_event_token = config['model_params'].get('no_event_token', False)
+    station_experiment_cfg = training_params.get('station_experiment', None)
 
     datasets = {}
     for split_name, em_list, meta_list in [('train', event_metadata_train, metadata_train),
@@ -208,9 +209,11 @@ def build_datasets(config, overfit_n=0):
                 use_coords_rel=config['model_params'].get('use_coords_rel', False),
                 use_coords_abs=config['model_params'].get('use_coords_abs', True),
                 use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
+                station_experiment=station_experiment_cfg,
                 shuffle=False,  # deterministic eval order
             )
             merged = {**defaults, **gp_copy}
+            experiment = merged.get('station_experiment') or {}
             print(
                 f'[generator/{split_name}/{i}] '
                 f'select_first_inputs={merged.get("select_first_inputs", merged.get("select_first"))}, '
@@ -219,6 +222,7 @@ def build_datasets(config, overfit_n=0):
                 f'selection_skew={merged.get("selection_skew")}, '
                 f'pga_selection_skew={merged.get("pga_selection_skew")}, '
                 f'max_stations={merged.get("max_stations")}, '
+                f'station_experiment={experiment.get("mode") if experiment.get("enabled") else None}, '
                 f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
             )
             generators.append(util.PreloadedEventGenerator(

@@ -228,7 +228,7 @@ class PreloadedEventGenerator(Dataset):
                  no_event_token=False, pga_selection_skew=None,
                  dump_debug_snapshot=False,
                  use_coords_rel=False, use_coords_abs=True,
-                 use_coords_rel_abs_fusion=False, **kwargs):
+                 use_coords_rel_abs_fusion=False, station_experiment=None, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -300,6 +300,7 @@ class PreloadedEventGenerator(Dataset):
         self.use_coords_rel = use_coords_rel
         self.use_coords_abs = use_coords_abs
         self.use_coords_rel_abs_fusion = use_coords_rel_abs_fusion
+        self.station_experiment = self._normalize_station_experiment(station_experiment)
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
         ))
@@ -363,6 +364,161 @@ class PreloadedEventGenerator(Dataset):
     def __len__(self):
 #        return len(self.event_metadata)
         return self.indexes.shape[0]
+
+    def _normalize_station_experiment(self, station_experiment):
+        if not station_experiment:
+            return {'enabled': False}
+        cfg = dict(station_experiment)
+        cfg['enabled'] = bool(cfg.get('enabled', False))
+        if not cfg['enabled']:
+            return cfg
+        mode = cfg.get('mode', None)
+        valid_modes = {
+            'single_input_same_station_pga',
+            'single_input_multi_target_pga',
+            'snr_filtered_input_holdout_pga',
+        }
+        if mode not in valid_modes:
+            raise ValueError(f'station_experiment.mode must be one of {sorted(valid_modes)}, got {mode!r}')
+        if mode in ('single_input_same_station_pga', 'single_input_multi_target_pga'):
+            cfg['input_station_count'] = int(cfg.get('input_station_count', 1))
+            if cfg['input_station_count'] != 1:
+                raise ValueError(f'{mode} requires input_station_count=1')
+        cfg['target_station_count'] = cfg.get('target_station_count', self.pga_targets)
+        if cfg['target_station_count'] is not None:
+            cfg['target_station_count'] = int(cfg['target_station_count'])
+        cfg['exclude_input_from_targets'] = bool(cfg.get(
+            'exclude_input_from_targets',
+            mode != 'single_input_same_station_pga',
+        ))
+        cfg['max_input_stations'] = int(cfg.get('max_input_stations', self.max_stations))
+        cfg['snr_threshold'] = cfg.get('snr_threshold', None)
+        if cfg['snr_threshold'] is not None:
+            cfg['snr_threshold'] = float(cfg['snr_threshold'])
+        cfg['snr_noise_window_sec'] = tuple(cfg.get('snr_noise_window_sec', (-5.0, -1.0)))
+        cfg['snr_signal_window_sec'] = tuple(cfg.get('snr_signal_window_sec', (0.0, 5.0)))
+        return cfg
+
+    def _station_snr(self, waveforms, p_picks):
+        cfg = self.station_experiment
+        noise_sec = cfg.get('snr_noise_window_sec', (-5.0, -1.0))
+        signal_sec = cfg.get('snr_signal_window_sec', (0.0, 5.0))
+        noise_offsets = tuple(int(round(x * self.sampling_rate)) for x in noise_sec)
+        signal_offsets = tuple(int(round(x * self.sampling_rate)) for x in signal_sec)
+        snr = np.zeros(waveforms.shape[:2], dtype=np.float32)
+        eps = self.wave_eps
+        n_samples = waveforms.shape[2]
+        for i in range(waveforms.shape[0]):
+            for j in range(waveforms.shape[1]):
+                pick = int(round(p_picks[i, j]))
+                if pick <= 0 or pick >= n_samples:
+                    continue
+                n0 = max(0, pick + noise_offsets[0])
+                n1 = min(n_samples, pick + noise_offsets[1])
+                s0 = max(0, pick + signal_offsets[0])
+                s1 = min(n_samples, pick + signal_offsets[1])
+                if n1 <= n0 or s1 <= s0:
+                    continue
+                noise = waveforms[i, j, n0:n1, :]
+                signal = waveforms[i, j, s0:s1, :]
+                noise_rms = np.sqrt(np.mean(noise ** 2))
+                signal_rms = np.sqrt(np.mean(signal ** 2))
+                snr[i, j] = signal_rms / (noise_rms + eps)
+        return snr
+
+    @staticmethod
+    def _pick_random_subset(candidates, n):
+        candidates = np.asarray(candidates, dtype=np.int64)
+        if candidates.size <= n:
+            return candidates
+        picked = candidates.copy()
+        np.random.shuffle(picked)
+        return picked[:n]
+
+    def _apply_station_experiment_inputs(self, waveforms, p_picks, station_valid, pga_valid_input):
+        cfg = self.station_experiment
+        if not cfg.get('enabled', False):
+            return station_valid, None
+
+        mode = cfg['mode']
+        input_mask = np.zeros_like(station_valid, dtype=bool)
+        snr = None
+        if mode == 'snr_filtered_input_holdout_pga':
+            snr = self._station_snr(waveforms, p_picks)
+
+        for i in range(station_valid.shape[0]):
+            candidates = station_valid[i].copy()
+            if mode == 'single_input_same_station_pga':
+                candidates &= pga_valid_input[i]
+                n_inputs = 1
+            elif mode == 'single_input_multi_target_pga':
+                n_inputs = 1
+            elif mode == 'snr_filtered_input_holdout_pga':
+                threshold = cfg.get('snr_threshold', None)
+                if threshold is not None:
+                    candidates &= snr[i] >= threshold
+                n_inputs = cfg.get('max_input_stations', self.max_stations)
+            else:
+                raise ValueError(f'Unsupported station experiment mode: {mode}')
+
+            active = np.where(candidates)[0]
+            if active.size == 0:
+                raise _EmptySample()
+            selected = self._pick_random_subset(active, n_inputs)
+            input_mask[i, selected] = True
+
+        waveforms[~input_mask] = 0
+        return station_valid & input_mask, snr
+
+    def _build_station_experiment_pga_targets(self, metadata, pga, pga_valid, station_valid_full,
+                                              input_station_valid, selected_input_indices,
+                                              full_selected_indices):
+        cfg = self.station_experiment
+        if not cfg.get('enabled', False) or not self.pga_targets:
+            return None
+
+        mode = cfg['mode']
+        n_targets = min(cfg.get('target_station_count', self.pga_targets) or self.pga_targets, self.pga_targets)
+        pga_values = np.zeros((input_station_valid.shape[0], self.pga_targets), dtype=np.float32)
+        pga_targets = np.zeros((input_station_valid.shape[0], self.pga_targets, 3), dtype=np.float32)
+        pga_target_valid = np.zeros((input_station_valid.shape[0], self.pga_targets), dtype=bool)
+
+        for i in range(input_station_valid.shape[0]):
+            input_slots = np.where(input_station_valid[i])[0]
+            if input_slots.size == 0:
+                raise _EmptySample()
+
+            if mode == 'single_input_same_station_pga':
+                candidates = input_slots[pga_valid[i, input_slots]]
+            else:
+                candidates = np.where(pga_valid[i] & station_valid_full[i])[0]
+                if cfg.get('exclude_input_from_targets', True):
+                    input_orig = set(
+                        int(selected_input_indices[i, slot])
+                        for slot in input_slots
+                        if selected_input_indices[i, slot] >= 0
+                    )
+                    candidates = np.array(
+                        [
+                            idx for idx in candidates
+                            if int(full_selected_indices[i, idx]) not in input_orig
+                        ],
+                        dtype=np.int64,
+                    )
+
+            if candidates.size == 0:
+                raise _EmptySample()
+            selected_targets = self._pick_random_subset(candidates, n_targets)
+            n = len(selected_targets)
+            if metadata.shape[-1] == 3:
+                pga_targets[i, :n, :] = metadata[i, selected_targets, :]
+            else:
+                full_targets = metadata[i, selected_targets]
+                pga_targets[i, :n, :] = full_targets[:, (0, 1, 3)]
+            pga_values[i, :n] = pga[i, selected_targets]
+            pga_target_valid[i, :n] = True
+
+        return pga_targets, pga_values.reshape((input_station_valid.shape[0], self.pga_targets, 1)), pga_target_valid
 
     def __getitem__(self, index):
         # Iteratively skip empty samples (no station with signal after cutout).
@@ -454,6 +610,7 @@ class PreloadedEventGenerator(Dataset):
         full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1, tms)
         p_picks = np.zeros((true_batch_size, self.max_stations)) # shape (1, 25)
         selected_input_indices = -np.ones((true_batch_size, self.max_stations), dtype=np.int64)
+        full_selected_indices = -np.ones((true_batch_size, true_max_stations_in_batch), dtype=np.int64)
         # station_valid: True for slots that hold a real station (not padding).
         # Will be tightened later by cutout/blinding/etc.
         station_valid_full = np.zeros((true_batch_size, true_max_stations_in_batch), dtype=bool) # shape (1, tms)
@@ -468,6 +625,7 @@ class PreloadedEventGenerator(Dataset):
                 p_picks[i, :len(self.triggers)] = self.triggers
                 full_p_picks[i, :len(self.triggers)] = self.triggers
                 selected_input_indices[i, :len(X)] = np.arange(len(X), dtype=np.int64)
+                full_selected_indices[i, :len(X)] = np.arange(len(X), dtype=np.int64)
                 station_valid_full[i, :len(self.metadata)] = True # all stations init to True
                 reverse_selections += [[]]
             else:
@@ -491,6 +649,7 @@ class PreloadedEventGenerator(Dataset):
                 metadata[i, :len(selection)] = self.metadata[selection]
                 pga[i, :len(selection)] = self.pga[selection]
                 full_p_picks[i, :len(selection)] = self.triggers[selection]
+                full_selected_indices[i, :len(selection)] = selection
                 station_valid_full[i, :len(selection)] = True # tms set to True
 
                 tmp_reverse_selection = [0 for _ in selection]
@@ -585,9 +744,16 @@ class PreloadedEventGenerator(Dataset):
         if not self.pga_from_inactive and not self.pga_mode: # select 1st 25 zb.
             metadata = metadata[:, :self.max_stations]
             pga = pga[:, :self.max_stations]
+            station_valid_full = station_valid_full[:, :self.max_stations]
+            full_selected_indices = full_selected_indices[:, :self.max_stations]
 
         # PGA validity is detected via NaN/Inf so that the legal value 0 is preserved.
         pga_valid_full = ~(np.isnan(pga) | np.isinf(pga))
+        metadata_for_pga = metadata.copy()
+        pga_for_targets = pga.copy()
+        pga_valid_for_targets = pga_valid_full.copy()
+        station_valid_for_targets = station_valid_full.copy()
+        full_selected_indices_for_targets = full_selected_indices.copy()
 
         if self.pga_targets:
             pga_values = np.zeros(
@@ -680,6 +846,24 @@ class PreloadedEventGenerator(Dataset):
             # Note: metadata is intentionally NOT zeroed at blinded positions —
             # the model uses station_valid for masking, not the value.
 
+        station_snr = None
+        if self.station_experiment.get('enabled', False):
+            pga_valid_input = ~(np.isnan(pga[:, :self.max_stations]) | np.isinf(pga[:, :self.max_stations]))
+            station_valid, station_snr = self._apply_station_experiment_inputs(
+                waveforms, p_picks, station_valid, pga_valid_input
+            )
+            experiment_targets = self._build_station_experiment_pga_targets(
+                metadata_for_pga,
+                pga_for_targets,
+                pga_valid_for_targets,
+                station_valid_for_targets,
+                station_valid,
+                selected_input_indices,
+                full_selected_indices_for_targets,
+            )
+            if experiment_targets is not None:
+                pga_targets, pga_values, pga_target_valid = experiment_targets
+
         input_pga_values = None
         input_pga_valid = None
         if has_pga_values:
@@ -746,6 +930,8 @@ class PreloadedEventGenerator(Dataset):
             'event_id': str(ith_event),
             'selected_input_indices': torch.from_numpy(selected_input_indices[0]).long(),
         }
+        if station_snr is not None:
+            p_pick_info['station_snr'] = torch.from_numpy(station_snr[0]).float()
         if input_pga_values is not None:
             p_pick_info['input_pga_values'] = torch.from_numpy(input_pga_values[0]).float()
             p_pick_info['input_pga_valid'] = torch.from_numpy(input_pga_valid[0]).bool()
