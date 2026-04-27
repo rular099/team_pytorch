@@ -84,6 +84,10 @@
             "include_val": true,
             "max_batches_per_epoch": null
         },
+        "checkpoint": {
+            "exclude_frozen_encoder": true,
+            "save_optimizer_state": true
+        },
         "station_experiment": {
             "enabled": false,
             "mode": "single_input_same_station_pga",

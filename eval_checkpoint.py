@@ -29,9 +29,12 @@ import loader_light as loader
 
 # Reuse the same build_diting_args / overfit split logic from train_light.py
 from train_light import (
+    CHECKPOINT_ENCODER_PREFIXES,
     SingleStationTaskDataset,
     build_diting_args as load_diting_args,
     build_overfit_event_metadata_splits,
+    clean_state_dict_keys,
+    load_model_state_dict_compatible,
 )
 
 
@@ -66,11 +69,13 @@ def build_model_and_load(config, diting_args, checkpoint_path, device):
 
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     state_dict = checkpoint['model_state_dict']
-    # Handle DDP module. prefix
-    if list(state_dict.keys())[0].startswith('module.'):
-        from collections import OrderedDict
-        state_dict = OrderedDict((k.replace('module.', '', 1), v) for k, v in state_dict.items())
-    full_model.load_state_dict(state_dict)
+    load_model_state_dict_compatible(
+        full_model,
+        state_dict,
+        strict=True,
+        context=checkpoint_path,
+        allowed_missing_prefixes=tuple(checkpoint.get('excluded_prefixes', CHECKPOINT_ENCODER_PREFIXES)),
+    )
     full_model.eval()
 
     epoch = checkpoint.get('epoch', '?')
@@ -81,10 +86,7 @@ def build_model_and_load(config, diting_args, checkpoint_path, device):
 def _load_checkpoint_state(checkpoint_path, device):
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     state_dict = checkpoint['model_state_dict'] if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint else checkpoint
-    if list(state_dict.keys())[0].startswith('module.'):
-        from collections import OrderedDict
-        state_dict = OrderedDict((k.replace('module.', '', 1), v) for k, v in state_dict.items())
-    return checkpoint, state_dict
+    return checkpoint, clean_state_dict_keys(state_dict)
 
 
 def build_single_station_model_and_load(config, diting_args, checkpoint_path, device):
@@ -106,7 +108,12 @@ def build_single_station_model_and_load(config, diting_args, checkpoint_path, de
         trace_length=10000,
         diting_args=diting_args,
     )
-    missing, unexpected = single_model.load_state_dict(state_dict, strict=False)
+    missing, unexpected = load_model_state_dict_compatible(
+        single_model,
+        state_dict,
+        strict=False,
+        context=checkpoint_path,
+    )
     single_model = single_model.to(device)
     single_model.eval()
 

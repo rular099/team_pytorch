@@ -248,13 +248,124 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
         return waveforms[station_idx].float(), targets, sample_info
 
 
-def _state_dict_from_checkpoint(path, device):
-    ckpt = torch.load(path, map_location=device)
-    state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+CHECKPOINT_ENCODER_PREFIXES = ('waveform_model.0.',)
+
+
+def clean_state_dict_keys(state_dict):
     clean = {}
     for key, value in state_dict.items():
         clean[key.replace('module.', '', 1) if key.startswith('module.') else key] = value
     return clean
+
+
+def _state_dict_from_checkpoint(path, device):
+    ckpt = torch.load(path, map_location=device)
+    state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+    return clean_state_dict_keys(state_dict)
+
+
+def _checkpoint_config(training_params=None):
+    cfg = (training_params or {}).get('checkpoint', {}) or {}
+    return {
+        'exclude_frozen_encoder': bool(cfg.get('exclude_frozen_encoder', True)),
+        'save_optimizer_state': bool(cfg.get('save_optimizer_state', True)),
+        'excluded_prefixes': tuple(cfg.get('excluded_prefixes', CHECKPOINT_ENCODER_PREFIXES)),
+        'encoder_source': cfg.get('encoder_source', None),
+    }
+
+
+def _encoder_is_frozen(raw_model, excluded_prefixes):
+    if not excluded_prefixes:
+        return False
+    state_keys = raw_model.state_dict().keys()
+    if not any(any(key.startswith(prefix) for prefix in excluded_prefixes) for key in state_keys):
+        return False
+    encoder = getattr(raw_model, 'waveform_model', None)
+    if encoder is None:
+        return False
+    try:
+        encoder_module = encoder[0]
+    except (TypeError, IndexError, KeyError):
+        return False
+    return all(not param.requires_grad for param in encoder_module.parameters())
+
+
+def _checkpoint_state_dict(raw_model, training_params=None):
+    cfg = _checkpoint_config(training_params)
+    state_dict = raw_model.state_dict()
+    excluded_prefixes = cfg['excluded_prefixes']
+    exclude_encoder = (
+        cfg['exclude_frozen_encoder']
+        and _encoder_is_frozen(raw_model, excluded_prefixes)
+    )
+    if not exclude_encoder:
+        return state_dict, (), 0, len(state_dict)
+
+    filtered = {
+        key: value
+        for key, value in state_dict.items()
+        if not any(key.startswith(prefix) for prefix in excluded_prefixes)
+    }
+    return filtered, excluded_prefixes, len(state_dict) - len(filtered), len(state_dict)
+
+
+def save_model_checkpoint(path, model, epoch, training_params=None, optimizer=None,
+                          scheduler=None, loss=None, extra=None):
+    raw_model = model.module if hasattr(model, 'module') else model
+    state_dict, excluded_prefixes, excluded_count, total_count = _checkpoint_state_dict(
+        raw_model, training_params=training_params
+    )
+    cfg = _checkpoint_config(training_params)
+    payload = {
+        'epoch': epoch,
+        'model_state_dict': state_dict,
+        'checkpoint_format': 'non_encoder_v1' if excluded_prefixes else 'full_v1',
+        'excluded_prefixes': list(excluded_prefixes),
+        'excluded_tensor_count': excluded_count,
+        'saved_tensor_count': len(state_dict),
+        'total_tensor_count': total_count,
+    }
+    if cfg.get('encoder_source'):
+        payload['encoder_source'] = cfg['encoder_source']
+    if loss is not None:
+        payload['loss'] = loss
+    if cfg['save_optimizer_state'] and optimizer is not None:
+        payload['optimizer_state_dict'] = optimizer.state_dict()
+    if cfg['save_optimizer_state'] and scheduler is not None:
+        payload['scheduler_state_dict'] = scheduler.state_dict()
+    if extra:
+        payload.update(extra)
+    torch.save(payload, path)
+    if excluded_count:
+        print(
+            f'Saved non-encoder checkpoint to {path} '
+            f'({len(state_dict)}/{total_count} tensors; excluded {excluded_count} frozen encoder tensors)'
+        )
+    else:
+        print(f'Saved full checkpoint to {path} ({len(state_dict)} tensors)')
+    return payload
+
+
+def load_model_state_dict_compatible(model, state_dict, strict=True, context='checkpoint',
+                                     allowed_missing_prefixes=CHECKPOINT_ENCODER_PREFIXES):
+    raw_model = model.module if hasattr(model, 'module') else model
+    state_dict = clean_state_dict_keys(state_dict)
+    missing, unexpected = raw_model.load_state_dict(state_dict, strict=False)
+    disallowed_missing = [
+        key for key in missing
+        if not any(key.startswith(prefix) for prefix in allowed_missing_prefixes)
+    ]
+    if strict and (disallowed_missing or unexpected):
+        raise RuntimeError(
+            f'Failed to load {context}: '
+            f'disallowed missing tensors={disallowed_missing}, unexpected tensors={unexpected}'
+        )
+    if missing or unexpected:
+        print(
+            f'Loaded {context} with partial state: '
+            f'missing={len(missing)}, unexpected={len(unexpected)}'
+        )
+    return missing, unexpected
 
 
 def load_station_pretrain_weights(full_model, weights_path, device='cpu',
@@ -379,7 +490,8 @@ def single_station_multitask_loss(outputs, targets, tasks, task_weights,
 
 
 def train_single_station_model(model, train_loader, val_loader, optimizer, scheduler, pretrain_params,
-                               weight_path, device, is_dist=False, rank=0, train_sampler=None):
+                               weight_path, device, is_dist=False, rank=0, train_sampler=None,
+                               checkpoint_params=None):
     raw_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     tasks = list(pretrain_params.get('tasks', ['mag', 'epidist', 'pga']))
     task_weights_cfg = pretrain_params.get('task_weights', {task: 1.0 for task in tasks})
@@ -403,6 +515,9 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
     best_val = float('inf')
     best_path = os.path.join(weight_path, 'single_station_best.pth')
     final_path = os.path.join(weight_path, 'single_station_final.pth')
+    checkpoint_training_params = {
+        'checkpoint': checkpoint_params if checkpoint_params is not None else pretrain_params.get('checkpoint', {})
+    }
     try:
         for epoch in range(num_epochs):
             if is_dist and train_sampler is not None:
@@ -494,18 +609,18 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
                     )
                 print(f'[single] Epoch [{epoch+1}/{num_epochs}], train={epoch_loss:.4f}, val={val_loss:.4f}')
 
-                state_dict = raw_model.state_dict()
                 if val_loss < best_val:
                     best_val = val_loss
-                    torch.save({
-                        'epoch': epoch + 1,
-                        'model_state_dict': state_dict,
-                        'optimizer_state_dict': optimizer.state_dict(),
-                        'scheduler_state_dict': scheduler.state_dict(),
-                        'loss': val_loss,
-                        'tasks': tasks,
-                    }, best_path)
-                    print(f'[single] Saved best checkpoint to {best_path}')
+                    save_model_checkpoint(
+                        best_path,
+                        raw_model,
+                        epoch=epoch + 1,
+                        training_params=checkpoint_training_params,
+                        optimizer=optimizer,
+                        scheduler=scheduler,
+                        loss=val_loss,
+                        extra={'tasks': tasks},
+                    )
 
             if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                 scheduler.step(epoch_loss if lr_monitor == 'train' else val_loss)
@@ -515,15 +630,16 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
                 dist.barrier()
 
         if (not is_dist) or rank == 0:
-            torch.save({
-                'epoch': num_epochs,
-                'model_state_dict': raw_model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
-                'loss': best_val,
-                'tasks': tasks,
-            }, final_path)
-            print(f'[single] Saved final checkpoint to {final_path}')
+            save_model_checkpoint(
+                final_path,
+                raw_model,
+                epoch=num_epochs,
+                training_params=checkpoint_training_params,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                loss=best_val,
+                extra={'tasks': tasks},
+            )
     finally:
         if (not is_dist) or rank == 0:
             export_path, manifest_path = export_scalar_history(
@@ -1095,7 +1211,7 @@ def maybe_dump_model_batch(input_dump_config, split_name, epoch_idx, batch_idx, 
 
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val',
-                input_dump_config=None, loss_type='mdn', huber_delta=1.0):
+                input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1256,16 +1372,17 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
 
                 # Save checkpoint
                 filepath = os.path.join(training_params['weight_path'], f'{save_name}_{epoch+1}.pth')
-                state_dict = eval_model.state_dict()
 
                 if epoch % 10 == 0:
-                    torch.save({
-                        'epoch': epoch+1,
-                        'model_state_dict': state_dict,
-                        'optimizer_state_dict': optimizer.state_dict(),
-                        'scheduler_state_dict': scheduler.state_dict(),
-                        'loss': val_loss,
-                    }, filepath)
+                    save_model_checkpoint(
+                        filepath,
+                        eval_model,
+                        epoch=epoch + 1,
+                        training_params={'checkpoint': checkpoint_params or {}},
+                        optimizer=optimizer,
+                        scheduler=scheduler,
+                        loss=val_loss,
+                    )
             if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                 monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
                 scheduler.step(monitor_loss)
@@ -1299,16 +1416,15 @@ def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dis
         dist.broadcast_object_list(buf, src=0)
         checkpoint = buf[0]
 
-    # 兼容 module. 前缀
     state_dict = checkpoint['model_state_dict']
-    if list(state_dict.keys())[0].startswith("module.") and not isinstance(model, torch.nn.parallel.DistributedDataParallel):
-        from collections import OrderedDict
-        new_state_dict = OrderedDict()
-        for k, v in state_dict.items():
-            new_state_dict[k.replace("module.", "", 1)] = v
-        state_dict = new_state_dict
 
-    model.load_state_dict(state_dict)
+    load_model_state_dict_compatible(
+        model,
+        state_dict,
+        strict=True,
+        context=checkpoint_path,
+        allowed_missing_prefixes=tuple(checkpoint.get('excluded_prefixes', CHECKPOINT_ENCODER_PREFIXES)),
+    )
 
     if optimizer and 'optimizer_state_dict' in checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -1317,7 +1433,7 @@ def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dis
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
     start_epoch = checkpoint.get('epoch', 0)
-    val_loss = checkpoint.get('val_loss', None)
+    val_loss = checkpoint.get('val_loss', checkpoint.get('loss', None))
 
     return model, optimizer, scheduler, start_epoch, val_loss
 
@@ -1345,6 +1461,7 @@ def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=Fal
     # 加载 checkpoint
     ckpt = torch.load(weights_path, map_location=device)
     state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
+    state_dict = clean_state_dict_keys(state_dict)
 
     # Unwrap DDP if needed
     raw_model = model.module if hasattr(model, 'module') else model
@@ -1353,33 +1470,35 @@ def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=Fal
     conv1d_layer = None
     conv1d_name = None
     for name, module in raw_model.named_modules():
-        if isinstance(module, nn.Conv1d):
+        weight_name = name + ".weight"
+        if isinstance(module, nn.Conv1d) and weight_name in state_dict:
             conv1d_layer = module
-            conv1d_name = name + ".weight"
+            conv1d_name = weight_name
             break
 
-    model_borehole = conv1d_layer.in_channels == 64
-    weights_borehole = state_dict[conv1d_name].shape[1] == 64
+    if conv1d_layer is not None:
+        model_borehole = conv1d_layer.in_channels == 64
+        weights_borehole = state_dict[conv1d_name].shape[1] == 64
+
+        # 处理输入通道不一致的情况
+        if model_borehole and not weights_borehole:
+            # surface -> borehole: 复制 + 平均
+            kernel = state_dict[conv1d_name]
+            combine_weights = torch.cat([kernel, kernel], dim=1) / 2.0
+            state_dict[conv1d_name] = combine_weights
+        elif not model_borehole and weights_borehole:
+            # borehole -> surface: 截取前 32 通道 + 缩放
+            kernel = state_dict[conv1d_name][:, :32, :]
+            state_dict[conv1d_name] = kernel * 2.0
 
     # 删除 embedding 层权重（如果存在）
     for key in list(state_dict.keys()):
         if key.startswith("embedding"):
             del state_dict[key]
 
-    # 处理输入通道不一致的情况
-    if model_borehole and not weights_borehole:
-        # surface -> borehole: 复制 + 平均
-        kernel = state_dict[conv1d_name]
-        combine_weights = torch.cat([kernel, kernel], dim=1) / 2.0
-        state_dict[conv1d_name] = combine_weights
-    elif not model_borehole and weights_borehole:
-        # borehole -> surface: 截取前 32 通道 + 缩放
-        kernel = state_dict[conv1d_name][:, :32, :]
-        state_dict[conv1d_name] = kernel * 2.0
-
     # 加载参数
     missing, unexpected = raw_model.load_state_dict(state_dict, strict=False)
-    print(f"Transferred {len(state_dict) - len(missing)} weights, "
+    print(f"Transferred {len(state_dict) - len(unexpected)} weights, "
           f"Missing: {missing}, Unexpected: {unexpected}")
     return model
 
@@ -1532,6 +1651,8 @@ if __name__ == '__main__':
  # end diting args
 
     training_params = config['training_params']
+    checkpoint_cfg = training_params.setdefault('checkpoint', {})
+    checkpoint_cfg.setdefault('encoder_source', getattr(diting_args, 'pretrained', None))
     generator_params = training_params.get('generator_params', [training_params.copy()])
 
     if (not is_dist) or (is_dist and (rank == 0)):
@@ -1690,7 +1811,12 @@ if __name__ == '__main__':
             if rank == 0:
                 print(f'Loading single-station pretrain checkpoint from {single_load_path}')
             state_dict = _state_dict_from_checkpoint(single_load_path, device)
-            single_model.load_state_dict(state_dict, strict=False)
+            load_model_state_dict_compatible(
+                single_model,
+                state_dict,
+                strict=False,
+                context=single_load_path,
+            )
 
         configure_single_station_trainability(single_model, single_pretrain_params, rank=rank)
         if is_dist:
@@ -1828,8 +1954,12 @@ if __name__ == '__main__':
         if rank == 0:
             init_path = os.path.join(training_params['weight_path'], 'single_station_init.pth')
             raw_single = single_model.module if is_dist else single_model
-            torch.save({'epoch': 0, 'model_state_dict': raw_single.state_dict()}, init_path)
-            print(f'Saved single-station initial checkpoint to {init_path}')
+            save_model_checkpoint(
+                init_path,
+                raw_single,
+                epoch=0,
+                training_params=training_params,
+            )
 
         auto_station_pretrain_path = train_single_station_model(
             single_model,
@@ -1843,6 +1973,7 @@ if __name__ == '__main__':
             is_dist=is_dist,
             rank=local_rank,
             train_sampler=single_train_sampler,
+            checkpoint_params=training_params.get('checkpoint', None),
         )
         if is_dist:
             dist.barrier()
@@ -1909,7 +2040,16 @@ if __name__ == '__main__':
             ckpt = torch.load(training_params['load_model_path'], map_location=device)
             state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
             load_target = full_model.module if is_dist else full_model
-            load_target.load_state_dict(state_dict)
+            load_model_state_dict_compatible(
+                load_target,
+                state_dict,
+                strict=True,
+                context=training_params['load_model_path'],
+                allowed_missing_prefixes=tuple(
+                    ckpt.get('excluded_prefixes', CHECKPOINT_ENCODER_PREFIXES)
+                    if isinstance(ckpt, dict) else CHECKPOINT_ENCODER_PREFIXES
+                ),
+            )
 
         if 'transfer_model_path' in training_params:
             print('Transfering model weights')
@@ -2080,11 +2220,12 @@ if __name__ == '__main__':
             # Save initial checkpoint before training
             init_ckpt_path = os.path.join(training_params['weight_path'], 'full_model_init.pth')
             eval_model = full_model.module if is_dist else full_model
-            torch.save({
-                'epoch': 0,
-                'model_state_dict': eval_model.state_dict(),
-            }, init_ckpt_path)
-            print(f'Saved initial checkpoint to {init_ckpt_path}')
+            save_model_checkpoint(
+                init_ckpt_path,
+                eval_model,
+                epoch=0,
+                training_params=training_params,
+            )
             run_sanity_check(full_model, train_loader, device, name='full_model_train_pre')
         # Task enable switches: set training_params['res_comps'] in the JSON
         # config to e.g. ["pga"] to train PGA only, ["mag","pga"] for mag+PGA,
@@ -2128,6 +2269,7 @@ if __name__ == '__main__':
             input_dump_config=input_dump_config,
             loss_type=full_loss_type,
             huber_delta=full_huber_delta,
+            checkpoint_params=training_params.get('checkpoint', None),
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,
