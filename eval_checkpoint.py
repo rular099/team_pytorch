@@ -704,7 +704,9 @@ def resolve_single_station_checkpoint(config, explicit_path=None):
         return explicit_path if os.path.exists(explicit_path) else None
 
     training_params = config['training_params']
-    configured = training_params.get('single_station_checkpoint', None)
+    configured = training_params.get('station_pretrain_path', None)
+    if configured is None:
+        configured = training_params.get('single_station_checkpoint', None)
     if configured:
         return configured if os.path.exists(configured) else None
 
@@ -819,7 +821,7 @@ def main():
     parser.add_argument('--diting_pretrained', default=None)
     parser.add_argument('--checkpoint', required=True, help='Path to .pth checkpoint')
     parser.add_argument('--single_station_checkpoint', default=None,
-                        help='Optional single_station_best.pth checkpoint; defaults to weight_path/single_station_best.pth when present')
+                        help='Optional single-station checkpoint; overrides training_params.station_pretrain_path')
     parser.add_argument('--skip_single_station', action='store_true',
                         help='Disable single-station checkpoint evaluation')
     parser.add_argument('--output', default='eval_results.npz', help='Output file for results')
