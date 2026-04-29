@@ -263,8 +263,12 @@ class Transformer(nn.Module):
 
     def forward(self, x, att_mask=None, padding_mask=None):
         # The inputs are already handled by the calling function.
+        self._last_attentions = []
         for block in self.blocks:
             x = block(x, att_mask, padding_mask)
+            attn = getattr(block.attention, '_last_attention', None)
+            if attn is not None:
+                self._last_attentions.append(attn)
         return x
 
 
@@ -453,6 +457,7 @@ class MultiHeadSelfAttention(nn.Module):
             score = score - inv_mask * self.infinity
 
         score = torch.softmax(score, dim=-1) #Softmax on the last dimension
+        self._last_attention = score.detach()
         if self.att_dropout > 0:
             score = F.dropout(score, p=self.att_dropout, training=self.training)
 
@@ -1179,7 +1184,8 @@ class FullModel(nn.Module):
                  waveform_scale_init_gate=0.1, disable_waveform_scale=False, use_amplitude_info=None,
                  use_coords_rel=False, use_coords_abs=True, use_coords_rel_abs_fusion=False,
                  coords_abs_weight=0.1, coord_fusion_mode='add', aux_mag_head=None,
-                 output_distribution='mdn'):
+                 output_distribution='mdn', pga_readout_mode='query_transformer',
+                 pga_attention_diagnostics=False, pga_mask_sanity_check=False):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1214,10 +1220,20 @@ class FullModel(nn.Module):
         self.coord_fusion_mode = coord_fusion_mode
         self.aux_mag_head = aux_mag_head
         self.output_distribution = output_distribution
+        self.pga_readout_mode = pga_readout_mode
+        self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
+        self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
         if self.output_distribution not in ('mdn', 'point'):
             raise ValueError(
                 f"output_distribution must be 'mdn' or 'point', got {self.output_distribution!r}."
             )
+        if self.pga_readout_mode not in ('query_transformer', 'query_no_transformer', 'direct_station'):
+            raise ValueError(
+                "pga_readout_mode must be one of 'query_transformer', "
+                f"'query_no_transformer', 'direct_station', got {self.pga_readout_mode!r}."
+            )
+        if self.pga_readout_mode != 'query_transformer' and self.output_distribution != 'point':
+            raise ValueError('pga_readout_mode ablations are implemented for point output_distribution.')
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -1372,6 +1388,66 @@ class FullModel(nn.Module):
 
         return coords_rel_emb + self.coords_abs_weight * coords_abs_emb
 
+    def _direct_station_pga_embedding(self, station_emb, station_valid, n_pga):
+        weights = station_valid.unsqueeze(-1).to(station_emb.dtype)
+        denom = weights.sum(dim=1).clamp_min(1.0)
+        pooled = (station_emb * weights).sum(dim=1) / denom
+        return pooled.unsqueeze(1).expand(-1, n_pga, -1)
+
+    def _record_pga_mask_diag(self, att_mask, padding_mask, station_mask, pga_target_valid):
+        if not self.pga_mask_sanity_check:
+            return
+        has_event = not (self.skip_transformer or self.no_event_token)
+        station_offset = 1 if has_event else 0
+        pga_offset = station_offset + station_mask.shape[1]
+        ptv = pga_target_valid.bool()
+        expected_key_mask = torch.cat([station_mask, torch.zeros_like(ptv)], dim=1)
+        if has_event:
+            expected_key_mask = torch.cat(
+                [torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool), expected_key_mask],
+                dim=1,
+            )
+        expected_padding = torch.cat([station_mask, ptv], dim=1)
+        if has_event:
+            expected_padding = torch.cat(
+                [torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool), expected_padding],
+                dim=1,
+            )
+
+        self._last_diag['pga_mask_key_matches_expected'] = (
+            (att_mask == expected_key_mask).float().mean().detach()
+        )
+        self._last_diag['pga_padding_matches_expected'] = (
+            (padding_mask == expected_padding).float().mean().detach()
+        )
+        self._last_diag['pga_mask_station_key_ratio'] = (
+            att_mask[:, station_offset:pga_offset].float().mean().detach()
+        )
+        if has_event:
+            self._last_diag['pga_mask_event_key_ratio'] = att_mask[:, :1].float().mean().detach()
+        self._last_diag['pga_mask_pga_key_ratio'] = att_mask[:, pga_offset:].float().mean().detach()
+
+    def _record_pga_attention_diag(self, seq_len, station_count, n_pga, has_event):
+        if not self.pga_attention_diagnostics or self.transformer is None:
+            return
+        attentions = getattr(self.transformer, '_last_attentions', [])
+        if not attentions:
+            return
+        station_offset = 1 if has_event else 0
+        station_slice = slice(station_offset, station_offset + station_count)
+        pga_slice = slice(seq_len - n_pga, seq_len)
+
+        for layer_idx, attn in enumerate((attentions[0], attentions[-1])):
+            prefix = 'pga_attn_first' if layer_idx == 0 else 'pga_attn_last'
+            pga_query_attn = attn[:, :, pga_slice, :]
+            station_mass = pga_query_attn[:, :, :, station_slice].sum(dim=-1).mean()
+            pga_mass = pga_query_attn[:, :, :, pga_slice].sum(dim=-1).mean()
+            self._last_diag[f'{prefix}_to_station'] = station_mass.detach()
+            self._last_diag[f'{prefix}_to_pga'] = pga_mass.detach()
+            if has_event:
+                event_mass = pga_query_attn[:, :, :, 0].mean()
+                self._last_diag[f'{prefix}_to_event'] = event_mass.detach()
+
 
     def _extract_scale_features(self, waveform):
         # waveform: (B, S, C, T). Match the per-channel time-axis normalization
@@ -1419,6 +1495,7 @@ class FullModel(nn.Module):
                 emb = self.coord_fusion_norm(emb)
         else:
             emb = torch.cat([waveforms_emb, coords_feat], dim=-1)
+        station_feature_emb = emb
 
         self._last_diag = {
             'station_adapter_raw_norm': self._mean_token_norm(raw_station_emb).detach(),
@@ -1461,26 +1538,42 @@ class FullModel(nn.Module):
             pga_targets_abs = pga_targets_inp * ptv[:, :, None].float()
             pga_targets_rel = (pga_targets_abs - coords_center) * ptv[:, :, None].float()
             pga_emb = self._pga_coord_embedding(pga_targets_abs, pga_targets_rel, ptv)
-            emb = torch.cat([emb, pga_emb], dim=1)
 
             n_pga = pga_emb.shape[1]
-            ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
-            pga_false = torch.zeros(station_mask.shape[0], n_pga, device=station_mask.device, dtype=torch.bool)
+            if self.pga_readout_mode == 'direct_station':
+                pga_readout_emb = self._direct_station_pga_embedding(station_feature_emb, sv, n_pga)
+                self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(2.0).detach()
+            elif self.pga_readout_mode == 'query_no_transformer':
+                pga_readout_emb = pga_emb
+                self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(1.0).detach()
+            else:
+                emb = torch.cat([emb, pga_emb], dim=1)
+                ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
+                pga_false = torch.zeros(station_mask.shape[0], n_pga, device=station_mask.device, dtype=torch.bool)
 
-            # padding_mask: [event_token=True, station_mask, pga_target_valid]
-            padding_mask = torch.cat([station_mask, ptv], dim=1)
-            if not (self.skip_transformer or self.no_event_token):
-                padding_mask = torch.cat([ones_1, padding_mask], dim=1)
-
-            # att_mask: [event_token=True, station_mask=True(all), pga=False] — PGA positions are query-only
-            if att_mask is None:
-                att_mask = torch.cat([pga_false], dim=1)  # only PGA part differs
+                # padding_mask: [event_token=True, station_mask, pga_target_valid]
+                padding_mask = torch.cat([station_mask, ptv], dim=1)
                 if not (self.skip_transformer or self.no_event_token):
-                    att_mask = torch.cat([ones_1, torch.ones_like(station_mask), att_mask], dim=1)
-                else:
-                    att_mask = torch.cat([torch.ones_like(station_mask), att_mask], dim=1)
+                    padding_mask = torch.cat([ones_1, padding_mask], dim=1)
 
-            emb = self.transformer(emb.float(), att_mask, padding_mask)
+                # att_mask: [event_token=True, station_mask=True(all), pga=False] — PGA positions are query-only
+                if att_mask is None:
+                    att_mask = torch.cat([pga_false], dim=1)  # only PGA part differs
+                    if not (self.skip_transformer or self.no_event_token):
+                        att_mask = torch.cat([ones_1, torch.ones_like(station_mask), att_mask], dim=1)
+                    else:
+                        att_mask = torch.cat([torch.ones_like(station_mask), att_mask], dim=1)
+
+                self._record_pga_mask_diag(att_mask, padding_mask, station_mask, ptv)
+                emb = self.transformer(emb.float(), att_mask, padding_mask)
+                self._record_pga_attention_diag(
+                    seq_len=emb.shape[1],
+                    station_count=station_mask.shape[1],
+                    n_pga=n_pga,
+                    has_event=not (self.skip_transformer or self.no_event_token),
+                )
+                pga_readout_emb = emb[:, -self.n_pga_targets:, :]
+                self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(0.0).detach()
         else:
             if self.skip_transformer:
                 emb = torch.stack([self.mlp_layer(emb[:, i, :]) for i in range(emb.shape[1])], dim=1)
@@ -1521,7 +1614,7 @@ class FullModel(nn.Module):
             outputs.append(self.aux_mag_head(base_waveforms_emb, sv))
 
         if self.n_pga_targets:
-            pga_emb = emb[:, -self.n_pga_targets:, :]  # Select embeddings for pga
+            pga_emb = pga_readout_emb
             pga_emb = torch.stack([self.mlp_pga(pga_emb[:, i, :]) for i in range(pga_emb.shape[1])], dim=1)
             pga_out_tmp = []
             for i in range(pga_emb.shape[1]):
@@ -1724,6 +1817,9 @@ def build_transformer_model(max_stations,
                             aux_mag_hidden_dim=None,
                             aux_mag_sigma=0.3,
                             output_distribution='mdn',
+                            pga_readout_mode='query_transformer',
+                            pga_attention_diagnostics=False,
+                            pga_mask_sanity_check=False,
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -1832,7 +1928,10 @@ def build_transformer_model(max_stations,
                              coords_abs_weight=coords_abs_weight,
                              coord_fusion_mode=coord_fusion_mode,
                              aux_mag_head=aux_mag_module,
-                             output_distribution=output_distribution)
+                             output_distribution=output_distribution,
+                             pga_readout_mode=pga_readout_mode,
+                             pga_attention_diagnostics=pga_attention_diagnostics,
+                             pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model
 
 
