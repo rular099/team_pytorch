@@ -1664,8 +1664,11 @@ if __name__ == '__main__':
         if len(listdir) != 1 or listdir[0] != 'config.json':
             raise ValueError(f'Weight path needs to be empty. ({training_params["weight_path"]})')
 
-    with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
-        json.dump(config, f, indent=4)
+    if (not is_dist) or (is_dist and (rank == 0)):
+        with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
+            json.dump(config, f, indent=4)
+    if is_dist:
+        dist.barrier()
 
     print('Loading data')
     if args.test_run:
@@ -1971,7 +1974,7 @@ if __name__ == '__main__':
             training_params['weight_path'],
             device,
             is_dist=is_dist,
-            rank=local_rank,
+            rank=rank,
             train_sampler=single_train_sampler,
             checkpoint_params=training_params.get('checkpoint', None),
         )
@@ -2019,8 +2022,11 @@ if __name__ == '__main__':
             if is_dist:
                 dist.barrier()
 
-            with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
-                json.dump(config, f, indent=4)
+            if (not is_dist) or (is_dist and (rank == 0)):
+                with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
+                    json.dump(config, f, indent=4)
+            if is_dist:
+                dist.barrier()
 
         print('Building model')
         full_model = models.build_transformer_model(**config['model_params'],
@@ -2216,7 +2222,7 @@ if __name__ == '__main__':
             val_sampler = None
             train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], sampler=val_sampler, shuffle=(val_sampler is None))
-        if ((not is_dist) or local_rank == 0):
+        if ((not is_dist) or rank == 0):
             # Save initial checkpoint before training
             init_ckpt_path = os.path.join(training_params['weight_path'], 'full_model_init.pth')
             eval_model = full_model.module if is_dist else full_model
@@ -2226,7 +2232,7 @@ if __name__ == '__main__':
                 epoch=0,
                 training_params=training_params,
             )
-            run_sanity_check(full_model, train_loader, device, name='full_model_train_pre')
+            run_sanity_check(eval_model, train_loader, device, name='full_model_train_pre')
         # Task enable switches: set training_params['res_comps'] in the JSON
         # config to e.g. ["pga"] to train PGA only, ["mag","pga"] for mag+PGA,
         # etc. Default trains all three tasks. res_weight is parallel to
@@ -2242,7 +2248,7 @@ if __name__ == '__main__':
         default_full_loss = 'huber' if config['model_params'].get('output_distribution', 'mdn') == 'point' else 'mdn'
         full_loss_type = training_params.get('full_model_loss', training_params.get('loss', default_full_loss))
         full_huber_delta = float(training_params.get('full_model_huber_delta', 1.0))
-        if (not is_dist) or local_rank == 0:
+        if (not is_dist) or rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
             station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
             if station_experiment_active and res_comps_cfg != ['pga']:
@@ -2258,7 +2264,7 @@ if __name__ == '__main__':
             num_epochs=training_params['epochs_full_model'],
             clipnorm=training_params.get('clipnorm', None),
             is_dist=is_dist,
-            rank=local_rank,
+            rank=rank,
             save_name='full_model',
             res_comps=res_comps_cfg,
             res_weight=res_weight_cfg,

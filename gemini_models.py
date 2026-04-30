@@ -719,6 +719,126 @@ class AuxiliaryMagnitudeHead(nn.Module):
         return torch.cat([alpha_logits, mu, sigma], dim=-1)
 
 
+class GraphPGAReadout(nn.Module):
+    """Edge-conditioned station-to-target graph readout for PGA prediction.
+
+    This is intentionally implemented with dense PyTorch tensors because the
+    current PGA experiments use small station/target counts. It avoids adding
+    PyG/DGL dependencies while keeping the graph message-passing structure
+    explicit: station nodes send edge-conditioned messages to target nodes.
+    """
+
+    def __init__(self, emb_dim, edge_hidden_dim=None, dropout=0.0, k_nearest=None, eps=1e-3):
+        super().__init__()
+        if edge_hidden_dim is None:
+            edge_hidden_dim = emb_dim
+        self.emb_dim = emb_dim
+        self.edge_hidden_dim = edge_hidden_dim
+        self.k_nearest = k_nearest
+        self.eps = eps
+
+        self.target_proj = nn.Linear(emb_dim, emb_dim)
+        self.station_proj = nn.Linear(emb_dim, emb_dim)
+        self.edge_proj = nn.Sequential(
+            nn.Linear(6, edge_hidden_dim),
+            nn.GELU(),
+            nn.Linear(edge_hidden_dim, emb_dim),
+        )
+        self.score_proj = nn.Linear(emb_dim, 1)
+        self.value_proj = nn.Sequential(
+            nn.Linear(2 * emb_dim, emb_dim),
+            nn.GELU(),
+            nn.Linear(emb_dim, emb_dim),
+        )
+        self.out_proj = nn.Linear(emb_dim, emb_dim)
+        self.norm = nn.LayerNorm(emb_dim)
+        self.dropout = nn.Dropout(dropout)
+        self._last_diag = {}
+
+    def _edge_features(self, station_coords, target_coords, station_valid, target_valid):
+        # station_coords: (B, S, 3), target_coords: (B, T, 3)
+        rel = target_coords[:, :, None, :] - station_coords[:, None, :, :]
+        dist = torch.linalg.norm(rel, dim=-1, keepdim=True)
+        valid_edges = target_valid[:, :, None] & station_valid[:, None, :]
+        safe_dist = dist.clamp_min(self.eps)
+        features = torch.cat([
+            rel,
+            dist,
+            torch.log1p(safe_dist),
+            1.0 / safe_dist,
+        ], dim=-1)
+        return features, dist.squeeze(-1), valid_edges
+
+    def _apply_knn_mask(self, valid_edges, distances):
+        if self.k_nearest is None or self.k_nearest <= 0:
+            return valid_edges
+        station_count = valid_edges.shape[-1]
+        k = min(int(self.k_nearest), station_count)
+        if k >= station_count:
+            return valid_edges
+
+        masked_dist = distances.masked_fill(~valid_edges, float('inf'))
+        nearest_idx = torch.topk(masked_dist, k=k, dim=-1, largest=False).indices
+        knn_mask = torch.zeros_like(valid_edges)
+        knn_mask.scatter_(-1, nearest_idx, True)
+        return valid_edges & knn_mask
+
+    def _record_diag(self, weights, valid_edges, distances):
+        with torch.no_grad():
+            valid_target = valid_edges.any(dim=-1)
+            safe_weights = weights.masked_fill(~valid_edges, 0.0)
+            entropy = -(safe_weights * torch.log(safe_weights.clamp_min(1e-8))).sum(dim=-1)
+            mean_dist = (safe_weights * distances).sum(dim=-1)
+            top_idx = safe_weights.argmax(dim=-1, keepdim=True)
+            top_dist = torch.gather(distances, dim=-1, index=top_idx).squeeze(-1)
+
+            if valid_target.any():
+                self._last_diag = {
+                    'graph_pga_attn_entropy': entropy[valid_target].mean().detach(),
+                    'graph_pga_weighted_distance_mean': mean_dist[valid_target].mean().detach(),
+                    'graph_pga_top1_distance_mean': top_dist[valid_target].mean().detach(),
+                    'graph_pga_valid_edge_ratio': valid_edges.float().mean().detach(),
+                }
+            else:
+                nan = weights.new_tensor(float('nan'))
+                self._last_diag = {
+                    'graph_pga_attn_entropy': nan,
+                    'graph_pga_weighted_distance_mean': nan,
+                    'graph_pga_top1_distance_mean': nan,
+                    'graph_pga_valid_edge_ratio': valid_edges.float().mean().detach(),
+                }
+
+    def forward(self, station_emb, target_emb, station_coords, target_coords,
+                station_valid, target_valid):
+        station_valid = station_valid.bool()
+        target_valid = target_valid.bool()
+        edge_feat, distances, valid_edges = self._edge_features(
+            station_coords, target_coords, station_valid, target_valid
+        )
+        valid_edges = self._apply_knn_mask(valid_edges, distances)
+
+        edge_emb = self.edge_proj(edge_feat)
+        score_state = torch.tanh(
+            self.target_proj(target_emb)[:, :, None, :]
+            + self.station_proj(station_emb)[:, None, :, :]
+            + edge_emb
+        )
+        scores = self.score_proj(score_state).squeeze(-1)
+        scores = scores.masked_fill(~valid_edges, -1e6)
+        weights = torch.softmax(scores, dim=-1)
+        weights = weights.masked_fill(~valid_edges, 0.0)
+        weights = weights / weights.sum(dim=-1, keepdim=True).clamp_min(1e-8)
+
+        station_value = station_emb[:, None, :, :].expand(-1, target_emb.shape[1], -1, -1)
+        values = self.value_proj(torch.cat([station_value, edge_emb], dim=-1))
+        message = torch.sum(weights.unsqueeze(-1) * values, dim=2)
+        out = self.norm(target_emb + self.dropout(self.out_proj(message)))
+        out = out * target_valid.unsqueeze(-1).to(out.dtype)
+
+        self._record_diag(weights, valid_edges, distances)
+        return out
+
+
 class SingleStationRegressionHead(nn.Module):
     """Small point-regression head used only for single-station pretraining."""
 
@@ -1185,7 +1305,8 @@ class FullModel(nn.Module):
                  use_coords_rel=False, use_coords_abs=True, use_coords_rel_abs_fusion=False,
                  coords_abs_weight=0.1, coord_fusion_mode='add', aux_mag_head=None,
                  output_distribution='mdn', pga_readout_mode='query_transformer',
-                 pga_attention_diagnostics=False, pga_mask_sanity_check=False):
+                 pga_attention_diagnostics=False, pga_mask_sanity_check=False,
+                 graph_pga_readout=None):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1223,17 +1344,23 @@ class FullModel(nn.Module):
         self.pga_readout_mode = pga_readout_mode
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
+        self.graph_pga_readout = graph_pga_readout
         if self.output_distribution not in ('mdn', 'point'):
             raise ValueError(
                 f"output_distribution must be 'mdn' or 'point', got {self.output_distribution!r}."
             )
-        if self.pga_readout_mode not in ('query_transformer', 'query_no_transformer', 'direct_station'):
+        if self.pga_readout_mode not in (
+            'query_transformer', 'query_no_transformer', 'direct_station', 'graph_message_passing'
+        ):
             raise ValueError(
                 "pga_readout_mode must be one of 'query_transformer', "
-                f"'query_no_transformer', 'direct_station', got {self.pga_readout_mode!r}."
+                "'query_no_transformer', 'direct_station', 'graph_message_passing', "
+                f"got {self.pga_readout_mode!r}."
             )
         if self.pga_readout_mode != 'query_transformer' and self.output_distribution != 'point':
             raise ValueError('pga_readout_mode ablations are implemented for point output_distribution.')
+        if self.pga_readout_mode == 'graph_message_passing' and self.graph_pga_readout is None:
+            raise ValueError('graph_pga_readout must be provided for graph_message_passing mode.')
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -1546,6 +1673,18 @@ class FullModel(nn.Module):
             elif self.pga_readout_mode == 'query_no_transformer':
                 pga_readout_emb = pga_emb
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(1.0).detach()
+            elif self.pga_readout_mode == 'graph_message_passing':
+                pga_readout_emb = self.graph_pga_readout(
+                    station_feature_emb,
+                    pga_emb,
+                    coords_abs,
+                    pga_targets_abs,
+                    sv,
+                    ptv,
+                )
+                for key, value in getattr(self.graph_pga_readout, '_last_diag', {}).items():
+                    self._last_diag[key] = value
+                self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(3.0).detach()
             else:
                 emb = torch.cat([emb, pga_emb], dim=1)
                 ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
@@ -1820,6 +1959,9 @@ def build_transformer_model(max_stations,
                             pga_readout_mode='query_transformer',
                             pga_attention_diagnostics=False,
                             pga_mask_sanity_check=False,
+                            graph_pga_hidden_dim=None,
+                            graph_pga_dropout=0.0,
+                            graph_pga_k_nearest=None,
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -1914,6 +2056,16 @@ def build_transformer_model(max_stations,
         hidden_dim=aux_mag_hidden_dim,
         sigma_init=aux_mag_sigma,
     ) if aux_mag_head else None
+
+    graph_pga_module = None
+    if pga_readout_mode == 'graph_message_passing':
+        graph_pga_module = GraphPGAReadout(
+            emb_dim,
+            edge_hidden_dim=graph_pga_hidden_dim,
+            dropout=graph_pga_dropout,
+            k_nearest=graph_pga_k_nearest,
+        )
+
     full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
@@ -1931,7 +2083,8 @@ def build_transformer_model(max_stations,
                              output_distribution=output_distribution,
                              pga_readout_mode=pga_readout_mode,
                              pga_attention_diagnostics=pga_attention_diagnostics,
-                             pga_mask_sanity_check=pga_mask_sanity_check)
+                             pga_mask_sanity_check=pga_mask_sanity_check,
+                             graph_pga_readout=graph_pga_module)
     return full_model
 
 
