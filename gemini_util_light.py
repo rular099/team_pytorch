@@ -643,7 +643,7 @@ class PreloadedEventGenerator(Dataset):
                     selection = np.argsort(-coeffs)
 
                 if self.select_first_inputs: # pick_time
-                    pick_order = self.triggers.copy()
+                    pick_order = self.triggers.astype(np.float64, copy=True)
                     invalid_pick = np.logical_or(pick_order <= 0, pick_order > self.p_pick_limit)
                     pick_order[invalid_pick] = np.inf
                     selection = np.argsort(pick_order)
