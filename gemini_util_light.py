@@ -643,7 +643,10 @@ class PreloadedEventGenerator(Dataset):
                     selection = np.argsort(-coeffs)
 
                 if self.select_first_inputs: # pick_time
-                    selection = np.argsort(self.triggers)
+                    pick_order = self.triggers.copy()
+                    invalid_pick = np.logical_or(pick_order <= 0, pick_order > self.p_pick_limit)
+                    pick_order[invalid_pick] = np.inf
+                    selection = np.argsort(pick_order)
 
                 selection = selection[:true_max_stations_in_batch] # len tms
                 metadata[i, :len(selection)] = self.metadata[selection]
