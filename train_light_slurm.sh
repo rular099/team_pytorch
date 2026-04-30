@@ -32,8 +32,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 SUBMIT_DIR=${SLURM_SUBMIT_DIR:-$PWD}
 REPO_ROOT=${REPO_ROOT:-"$SUBMIT_DIR"}
-#WORKDIR=${WORKDIR:-"$REPO_ROOT"}
-WORKDIR=/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team
+WORKDIR=${WORKDIR:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team}
 
 CONFIG_INPUT=${1:?Usage: bash train_light_slurm.sh <config.json> [train_light.py extra args...]}
 shift
@@ -62,8 +61,7 @@ resolve_path() {
     esac
 }
 
-CONFIG="./pga_configs/transformer_japan_overfit_new.json"
-#CONFIG=$(resolve_path "$CONFIG_INPUT" "$PWD")
+CONFIG=$(resolve_path "$CONFIG_INPUT" "$PWD")
 #DITING_CONFIG=$(resolve_path "$DITING_CONFIG" "$WORKDIR")
 DITING_PRETRAINED=/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt
 if [[ -n "${DITING_PRETRAINED:-}" ]]; then

@@ -887,6 +887,40 @@ def global_grad_norm(parameters):
     return torch.sqrt(sq_sum)
 
 
+def collect_event_output_stats(outputs, labels, output_layout):
+    stats = {}
+    label_layout = [n for n in output_layout if n in ('mag', 'loc', 'pga')]
+    for name in ('mag', 'loc'):
+        if name not in output_layout or name not in label_layout:
+            continue
+        pred = outputs[output_layout.index(name)]
+        target = labels[label_layout.index(name)].to(pred.device, dtype=pred.dtype)
+        d = 3 if name == 'loc' else 1
+        if pred.shape[-1] == d:
+            mu = pred.reshape(pred.shape[0], -1, d)[:, 0, :]
+        else:
+            alpha_logits = pred[..., 0]
+            mu_all = pred[..., 1:1 + d]
+            best_idx = alpha_logits.argmax(dim=-1)
+            if mu_all.ndim == 3:
+                batch_idx = torch.arange(mu_all.shape[0], device=mu_all.device)
+                mu = mu_all[batch_idx, best_idx]
+            else:
+                mu = mu_all
+        target = target.reshape(target.shape[0], -1, d)[:, 0, :]
+        stats.update({
+            f'diag/{name}_mu_best_mean': mu.mean().detach(),
+            f'diag/{name}_mu_best_std': mu.std(unbiased=False).detach(),
+            f'diag/{name}_target_mean': target.mean().detach(),
+            f'diag/{name}_target_std': target.std(unbiased=False).detach(),
+            f'diag/{name}_pred_target_mean_gap': (mu.mean() - target.mean()).detach(),
+            f'diag/{name}_pred_target_std_gap': (
+                mu.std(unbiased=False) - target.std(unbiased=False)
+            ).detach(),
+        })
+    return stats
+
+
 def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
     if 'pga' not in output_layout:
         return {}
@@ -1275,6 +1309,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                                 continue
                             diag_scalars[f'diag/{key}'] = value.detach()
                     diag_scalars.update(collect_input_stats(inputs, labels, p_picks))
+                    diag_scalars.update(collect_event_output_stats(outputs, labels, eval_model.output_layout))
                     diag_scalars.update(collect_pga_output_stats(outputs, labels, eval_model.output_layout, pga_target_valid))
 
                     grad_targets = {
@@ -1664,8 +1699,11 @@ if __name__ == '__main__':
         if len(listdir) != 1 or listdir[0] != 'config.json':
             raise ValueError(f'Weight path needs to be empty. ({training_params["weight_path"]})')
 
-    with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
-        json.dump(config, f, indent=4)
+    if (not is_dist) or (is_dist and (rank == 0)):
+        with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
+            json.dump(config, f, indent=4)
+    if is_dist:
+        dist.barrier()
 
     print('Loading data')
     if args.test_run:
@@ -1971,7 +2009,7 @@ if __name__ == '__main__':
             training_params['weight_path'],
             device,
             is_dist=is_dist,
-            rank=local_rank,
+            rank=rank,
             train_sampler=single_train_sampler,
             checkpoint_params=training_params.get('checkpoint', None),
         )
@@ -2019,8 +2057,11 @@ if __name__ == '__main__':
             if is_dist:
                 dist.barrier()
 
-            with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
-                json.dump(config, f, indent=4)
+            if (not is_dist) or (is_dist and (rank == 0)):
+                with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
+                    json.dump(config, f, indent=4)
+            if is_dist:
+                dist.barrier()
 
         print('Building model')
         full_model = models.build_transformer_model(**config['model_params'],
@@ -2216,7 +2257,7 @@ if __name__ == '__main__':
             val_sampler = None
             train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], sampler=val_sampler, shuffle=(val_sampler is None))
-        if ((not is_dist) or local_rank == 0):
+        if ((not is_dist) or rank == 0):
             # Save initial checkpoint before training
             init_ckpt_path = os.path.join(training_params['weight_path'], 'full_model_init.pth')
             eval_model = full_model.module if is_dist else full_model
@@ -2242,7 +2283,7 @@ if __name__ == '__main__':
         default_full_loss = 'huber' if config['model_params'].get('output_distribution', 'mdn') == 'point' else 'mdn'
         full_loss_type = training_params.get('full_model_loss', training_params.get('loss', default_full_loss))
         full_huber_delta = float(training_params.get('full_model_huber_delta', 1.0))
-        if (not is_dist) or local_rank == 0:
+        if (not is_dist) or rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
             station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
             if station_experiment_active and res_comps_cfg != ['pga']:
@@ -2258,7 +2299,7 @@ if __name__ == '__main__':
             num_epochs=training_params['epochs_full_model'],
             clipnorm=training_params.get('clipnorm', None),
             is_dist=is_dist,
-            rank=local_rank,
+            rank=rank,
             save_name='full_model',
             res_comps=res_comps_cfg,
             res_weight=res_weight_cfg,

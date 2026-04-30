@@ -300,6 +300,43 @@ class TransformerBlock(nn.Module):
         return x
 
 
+class CrossAttentionReadout(nn.Module):
+    """Single-direction query-to-station readout.
+
+    The output values come from station tokens only. Query embeddings control
+    the attention weights but are not added back as a residual, which makes this
+    readout a cleaner diagnostic for whether station information is usable.
+    """
+
+    def __init__(self, emb_dim, n_heads, att_dropout=0.0):
+        super().__init__()
+        self.query_norm = nn.LayerNorm(emb_dim)
+        self.kv_norm = nn.LayerNorm(emb_dim)
+        self.attn = nn.MultiheadAttention(
+            embed_dim=emb_dim,
+            num_heads=n_heads,
+            dropout=att_dropout,
+            batch_first=True,
+        )
+        self.out_norm = nn.LayerNorm(emb_dim)
+        self._last_attention = None
+
+    def forward(self, query, station_emb, station_valid):
+        q = self.query_norm(query)
+        kv = self.kv_norm(station_emb)
+        key_padding_mask = ~station_valid.bool()
+        out, attn = self.attn(
+            q,
+            kv,
+            kv,
+            key_padding_mask=key_padding_mask,
+            need_weights=True,
+            average_attn_weights=True,
+        )
+        self._last_attention = attn.detach()
+        return self.out_norm(out)
+
+
 # Calculates and concatenates sinusoidal embeddings for lat, lon and depth
 # Note: Permutation is completely unnecessary, but kept for compatibility reasons
 # WARNING: Does not take into account curvature of the earth!
@@ -1185,7 +1222,9 @@ class FullModel(nn.Module):
                  use_coords_rel=False, use_coords_abs=True, use_coords_rel_abs_fusion=False,
                  coords_abs_weight=0.1, coord_fusion_mode='add', aux_mag_head=None,
                  output_distribution='mdn', pga_readout_mode='query_transformer',
-                 pga_attention_diagnostics=False, pga_mask_sanity_check=False):
+                 event_readout_mode='event_transformer',
+                 pga_attention_diagnostics=False, pga_mask_sanity_check=False,
+                 readout_n_heads=1, readout_dropout=0.0, query_token_init_range=0.02):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1221,19 +1260,36 @@ class FullModel(nn.Module):
         self.aux_mag_head = aux_mag_head
         self.output_distribution = output_distribution
         self.pga_readout_mode = pga_readout_mode
+        self.event_readout_mode = event_readout_mode
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
         if self.output_distribution not in ('mdn', 'point'):
             raise ValueError(
                 f"output_distribution must be 'mdn' or 'point', got {self.output_distribution!r}."
             )
-        if self.pga_readout_mode not in ('query_transformer', 'query_no_transformer', 'direct_station'):
+        if self.pga_readout_mode not in (
+            'query_transformer',
+            'query_no_transformer',
+            'direct_station',
+            'target_cross_attention',
+        ):
             raise ValueError(
                 "pga_readout_mode must be one of 'query_transformer', "
-                f"'query_no_transformer', 'direct_station', got {self.pga_readout_mode!r}."
+                "'query_no_transformer', 'direct_station', 'target_cross_attention', "
+                f"got {self.pga_readout_mode!r}."
             )
         if self.pga_readout_mode != 'query_transformer' and self.output_distribution != 'point':
             raise ValueError('pga_readout_mode ablations are implemented for point output_distribution.')
+        if self.event_readout_mode not in (
+            'event_transformer',
+            'event_cross_attention',
+            'direct_station_pool',
+        ):
+            raise ValueError(
+                "event_readout_mode must be one of 'event_transformer', "
+                "'event_cross_attention', 'direct_station_pool', "
+                f"got {self.event_readout_mode!r}."
+            )
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -1258,6 +1314,17 @@ class FullModel(nn.Module):
                 'embeddings (alternative_coords_embedding=False).'
             )
         self.loc_target_mode = 'abs' if self.use_coords_abs else 'rel'
+
+        self.pga_query_token = nn.Parameter(torch.empty(1, 1, emb_dim))
+        nn.init.normal_(self.pga_query_token, mean=0.0, std=float(query_token_init_range))
+        self.event_query_token = nn.Parameter(torch.empty(1, 1, emb_dim))
+        nn.init.normal_(self.event_query_token, mean=0.0, std=float(query_token_init_range))
+        self.pga_cross_attention = CrossAttentionReadout(
+            emb_dim, readout_n_heads, att_dropout=readout_dropout
+        )
+        self.event_cross_attention = CrossAttentionReadout(
+            emb_dim, readout_n_heads, att_dropout=readout_dropout
+        )
 
         if self.n_pga_targets > 0:
             self.att_masking = True
@@ -1401,7 +1468,11 @@ class FullModel(nn.Module):
         station_offset = 1 if has_event else 0
         pga_offset = station_offset + station_mask.shape[1]
         ptv = pga_target_valid.bool()
-        expected_key_mask = torch.cat([station_mask, torch.zeros_like(ptv)], dim=1)
+        # att_mask and padding_mask are deliberately two-level masks:
+        # - att_mask marks key types that may be attended at all. All station
+        #   slots are allowed here, and padding_mask removes invalid stations.
+        # - padding_mask marks valid sequence positions.
+        expected_key_mask = torch.cat([torch.ones_like(station_mask), torch.zeros_like(ptv)], dim=1)
         if has_event:
             expected_key_mask = torch.cat(
                 [torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool), expected_key_mask],
@@ -1416,6 +1487,17 @@ class FullModel(nn.Module):
 
         self._last_diag['pga_mask_key_matches_expected'] = (
             (att_mask == expected_key_mask).float().mean().detach()
+        )
+        effective_key_mask = att_mask & padding_mask
+        expected_effective_key_mask = torch.cat([station_mask, torch.zeros_like(ptv)], dim=1)
+        if has_event:
+            expected_effective_key_mask = torch.cat(
+                [torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool),
+                 expected_effective_key_mask],
+                dim=1,
+            )
+        self._last_diag['pga_effective_key_matches_expected'] = (
+            (effective_key_mask == expected_effective_key_mask).float().mean().detach()
         )
         self._last_diag['pga_padding_matches_expected'] = (
             (padding_mask == expected_padding).float().mean().detach()
@@ -1447,6 +1529,20 @@ class FullModel(nn.Module):
             if has_event:
                 event_mass = pga_query_attn[:, :, :, 0].mean()
                 self._last_diag[f'{prefix}_to_event'] = event_mass.detach()
+
+    def _record_cross_attention_diag(self, prefix, readout, valid_mask):
+        attn = getattr(readout, '_last_attention', None)
+        if attn is None:
+            return
+        valid = valid_mask.bool().unsqueeze(1).to(attn.device)
+        valid_mass = (attn * valid.to(attn.dtype)).sum(dim=-1).mean()
+        entropy = -(attn.clamp_min(1e-8) * attn.clamp_min(1e-8).log()).sum(dim=-1).mean()
+        valid_count = valid_mask.float().sum(dim=-1).clamp_min(1.0).mean()
+        max_entropy = torch.log(valid_count.to(attn.device))
+        self._last_diag[f'{prefix}_attn_valid_mass'] = valid_mass.detach()
+        self._last_diag[f'{prefix}_attn_entropy'] = entropy.detach()
+        self._last_diag[f'{prefix}_attn_entropy_ratio'] = (entropy / (max_entropy + 1e-8)).detach()
+        self._last_diag[f'{prefix}_attn_max_weight'] = attn.max(dim=-1).values.mean().detach()
 
 
     def _extract_scale_features(self, waveform):
@@ -1524,12 +1620,11 @@ class FullModel(nn.Module):
         if not self.alternative_coords_embedding:
             self._last_diag['coords_emb_norm'] = self._mean_token_norm(coords_emb).detach()
 
-        if not (self.skip_transformer or self.no_event_token):
-            emb = self.add_event_token(emb)
-
         # padding_mask: True=valid position, used for key masking + output zeroing (matches TF `mask`)
         # att_mask: True=attendable as key, used only for additional key masking (matches TF `att_mask`)
         station_mask = sv  # (batch, n_stations) — comes from explicit station_valid input
+        transformer_emb = None
+        pga_readout_emb = None
 
         if self.n_pga_targets:
             assert pga_target_valid is not None, \
@@ -1538,16 +1633,24 @@ class FullModel(nn.Module):
             pga_targets_abs = pga_targets_inp * ptv[:, :, None].float()
             pga_targets_rel = (pga_targets_abs - coords_center) * ptv[:, :, None].float()
             pga_emb = self._pga_coord_embedding(pga_targets_abs, pga_targets_rel, ptv)
+            pga_query_emb = pga_emb + self.pga_query_token
 
             n_pga = pga_emb.shape[1]
             if self.pga_readout_mode == 'direct_station':
                 pga_readout_emb = self._direct_station_pga_embedding(station_feature_emb, sv, n_pga)
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(2.0).detach()
+            elif self.pga_readout_mode == 'target_cross_attention':
+                pga_readout_emb = self.pga_cross_attention(pga_query_emb, station_feature_emb, sv)
+                self._record_cross_attention_diag('pga_cross', self.pga_cross_attention, sv)
+                self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(3.0).detach()
             elif self.pga_readout_mode == 'query_no_transformer':
-                pga_readout_emb = pga_emb
+                pga_readout_emb = pga_query_emb
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(1.0).detach()
             else:
-                emb = torch.cat([emb, pga_emb], dim=1)
+                transformer_input = station_feature_emb
+                if not (self.skip_transformer or self.no_event_token):
+                    transformer_input = self.add_event_token(transformer_input)
+                transformer_input = torch.cat([transformer_input, pga_query_emb], dim=1)
                 ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
                 pga_false = torch.zeros(station_mask.shape[0], n_pga, device=station_mask.device, dtype=torch.bool)
 
@@ -1565,33 +1668,41 @@ class FullModel(nn.Module):
                         att_mask = torch.cat([torch.ones_like(station_mask), att_mask], dim=1)
 
                 self._record_pga_mask_diag(att_mask, padding_mask, station_mask, ptv)
-                emb = self.transformer(emb.float(), att_mask, padding_mask)
+                transformer_emb = self.transformer(transformer_input.float(), att_mask, padding_mask)
                 self._record_pga_attention_diag(
-                    seq_len=emb.shape[1],
+                    seq_len=transformer_emb.shape[1],
                     station_count=station_mask.shape[1],
                     n_pga=n_pga,
                     has_event=not (self.skip_transformer or self.no_event_token),
                 )
-                pga_readout_emb = emb[:, -self.n_pga_targets:, :]
+                pga_readout_emb = transformer_emb[:, -self.n_pga_targets:, :]
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(0.0).detach()
-        else:
-            if self.skip_transformer:
-                emb = torch.stack([self.mlp_layer(emb[:, i, :]) for i in range(emb.shape[1])], dim=1)
-                emb = self.maxpool(emb, mask=station_mask)
-            else:
-                # padding_mask: [event_token=True, station_mask]
-                padding_mask = station_mask.clone()
-                if not (self.skip_transformer or self.no_event_token):
-                    ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
-                    padding_mask = torch.cat([ones_1, padding_mask], dim=1)
-                emb = self.transformer(emb.float(), padding_mask=padding_mask)
 
         outputs = []
         if not self.no_event_token:
-            if self.skip_transformer:
-                event_emb = emb
+            if self.event_readout_mode == 'event_cross_attention':
+                event_query = self.event_query_token.expand(station_feature_emb.shape[0], 1, -1)
+                event_emb = self.event_cross_attention(event_query, station_feature_emb, sv).squeeze(1)
+                self._record_cross_attention_diag('event_cross', self.event_cross_attention, sv)
+                self._last_diag['event_readout_mode'] = event_emb.new_tensor(1.0).detach()
+            elif self.event_readout_mode == 'direct_station_pool':
+                event_emb = self._direct_station_pga_embedding(station_feature_emb, sv, 1).squeeze(1)
+                self._last_diag['event_readout_mode'] = event_emb.new_tensor(2.0).detach()
             else:
-                event_emb = emb[:, 0, :]  # Select event embedding
+                if self.skip_transformer:
+                    event_tokens = torch.stack(
+                        [self.mlp_layer(station_feature_emb[:, i, :]) for i in range(station_feature_emb.shape[1])],
+                        dim=1,
+                    )
+                    event_emb = self.maxpool(event_tokens, mask=station_mask)
+                else:
+                    if transformer_emb is None:
+                        transformer_input = self.add_event_token(station_feature_emb)
+                        ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
+                        padding_mask = torch.cat([ones_1, station_mask], dim=1)
+                        transformer_emb = self.transformer(transformer_input.float(), padding_mask=padding_mask)
+                    event_emb = transformer_emb[:, 0, :]  # Select event embedding
+                self._last_diag['event_readout_mode'] = event_emb.new_tensor(0.0).detach()
 
             mag_embedding = self.mlp_mag(event_emb)
             if self.output_distribution == 'point':
@@ -1818,6 +1929,10 @@ def build_transformer_model(max_stations,
                             aux_mag_sigma=0.3,
                             output_distribution='mdn',
                             pga_readout_mode='query_transformer',
+                            event_readout_mode='event_transformer',
+                            readout_n_heads=None,
+                            readout_dropout=None,
+                            query_token_init_range=0.02,
                             pga_attention_diagnostics=False,
                             pga_mask_sanity_check=False,
                             diting_args=None,
@@ -1829,6 +1944,10 @@ def build_transformer_model(max_stations,
 #    emb_dim = diting_args.target_width
     mad_params = mad_params.copy()  # Avoid modifying the input dicts
     ffn_params = ffn_params.copy()
+    if readout_n_heads is None:
+        readout_n_heads = mad_params.get('n_heads', 1)
+    if readout_dropout is None:
+        readout_dropout = mad_params.get('att_dropout', 0.0)
 
     #   Single station model
     if borehole:
@@ -1930,6 +2049,10 @@ def build_transformer_model(max_stations,
                              aux_mag_head=aux_mag_module,
                              output_distribution=output_distribution,
                              pga_readout_mode=pga_readout_mode,
+                             event_readout_mode=event_readout_mode,
+                             readout_n_heads=readout_n_heads,
+                             readout_dropout=readout_dropout,
+                             query_token_init_range=query_token_init_range,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model
