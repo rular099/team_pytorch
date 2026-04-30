@@ -83,7 +83,7 @@
         "epoch_sanity": true,
         "epochs_full_model": 300,
         "data_path": [
-            "/opt/zb/data/japan/japan_2024.hdf5"
+            "/public/home/test_bigmodel/seismogram/zb/team_pytorch/japan_2024.hdf5"
         ],
         "workers": 0,
         "weight_path": "weights_japan_overfit_exp1_graph_single_input_same_station_pga",
