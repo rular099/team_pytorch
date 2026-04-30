@@ -32,7 +32,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 SUBMIT_DIR=${SLURM_SUBMIT_DIR:-$PWD}
 REPO_ROOT=${REPO_ROOT:-"$SUBMIT_DIR"}
-WORKDIR=${WORKDIR:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team}
+WORKDIR=${WORKDIR:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_graph}
 
 CONFIG_INPUT=${1:?Usage: bash train_light_slurm.sh <config.json> [train_light.py extra args...]}
 shift
@@ -45,7 +45,7 @@ SLURM_GPUS_PER_NODE=${SLURM_GPUS_PER_NODE:-4}
 SLURM_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK:-8}
 SLURM_TIME=${SLURM_TIME:-24:00:00}
 SLURM_LOG_DIR=${SLURM_LOG_DIR:-"$WORKDIR/logs/slurm"}
-DITING_CONFIG=${DITING_CONFIG:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/diting/config/diting_1200m_backbone_attnpool.yml}
+DITING_CONFIG=${DITING_CONFIG:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_graph/diting/config/diting_1200m_backbone_attnpool.yml}
 CONDA_ENV=${CONDA_ENV:-lsm_env}
 MODULE_UNLOAD=${MODULE_UNLOAD:-compiler/rocm/2.9}
 MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04 apps/miniconda/3"}
