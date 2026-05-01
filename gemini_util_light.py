@@ -226,6 +226,7 @@ class PreloadedEventGenerator(Dataset):
                  fake_borehole=False, scale_metadata=True, pga_key='pga',
                  pga_mode=False, p_pick_limit=5000, coord_keys=None, upsample_high_station_events=None,
                  no_event_token=False, pga_selection_skew=None,
+                 random_input_station_count=None, pga_target_sampling=None, pga_distance_bins=None,
                  dump_debug_snapshot=False,
                  use_coords_rel=False, use_coords_abs=True,
                  use_coords_rel_abs_fusion=False, station_experiment=None, **kwargs):
@@ -285,6 +286,15 @@ class PreloadedEventGenerator(Dataset):
         self.selection_skew = selection_skew
         self.pga_from_inactive = pga_from_inactive
         self.pga_selection_skew = pga_selection_skew
+        self.random_input_station_count = self._normalize_station_count_choices(random_input_station_count)
+        self.pga_target_sampling = pga_target_sampling
+        valid_pga_target_sampling = {None, 'random', 'distance_stratified', 'distance_coverage'}
+        if self.pga_target_sampling not in valid_pga_target_sampling:
+            raise ValueError(
+                f'pga_target_sampling must be one of {sorted(x for x in valid_pga_target_sampling if x)}, '
+                f'got {self.pga_target_sampling!r}'
+            )
+        self.pga_distance_bins = self._normalize_distance_bins(pga_distance_bins)
         self.integrate = integrate
         self.sampling_rate = sampling_rate
         self.select_first = select_first
@@ -434,6 +444,100 @@ class PreloadedEventGenerator(Dataset):
         picked = candidates.copy()
         np.random.shuffle(picked)
         return picked[:n]
+
+    @staticmethod
+    def _normalize_station_count_choices(value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            value = [x.strip() for x in value.split(',') if x.strip()]
+        elif np.isscalar(value):
+            value = [value]
+        choices = [int(x) for x in value]
+        choices = sorted({x for x in choices if x > 0})
+        if not choices:
+            raise ValueError('random_input_station_count must contain at least one positive count')
+        return choices
+
+    @staticmethod
+    def _normalize_distance_bins(value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            value = [x.strip() for x in value.split(',') if x.strip()]
+        bins = np.asarray([float(x) for x in value], dtype=np.float32)
+        bins = np.sort(bins[np.isfinite(bins)])
+        return bins if bins.size > 0 else None
+
+    def _apply_random_input_station_count(self, station_valid):
+        if self.random_input_station_count is None:
+            return station_valid
+
+        sampled_valid = np.zeros_like(station_valid, dtype=bool)
+        for i in range(station_valid.shape[0]):
+            active = np.where(station_valid[i])[0]
+            if active.size == 0:
+                raise _EmptySample()
+            n_inputs = int(np.random.choice(self.random_input_station_count))
+            n_inputs = min(n_inputs, active.size)
+            selected = self._pick_random_subset(active, n_inputs)
+            sampled_valid[i, selected] = True
+        return sampled_valid
+
+    @staticmethod
+    def _coords3_from_rows(rows):
+        if rows.shape[-1] == 4:
+            return rows[:, (0, 1, 3)]
+        return rows[:, :3]
+
+    def _stratified_by_nearest_input_distance(self, active, target_coords, input_coords, n_targets):
+        active = np.asarray(active, dtype=np.int64)
+        if active.size <= n_targets or input_coords.size == 0:
+            selected = active.copy()
+            np.random.shuffle(selected)
+            return selected[:n_targets]
+
+        target_xyz = self._coords3_from_rows(target_coords[active])
+        input_xyz = self._coords3_from_rows(input_coords)
+        nearest_dist = np.linalg.norm(
+            target_xyz[:, None, :] - input_xyz[None, :, :],
+            axis=-1,
+        ).min(axis=1)
+
+        selected_positions = []
+        if self.pga_distance_bins is None:
+            ordered = np.argsort(nearest_dist)
+            groups = np.array_split(ordered, min(n_targets, active.size))
+            bin_positions = [g.copy() for g in groups if g.size > 0]
+        else:
+            bin_ids = np.digitize(nearest_dist, self.pga_distance_bins)
+            bin_positions = [np.where(bin_ids == b)[0] for b in np.unique(bin_ids)]
+
+        bin_queues = []
+        for positions in bin_positions:
+            shuffled = positions.copy()
+            np.random.shuffle(shuffled)
+            bin_queues.append(list(shuffled))
+
+        while len(selected_positions) < n_targets:
+            progressed = False
+            for queue in bin_queues:
+                if len(selected_positions) >= n_targets:
+                    break
+                if not queue:
+                    continue
+                selected_positions.append(int(queue.pop(0)))
+                progressed = True
+            if not progressed:
+                break
+
+        if len(selected_positions) < n_targets:
+            used = set(selected_positions)
+            remaining = np.array([j for j in range(active.size) if j not in used], dtype=np.int64)
+            np.random.shuffle(remaining)
+            selected_positions.extend(int(j) for j in remaining[:n_targets - len(selected_positions)])
+
+        return active[np.asarray(selected_positions, dtype=np.int64)]
 
     def _apply_station_experiment_inputs(self, waveforms, p_picks, station_valid, pga_valid_input):
         cfg = self.station_experiment
@@ -754,6 +858,12 @@ class PreloadedEventGenerator(Dataset):
         pga_valid_for_targets = pga_valid_full.copy()
         station_valid_for_targets = station_valid_full.copy()
         full_selected_indices_for_targets = full_selected_indices.copy()
+        input_station_valid_for_model = station_valid_full[:, :self.max_stations].copy()
+        has_signal_for_input = (np.abs(waveforms) > self.wave_eps).any(axis=(2, 3))
+        pick_valid_for_input = (p_picks > 0) & (p_picks < waveforms.shape[2])
+        input_station_valid_for_model &= has_signal_for_input
+        input_station_valid_for_model &= pick_valid_for_input
+        input_station_valid_for_model = self._apply_random_input_station_count(input_station_valid_for_model)
 
         if self.pga_targets:
             pga_values = np.zeros(
@@ -805,6 +915,15 @@ class PreloadedEventGenerator(Dataset):
                         coeffs = np.exp(-active_p_picks / self.pga_selection_skew)
                         coeffs *= np.random.random(coeffs.shape)
                         active = active[np.argsort(-coeffs)]
+                    elif self.pga_target_sampling in ('distance_stratified', 'distance_coverage'):
+                        input_slots = np.where(input_station_valid_for_model[i])[0]
+                        input_coords = metadata[i, input_slots]
+                        active = self._stratified_by_nearest_input_distance(
+                            active,
+                            metadata[i],
+                            input_coords,
+                            self.pga_targets,
+                        )
                     else:
                         np.random.shuffle(active)
 
@@ -821,7 +940,7 @@ class PreloadedEventGenerator(Dataset):
             pga_values = pga_values.reshape((true_batch_size, self.pga_targets, 1))
 
         metadata = metadata[:, :self.max_stations]
-        station_valid = station_valid_full[:, :self.max_stations].copy()
+        station_valid = input_station_valid_for_model.copy()
 
         # Mark stations whose waveform was zeroed by cutout / trigger_based as
         # invalid for the encoder. Waveform "all zero" is a safe sentinel here:

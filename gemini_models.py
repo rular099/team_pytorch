@@ -308,7 +308,7 @@ class CrossAttentionReadout(nn.Module):
     readout a cleaner diagnostic for whether station information is usable.
     """
 
-    def __init__(self, emb_dim, n_heads, att_dropout=0.0):
+    def __init__(self, emb_dim, n_heads, att_dropout=0.0, distance_bias=False, distance_hidden_dim=64):
         super().__init__()
         self.query_norm = nn.LayerNorm(emb_dim)
         self.kv_norm = nn.LayerNorm(emb_dim)
@@ -319,17 +319,39 @@ class CrossAttentionReadout(nn.Module):
             batch_first=True,
         )
         self.out_norm = nn.LayerNorm(emb_dim)
+        self.distance_bias = bool(distance_bias)
+        if self.distance_bias:
+            self.distance_mlp = nn.Sequential(
+                nn.Linear(4, distance_hidden_dim),
+                nn.GELU(),
+                nn.Linear(distance_hidden_dim, 1),
+            )
+            nn.init.zeros_(self.distance_mlp[-1].weight)
+            nn.init.zeros_(self.distance_mlp[-1].bias)
+        else:
+            self.distance_mlp = None
         self._last_attention = None
 
-    def forward(self, query, station_emb, station_valid):
+    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None):
         q = self.query_norm(query)
         kv = self.kv_norm(station_emb)
         key_padding_mask = ~station_valid.bool()
+        attn_mask = None
+        if self.distance_mlp is not None:
+            if query_coords is None or station_coords is None:
+                raise ValueError('query_coords and station_coords are required when distance_bias=True.')
+            rel = query_coords[:, :, None, :] - station_coords[:, None, :, :]
+            dist = torch.linalg.norm(rel, dim=-1, keepdim=True)
+            geom = torch.cat([rel, dist], dim=-1)
+            bias = self.distance_mlp(geom).squeeze(-1)
+            bias = bias.repeat_interleave(self.attn.num_heads, dim=0)
+            attn_mask = bias
         out, attn = self.attn(
             q,
             kv,
             kv,
             key_padding_mask=key_padding_mask,
+            attn_mask=attn_mask,
             need_weights=True,
             average_attn_weights=True,
         )
@@ -1224,7 +1246,9 @@ class FullModel(nn.Module):
                  output_distribution='mdn', pga_readout_mode='query_transformer',
                  event_readout_mode='event_transformer',
                  pga_attention_diagnostics=False, pga_mask_sanity_check=False,
-                 readout_n_heads=1, readout_dropout=0.0, query_token_init_range=0.02):
+                 readout_n_heads=1, readout_dropout=0.0, query_token_init_range=0.02,
+                 pga_distance_bias=False, pga_distance_bias_hidden_dim=64,
+                 pga_use_event_context=False, pga_event_context_init_gate=0.0):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1261,6 +1285,7 @@ class FullModel(nn.Module):
         self.output_distribution = output_distribution
         self.pga_readout_mode = pga_readout_mode
         self.event_readout_mode = event_readout_mode
+        self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
         if self.output_distribution not in ('mdn', 'point'):
@@ -1320,11 +1345,21 @@ class FullModel(nn.Module):
         self.event_query_token = nn.Parameter(torch.empty(1, 1, emb_dim))
         nn.init.normal_(self.event_query_token, mean=0.0, std=float(query_token_init_range))
         self.pga_cross_attention = CrossAttentionReadout(
-            emb_dim, readout_n_heads, att_dropout=readout_dropout
+            emb_dim,
+            readout_n_heads,
+            att_dropout=readout_dropout,
+            distance_bias=pga_distance_bias,
+            distance_hidden_dim=pga_distance_bias_hidden_dim,
         )
         self.event_cross_attention = CrossAttentionReadout(
             emb_dim, readout_n_heads, att_dropout=readout_dropout
         )
+        if self.pga_use_event_context:
+            self.pga_event_context_proj = nn.Linear(emb_dim, emb_dim)
+            self.pga_event_context_gate = nn.Parameter(torch.tensor(float(pga_event_context_init_gate)))
+        else:
+            self.pga_event_context_proj = None
+            self.pga_event_context_gate = None
 
         if self.n_pga_targets > 0:
             self.att_masking = True
@@ -1640,7 +1675,13 @@ class FullModel(nn.Module):
                 pga_readout_emb = self._direct_station_pga_embedding(station_feature_emb, sv, n_pga)
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(2.0).detach()
             elif self.pga_readout_mode == 'target_cross_attention':
-                pga_readout_emb = self.pga_cross_attention(pga_query_emb, station_feature_emb, sv)
+                pga_readout_emb = self.pga_cross_attention(
+                    pga_query_emb,
+                    station_feature_emb,
+                    sv,
+                    query_coords=pga_targets_abs,
+                    station_coords=coords_abs,
+                )
                 self._record_cross_attention_diag('pga_cross', self.pga_cross_attention, sv)
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(3.0).detach()
             elif self.pga_readout_mode == 'query_no_transformer':
@@ -1703,6 +1744,15 @@ class FullModel(nn.Module):
                         transformer_emb = self.transformer(transformer_input.float(), padding_mask=padding_mask)
                     event_emb = transformer_emb[:, 0, :]  # Select event embedding
                 self._last_diag['event_readout_mode'] = event_emb.new_tensor(0.0).detach()
+
+            if (
+                pga_readout_emb is not None
+                and self.pga_event_context_proj is not None
+                and self.pga_event_context_gate is not None
+            ):
+                event_for_pga = self.pga_event_context_proj(event_emb).unsqueeze(1)
+                pga_readout_emb = pga_readout_emb + self.pga_event_context_gate * event_for_pga
+                self._last_diag['pga_event_context_gate'] = self.pga_event_context_gate.detach()
 
             mag_embedding = self.mlp_mag(event_emb)
             if self.output_distribution == 'point':
@@ -1933,6 +1983,10 @@ def build_transformer_model(max_stations,
                             readout_n_heads=None,
                             readout_dropout=None,
                             query_token_init_range=0.02,
+                            pga_distance_bias=False,
+                            pga_distance_bias_hidden_dim=64,
+                            pga_use_event_context=False,
+                            pga_event_context_init_gate=0.0,
                             pga_attention_diagnostics=False,
                             pga_mask_sanity_check=False,
                             diting_args=None,
@@ -2053,6 +2107,10 @@ def build_transformer_model(max_stations,
                              readout_n_heads=readout_n_heads,
                              readout_dropout=readout_dropout,
                              query_token_init_range=query_token_init_range,
+                             pga_distance_bias=pga_distance_bias,
+                             pga_distance_bias_hidden_dim=pga_distance_bias_hidden_dim,
+                             pga_use_event_context=pga_use_event_context,
+                             pga_event_context_init_gate=pga_event_context_init_gate,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model

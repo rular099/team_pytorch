@@ -524,6 +524,10 @@ def run_inference(model, dataset, device):
             ptv = inputs[4]
             ptv_np = ptv.numpy() if isinstance(ptv, torch.Tensor) else np.array(ptv)
             results['pga_target_valid'].append(ptv_np)
+        if isinstance(inputs, list) and len(inputs) >= 3:
+            station_valid = inputs[2]
+            sv_np = station_valid.numpy() if isinstance(station_valid, torch.Tensor) else np.array(station_valid)
+            results['station_valid_count'].append(int(np.asarray(sv_np).astype(bool).sum()))
         if isinstance(p_picks, dict):
             if 'loc_target_abs' in p_picks:
                 results['loc_label_abs'].append(_to_numpy(p_picks['loc_target_abs']))
@@ -818,6 +822,37 @@ def print_summary(results, split_name):
                         print(f'  R^2: {r2:.4f}')
                     slope, intercept = np.polyfit(all_l, all_p, 1)
                     print(f'  Linear fit: pred = {slope:.4f} * label + {intercept:.4f}')
+
+                station_counts = results.get('station_valid_count')
+                if station_counts is not None:
+                    station_counts = np.asarray(station_counts, dtype=np.int64)
+                    bucket_defs = [
+                        ('1', station_counts == 1),
+                        ('2-3', (station_counts >= 2) & (station_counts <= 3)),
+                        ('4-5', (station_counts >= 4) & (station_counts <= 5)),
+                        ('6-10', (station_counts >= 6) & (station_counts <= 10)),
+                        ('11-15', (station_counts >= 11) & (station_counts <= 15)),
+                        ('16+', station_counts >= 16),
+                    ]
+                    print('  By input station count:')
+                    for bucket_name, event_mask in bucket_defs:
+                        if not event_mask.any():
+                            continue
+                        target_mask = mask[event_mask]
+                        if not target_mask.any():
+                            continue
+                        bucket_l = labels_flat[event_mask][target_mask]
+                        bucket_p = mu_best[event_mask][target_mask]
+                        bucket_res = bucket_p - bucket_l
+                        msg = (
+                            f'    n={bucket_name}: events={int(event_mask.sum())}, '
+                            f'targets={int(target_mask.sum())}, '
+                            f'MAE={np.mean(np.abs(bucket_res)):.4f}, '
+                            f'RMSE={np.sqrt(np.mean(bucket_res**2)):.4f}'
+                        )
+                        if len(bucket_l) > 1:
+                            msg += f', corr={np.corrcoef(bucket_l, bucket_p)[0, 1]:.4f}'
+                        print(msg)
             else:
                 print(f'  No valid PGA targets found')
 
