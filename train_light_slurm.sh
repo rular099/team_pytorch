@@ -21,8 +21,8 @@
 #   MODULE_LOADS       Space-separated modules to load
 #   RESET_WEIGHT_PATH  Delete training_params.weight_path before training when set to 1
 #   RUN_EVAL           Run eval_checkpoint.py after successful training when set to 1
-#   EVAL_CHECKPOINT    Optional checkpoint path; defaults to latest full_model_*.pth
-#   EVAL_SINGLE_STATION_CHECKPOINT Optional single-station checkpoint path; defaults to best/final under weight_path
+#   EVAL_CHECKPOINT    Optional checkpoint path; defaults to full_model_best.pth, then full_model_last.pth
+#   EVAL_SINGLE_STATION_CHECKPOINT Optional single-station checkpoint path; defaults to best/last under weight_path
 #   EVAL_DEVICE        Optional eval device, e.g. cuda:0
 #   EVAL_OUTPUT_TXT    Optional eval stdout/stderr path; defaults to weight_path/eval_results.txt
 #   EVAL_OUTPUT_NPZ    Optional eval npz path; defaults to weight_path/eval_results.npz
@@ -267,12 +267,13 @@ else
 fi
 
 if [[ "$RUN_EVAL" == "1" ]]; then
-    EVAL_CHECKPOINT=${EVAL_CHECKPOINT:-$(python -c 'import glob, os, re, sys
-paths = glob.glob(os.path.join(sys.argv[1], "full_model_*.pth"))
-def epoch(path):
-    m = re.search(r"full_model_(\d+)\.pth$", os.path.basename(path))
-    return int(m.group(1)) if m else -1
-print(max(paths, key=epoch) if paths else "")' "$WEIGHT_DIR")}
+    EVAL_CHECKPOINT=${EVAL_CHECKPOINT:-$(python -c 'import os, sys
+weight_dir = sys.argv[1]
+for name in ("full_model_best.pth", "full_model_last.pth"):
+    path = os.path.join(weight_dir, name)
+    if os.path.isfile(path):
+        print(path)
+        break' "$WEIGHT_DIR")}
     if [[ -z "$EVAL_CHECKPOINT" || ! -f "$EVAL_CHECKPOINT" ]]; then
         echo "Eval checkpoint not found under $WEIGHT_DIR" >&2
         exit 1
@@ -283,8 +284,8 @@ print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enab
     if [[ -z "${EVAL_SINGLE_STATION_CHECKPOINT:-}" && "$SINGLE_STATION_ENABLED" == "1" ]]; then
         if [[ -f "$WEIGHT_DIR/single_station_best.pth" ]]; then
             EVAL_SINGLE_STATION_CHECKPOINT="$WEIGHT_DIR/single_station_best.pth"
-        elif [[ -f "$WEIGHT_DIR/single_station_final.pth" ]]; then
-            EVAL_SINGLE_STATION_CHECKPOINT="$WEIGHT_DIR/single_station_final.pth"
+        elif [[ -f "$WEIGHT_DIR/single_station_last.pth" ]]; then
+            EVAL_SINGLE_STATION_CHECKPOINT="$WEIGHT_DIR/single_station_last.pth"
         else
             echo "Single-station eval checkpoint not found under $WEIGHT_DIR" >&2
             exit 1

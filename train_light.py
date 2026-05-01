@@ -524,7 +524,7 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
     global_step = 0
     best_val = float('inf')
     best_path = os.path.join(weight_path, 'single_station_best.pth')
-    final_path = os.path.join(weight_path, 'single_station_final.pth')
+    last_path = os.path.join(weight_path, 'single_station_last.pth')
     checkpoint_training_params = {
         'checkpoint': checkpoint_params if checkpoint_params is not None else pretrain_params.get('checkpoint', {})
     }
@@ -636,20 +636,20 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
                 scheduler.step(epoch_loss if lr_monitor == 'train' else val_loss)
             else:
                 scheduler.step()
+
+            if (not is_dist) or rank == 0:
+                save_model_checkpoint(
+                    last_path,
+                    raw_model,
+                    epoch=epoch + 1,
+                    training_params=checkpoint_training_params,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    loss=val_loss,
+                    extra={'tasks': tasks},
+                )
             if is_dist:
                 dist.barrier()
-
-        if (not is_dist) or rank == 0:
-            save_model_checkpoint(
-                final_path,
-                raw_model,
-                epoch=num_epochs,
-                training_params=checkpoint_training_params,
-                optimizer=optimizer,
-                scheduler=scheduler,
-                loss=best_val,
-                extra={'tasks': tasks},
-            )
     finally:
         if (not is_dist) or rank == 0:
             export_path, manifest_path = export_scalar_history(
@@ -659,7 +659,7 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
             print(f'[single] Exported scalar history to {export_path} (manifest: {manifest_path})')
             if writer is not None:
                 writer.close()
-    return best_path if os.path.exists(best_path) else final_path
+    return best_path if os.path.exists(best_path) else last_path
 
 
 def select_diverse_event_ids(event_metadata, n, mag_key=None):
@@ -1238,6 +1238,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
     global_step = 0
     steps_per_epoch = 0
     export_dir = os.path.join('logs', training_params['weight_path'])
+    best_val = float('inf')
+    best_path = os.path.join(training_params['weight_path'], f'{save_name}_best.pth')
+    last_path = os.path.join(training_params['weight_path'], f'{save_name}_last.pth')
     try:
         for epoch in range(num_epochs):
             if is_dist and train_sampler is not None:
@@ -1385,12 +1388,10 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 _record_scalar(writer, scalar_history, 'val/epoch_loss', val_loss, epoch)
                 print(f'Validation Loss: {val_loss:.4f}')
 
-                # Save checkpoint
-                filepath = os.path.join(training_params['weight_path'], f'{save_name}_{epoch+1}.pth')
-
-                if epoch % 10 == 0:
+                if val_loss < best_val:
+                    best_val = val_loss
                     save_model_checkpoint(
-                        filepath,
+                        best_path,
                         eval_model,
                         epoch=epoch + 1,
                         training_params={'checkpoint': checkpoint_params or {}},
@@ -1403,6 +1404,16 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 scheduler.step(monitor_loss)
             else:
                 scheduler.step()
+            if (not is_dist) or (is_dist and (rank == 0)):
+                save_model_checkpoint(
+                    last_path,
+                    eval_model,
+                    epoch=epoch + 1,
+                    training_params={'checkpoint': checkpoint_params or {}},
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    loss=val_loss,
+                )
             if is_dist:
                 dist.barrier()
             if epoch_sanity and ((not is_dist) or (is_dist and (rank == 0))):
