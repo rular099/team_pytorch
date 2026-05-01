@@ -724,6 +724,7 @@ def resolve_single_station_checkpoint(config, explicit_path=None):
     weight_path = training_params.get('weight_path', '')
     candidates = [
         os.path.join(weight_path, 'single_station_best.pth'),
+        os.path.join(weight_path, 'single_station_last.pth'),
         os.path.join(weight_path, 'single_station_final.pth'),
     ]
     for path in candidates:
