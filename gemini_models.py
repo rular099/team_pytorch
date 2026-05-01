@@ -728,17 +728,27 @@ class GraphPGAReadout(nn.Module):
     explicit: station nodes send edge-conditioned messages to target nodes.
     """
 
-    def __init__(self, emb_dim, edge_hidden_dim=None, dropout=0.0, k_nearest=None, eps=1e-3):
+    def __init__(self, emb_dim, edge_hidden_dim=None, dropout=0.0, k_nearest=None,
+                 use_station_pga_prior=True, use_distance_baseline=True,
+                 distance_baseline_power=1.0, eps=1e-3):
         super().__init__()
         if edge_hidden_dim is None:
             edge_hidden_dim = emb_dim
         self.emb_dim = emb_dim
         self.edge_hidden_dim = edge_hidden_dim
         self.k_nearest = k_nearest
+        self.use_station_pga_prior = bool(use_station_pga_prior)
+        self.use_distance_baseline = bool(use_distance_baseline)
+        self.distance_baseline_power = float(distance_baseline_power)
         self.eps = eps
 
         self.target_proj = nn.Linear(emb_dim, emb_dim)
         self.station_proj = nn.Linear(emb_dim, emb_dim)
+        self.station_prior_proj = nn.Sequential(
+            nn.Linear(1, emb_dim),
+            nn.GELU(),
+            nn.Linear(emb_dim, emb_dim),
+        ) if self.use_station_pga_prior else None
         self.edge_proj = nn.Sequential(
             nn.Linear(6, edge_hidden_dim),
             nn.GELU(),
@@ -754,6 +764,7 @@ class GraphPGAReadout(nn.Module):
         self.norm = nn.LayerNorm(emb_dim)
         self.dropout = nn.Dropout(dropout)
         self._last_diag = {}
+        self._last_baseline = None
 
     def _edge_features(self, station_coords, target_coords, station_valid, target_valid):
         # station_coords: (B, S, 3), target_coords: (B, T, 3)
@@ -783,7 +794,24 @@ class GraphPGAReadout(nn.Module):
         knn_mask.scatter_(-1, nearest_idx, True)
         return valid_edges & knn_mask
 
-    def _record_diag(self, weights, valid_edges, distances):
+    def _distance_baseline(self, station_prior_values, valid_edges, distances):
+        if (
+            station_prior_values is None
+            or not self.use_station_pga_prior
+            or not self.use_distance_baseline
+        ):
+            return None
+        safe_dist = distances.clamp_min(self.eps)
+        baseline_weights = safe_dist.pow(-self.distance_baseline_power)
+        baseline_weights = baseline_weights.masked_fill(~valid_edges, 0.0)
+        baseline_weights = baseline_weights / baseline_weights.sum(dim=-1, keepdim=True).clamp_min(1e-8)
+        baseline = torch.sum(
+            baseline_weights * station_prior_values[:, None, :].to(baseline_weights.dtype),
+            dim=-1,
+        )
+        return baseline
+
+    def _record_diag(self, weights, valid_edges, distances, station_prior_values=None, baseline=None):
         with torch.no_grad():
             valid_target = valid_edges.any(dim=-1)
             safe_weights = weights.masked_fill(~valid_edges, 0.0)
@@ -799,6 +827,17 @@ class GraphPGAReadout(nn.Module):
                     'graph_pga_top1_distance_mean': top_dist[valid_target].mean().detach(),
                     'graph_pga_valid_edge_ratio': valid_edges.float().mean().detach(),
                 }
+                if station_prior_values is not None:
+                    expanded_prior = station_prior_values[:, None, :].expand_as(weights)
+                    self._last_diag.update({
+                        'graph_pga_station_prior_mean': expanded_prior[valid_edges].mean().detach(),
+                        'graph_pga_station_prior_std': expanded_prior[valid_edges].std(unbiased=False).detach(),
+                    })
+                if baseline is not None:
+                    self._last_diag.update({
+                        'graph_pga_distance_baseline_mean': baseline[valid_target].mean().detach(),
+                        'graph_pga_distance_baseline_std': baseline[valid_target].std(unbiased=False).detach(),
+                    })
             else:
                 nan = weights.new_tensor(float('nan'))
                 self._last_diag = {
@@ -809,13 +848,18 @@ class GraphPGAReadout(nn.Module):
                 }
 
     def forward(self, station_emb, target_emb, station_coords, target_coords,
-                station_valid, target_valid):
+                station_valid, target_valid, station_prior_values=None):
         station_valid = station_valid.bool()
         target_valid = target_valid.bool()
         edge_feat, distances, valid_edges = self._edge_features(
             station_coords, target_coords, station_valid, target_valid
         )
         valid_edges = self._apply_knn_mask(valid_edges, distances)
+
+        if station_prior_values is not None and self.use_station_pga_prior:
+            station_prior_values = station_prior_values * station_valid.to(station_prior_values.dtype)
+            prior_emb = self.station_prior_proj(station_prior_values.unsqueeze(-1))
+            station_emb = station_emb + prior_emb * station_valid.unsqueeze(-1).to(station_emb.dtype)
 
         edge_emb = self.edge_proj(edge_feat)
         score_state = torch.tanh(
@@ -835,7 +879,11 @@ class GraphPGAReadout(nn.Module):
         out = self.norm(target_emb + self.dropout(self.out_proj(message)))
         out = out * target_valid.unsqueeze(-1).to(out.dtype)
 
-        self._record_diag(weights, valid_edges, distances)
+        baseline = self._distance_baseline(station_prior_values, valid_edges, distances)
+        if baseline is not None:
+            baseline = baseline * target_valid.to(baseline.dtype)
+        self._last_baseline = baseline
+        self._record_diag(weights, valid_edges, distances, station_prior_values, baseline)
         return out
 
 
@@ -1306,7 +1354,8 @@ class FullModel(nn.Module):
                  coords_abs_weight=0.1, coord_fusion_mode='add', aux_mag_head=None,
                  output_distribution='mdn', pga_readout_mode='query_transformer',
                  pga_attention_diagnostics=False, pga_mask_sanity_check=False,
-                 graph_pga_readout=None):
+                 graph_pga_readout=None, graph_pga_use_station_prior=True,
+                 graph_pga_use_distance_baseline=True, graph_pga_prior_hidden_dim=None):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1345,6 +1394,9 @@ class FullModel(nn.Module):
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
         self.graph_pga_readout = graph_pga_readout
+        self.graph_pga_use_station_prior = bool(graph_pga_use_station_prior)
+        self.graph_pga_use_distance_baseline = bool(graph_pga_use_distance_baseline)
+        self.station_pga_prior_head = None
         if self.output_distribution not in ('mdn', 'point'):
             raise ValueError(
                 f"output_distribution must be 'mdn' or 'point', got {self.output_distribution!r}."
@@ -1361,6 +1413,13 @@ class FullModel(nn.Module):
             raise ValueError('pga_readout_mode ablations are implemented for point output_distribution.')
         if self.pga_readout_mode == 'graph_message_passing' and self.graph_pga_readout is None:
             raise ValueError('graph_pga_readout must be provided for graph_message_passing mode.')
+        if self.pga_readout_mode == 'graph_message_passing' and self.graph_pga_use_station_prior:
+            self.station_pga_prior_head = SingleStationRegressionHead(
+                emb_dim,
+                hidden_dim=graph_pga_prior_hidden_dim,
+                output_init=0.0,
+                sigma_init=1.0,
+            )
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -1651,6 +1710,15 @@ class FullModel(nn.Module):
         if not self.alternative_coords_embedding:
             self._last_diag['coords_emb_norm'] = self._mean_token_norm(coords_emb).detach()
 
+        station_pga_prior = None
+        if self.station_pga_prior_head is not None:
+            station_pga_prior_out = self.station_pga_prior_head(waveforms_emb)
+            station_pga_prior = station_pga_prior_out[..., 0] * sv.to(waveforms_emb.dtype)
+            valid_prior = station_pga_prior[sv]
+            if valid_prior.numel() > 0:
+                self._last_diag['station_pga_prior_mean'] = valid_prior.mean().detach()
+                self._last_diag['station_pga_prior_std'] = valid_prior.std(unbiased=False).detach()
+
         if not (self.skip_transformer or self.no_event_token):
             emb = self.add_event_token(emb)
 
@@ -1681,6 +1749,7 @@ class FullModel(nn.Module):
                     pga_targets_abs,
                     sv,
                     ptv,
+                    station_prior_values=station_pga_prior,
                 )
                 for key, value in getattr(self.graph_pga_readout, '_last_diag', {}).items():
                     self._last_diag[key] = value
@@ -1763,6 +1832,18 @@ class FullModel(nn.Module):
                     alpha_logits, mu, sigma = self.output_model_pga(pga_emb[:, i, :])
                     pga_out_tmp.append(torch.cat([alpha_logits, mu, sigma], dim=-1))
             output_pga = torch.stack(pga_out_tmp, dim=1)
+            graph_baseline = None
+            if self.pga_readout_mode == 'graph_message_passing' and self.graph_pga_use_distance_baseline:
+                graph_baseline = getattr(self.graph_pga_readout, '_last_baseline', None)
+            if graph_baseline is not None:
+                if self.output_distribution != 'point':
+                    raise RuntimeError('Graph PGA distance baseline is implemented for point outputs only.')
+                output_pga = output_pga.clone()
+                output_pga[..., 0] = output_pga[..., 0] + graph_baseline.to(output_pga.dtype)
+                valid_baseline = graph_baseline[pga_target_valid.bool()]
+                if valid_baseline.numel() > 0:
+                    self._last_diag['pga_distance_baseline_mean'] = valid_baseline.mean().detach()
+                    self._last_diag['pga_distance_baseline_std'] = valid_baseline.std(unbiased=False).detach()
             outputs.append(output_pga)
 
         if self.dataset_bias:
@@ -1962,6 +2043,10 @@ def build_transformer_model(max_stations,
                             graph_pga_hidden_dim=None,
                             graph_pga_dropout=0.0,
                             graph_pga_k_nearest=None,
+                            graph_pga_use_station_prior=True,
+                            graph_pga_use_distance_baseline=True,
+                            graph_pga_distance_baseline_power=1.0,
+                            graph_pga_prior_hidden_dim=None,
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -2064,6 +2149,9 @@ def build_transformer_model(max_stations,
             edge_hidden_dim=graph_pga_hidden_dim,
             dropout=graph_pga_dropout,
             k_nearest=graph_pga_k_nearest,
+            use_station_pga_prior=graph_pga_use_station_prior,
+            use_distance_baseline=graph_pga_use_distance_baseline,
+            distance_baseline_power=graph_pga_distance_baseline_power,
         )
 
     full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
@@ -2084,7 +2172,10 @@ def build_transformer_model(max_stations,
                              pga_readout_mode=pga_readout_mode,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check,
-                             graph_pga_readout=graph_pga_module)
+                             graph_pga_readout=graph_pga_module,
+                             graph_pga_use_station_prior=graph_pga_use_station_prior,
+                             graph_pga_use_distance_baseline=graph_pga_use_distance_baseline,
+                             graph_pga_prior_hidden_dim=graph_pga_prior_hidden_dim)
     return full_model
 
 

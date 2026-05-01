@@ -369,7 +369,8 @@ def load_model_state_dict_compatible(model, state_dict, strict=True, context='ch
 
 
 def load_station_pretrain_weights(full_model, weights_path, device='cpu',
-                                  load_encoder=False, load_scale=True, load_layernorm=True):
+                                  load_encoder=False, load_scale=True, load_layernorm=True,
+                                  load_pga_prior_head=True):
     """Load representation weights from a single-station pretrain checkpoint."""
     raw_model = full_model.module if hasattr(full_model, 'module') else full_model
     state_dict = _state_dict_from_checkpoint(weights_path, device)
@@ -387,6 +388,15 @@ def load_station_pretrain_weights(full_model, weights_path, device='cpu',
         for key, value in state_dict.items()
         if key in exact or any(key.startswith(prefix) for prefix in prefixes)
     }
+    if load_pga_prior_head and getattr(raw_model, 'station_pga_prior_head', None) is not None:
+        prior_prefix = 'station_pga_prior_head.'
+        raw_state = raw_model.state_dict()
+        for key, value in state_dict.items():
+            if not key.startswith('heads.pga.'):
+                continue
+            mapped_key = prior_prefix + key[len('heads.pga.'):]
+            if mapped_key in raw_state and raw_state[mapped_key].shape == value.shape:
+                filtered[mapped_key] = value
     if not filtered:
         raise ValueError(f'No station pretrain weights matched expected prefixes in {weights_path}')
     missing, unexpected = raw_model.load_state_dict(filtered, strict=False)
@@ -1285,6 +1295,11 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         'grad/output_model_pga': module_grad_norm(eval_model.output_model_pga),
                         'grad_rms/output_model_pga': module_grad_rms(eval_model.output_model_pga),
                     }
+                    if getattr(eval_model, 'station_pga_prior_head', None) is not None:
+                        grad_targets.update({
+                            'grad/station_pga_prior_head': module_grad_norm(eval_model.station_pga_prior_head),
+                            'grad_rms/station_pga_prior_head': module_grad_rms(eval_model.station_pga_prior_head),
+                        })
                     if pre_clip_global_grad is not None and not torch.isnan(pre_clip_global_grad).any():
                         diag_scalars['grad/global_pre_clip_norm'] = pre_clip_global_grad.detach()
                     for key, value in grad_targets.items():
@@ -2111,6 +2126,7 @@ if __name__ == '__main__':
                 load_encoder=training_params.get('station_pretrain_load_encoder', False),
                 load_scale=training_params.get('station_pretrain_load_scale', True),
                 load_layernorm=training_params.get('station_pretrain_load_layernorm', True),
+                load_pga_prior_head=training_params.get('station_pretrain_load_pga_prior_head', True),
             )
 
         no_event_token = config['model_params'].get('no_event_token', False)
