@@ -18,9 +18,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pick_mode", choices=["trigger_repair", "travel_time"], default="travel_time", help="Coarse P-pick source before STA/LTA refinement.")
     parser.add_argument("--final_pick", choices=["travel_time", "stalta", "diting_acc", "diting_vel"], default="stalta", help="Pick source stored in p_picks for training.")
     parser.add_argument("--p_velocity_km_s", type=float, default=6.0, help="P-wave velocity for --pick_mode travel_time.")
+    parser.add_argument("--p_velocity_min_km_s", type=float, default=3.0, help="Lower P-wave velocity bound; defines the late edge of the pick search range.")
+    parser.add_argument("--p_velocity_max_km_s", type=float, default=8.0, help="Upper P-wave velocity bound; defines the early edge of the pick search range.")
     parser.add_argument("--travel_time_intercept_s", type=float, default=0.0, help="Constant offset added to distance / velocity.")
-    parser.add_argument("--stalta_pre_seconds", type=float, default=10.0, help="Seconds before coarse pick searched by STA/LTA.")
-    parser.add_argument("--stalta_post_seconds", type=float, default=10.0, help="Seconds after coarse pick searched by STA/LTA.")
+    parser.add_argument("--stalta_pre_seconds", type=float, default=10.0, help="Fallback seconds before coarse pick searched by STA/LTA when no velocity search range exists.")
+    parser.add_argument("--stalta_post_seconds", type=float, default=10.0, help="Fallback seconds after coarse pick searched by STA/LTA when no velocity search range exists.")
     parser.add_argument("--stalta_sta_seconds", type=float, default=0.2, help="STA window length in seconds.")
     parser.add_argument("--stalta_lta_seconds", type=float, default=1.0, help="LTA window length in seconds.")
     parser.add_argument("--stalta_threshold_ratio", type=float, default=2.5, help="STA/LTA threshold ratio.")
@@ -34,7 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--diting_p_th", type=float, default=0.1)
     parser.add_argument("--diting_s_th", type=float, default=0.1)
     parser.add_argument("--diting_d_th", type=float, default=0.3)
-    parser.add_argument("--diting_target_half_window_seconds", type=float, default=10.0, help="Coarse pick +/- this window is sent to DiTing.")
+    parser.add_argument("--diting_target_half_window_seconds", type=float, default=10.0, help="Fallback coarse pick +/- window sent to DiTing when no velocity search range exists.")
     parser.add_argument("--diting_window_seconds", type=float, default=100.0, help="DiTing model input length; the target window is placed at the tail.")
     parser.add_argument("--velocity_highpass_hz", type=float, default=0.05, help="High-pass before acceleration integration.")
     parser.add_argument("--diagnostics_dir", default=None, help="Directory for pick statistics and waveform QC plots. Defaults to output_dir/diagnostics_{year}.")
@@ -79,6 +81,8 @@ def main():
             pick_mode=args.pick_mode,
             final_pick=args.final_pick,
             p_velocity_km_s=args.p_velocity_km_s,
+            p_velocity_min_km_s=args.p_velocity_min_km_s,
+            p_velocity_max_km_s=args.p_velocity_max_km_s,
             travel_time_intercept_s=args.travel_time_intercept_s,
             stalta_pre_seconds=args.stalta_pre_seconds,
             stalta_post_seconds=args.stalta_post_seconds,

@@ -585,6 +585,8 @@ def apply_repaired_and_refined_p_picks(
     velocity_highpass_hz: float = 0.05,
     threshold_seconds: float = 3.0,
     default_velocity_km_s: float = 6.0,
+    min_velocity_km_s: float | None = None,
+    max_velocity_km_s: float | None = None,
     travel_time_intercept_s: float = 0.0,
     min_margin_seconds: float = 0.5,
     stalta_pre_seconds: float = 4.0,
@@ -606,6 +608,8 @@ def apply_repaired_and_refined_p_picks(
         repaired_df, fit_summary = estimate_event_travel_time_p_picks(
             station_df,
             p_velocity_km_s=default_velocity_km_s,
+            min_velocity_km_s=min_velocity_km_s,
+            max_velocity_km_s=max_velocity_km_s,
             travel_time_intercept_s=travel_time_intercept_s,
             threshold_seconds=threshold_seconds,
             min_margin_seconds=min_margin_seconds,
@@ -624,6 +628,8 @@ def apply_repaired_and_refined_p_picks(
         lta_seconds=stalta_lta_seconds,
         threshold_ratio=stalta_threshold_ratio,
         feature=stalta_feature,
+        search_left_col="p_pick_search_left_aligned",
+        search_right_col="p_pick_search_right_aligned",
     )
     refined_df["p_pick_trigger_aligned"] = refined_df["p_pick_observed_aligned"].astype(np.int64)
     refined_df["p_pick_refined_aligned"] = refined_df["stalta_refined_pick_aligned"].astype(np.int64)
@@ -647,6 +653,8 @@ def apply_repaired_and_refined_p_picks(
             target_half_window_seconds=diting_target_half_window_seconds,
             model_window_seconds=diting_window_seconds,
             velocity_highpass_hz=velocity_highpass_hz,
+            search_left_col="p_pick_search_left_aligned",
+            search_right_col="p_pick_search_right_aligned",
         )
         datasets["p_pick_diting_acc_aligned"] = refined_df["p_pick_diting_acc_aligned"].fillna(refined_df["p_pick_repaired_aligned"]).to_numpy(dtype=np.int64)
         datasets["p_pick_diting_vel_aligned"] = refined_df["p_pick_diting_vel_aligned"].fillna(refined_df["p_pick_repaired_aligned"]).to_numpy(dtype=np.int64)
@@ -675,11 +683,19 @@ def apply_repaired_and_refined_p_picks(
     datasets["p_pick_trigger_aligned"] = refined_df["p_pick_trigger_aligned"].to_numpy(dtype=np.int64)
     datasets["p_pick_repaired_aligned"] = refined_df["p_pick_repaired_aligned"].to_numpy(dtype=np.int64)
     datasets["p_pick_refined_aligned"] = refined_df["p_pick_refined_aligned"].to_numpy(dtype=np.int64)
+    for col in (
+        "p_pick_search_left_aligned",
+        "p_pick_search_right_aligned",
+        "p_pick_travel_time_fast_aligned",
+        "p_pick_travel_time_slow_aligned",
+    ):
+        if col in refined_df.columns:
+            datasets[col] = refined_df[col].to_numpy(dtype=np.int64)
     datasets["p_picks"] = datasets["p_pick_refined_aligned"]
     datasets["trigger_is_pick"] = refined_df["trigger_is_pick"].to_numpy(dtype=np.int8)
     datasets["p_pick_repaired_source"] = refined_df["p_pick_repaired_source"].to_numpy(dtype=object)
     datasets["p_pick_refined_source"] = refined_df["p_pick_refined_source"].to_numpy(dtype=object)
-    datasets["p_pick_refine_method"] = refined_df["stalta_method"].to_numpy(dtype=object)
+    datasets["p_pick_refine_method"] = refined_df["p_pick_refine_method"].to_numpy(dtype=object)
     datasets["stalta_ratio_peak"] = refined_df["stalta_ratio_peak"].to_numpy(dtype=np.float64)
     datasets["stalta_ratio_at_pick"] = refined_df["stalta_ratio_at_pick"].to_numpy(dtype=np.float64)
     datasets["stalta_search_left_aligned"] = refined_df["stalta_search_left_aligned"].to_numpy(dtype=np.int64)
@@ -692,6 +708,8 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_Mode": pick_mode,
             "P_Pick_Final_Source": final_pick,
             "P_Pick_Fit_Default_Velocity_Km_S": float(default_velocity_km_s),
+            "P_Pick_Search_Min_Velocity_Km_S": float(fit_summary.get("min_velocity_km_s", default_velocity_km_s)),
+            "P_Pick_Search_Max_Velocity_Km_S": float(fit_summary.get("max_velocity_km_s", default_velocity_km_s)),
             "P_Pick_Fit_Velocity_Km_S": float(fit_summary["velocity_km_s"]),
             "P_Pick_Fit_Slope_S_Per_Km": float(fit_summary["slope_s_per_km"]),
             "P_Pick_Fit_Intercept_S": float(fit_summary["intercept_s"]),
@@ -734,18 +752,28 @@ def prepare_diting_input_window(
     model_window_seconds: float = 100.0,
     mode: str = "velocity",
     velocity_highpass_hz: float = 0.05,
+    search_left_aligned: int | None = None,
+    search_right_aligned: int | None = None,
 ) -> tuple[np.ndarray, int, int]:
     target_fs = 100.0
     if not math.isclose(sampling_rate_hz, target_fs):
         waveform = _resample_waveform(waveform_aligned_mps2, raw_fs=sampling_rate_hz, target_fs=target_fs)
         coarse_pick = int(round(coarse_pick_aligned * target_fs / sampling_rate_hz))
+        search_left = None if search_left_aligned is None else int(round(search_left_aligned * target_fs / sampling_rate_hz))
+        search_right = None if search_right_aligned is None else int(round(search_right_aligned * target_fs / sampling_rate_hz))
     else:
         waveform = waveform_aligned_mps2.copy()
         coarse_pick = int(coarse_pick_aligned)
+        search_left = search_left_aligned
+        search_right = search_right_aligned
 
-    half = int(round(target_half_window_seconds * target_fs))
-    crop_start = max(0, coarse_pick - half)
-    crop_end = min(waveform.shape[0], coarse_pick + half)
+    if search_left is not None and search_right is not None:
+        crop_start = max(0, min(int(search_left), int(search_right)))
+        crop_end = min(waveform.shape[0], max(int(search_left), int(search_right)) + 1)
+    else:
+        half = int(round(target_half_window_seconds * target_fs))
+        crop_start = max(0, coarse_pick - half)
+        crop_end = min(waveform.shape[0], coarse_pick + half)
     crop = waveform[crop_start:crop_end].astype(np.float64, copy=False)
     if crop.size:
         crop = detrend(crop, axis=0, type="linear")
@@ -768,9 +796,11 @@ def prepare_diting_input_window(
         tail_start = max(0, model_n - crop.shape[0])
         copy_n = min(crop.shape[0], model_n)
         window[tail_start:tail_start + copy_n, :] = crop[-copy_n:]
+        placed_start = crop_start + crop.shape[0] - copy_n
     else:
         tail_start = model_n
-    return window, crop_start, tail_start
+        placed_start = crop_start
+    return window, placed_start, tail_start
 
 
 def run_diting_single_station(
@@ -853,6 +883,8 @@ def add_diting_picks_to_event(
     target_half_window_seconds: float,
     model_window_seconds: float,
     velocity_highpass_hz: float,
+    search_left_col: str | None = None,
+    search_right_col: str | None = None,
 ) -> pd.DataFrame:
     df = event_df.copy().reset_index(drop=True)
     for col in (
@@ -876,6 +908,8 @@ def add_diting_picks_to_event(
             waveform[valid_end:] = 0.0
 
         coarse_pick = int(row[coarse_pick_col])
+        search_left = int(row[search_left_col]) if search_left_col and search_left_col in df.columns and pd.notna(row[search_left_col]) else None
+        search_right = int(row[search_right_col]) if search_right_col and search_right_col in df.columns and pd.notna(row[search_right_col]) else None
         for mode, suffix in (("acceleration", "acc"), ("velocity", "vel")):
             try:
                 window, crop_start, tail_start = prepare_diting_input_window(
@@ -886,6 +920,8 @@ def add_diting_picks_to_event(
                     model_window_seconds=model_window_seconds,
                     mode=mode,
                     velocity_highpass_hz=velocity_highpass_hz,
+                    search_left_aligned=search_left,
+                    search_right_aligned=search_right,
                 )
                 pred_idx, score = run_diting_single_station(
                     model=model,
@@ -899,6 +935,11 @@ def add_diting_picks_to_event(
                 )
                 if not np.isfinite(pred_idx):
                     df.loc[idx, f"diting_{suffix}_error"] = "no_p_pick"
+                    continue
+                model_n = int(round(model_window_seconds * 100.0))
+                crop_n = model_n - tail_start
+                if pred_idx < tail_start or pred_idx >= tail_start + crop_n:
+                    df.loc[idx, f"diting_{suffix}_error"] = "p_pick_outside_search_window"
                     continue
                 aligned_pick_100hz = crop_start + int(round(pred_idx - tail_start))
                 aligned_pick = int(round(aligned_pick_100hz * sampling_rate_hz / 100.0))
@@ -973,6 +1014,26 @@ def write_pick_diagnostics(
 
     summary_df = pd.DataFrame(summary_rows)
     summary_df.to_csv(diagnostics_dir / "pick_difference_summary.csv", index=False)
+    if "p_pick_search_left_aligned" in out_df.columns and "p_pick_search_right_aligned" in out_df.columns:
+        range_width_s = (
+            pd.to_numeric(out_df["p_pick_search_right_aligned"], errors="coerce")
+            - pd.to_numeric(out_df["p_pick_search_left_aligned"], errors="coerce")
+        ) / sr
+        out_df["p_pick_search_width_s"] = range_width_s
+        finite_width = range_width_s[np.isfinite(range_width_s)]
+        pd.DataFrame(
+            [
+                {
+                    "count": int(finite_width.size),
+                    "mean_width_s": float(finite_width.mean()) if finite_width.size else np.nan,
+                    "median_width_s": float(finite_width.median()) if finite_width.size else np.nan,
+                    "p05_width_s": float(finite_width.quantile(0.05)) if finite_width.size else np.nan,
+                    "p95_width_s": float(finite_width.quantile(0.95)) if finite_width.size else np.nan,
+                    "min_width_s": float(finite_width.min()) if finite_width.size else np.nan,
+                    "max_width_s": float(finite_width.max()) if finite_width.size else np.nan,
+                }
+            ]
+        ).to_csv(diagnostics_dir / "pick_search_range_summary.csv", index=False)
     out_df.to_csv(diagnostics_dir / "station_pick_differences.csv", index=False)
 
     try:
@@ -1084,6 +1145,15 @@ def write_pick_diagnostics(
             axes[1].set_ylabel("norm m/s^2")
             axes[1].set_xlabel("seconds relative to final pick")
 
+            if "p_pick_search_left_aligned" in row_dict and "p_pick_search_right_aligned" in row_dict:
+                search_left = row_dict["p_pick_search_left_aligned"]
+                search_right = row_dict["p_pick_search_right_aligned"]
+                if np.isfinite(search_left) and np.isfinite(search_right):
+                    x0 = (float(min(search_left, search_right)) - center) / sr_hz
+                    x1 = (float(max(search_left, search_right)) - center) / sr_hz
+                    for ax in axes:
+                        ax.axvspan(x0, x1, color="tab:blue", alpha=0.12, label="velocity_range")
+
             for col, color in colors.items():
                 if col not in row_dict:
                     continue
@@ -1137,6 +1207,8 @@ def build_year_dataset(
     pick_mode: str = "trigger_repair",
     final_pick: str = "stalta",
     p_velocity_km_s: float = 6.0,
+    p_velocity_min_km_s: float | None = None,
+    p_velocity_max_km_s: float | None = None,
     travel_time_intercept_s: float = 0.0,
     stalta_pre_seconds: float = 4.0,
     stalta_post_seconds: float = 1.0,
@@ -1229,6 +1301,8 @@ def build_year_dataset(
                 diting_window_seconds=diting_window_seconds,
                 velocity_highpass_hz=velocity_highpass_hz,
                 default_velocity_km_s=p_velocity_km_s,
+                min_velocity_km_s=p_velocity_min_km_s,
+                max_velocity_km_s=p_velocity_max_km_s,
                 travel_time_intercept_s=travel_time_intercept_s,
                 stalta_pre_seconds=stalta_pre_seconds,
                 stalta_post_seconds=stalta_post_seconds,
@@ -1514,6 +1588,8 @@ def estimate_event_repaired_p_picks(
 def estimate_event_travel_time_p_picks(
     event_df: pd.DataFrame,
     p_velocity_km_s: float = 6.0,
+    min_velocity_km_s: float | None = None,
+    max_velocity_km_s: float | None = None,
     travel_time_intercept_s: float = 0.0,
     threshold_seconds: float = 3.0,
     min_margin_seconds: float = 0.5,
@@ -1550,9 +1626,30 @@ def estimate_event_travel_time_p_picks(
 
     observed_abs_ts = global_start_ts + df["p_pick_aligned"].to_numpy(dtype=np.float64) / sampling_rate_hz
     observed_tp_seconds = observed_abs_ts - origin_ts
-    predicted_tp_seconds = float(travel_time_intercept_s) + df["hypocentral_distance_km"].to_numpy(dtype=np.float64) / float(p_velocity_km_s)
+    if min_velocity_km_s is None:
+        min_velocity_km_s = p_velocity_km_s
+    if max_velocity_km_s is None:
+        max_velocity_km_s = p_velocity_km_s
+    min_velocity_km_s = float(min_velocity_km_s)
+    max_velocity_km_s = float(max_velocity_km_s)
+    if min_velocity_km_s <= 0 or max_velocity_km_s <= 0:
+        raise ValueError("Velocity bounds must be positive")
+    if min_velocity_km_s > max_velocity_km_s:
+        min_velocity_km_s, max_velocity_km_s = max_velocity_km_s, min_velocity_km_s
+    if not (min_velocity_km_s <= float(p_velocity_km_s) <= max_velocity_km_s):
+        raise ValueError(
+            f"p_velocity_km_s ({p_velocity_km_s}) must be within "
+            f"[{min_velocity_km_s}, {max_velocity_km_s}]"
+        )
+
+    distances = df["hypocentral_distance_km"].to_numpy(dtype=np.float64)
+    predicted_tp_seconds = float(travel_time_intercept_s) + distances / float(p_velocity_km_s)
+    fast_tp_seconds = float(travel_time_intercept_s) + distances / max_velocity_km_s
+    slow_tp_seconds = float(travel_time_intercept_s) + distances / min_velocity_km_s
     predicted_abs_ts = origin_ts + predicted_tp_seconds
     predicted_aligned = np.rint((predicted_abs_ts - global_start_ts) * sampling_rate_hz).astype(np.int64)
+    fast_aligned = np.rint((origin_ts + fast_tp_seconds - global_start_ts) * sampling_rate_hz).astype(np.int64)
+    slow_aligned = np.rint((origin_ts + slow_tp_seconds - global_start_ts) * sampling_rate_hz).astype(np.int64)
 
     pga_margin_samples = int(round(min_margin_seconds * sampling_rate_hz))
     record_start = df["record_start_sample"].to_numpy(dtype=np.int64)
@@ -1561,11 +1658,27 @@ def estimate_event_travel_time_p_picks(
     max_allowed = np.minimum(valid_end, df["pga_norm_aligned_loc"].to_numpy(dtype=np.int64) - pga_margin_samples)
     max_allowed = np.maximum(max_allowed, record_start)
     repaired_aligned = np.clip(predicted_aligned, record_start, max_allowed).astype(np.int64)
+    search_left = np.clip(np.minimum(fast_aligned, slow_aligned), record_start, valid_end).astype(np.int64)
+    search_right = np.clip(np.maximum(fast_aligned, slow_aligned), record_start, valid_end).astype(np.int64)
+    swapped = search_left > search_right
+    if np.any(swapped):
+        tmp = search_left.copy()
+        search_left[swapped] = search_right[swapped]
+        search_right[swapped] = tmp[swapped]
 
     df["p_pick_observed_aligned"] = df["p_pick_aligned"].astype(np.int64)
     df["p_pick_observed_seconds_after_origin"] = observed_tp_seconds
     df["p_pick_predicted_aligned"] = predicted_aligned
     df["p_pick_predicted_seconds_after_origin"] = predicted_tp_seconds
+    df["p_pick_travel_time_fast_aligned"] = fast_aligned
+    df["p_pick_travel_time_slow_aligned"] = slow_aligned
+    df["p_pick_travel_time_fast_seconds_after_origin"] = fast_tp_seconds
+    df["p_pick_travel_time_slow_seconds_after_origin"] = slow_tp_seconds
+    df["p_pick_search_left_aligned"] = search_left
+    df["p_pick_search_right_aligned"] = search_right
+    df["p_pick_search_left_seconds_after_origin"] = global_start_ts + search_left.astype(np.float64) / sampling_rate_hz - origin_ts
+    df["p_pick_search_right_seconds_after_origin"] = global_start_ts + search_right.astype(np.float64) / sampling_rate_hz - origin_ts
+    df["p_pick_search_width_seconds"] = (search_right - search_left) / sampling_rate_hz
     df["p_pick_repaired_aligned"] = repaired_aligned
     df["p_pick_repaired_source"] = np.where(predicted_aligned == repaired_aligned, "travel_time", "travel_time_clipped")
     df["p_pick_repaired_seconds_after_origin"] = (
@@ -1575,6 +1688,8 @@ def estimate_event_travel_time_p_picks(
     fit_summary = {
         "threshold_seconds": float(threshold_seconds),
         "default_velocity_km_s": float(p_velocity_km_s),
+        "min_velocity_km_s": float(min_velocity_km_s),
+        "max_velocity_km_s": float(max_velocity_km_s),
         "velocity_km_s": float(p_velocity_km_s),
         "slope_s_per_km": float(1.0 / float(p_velocity_km_s)),
         "intercept_s": float(travel_time_intercept_s),
@@ -1598,6 +1713,8 @@ def refine_pick_stalta(
     sampling_rate_hz: float,
     record_start_sample: int = 0,
     valid_n_samples: int | None = None,
+    search_left_aligned: int | None = None,
+    search_right_aligned: int | None = None,
     pre_seconds: float = 4.0,
     post_seconds: float = 1.0,
     sta_seconds: float = 0.2,
@@ -1623,8 +1740,14 @@ def refine_pick_stalta(
         }
 
     coarse_rel = int(np.clip(coarse_pick_aligned - start, 0, max(0, valid.shape[0] - 1)))
-    left = max(0, coarse_rel - int(round(pre_seconds * sampling_rate_hz)))
-    right = min(valid.shape[0], coarse_rel + int(round(post_seconds * sampling_rate_hz)) + 1)
+    if search_left_aligned is not None and search_right_aligned is not None:
+        left_abs = min(int(search_left_aligned), int(search_right_aligned))
+        right_abs = max(int(search_left_aligned), int(search_right_aligned))
+        left = int(np.clip(left_abs - start, 0, max(0, valid.shape[0] - 1)))
+        right = int(np.clip(right_abs - start + 1, left + 1, valid.shape[0]))
+    else:
+        left = max(0, coarse_rel - int(round(pre_seconds * sampling_rate_hz)))
+        right = min(valid.shape[0], coarse_rel + int(round(post_seconds * sampling_rate_hz)) + 1)
 
     if feature == "vertical":
         char = np.abs(valid[:, 2])
@@ -1677,6 +1800,8 @@ def refine_event_p_picks_from_arrays(
     lta_seconds: float = 1.0,
     threshold_ratio: float = 0.2,
     feature: str = "vertical",
+    search_left_col: str | None = None,
+    search_right_col: str | None = None,
 ) -> pd.DataFrame:
     if event_df.empty:
         raise ValueError("event_df must not be empty")
@@ -1687,12 +1812,16 @@ def refine_event_p_picks_from_arrays(
     refined_rows = []
     for _, row in df.iterrows():
         wave_idx = int(row["wave_idx"])
+        search_left = int(row[search_left_col]) if search_left_col and search_left_col in df.columns and pd.notna(row[search_left_col]) else None
+        search_right = int(row[search_right_col]) if search_right_col and search_right_col in df.columns and pd.notna(row[search_right_col]) else None
         refined = refine_pick_stalta(
             waveform_aligned=waveforms[wave_idx],
             coarse_pick_aligned=int(row[coarse_pick_col]),
             sampling_rate_hz=sampling_rate_hz,
             record_start_sample=int(record_start_sample[wave_idx]),
             valid_n_samples=int(valid_n_samples[wave_idx]),
+            search_left_aligned=search_left,
+            search_right_aligned=search_right,
             pre_seconds=pre_seconds,
             post_seconds=post_seconds,
             sta_seconds=sta_seconds,
