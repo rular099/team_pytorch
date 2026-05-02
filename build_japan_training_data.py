@@ -15,6 +15,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target_sampling_rate", type=float, default=100.0, help="Target sampling rate in Hz.")
     parser.add_argument("--limit_events", type=int, default=None, help="Optional cap on the number of outer event archives per year.")
     parser.add_argument("--compression_level", type=int, default=4, help="gzip compression level for output HDF5.")
+    parser.add_argument("--pick_mode", choices=["trigger_repair", "travel_time"], default="travel_time", help="Coarse P-pick source before STA/LTA refinement.")
+    parser.add_argument("--p_velocity_km_s", type=float, default=6.0, help="P-wave velocity for --pick_mode travel_time.")
+    parser.add_argument("--travel_time_intercept_s", type=float, default=0.0, help="Constant offset added to distance / velocity.")
+    parser.add_argument("--stalta_pre_seconds", type=float, default=10.0, help="Seconds before coarse pick searched by STA/LTA.")
+    parser.add_argument("--stalta_post_seconds", type=float, default=10.0, help="Seconds after coarse pick searched by STA/LTA.")
+    parser.add_argument("--stalta_sta_seconds", type=float, default=0.2, help="STA window length in seconds.")
+    parser.add_argument("--stalta_lta_seconds", type=float, default=1.0, help="LTA window length in seconds.")
+    parser.add_argument("--stalta_threshold_ratio", type=float, default=2.5, help="STA/LTA threshold ratio.")
+    parser.add_argument("--stalta_feature", choices=["vertical", "norm"], default="vertical", help="STA/LTA characteristic function.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output files.")
     return parser.parse_args()
 
@@ -50,6 +59,15 @@ def main():
             min_stations=args.min_stations,
             limit_events=args.limit_events,
             compression_level=args.compression_level,
+            pick_mode=args.pick_mode,
+            p_velocity_km_s=args.p_velocity_km_s,
+            travel_time_intercept_s=args.travel_time_intercept_s,
+            stalta_pre_seconds=args.stalta_pre_seconds,
+            stalta_post_seconds=args.stalta_post_seconds,
+            stalta_sta_seconds=args.stalta_sta_seconds,
+            stalta_lta_seconds=args.stalta_lta_seconds,
+            stalta_threshold_ratio=args.stalta_threshold_ratio,
+            stalta_feature=args.stalta_feature,
         )
 
         print(f"\nYear {year} complete")

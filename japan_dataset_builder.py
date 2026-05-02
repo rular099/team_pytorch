@@ -569,8 +569,10 @@ def apply_repaired_and_refined_p_picks(
     event_meta: dict[str, object],
     station_rows: list[dict[str, object]],
     datasets: dict[str, np.ndarray | object],
+    pick_mode: str = "trigger_repair",
     threshold_seconds: float = 3.0,
     default_velocity_km_s: float = 6.0,
+    travel_time_intercept_s: float = 0.0,
     min_margin_seconds: float = 0.5,
     stalta_pre_seconds: float = 4.0,
     stalta_post_seconds: float = 1.0,
@@ -580,12 +582,23 @@ def apply_repaired_and_refined_p_picks(
     stalta_feature: str = "vertical",
 ) -> tuple[dict[str, np.ndarray | object], dict[str, object], pd.DataFrame]:
     station_df = pd.DataFrame(station_rows)
-    repaired_df, fit_summary = estimate_event_repaired_p_picks(
-        station_df,
-        threshold_seconds=threshold_seconds,
-        default_velocity_km_s=default_velocity_km_s,
-        min_margin_seconds=min_margin_seconds,
-    )
+    if pick_mode == "trigger_repair":
+        repaired_df, fit_summary = estimate_event_repaired_p_picks(
+            station_df,
+            threshold_seconds=threshold_seconds,
+            default_velocity_km_s=default_velocity_km_s,
+            min_margin_seconds=min_margin_seconds,
+        )
+    elif pick_mode == "travel_time":
+        repaired_df, fit_summary = estimate_event_travel_time_p_picks(
+            station_df,
+            p_velocity_km_s=default_velocity_km_s,
+            travel_time_intercept_s=travel_time_intercept_s,
+            threshold_seconds=threshold_seconds,
+            min_margin_seconds=min_margin_seconds,
+        )
+    else:
+        raise ValueError(f"Unsupported pick_mode: {pick_mode}")
     refined_df = refine_event_p_picks_from_arrays(
         event_df=repaired_df,
         waveforms=np.asarray(datasets["waveforms"]),
@@ -621,11 +634,13 @@ def apply_repaired_and_refined_p_picks(
     event_meta.update(
         {
             "P_Pick_Trigger_Threshold_S": float(threshold_seconds),
+            "P_Pick_Mode": pick_mode,
             "P_Pick_Fit_Default_Velocity_Km_S": float(default_velocity_km_s),
             "P_Pick_Fit_Velocity_Km_S": float(fit_summary["velocity_km_s"]),
             "P_Pick_Fit_Slope_S_Per_Km": float(fit_summary["slope_s_per_km"]),
             "P_Pick_Fit_Intercept_S": float(fit_summary["intercept_s"]),
             "P_Pick_Fit_N_Trusted": int(fit_summary["n_trusted"]),
+            "P_Pick_Fit_N_Clipped": int(fit_summary.get("n_clipped", 0)),
             "P_Pick_STA_Pre_S": float(stalta_pre_seconds),
             "P_Pick_STA_Post_S": float(stalta_post_seconds),
             "P_Pick_STA_STA_S": float(stalta_sta_seconds),
@@ -665,6 +680,15 @@ def build_year_dataset(
     min_stations: int = 3,
     limit_events: int | None = None,
     compression_level: int = 4,
+    pick_mode: str = "trigger_repair",
+    p_velocity_km_s: float = 6.0,
+    travel_time_intercept_s: float = 0.0,
+    stalta_pre_seconds: float = 4.0,
+    stalta_post_seconds: float = 1.0,
+    stalta_sta_seconds: float = 0.2,
+    stalta_lta_seconds: float = 1.0,
+    stalta_threshold_ratio: float = 0.2,
+    stalta_feature: str = "vertical",
 ) -> dict[str, int]:
     year_dir = waveform_root / str(year)
     outer_archives = sorted(year_dir.glob("*.tar"))
@@ -713,6 +737,15 @@ def build_year_dataset(
                 event_meta=event_meta,
                 station_rows=event_station_rows,
                 datasets=datasets,
+                pick_mode=pick_mode,
+                default_velocity_km_s=p_velocity_km_s,
+                travel_time_intercept_s=travel_time_intercept_s,
+                stalta_pre_seconds=stalta_pre_seconds,
+                stalta_post_seconds=stalta_post_seconds,
+                stalta_sta_seconds=stalta_sta_seconds,
+                stalta_lta_seconds=stalta_lta_seconds,
+                stalta_threshold_ratio=stalta_threshold_ratio,
+                stalta_feature=stalta_feature,
             )
             event_rows.append(event_meta)
             station_rows.extend(refined_station_df.to_dict(orient="records"))
@@ -977,6 +1010,80 @@ def estimate_event_repaired_p_picks(
     }
     if fit["n_obs"]:
         fit_summary["residual_mad_s"] = float(np.median(np.abs(np.asarray(fit["residuals"]) - np.median(np.asarray(fit["residuals"])))))
+    return df, fit_summary
+
+
+def estimate_event_travel_time_p_picks(
+    event_df: pd.DataFrame,
+    p_velocity_km_s: float = 6.0,
+    travel_time_intercept_s: float = 0.0,
+    threshold_seconds: float = 3.0,
+    min_margin_seconds: float = 0.5,
+) -> tuple[pd.DataFrame, dict[str, float | int]]:
+    if event_df.empty:
+        raise ValueError("event_df must not be empty")
+
+    df = event_df.copy().reset_index(drop=True)
+    sampling_rate_hz = float(df["sampling_rate_hz"].iloc[0])
+    origin_raw = str(df["Origin_Time(JST)"].iloc[0])
+    _, origin_ts = parse_jst_timestamp(origin_raw)
+    global_start_ts = pd.to_datetime(df["record_start_time_jst"], utc=True).min().timestamp()
+
+    distances_km = []
+    for _, row in df.iterrows():
+        distances_km.append(
+            hypocentral_distance_km(
+                event_lat=float(row["Latitude"]),
+                event_lon=float(row["Longitude"]),
+                event_depth_km=float(row["DEPTH"]),
+                station_lat=float(row["station_lat"]),
+                station_lon=float(row["station_lon"]),
+                station_height_m=float(row["station_height_m"]),
+            )
+        )
+    df["hypocentral_distance_km"] = distances_km
+    df["trigger_to_pga_seconds"] = (df["pga_norm_aligned_loc"] - df["p_pick_aligned"]) / sampling_rate_hz
+    df["trigger_is_pick"] = classify_trigger_is_pick(
+        p_pick_aligned=df["p_pick_aligned"].to_numpy(),
+        pga_aligned_loc=df["pga_norm_aligned_loc"].to_numpy(),
+        sampling_rate_hz=sampling_rate_hz,
+        threshold_seconds=threshold_seconds,
+    )
+
+    observed_abs_ts = global_start_ts + df["p_pick_aligned"].to_numpy(dtype=np.float64) / sampling_rate_hz
+    observed_tp_seconds = observed_abs_ts - origin_ts
+    predicted_tp_seconds = float(travel_time_intercept_s) + df["hypocentral_distance_km"].to_numpy(dtype=np.float64) / float(p_velocity_km_s)
+    predicted_abs_ts = origin_ts + predicted_tp_seconds
+    predicted_aligned = np.rint((predicted_abs_ts - global_start_ts) * sampling_rate_hz).astype(np.int64)
+
+    pga_margin_samples = int(round(min_margin_seconds * sampling_rate_hz))
+    record_start = df["record_start_sample"].to_numpy(dtype=np.int64)
+    valid_n = df["valid_n_samples"].to_numpy(dtype=np.int64)
+    valid_end = record_start + np.maximum(valid_n - 1, 0)
+    max_allowed = np.minimum(valid_end, df["pga_norm_aligned_loc"].to_numpy(dtype=np.int64) - pga_margin_samples)
+    max_allowed = np.maximum(max_allowed, record_start)
+    repaired_aligned = np.clip(predicted_aligned, record_start, max_allowed).astype(np.int64)
+
+    df["p_pick_observed_aligned"] = df["p_pick_aligned"].astype(np.int64)
+    df["p_pick_observed_seconds_after_origin"] = observed_tp_seconds
+    df["p_pick_predicted_aligned"] = predicted_aligned
+    df["p_pick_predicted_seconds_after_origin"] = predicted_tp_seconds
+    df["p_pick_repaired_aligned"] = repaired_aligned
+    df["p_pick_repaired_source"] = np.where(predicted_aligned == repaired_aligned, "travel_time", "travel_time_clipped")
+    df["p_pick_repaired_seconds_after_origin"] = (
+        global_start_ts + df["p_pick_repaired_aligned"].to_numpy(dtype=np.float64) / sampling_rate_hz - origin_ts
+    )
+
+    fit_summary = {
+        "threshold_seconds": float(threshold_seconds),
+        "default_velocity_km_s": float(p_velocity_km_s),
+        "velocity_km_s": float(p_velocity_km_s),
+        "slope_s_per_km": float(1.0 / float(p_velocity_km_s)),
+        "intercept_s": float(travel_time_intercept_s),
+        "n_total": int(len(df)),
+        "n_trusted": int(np.sum(df["trigger_is_pick"].to_numpy(dtype=bool))),
+        "n_clipped": int(np.sum(predicted_aligned != repaired_aligned)),
+    }
     return df, fit_summary
 
 
