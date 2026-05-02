@@ -17,6 +17,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--compression_level", type=int, default=4, help="gzip compression level for output HDF5.")
     parser.add_argument("--pick_mode", choices=["trigger_repair", "travel_time"], default="travel_time", help="Coarse P-pick source before STA/LTA refinement.")
     parser.add_argument("--final_pick", choices=["travel_time", "stalta", "diting_acc", "diting_vel"], default="stalta", help="Pick source stored in p_picks for training.")
+    parser.add_argument("--travel_time_model", choices=["jma2001a", "constant"], default="jma2001a", help="Travel-time model used by --pick_mode travel_time.")
+    parser.add_argument("--jma_travel_time_zip", default=None, help="Path to JMA2001A tjma2001h.zip. Defaults to resources/jma_travel_times/tjma2001h.zip.")
+    parser.add_argument("--jma_search_margin_seconds", type=float, default=10.0, help="Search margin around JMA theoretical P time.")
     parser.add_argument("--p_velocity_km_s", type=float, default=6.0, help="P-wave velocity for --pick_mode travel_time.")
     parser.add_argument("--p_velocity_min_km_s", type=float, default=3.0, help="Lower P-wave velocity bound; defines the late edge of the pick search range.")
     parser.add_argument("--p_velocity_max_km_s", type=float, default=8.0, help="Upper P-wave velocity bound; defines the early edge of the pick search range.")
@@ -80,6 +83,9 @@ def main():
             compression_level=args.compression_level,
             pick_mode=args.pick_mode,
             final_pick=args.final_pick,
+            travel_time_model=args.travel_time_model,
+            jma_travel_time_zip=Path(args.jma_travel_time_zip).expanduser().resolve() if args.jma_travel_time_zip else None,
+            jma_search_margin_seconds=args.jma_search_margin_seconds,
             p_velocity_km_s=args.p_velocity_km_s,
             p_velocity_min_km_s=args.p_velocity_min_km_s,
             p_velocity_max_km_s=args.p_velocity_max_km_s,

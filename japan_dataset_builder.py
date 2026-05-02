@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import tarfile
+import zipfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -28,6 +29,7 @@ COMPONENT_ORDER = ("NS", "EW", "UD")
 DIR_COMPONENT_INDEX = {name: i for i, name in enumerate(COMPONENT_ORDER)}
 OUTER_EVENT_RE = re.compile(r"(?P<event_id>\d{14})\.tar$")
 INNER_COMPONENT_RE = re.compile(r"^(?P<base>.+)\.(?P<comp>NS|EW|UD)(?P<suffix>[12]?)$")
+DEFAULT_JMA2001A_ZIP = Path(__file__).resolve().parent / "resources" / "jma_travel_times" / "tjma2001h.zip"
 
 
 @dataclass
@@ -574,6 +576,9 @@ def apply_repaired_and_refined_p_picks(
     datasets: dict[str, np.ndarray | object],
     pick_mode: str = "trigger_repair",
     final_pick: str = "stalta",
+    travel_time_model: str = "constant",
+    jma_table: JMATravelTimeTable | None = None,
+    jma_search_margin_seconds: float = 10.0,
     diting_model: object | None = None,
     diting_device: str = "cuda:0",
     diting_batch_size: int = 100,
@@ -607,6 +612,9 @@ def apply_repaired_and_refined_p_picks(
     elif pick_mode == "travel_time":
         repaired_df, fit_summary = estimate_event_travel_time_p_picks(
             station_df,
+            travel_time_model=travel_time_model,
+            jma_table=jma_table,
+            jma_search_margin_seconds=jma_search_margin_seconds,
             p_velocity_km_s=default_velocity_km_s,
             min_velocity_km_s=min_velocity_km_s,
             max_velocity_km_s=max_velocity_km_s,
@@ -688,6 +696,7 @@ def apply_repaired_and_refined_p_picks(
         "p_pick_search_right_aligned",
         "p_pick_travel_time_fast_aligned",
         "p_pick_travel_time_slow_aligned",
+        "p_pick_jma_grid_clipped",
     ):
         if col in refined_df.columns:
             datasets[col] = refined_df[col].to_numpy(dtype=np.int64)
@@ -707,6 +716,8 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_Trigger_Threshold_S": float(threshold_seconds),
             "P_Pick_Mode": pick_mode,
             "P_Pick_Final_Source": final_pick,
+            "P_Pick_Travel_Time_Model": fit_summary.get("travel_time_model", travel_time_model),
+            "P_Pick_JMA_Search_Margin_S": float(fit_summary.get("jma_search_margin_seconds", jma_search_margin_seconds)),
             "P_Pick_Fit_Default_Velocity_Km_S": float(default_velocity_km_s),
             "P_Pick_Search_Min_Velocity_Km_S": float(fit_summary.get("min_velocity_km_s", default_velocity_km_s)),
             "P_Pick_Search_Max_Velocity_Km_S": float(fit_summary.get("max_velocity_km_s", default_velocity_km_s)),
@@ -715,6 +726,7 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_Fit_Intercept_S": float(fit_summary["intercept_s"]),
             "P_Pick_Fit_N_Trusted": int(fit_summary["n_trusted"]),
             "P_Pick_Fit_N_Clipped": int(fit_summary.get("n_clipped", 0)),
+            "P_Pick_JMA_Grid_Clipped": int(fit_summary.get("n_jma_grid_clipped", 0)),
             "P_Pick_STA_Pre_S": float(stalta_pre_seconds),
             "P_Pick_STA_Post_S": float(stalta_post_seconds),
             "P_Pick_STA_STA_S": float(stalta_sta_seconds),
@@ -1194,6 +1206,103 @@ def write_dataframe_group(group: h5py.Group, df: pd.DataFrame, compression: str 
         _write_string_or_numeric_dataset(group, col, df[col].to_numpy(), compression=compression, compression_opts=compression_opts)
 
 
+def _interp_axis(grid: np.ndarray, value: float) -> tuple[int, int, float, bool]:
+    clipped = False
+    if value <= grid[0]:
+        return 0, 0, 0.0, value < grid[0]
+    if value >= grid[-1]:
+        return len(grid) - 1, len(grid) - 1, 0.0, value > grid[-1]
+    hi = int(np.searchsorted(grid, value, side="right"))
+    lo = hi - 1
+    span = float(grid[hi] - grid[lo])
+    weight = 0.0 if span == 0 else float((value - grid[lo]) / span)
+    return lo, hi, weight, clipped
+
+
+def _lerp(v0: float, v1: float, weight: float) -> float:
+    return float(v0 * (1.0 - weight) + v1 * weight)
+
+
+class JMATravelTimeTable:
+    def __init__(self, zip_path: Path):
+        self.zip_path = Path(zip_path).expanduser().resolve()
+        if not self.zip_path.exists():
+            raise FileNotFoundError(f"JMA travel-time table not found: {self.zip_path}")
+        self.altitudes_m, self.depths_km, self.distances_km, self.p_seconds = self._load_zip(self.zip_path)
+
+    @staticmethod
+    def _member_altitude_m(name: str) -> int | None:
+        match = re.search(r"tjma2001h[./]tjma2001h\.([+-]\d{5})$", name)
+        if not match:
+            return None
+        return int(match.group(1))
+
+    @classmethod
+    def _load_zip(cls, zip_path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        tables: list[tuple[int, np.ndarray]] = []
+        depths_ref = None
+        distances_ref = None
+        with zipfile.ZipFile(zip_path) as zf:
+            members = []
+            for name in zf.namelist():
+                altitude = cls._member_altitude_m(name)
+                if altitude is not None:
+                    members.append((altitude, name))
+            if not members:
+                raise ValueError(f"No tjma2001h table files found in {zip_path}")
+
+            for altitude, name in sorted(members):
+                rows = []
+                with zf.open(name) as fp:
+                    for raw_line in fp:
+                        parts = raw_line.decode("ascii", errors="ignore").split()
+                        if len(parts) < 6 or parts[0] != "P":
+                            continue
+                        rows.append((float(parts[1]), float(parts[3]), float(parts[4]), float(parts[5])))
+                arr = np.asarray(rows, dtype=np.float64)
+                if arr.size == 0:
+                    raise ValueError(f"No travel-time rows found in {name}")
+                depths = np.unique(arr[:, 2])
+                distances = np.unique(arr[:, 3])
+                if depths_ref is None:
+                    depths_ref = depths
+                    distances_ref = distances
+                elif not (np.array_equal(depths_ref, depths) and np.array_equal(distances_ref, distances)):
+                    raise ValueError(f"Inconsistent JMA grid in {name}")
+
+                depth_index = {float(v): i for i, v in enumerate(depths)}
+                distance_index = {float(v): i for i, v in enumerate(distances)}
+                table = np.empty((len(depths), len(distances)), dtype=np.float64)
+                table.fill(np.nan)
+                for p_time, _s_time, depth, distance in arr:
+                    table[depth_index[float(depth)], distance_index[float(distance)]] = p_time
+                if np.isnan(table).any():
+                    raise ValueError(f"Incomplete JMA grid in {name}")
+                tables.append((altitude, table))
+
+        altitudes = np.asarray([alt for alt, _ in tables], dtype=np.float64)
+        p_seconds = np.stack([table for _, table in tables], axis=0)
+        return altitudes, np.asarray(depths_ref, dtype=np.float64), np.asarray(distances_ref, dtype=np.float64), p_seconds
+
+    def predict_p_seconds(self, depth_km: float, distance_km: float, station_height_m: float) -> tuple[float, bool]:
+        a0, a1, aw, a_clipped = _interp_axis(self.altitudes_m, float(station_height_m))
+        d0, d1, dw, d_clipped = _interp_axis(self.depths_km, float(depth_km))
+        x0, x1, xw, x_clipped = _interp_axis(self.distances_km, float(distance_km))
+
+        def interp_for_alt(ai: int) -> float:
+            v00 = self.p_seconds[ai, d0, x0]
+            v01 = self.p_seconds[ai, d0, x1]
+            v10 = self.p_seconds[ai, d1, x0]
+            v11 = self.p_seconds[ai, d1, x1]
+            vx0 = _lerp(v00, v01, xw)
+            vx1 = _lerp(v10, v11, xw)
+            return _lerp(vx0, vx1, dw)
+
+        t0 = interp_for_alt(a0)
+        t1 = interp_for_alt(a1)
+        return _lerp(t0, t1, aw), bool(a_clipped or d_clipped or x_clipped)
+
+
 def build_year_dataset(
     waveform_root: Path,
     output_hdf5: Path,
@@ -1206,6 +1315,9 @@ def build_year_dataset(
     compression_level: int = 4,
     pick_mode: str = "trigger_repair",
     final_pick: str = "stalta",
+    travel_time_model: str = "jma2001a",
+    jma_travel_time_zip: Path | None = None,
+    jma_search_margin_seconds: float = 10.0,
     p_velocity_km_s: float = 6.0,
     p_velocity_min_km_s: float | None = None,
     p_velocity_max_km_s: float | None = None,
@@ -1240,6 +1352,12 @@ def build_year_dataset(
     stats = Counter()
     event_rows: list[dict[str, object]] = []
     station_rows: list[dict[str, object]] = []
+    jma_table = None
+    if travel_time_model == "jma2001a":
+        jma_table = JMATravelTimeTable(jma_travel_time_zip or DEFAULT_JMA2001A_ZIP)
+    elif travel_time_model != "constant":
+        raise ValueError(f"Unsupported travel_time_model: {travel_time_model}")
+
     diting_model = None
     if run_diting:
         if diting_weights is None:
@@ -1291,6 +1409,9 @@ def build_year_dataset(
                 datasets=datasets,
                 pick_mode=pick_mode,
                 final_pick=final_pick,
+                travel_time_model=travel_time_model,
+                jma_table=jma_table,
+                jma_search_margin_seconds=jma_search_margin_seconds,
                 diting_model=diting_model,
                 diting_device=diting_device,
                 diting_batch_size=diting_batch_size,
@@ -1508,7 +1629,16 @@ def estimate_event_repaired_p_picks(
     global_start_ts = pd.to_datetime(df["record_start_time_jst"], utc=True).min().timestamp()
 
     distances_km = []
+    epicentral_distances_km = []
     for _, row in df.iterrows():
+        epicentral_distances_km.append(
+            haversine_distance_km(
+                float(row["Latitude"]),
+                float(row["Longitude"]),
+                float(row["station_lat"]),
+                float(row["station_lon"]),
+            )
+        )
         distances_km.append(
             hypocentral_distance_km(
                 event_lat=float(row["Latitude"]),
@@ -1520,6 +1650,7 @@ def estimate_event_repaired_p_picks(
             )
         )
     df["hypocentral_distance_km"] = distances_km
+    df["epicentral_distance_km"] = epicentral_distances_km
     df["trigger_to_pga_seconds"] = (df["pga_norm_aligned_loc"] - df["p_pick_aligned"]) / sampling_rate_hz
     df["trigger_is_pick"] = classify_trigger_is_pick(
         p_pick_aligned=df["p_pick_aligned"].to_numpy(),
@@ -1587,6 +1718,9 @@ def estimate_event_repaired_p_picks(
 
 def estimate_event_travel_time_p_picks(
     event_df: pd.DataFrame,
+    travel_time_model: str = "constant",
+    jma_table: JMATravelTimeTable | None = None,
+    jma_search_margin_seconds: float = 10.0,
     p_velocity_km_s: float = 6.0,
     min_velocity_km_s: float | None = None,
     max_velocity_km_s: float | None = None,
@@ -1604,7 +1738,16 @@ def estimate_event_travel_time_p_picks(
     global_start_ts = pd.to_datetime(df["record_start_time_jst"], utc=True).min().timestamp()
 
     distances_km = []
+    epicentral_distances_km = []
     for _, row in df.iterrows():
+        epicentral_distances_km.append(
+            haversine_distance_km(
+                float(row["Latitude"]),
+                float(row["Longitude"]),
+                float(row["station_lat"]),
+                float(row["station_lon"]),
+            )
+        )
         distances_km.append(
             hypocentral_distance_km(
                 event_lat=float(row["Latitude"]),
@@ -1616,6 +1759,7 @@ def estimate_event_travel_time_p_picks(
             )
         )
     df["hypocentral_distance_km"] = distances_km
+    df["epicentral_distance_km"] = epicentral_distances_km
     df["trigger_to_pga_seconds"] = (df["pga_norm_aligned_loc"] - df["p_pick_aligned"]) / sampling_rate_hz
     df["trigger_is_pick"] = classify_trigger_is_pick(
         p_pick_aligned=df["p_pick_aligned"].to_numpy(),
@@ -1626,26 +1770,46 @@ def estimate_event_travel_time_p_picks(
 
     observed_abs_ts = global_start_ts + df["p_pick_aligned"].to_numpy(dtype=np.float64) / sampling_rate_hz
     observed_tp_seconds = observed_abs_ts - origin_ts
-    if min_velocity_km_s is None:
-        min_velocity_km_s = p_velocity_km_s
-    if max_velocity_km_s is None:
-        max_velocity_km_s = p_velocity_km_s
-    min_velocity_km_s = float(min_velocity_km_s)
-    max_velocity_km_s = float(max_velocity_km_s)
-    if min_velocity_km_s <= 0 or max_velocity_km_s <= 0:
-        raise ValueError("Velocity bounds must be positive")
-    if min_velocity_km_s > max_velocity_km_s:
-        min_velocity_km_s, max_velocity_km_s = max_velocity_km_s, min_velocity_km_s
-    if not (min_velocity_km_s <= float(p_velocity_km_s) <= max_velocity_km_s):
-        raise ValueError(
-            f"p_velocity_km_s ({p_velocity_km_s}) must be within "
-            f"[{min_velocity_km_s}, {max_velocity_km_s}]"
-        )
-
-    distances = df["hypocentral_distance_km"].to_numpy(dtype=np.float64)
-    predicted_tp_seconds = float(travel_time_intercept_s) + distances / float(p_velocity_km_s)
-    fast_tp_seconds = float(travel_time_intercept_s) + distances / max_velocity_km_s
-    slow_tp_seconds = float(travel_time_intercept_s) + distances / min_velocity_km_s
+    jma_clipped = np.zeros((len(df),), dtype=bool)
+    if travel_time_model == "jma2001a":
+        if jma_table is None:
+            raise ValueError("jma_table is required when travel_time_model='jma2001a'")
+        predicted = []
+        for i, row in df.iterrows():
+            p_seconds, clipped = jma_table.predict_p_seconds(
+                depth_km=float(row["DEPTH"]),
+                distance_km=float(row["epicentral_distance_km"]),
+                station_height_m=float(row["station_height_m"]),
+            )
+            predicted.append(float(p_seconds) + float(travel_time_intercept_s))
+            jma_clipped[i] = clipped
+        predicted_tp_seconds = np.asarray(predicted, dtype=np.float64)
+        fast_tp_seconds = predicted_tp_seconds - float(jma_search_margin_seconds)
+        slow_tp_seconds = predicted_tp_seconds + float(jma_search_margin_seconds)
+        min_velocity_km_s = np.nan if min_velocity_km_s is None else float(min_velocity_km_s)
+        max_velocity_km_s = np.nan if max_velocity_km_s is None else float(max_velocity_km_s)
+    elif travel_time_model == "constant":
+        if min_velocity_km_s is None:
+            min_velocity_km_s = p_velocity_km_s
+        if max_velocity_km_s is None:
+            max_velocity_km_s = p_velocity_km_s
+        min_velocity_km_s = float(min_velocity_km_s)
+        max_velocity_km_s = float(max_velocity_km_s)
+        if min_velocity_km_s <= 0 or max_velocity_km_s <= 0:
+            raise ValueError("Velocity bounds must be positive")
+        if min_velocity_km_s > max_velocity_km_s:
+            min_velocity_km_s, max_velocity_km_s = max_velocity_km_s, min_velocity_km_s
+        if not (min_velocity_km_s <= float(p_velocity_km_s) <= max_velocity_km_s):
+            raise ValueError(
+                f"p_velocity_km_s ({p_velocity_km_s}) must be within "
+                f"[{min_velocity_km_s}, {max_velocity_km_s}]"
+            )
+        distances = df["hypocentral_distance_km"].to_numpy(dtype=np.float64)
+        predicted_tp_seconds = float(travel_time_intercept_s) + distances / float(p_velocity_km_s)
+        fast_tp_seconds = float(travel_time_intercept_s) + distances / max_velocity_km_s
+        slow_tp_seconds = float(travel_time_intercept_s) + distances / min_velocity_km_s
+    else:
+        raise ValueError(f"Unsupported travel_time_model: {travel_time_model}")
     predicted_abs_ts = origin_ts + predicted_tp_seconds
     predicted_aligned = np.rint((predicted_abs_ts - global_start_ts) * sampling_rate_hz).astype(np.int64)
     fast_aligned = np.rint((origin_ts + fast_tp_seconds - global_start_ts) * sampling_rate_hz).astype(np.int64)
@@ -1674,28 +1838,34 @@ def estimate_event_travel_time_p_picks(
     df["p_pick_travel_time_slow_aligned"] = slow_aligned
     df["p_pick_travel_time_fast_seconds_after_origin"] = fast_tp_seconds
     df["p_pick_travel_time_slow_seconds_after_origin"] = slow_tp_seconds
+    df["p_pick_jma_grid_clipped"] = jma_clipped.astype(np.int8)
     df["p_pick_search_left_aligned"] = search_left
     df["p_pick_search_right_aligned"] = search_right
     df["p_pick_search_left_seconds_after_origin"] = global_start_ts + search_left.astype(np.float64) / sampling_rate_hz - origin_ts
     df["p_pick_search_right_seconds_after_origin"] = global_start_ts + search_right.astype(np.float64) / sampling_rate_hz - origin_ts
     df["p_pick_search_width_seconds"] = (search_right - search_left) / sampling_rate_hz
     df["p_pick_repaired_aligned"] = repaired_aligned
-    df["p_pick_repaired_source"] = np.where(predicted_aligned == repaired_aligned, "travel_time", "travel_time_clipped")
+    source_name = "jma2001a" if travel_time_model == "jma2001a" else "travel_time"
+    clipped_name = f"{source_name}_clipped"
+    df["p_pick_repaired_source"] = np.where(predicted_aligned == repaired_aligned, source_name, clipped_name)
     df["p_pick_repaired_seconds_after_origin"] = (
         global_start_ts + df["p_pick_repaired_aligned"].to_numpy(dtype=np.float64) / sampling_rate_hz - origin_ts
     )
 
     fit_summary = {
+        "travel_time_model": travel_time_model,
+        "jma_search_margin_seconds": float(jma_search_margin_seconds),
         "threshold_seconds": float(threshold_seconds),
         "default_velocity_km_s": float(p_velocity_km_s),
         "min_velocity_km_s": float(min_velocity_km_s),
         "max_velocity_km_s": float(max_velocity_km_s),
-        "velocity_km_s": float(p_velocity_km_s),
-        "slope_s_per_km": float(1.0 / float(p_velocity_km_s)),
+        "velocity_km_s": float(p_velocity_km_s) if travel_time_model == "constant" else float("nan"),
+        "slope_s_per_km": float(1.0 / float(p_velocity_km_s)) if travel_time_model == "constant" else float("nan"),
         "intercept_s": float(travel_time_intercept_s),
         "n_total": int(len(df)),
         "n_trusted": int(np.sum(df["trigger_is_pick"].to_numpy(dtype=bool))),
         "n_clipped": int(np.sum(predicted_aligned != repaired_aligned)),
+        "n_jma_grid_clipped": int(np.sum(jma_clipped)),
     }
     return df, fit_summary
 
