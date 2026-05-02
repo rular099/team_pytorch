@@ -16,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit_events", type=int, default=None, help="Optional cap on the number of outer event archives per year.")
     parser.add_argument("--compression_level", type=int, default=4, help="gzip compression level for output HDF5.")
     parser.add_argument("--pick_mode", choices=["trigger_repair", "travel_time"], default="travel_time", help="Coarse P-pick source before STA/LTA refinement.")
+    parser.add_argument("--final_pick", choices=["travel_time", "stalta", "diting_acc", "diting_vel"], default="stalta", help="Pick source stored in p_picks for training.")
     parser.add_argument("--p_velocity_km_s", type=float, default=6.0, help="P-wave velocity for --pick_mode travel_time.")
     parser.add_argument("--travel_time_intercept_s", type=float, default=0.0, help="Constant offset added to distance / velocity.")
     parser.add_argument("--stalta_pre_seconds", type=float, default=10.0, help="Seconds before coarse pick searched by STA/LTA.")
@@ -24,6 +25,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stalta_lta_seconds", type=float, default=1.0, help="LTA window length in seconds.")
     parser.add_argument("--stalta_threshold_ratio", type=float, default=2.5, help="STA/LTA threshold ratio.")
     parser.add_argument("--stalta_feature", choices=["vertical", "norm"], default="vertical", help="STA/LTA characteristic function.")
+    parser.add_argument("--run_diting", action="store_true", help="Run DiTing P-pickers for acceleration and integrated velocity windows.")
+    parser.add_argument("--ditingbench_root", default=None, help="Path to ditingbench root. Added to sys.path when set.")
+    parser.add_argument("--diting_model_name", default="diting1200m", help="Model name passed to dtbench.models.get_model.")
+    parser.add_argument("--diting_weights", default=None, help="Checkpoint path passed to dtbench.models.get_model.")
+    parser.add_argument("--diting_device", default="cuda:0")
+    parser.add_argument("--diting_batch_size", type=int, default=100)
+    parser.add_argument("--diting_p_th", type=float, default=0.1)
+    parser.add_argument("--diting_s_th", type=float, default=0.1)
+    parser.add_argument("--diting_d_th", type=float, default=0.3)
+    parser.add_argument("--diting_target_half_window_seconds", type=float, default=10.0, help="Coarse pick +/- this window is sent to DiTing.")
+    parser.add_argument("--diting_window_seconds", type=float, default=100.0, help="DiTing model input length; the target window is placed at the tail.")
+    parser.add_argument("--velocity_highpass_hz", type=float, default=0.05, help="High-pass before acceleration integration.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output files.")
     return parser.parse_args()
 
@@ -60,6 +73,7 @@ def main():
             limit_events=args.limit_events,
             compression_level=args.compression_level,
             pick_mode=args.pick_mode,
+            final_pick=args.final_pick,
             p_velocity_km_s=args.p_velocity_km_s,
             travel_time_intercept_s=args.travel_time_intercept_s,
             stalta_pre_seconds=args.stalta_pre_seconds,
@@ -68,6 +82,18 @@ def main():
             stalta_lta_seconds=args.stalta_lta_seconds,
             stalta_threshold_ratio=args.stalta_threshold_ratio,
             stalta_feature=args.stalta_feature,
+            run_diting=args.run_diting,
+            ditingbench_root=args.ditingbench_root,
+            diting_model_name=args.diting_model_name,
+            diting_weights=args.diting_weights,
+            diting_device=args.diting_device,
+            diting_batch_size=args.diting_batch_size,
+            diting_p_th=args.diting_p_th,
+            diting_s_th=args.diting_s_th,
+            diting_d_th=args.diting_d_th,
+            diting_target_half_window_seconds=args.diting_target_half_window_seconds,
+            diting_window_seconds=args.diting_window_seconds,
+            velocity_highpass_hz=args.velocity_highpass_hz,
         )
 
         print(f"\nYear {year} complete")

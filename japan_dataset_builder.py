@@ -4,6 +4,7 @@ import gzip
 import io
 import math
 import re
+import sys
 import tarfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -15,7 +16,8 @@ from typing import BinaryIO, Iterable
 import h5py
 import numpy as np
 import pandas as pd
-from scipy.signal import resample_poly
+from scipy.integrate import cumulative_trapezoid
+from scipy.signal import butter, detrend, resample_poly, sosfiltfilt
 from tqdm import tqdm
 
 
@@ -570,6 +572,16 @@ def apply_repaired_and_refined_p_picks(
     station_rows: list[dict[str, object]],
     datasets: dict[str, np.ndarray | object],
     pick_mode: str = "trigger_repair",
+    final_pick: str = "stalta",
+    diting_model: object | None = None,
+    diting_device: str = "cuda:0",
+    diting_batch_size: int = 100,
+    diting_p_th: float = 0.1,
+    diting_s_th: float = 0.1,
+    diting_d_th: float = 0.3,
+    diting_target_half_window_seconds: float = 10.0,
+    diting_window_seconds: float = 100.0,
+    velocity_highpass_hz: float = 0.05,
     threshold_seconds: float = 3.0,
     default_velocity_km_s: float = 6.0,
     travel_time_intercept_s: float = 0.0,
@@ -617,6 +629,48 @@ def apply_repaired_and_refined_p_picks(
     refined_df["p_pick_refined_source"] = refined_df["stalta_method"].astype(str)
     refined_df["p_pick_aligned"] = refined_df["stalta_refined_pick_aligned"].astype(np.int64)
 
+    if diting_model is not None:
+        refined_df = add_diting_picks_to_event(
+            event_df=refined_df,
+            waveforms=np.asarray(datasets["waveforms"]),
+            record_start_sample=np.asarray(datasets["record_start_sample"]),
+            valid_n_samples=np.asarray(datasets["valid_n_samples"]),
+            coarse_pick_col="p_pick_repaired_aligned",
+            sampling_rate_hz=float(refined_df["sampling_rate_hz"].iloc[0]),
+            model=diting_model,
+            device=diting_device,
+            batch_size=diting_batch_size,
+            p_th=diting_p_th,
+            s_th=diting_s_th,
+            d_th=diting_d_th,
+            target_half_window_seconds=diting_target_half_window_seconds,
+            model_window_seconds=diting_window_seconds,
+            velocity_highpass_hz=velocity_highpass_hz,
+        )
+        datasets["p_pick_diting_acc_aligned"] = refined_df["p_pick_diting_acc_aligned"].fillna(refined_df["p_pick_repaired_aligned"]).to_numpy(dtype=np.int64)
+        datasets["p_pick_diting_vel_aligned"] = refined_df["p_pick_diting_vel_aligned"].fillna(refined_df["p_pick_repaired_aligned"]).to_numpy(dtype=np.int64)
+        datasets["diting_acc_score"] = refined_df["diting_acc_score"].to_numpy(dtype=np.float64)
+        datasets["diting_vel_score"] = refined_df["diting_vel_score"].to_numpy(dtype=np.float64)
+        datasets["diting_acc_error"] = refined_df["diting_acc_error"].to_numpy(dtype=object)
+        datasets["diting_vel_error"] = refined_df["diting_vel_error"].to_numpy(dtype=object)
+
+    final_pick_columns = {
+        "travel_time": "p_pick_repaired_aligned",
+        "stalta": "p_pick_refined_aligned",
+        "diting_acc": "p_pick_diting_acc_aligned",
+        "diting_vel": "p_pick_diting_vel_aligned",
+    }
+    if final_pick not in final_pick_columns:
+        raise ValueError(f"Unsupported final_pick: {final_pick}")
+    final_col = final_pick_columns[final_pick]
+    if final_col not in refined_df.columns:
+        raise ValueError(f"final_pick={final_pick} requires --run_diting")
+    final_values = pd.to_numeric(refined_df[final_col], errors="coerce").fillna(refined_df["p_pick_repaired_aligned"]).astype(np.int64)
+    refined_df["p_pick_refined_aligned"] = final_values
+    refined_df["p_pick_refined_source"] = final_pick
+    refined_df["p_pick_refine_method"] = final_pick
+    refined_df["p_pick_aligned"] = final_values
+
     datasets["p_pick_trigger_aligned"] = refined_df["p_pick_trigger_aligned"].to_numpy(dtype=np.int64)
     datasets["p_pick_repaired_aligned"] = refined_df["p_pick_repaired_aligned"].to_numpy(dtype=np.int64)
     datasets["p_pick_refined_aligned"] = refined_df["p_pick_refined_aligned"].to_numpy(dtype=np.int64)
@@ -635,6 +689,7 @@ def apply_repaired_and_refined_p_picks(
         {
             "P_Pick_Trigger_Threshold_S": float(threshold_seconds),
             "P_Pick_Mode": pick_mode,
+            "P_Pick_Final_Source": final_pick,
             "P_Pick_Fit_Default_Velocity_Km_S": float(default_velocity_km_s),
             "P_Pick_Fit_Velocity_Km_S": float(fit_summary["velocity_km_s"]),
             "P_Pick_Fit_Slope_S_Per_Km": float(fit_summary["slope_s_per_km"]),
@@ -647,10 +702,212 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_STA_LTA_S": float(stalta_lta_seconds),
             "P_Pick_STA_Threshold": float(stalta_threshold_ratio),
             "P_Pick_STA_Feature": stalta_feature,
+            "P_Pick_DiTing_Enabled": int(diting_model is not None),
+            "P_Pick_DiTing_Target_Half_Window_S": float(diting_target_half_window_seconds),
+            "P_Pick_DiTing_Window_S": float(diting_window_seconds),
+            "P_Pick_DiTing_Velocity_Highpass_Hz": float(velocity_highpass_hz),
         }
     )
 
     return datasets, event_meta, refined_df
+
+
+def load_diting_model(
+    ditingbench_root: str | None,
+    model_name: str,
+    weights: str,
+    device: str,
+) -> object:
+    if ditingbench_root:
+        sys.path.insert(0, str(Path(ditingbench_root).expanduser().resolve()))
+    from dtbench.models import get_model
+
+    return get_model(name=model_name, pretrain_weights=weights, device=device)
+
+
+def prepare_diting_input_window(
+    waveform_aligned_mps2: np.ndarray,
+    coarse_pick_aligned: int,
+    sampling_rate_hz: float,
+    target_half_window_seconds: float = 10.0,
+    model_window_seconds: float = 100.0,
+    mode: str = "velocity",
+    velocity_highpass_hz: float = 0.05,
+) -> tuple[np.ndarray, int, int]:
+    target_fs = 100.0
+    if not math.isclose(sampling_rate_hz, target_fs):
+        waveform = _resample_waveform(waveform_aligned_mps2, raw_fs=sampling_rate_hz, target_fs=target_fs)
+        coarse_pick = int(round(coarse_pick_aligned * target_fs / sampling_rate_hz))
+    else:
+        waveform = waveform_aligned_mps2.copy()
+        coarse_pick = int(coarse_pick_aligned)
+
+    half = int(round(target_half_window_seconds * target_fs))
+    crop_start = max(0, coarse_pick - half)
+    crop_end = min(waveform.shape[0], coarse_pick + half)
+    crop = waveform[crop_start:crop_end].astype(np.float64, copy=False)
+    if crop.size:
+        crop = detrend(crop, axis=0, type="linear")
+        crop = crop - np.mean(crop, axis=0, keepdims=True)
+
+    if mode == "velocity":
+        if crop.shape[0] > 32 and velocity_highpass_hz > 0:
+            sos = butter(4, velocity_highpass_hz, btype="highpass", fs=target_fs, output="sos")
+            crop = sosfiltfilt(sos, crop, axis=0)
+        crop = cumulative_trapezoid(crop, dx=1.0 / target_fs, axis=0, initial=0.0)
+        if crop.size:
+            crop = detrend(crop, axis=0, type="linear")
+            crop = crop - np.mean(crop, axis=0, keepdims=True)
+    elif mode != "acceleration":
+        raise ValueError(f"Unsupported DiTing mode: {mode}")
+
+    model_n = int(round(model_window_seconds * target_fs))
+    window = np.zeros((model_n, 3), dtype=np.float32)
+    if crop.shape[0]:
+        tail_start = max(0, model_n - crop.shape[0])
+        copy_n = min(crop.shape[0], model_n)
+        window[tail_start:tail_start + copy_n, :] = crop[-copy_n:]
+    else:
+        tail_start = model_n
+    return window, crop_start, tail_start
+
+
+def run_diting_single_station(
+    model: object,
+    waveform_100s: np.ndarray,
+    station_code: str,
+    device: str,
+    batch_size: int,
+    p_th: float,
+    s_th: float,
+    d_th: float,
+) -> tuple[float, float]:
+    from obspy import Stream, Trace, UTCDateTime
+    from dtbench.inference.dt_infer import diting_dpk_inference
+
+    stream = Stream()
+    for comp, channel in enumerate(("BHN", "BHE", "BHZ")):
+        trace = Trace(data=waveform_100s[:, comp].astype(np.float32, copy=False))
+        trace.stats.network = "JP"
+        trace.stats.station = str(station_code)
+        trace.stats.location = ""
+        trace.stats.channel = channel
+        trace.stats.sampling_rate = 100.0
+        trace.stats.starttime = UTCDateTime(0)
+        stream.append(trace)
+
+    infer_res = diting_dpk_inference(
+        data=stream,
+        data_name=str(station_code),
+        data_type="stream",
+        model=model,
+        model_output_type="diting",
+        device=device,
+        batch_size=batch_size,
+        preprocess="default",
+        postprocess="nms",
+        output_format="default",
+        p_th=p_th,
+        s_th=s_th,
+        d_th=d_th,
+        window_length=10000,
+        step_size=2000,
+        radius_A=300,
+        radius_B=300,
+        pair_score=0.5,
+        joint_metric="p_union",
+        nms_pos_reduce="earliest",
+        nms_score_reduce="p_union",
+        process_len=10,
+    )
+
+    best_idx = np.nan
+    best_score = np.nan
+    for value in infer_res.values():
+        for pred in value.get("pred", []):
+            if len(pred) < 2 or not pred[1]:
+                continue
+            pick = pred[1][0]
+            idx = float(pick[0])
+            score = float(pick[1]) if len(pick) > 1 else np.nan
+            if np.isnan(best_idx) or idx < best_idx:
+                best_idx = idx
+                best_score = score
+    return best_idx, best_score
+
+
+def add_diting_picks_to_event(
+    event_df: pd.DataFrame,
+    waveforms: np.ndarray,
+    record_start_sample: np.ndarray,
+    valid_n_samples: np.ndarray,
+    coarse_pick_col: str,
+    sampling_rate_hz: float,
+    model: object,
+    device: str,
+    batch_size: int,
+    p_th: float,
+    s_th: float,
+    d_th: float,
+    target_half_window_seconds: float,
+    model_window_seconds: float,
+    velocity_highpass_hz: float,
+) -> pd.DataFrame:
+    df = event_df.copy().reset_index(drop=True)
+    for col in (
+        "p_pick_diting_acc_aligned",
+        "p_pick_diting_vel_aligned",
+        "diting_acc_score",
+        "diting_vel_score",
+        "diting_acc_error",
+        "diting_vel_error",
+    ):
+        df[col] = "" if col.endswith("_error") else np.nan
+
+    for idx, row in df.iterrows():
+        wave_idx = int(row["wave_idx"])
+        start = int(record_start_sample[wave_idx])
+        valid_end = start + int(valid_n_samples[wave_idx])
+        waveform = waveforms[wave_idx].copy()
+        if start > 0:
+            waveform[:start] = 0.0
+        if valid_end < waveform.shape[0]:
+            waveform[valid_end:] = 0.0
+
+        coarse_pick = int(row[coarse_pick_col])
+        for mode, suffix in (("acceleration", "acc"), ("velocity", "vel")):
+            try:
+                window, crop_start, tail_start = prepare_diting_input_window(
+                    waveform_aligned_mps2=waveform,
+                    coarse_pick_aligned=coarse_pick,
+                    sampling_rate_hz=sampling_rate_hz,
+                    target_half_window_seconds=target_half_window_seconds,
+                    model_window_seconds=model_window_seconds,
+                    mode=mode,
+                    velocity_highpass_hz=velocity_highpass_hz,
+                )
+                pred_idx, score = run_diting_single_station(
+                    model=model,
+                    waveform_100s=window,
+                    station_code=str(row["station_code"]),
+                    device=device,
+                    batch_size=batch_size,
+                    p_th=p_th,
+                    s_th=s_th,
+                    d_th=d_th,
+                )
+                if not np.isfinite(pred_idx):
+                    df.loc[idx, f"diting_{suffix}_error"] = "no_p_pick"
+                    continue
+                aligned_pick_100hz = crop_start + int(round(pred_idx - tail_start))
+                aligned_pick = int(round(aligned_pick_100hz * sampling_rate_hz / 100.0))
+                aligned_pick = int(np.clip(aligned_pick, start, max(start, valid_end - 1)))
+                df.loc[idx, f"p_pick_diting_{suffix}_aligned"] = aligned_pick
+                df.loc[idx, f"diting_{suffix}_score"] = score
+            except Exception as exc:
+                df.loc[idx, f"diting_{suffix}_error"] = str(exc)
+
+    return df
 
 
 def _write_string_or_numeric_dataset(group: h5py.Group, name: str, values, compression: str | None = None, compression_opts: int | None = None):
@@ -681,6 +938,7 @@ def build_year_dataset(
     limit_events: int | None = None,
     compression_level: int = 4,
     pick_mode: str = "trigger_repair",
+    final_pick: str = "stalta",
     p_velocity_km_s: float = 6.0,
     travel_time_intercept_s: float = 0.0,
     stalta_pre_seconds: float = 4.0,
@@ -689,6 +947,18 @@ def build_year_dataset(
     stalta_lta_seconds: float = 1.0,
     stalta_threshold_ratio: float = 0.2,
     stalta_feature: str = "vertical",
+    run_diting: bool = False,
+    ditingbench_root: str | None = None,
+    diting_model_name: str = "diting1200m",
+    diting_weights: str | None = None,
+    diting_device: str = "cuda:0",
+    diting_batch_size: int = 100,
+    diting_p_th: float = 0.1,
+    diting_s_th: float = 0.1,
+    diting_d_th: float = 0.3,
+    diting_target_half_window_seconds: float = 10.0,
+    diting_window_seconds: float = 100.0,
+    velocity_highpass_hz: float = 0.05,
 ) -> dict[str, int]:
     year_dir = waveform_root / str(year)
     outer_archives = sorted(year_dir.glob("*.tar"))
@@ -698,6 +968,16 @@ def build_year_dataset(
     stats = Counter()
     event_rows: list[dict[str, object]] = []
     station_rows: list[dict[str, object]] = []
+    diting_model = None
+    if run_diting:
+        if diting_weights is None:
+            raise ValueError("diting_weights must be set when run_diting=True")
+        diting_model = load_diting_model(
+            ditingbench_root=ditingbench_root,
+            model_name=diting_model_name,
+            weights=diting_weights,
+            device=diting_device,
+        )
 
     compression = "gzip"
     with h5py.File(output_hdf5, "w") as out_h5:
@@ -738,6 +1018,16 @@ def build_year_dataset(
                 station_rows=event_station_rows,
                 datasets=datasets,
                 pick_mode=pick_mode,
+                final_pick=final_pick,
+                diting_model=diting_model,
+                diting_device=diting_device,
+                diting_batch_size=diting_batch_size,
+                diting_p_th=diting_p_th,
+                diting_s_th=diting_s_th,
+                diting_d_th=diting_d_th,
+                diting_target_half_window_seconds=diting_target_half_window_seconds,
+                diting_window_seconds=diting_window_seconds,
+                velocity_highpass_hz=velocity_highpass_hz,
                 default_velocity_km_s=p_velocity_km_s,
                 travel_time_intercept_s=travel_time_intercept_s,
                 stalta_pre_seconds=stalta_pre_seconds,
