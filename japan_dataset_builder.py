@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import io
 import math
+import os
 import re
 import sys
 import tarfile
@@ -910,6 +911,202 @@ def add_diting_picks_to_event(
     return df
 
 
+def write_pick_diagnostics(
+    station_df: pd.DataFrame,
+    hdf5_path: Path,
+    diagnostics_dir: Path,
+    n_waveform_plots: int = 24,
+    random_seed: int = 2024,
+) -> None:
+    diagnostics_dir.mkdir(parents=True, exist_ok=True)
+    if station_df.empty:
+        return
+
+    base_col = "p_pick_repaired_aligned"
+    if base_col not in station_df.columns:
+        return
+
+    pick_cols = [
+        col for col in (
+            "p_pick_trigger_aligned",
+            "p_pick_observed_aligned",
+            "p_pick_predicted_aligned",
+            "p_pick_repaired_aligned",
+            "stalta_refined_pick_aligned",
+            "p_pick_diting_acc_aligned",
+            "p_pick_diting_vel_aligned",
+            "p_pick_refined_aligned",
+        )
+        if col in station_df.columns
+    ]
+    out_df = station_df.copy()
+    sr = pd.to_numeric(out_df["sampling_rate_hz"], errors="coerce").replace(0, np.nan)
+    base = pd.to_numeric(out_df[base_col], errors="coerce")
+
+    summary_rows = []
+    for col in pick_cols:
+        values = pd.to_numeric(out_df[col], errors="coerce")
+        diff_samples = values - base
+        diff_seconds = diff_samples / sr
+        out_df[f"{col}_minus_travel_time_samples"] = diff_samples
+        out_df[f"{col}_minus_travel_time_s"] = diff_seconds
+        finite = diff_seconds[np.isfinite(diff_seconds)]
+        summary_rows.append(
+            {
+                "pick": col,
+                "base_pick": base_col,
+                "count": int(finite.size),
+                "missing": int(diff_seconds.isna().sum()),
+                "mean_diff_s": float(finite.mean()) if finite.size else np.nan,
+                "std_diff_s": float(finite.std()) if finite.size else np.nan,
+                "median_diff_s": float(finite.median()) if finite.size else np.nan,
+                "mean_abs_diff_s": float(finite.abs().mean()) if finite.size else np.nan,
+                "median_abs_diff_s": float(finite.abs().median()) if finite.size else np.nan,
+                "p05_diff_s": float(finite.quantile(0.05)) if finite.size else np.nan,
+                "p25_diff_s": float(finite.quantile(0.25)) if finite.size else np.nan,
+                "p75_diff_s": float(finite.quantile(0.75)) if finite.size else np.nan,
+                "p95_diff_s": float(finite.quantile(0.95)) if finite.size else np.nan,
+                "min_diff_s": float(finite.min()) if finite.size else np.nan,
+                "max_diff_s": float(finite.max()) if finite.size else np.nan,
+            }
+        )
+
+    summary_df = pd.DataFrame(summary_rows)
+    summary_df.to_csv(diagnostics_dir / "pick_difference_summary.csv", index=False)
+    out_df.to_csv(diagnostics_dir / "station_pick_differences.csv", index=False)
+
+    try:
+        os.environ.setdefault("MPLCONFIGDIR", str(diagnostics_dir / ".mplconfig"))
+        (diagnostics_dir / ".mplconfig").mkdir(parents=True, exist_ok=True)
+        import matplotlib.pyplot as plt
+    except Exception:
+        return
+
+    if not summary_df.empty:
+        table_cols = ["pick", "count", "median_diff_s", "mean_abs_diff_s", "p05_diff_s", "p95_diff_s"]
+        table_df = summary_df[table_cols].copy()
+        for col in table_cols[2:]:
+            table_df[col] = table_df[col].map(lambda x: "" if pd.isna(x) else f"{x:.3f}")
+        fig_height = max(2.2, 0.34 * (len(table_df) + 1))
+        fig, ax = plt.subplots(figsize=(12, fig_height))
+        ax.axis("off")
+        table = ax.table(cellText=table_df.values, colLabels=table_df.columns, loc="center", cellLoc="center")
+        table.auto_set_font_size(False)
+        table.set_fontsize(8)
+        table.scale(1, 1.25)
+        fig.tight_layout()
+        fig.savefig(diagnostics_dir / "pick_difference_summary_table.png", dpi=180)
+        plt.close(fig)
+
+    for col in pick_cols:
+        if col == base_col:
+            continue
+        diff = out_df[f"{col}_minus_travel_time_s"].dropna()
+        if diff.empty:
+            continue
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.hist(diff, bins=80, color="0.25")
+        ax.axvline(0.0, color="tab:blue", linewidth=1.2)
+        ax.set_title(f"{col} - travel_time coarse pick")
+        ax.set_xlabel("seconds")
+        ax.set_ylabel("count")
+        fig.tight_layout()
+        fig.savefig(diagnostics_dir / f"{col}_minus_travel_time_hist.png", dpi=160)
+        plt.close(fig)
+
+    if n_waveform_plots <= 0:
+        return
+    sample_df = out_df.dropna(subset=["Magnitude"]).copy()
+    if sample_df.empty:
+        return
+    try:
+        n_mag_bins = min(4, int(sample_df["Magnitude"].nunique()))
+        if n_mag_bins > 1:
+            sample_df["mag_bin"] = pd.qcut(sample_df["Magnitude"], q=n_mag_bins, duplicates="drop")
+        else:
+            sample_df["mag_bin"] = "all"
+    except Exception:
+        sample_df["mag_bin"] = "all"
+
+    sampled_parts = []
+    n_bins = max(1, sample_df["mag_bin"].nunique())
+    per_bin = max(1, math.ceil(n_waveform_plots / n_bins))
+    for _, part in sample_df.groupby("mag_bin", observed=True):
+        sampled_parts.append(part.sample(min(len(part), per_bin), random_state=random_seed))
+    sampled = pd.concat(sampled_parts, ignore_index=True).sample(frac=1.0, random_state=random_seed).head(n_waveform_plots)
+    sampled.to_csv(diagnostics_dir / "waveform_pick_plot_samples.csv", index=False)
+
+    colors = {
+        "p_pick_trigger_aligned": "tab:gray",
+        "p_pick_predicted_aligned": "tab:cyan",
+        "p_pick_repaired_aligned": "tab:blue",
+        "stalta_refined_pick_aligned": "tab:orange",
+        "p_pick_diting_acc_aligned": "tab:red",
+        "p_pick_diting_vel_aligned": "tab:purple",
+        "p_pick_refined_aligned": "black",
+    }
+    labels = {
+        "p_pick_trigger_aligned": "trigger",
+        "p_pick_predicted_aligned": "travel_pred",
+        "p_pick_repaired_aligned": "travel_coarse",
+        "stalta_refined_pick_aligned": "stalta",
+        "p_pick_diting_acc_aligned": "diting_acc",
+        "p_pick_diting_vel_aligned": "diting_vel",
+        "p_pick_refined_aligned": "final",
+    }
+
+    with h5py.File(hdf5_path, "r") as h5:
+        for plot_idx, row in enumerate(sampled.itertuples(index=False), start=1):
+            row_dict = row._asdict()
+            event = str(row_dict["EVENT"])
+            wave_idx = int(row_dict["wave_idx"])
+            if event not in h5["data"]:
+                continue
+            grp = h5["data"][event]
+            waveform = grp["waveforms"][wave_idx]
+            sr_hz = float(row_dict["sampling_rate_hz"])
+            center = row_dict.get("p_pick_refined_aligned", row_dict.get(base_col))
+            if not np.isfinite(center):
+                center = row_dict.get(base_col)
+            center = int(center)
+            left = max(0, center - int(round(15.0 * sr_hz)))
+            right = min(waveform.shape[0], center + int(round(25.0 * sr_hz)))
+            if right <= left:
+                continue
+            t = (np.arange(left, right) - center) / sr_hz
+            vertical = waveform[left:right, 2]
+            norm = np.linalg.norm(waveform[left:right], axis=1)
+
+            fig, axes = plt.subplots(2, 1, figsize=(11, 5.4), sharex=True)
+            axes[0].plot(t, vertical, color="0.2", linewidth=0.8)
+            axes[0].set_ylabel("UD m/s^2")
+            axes[1].plot(t, norm, color="0.2", linewidth=0.8)
+            axes[1].set_ylabel("norm m/s^2")
+            axes[1].set_xlabel("seconds relative to final pick")
+
+            for col, color in colors.items():
+                if col not in row_dict:
+                    continue
+                pick = row_dict[col]
+                if not np.isfinite(pick):
+                    continue
+                x = (float(pick) - center) / sr_hz
+                for ax in axes:
+                    ax.axvline(x, color=color, linewidth=1.0, alpha=0.9, label=labels.get(col, col))
+            handles, legend_labels = axes[0].get_legend_handles_labels()
+            if handles:
+                by_label = dict(zip(legend_labels, handles))
+                axes[0].legend(by_label.values(), by_label.keys(), fontsize=7, ncol=4)
+            title = (
+                f"{event} wave_idx={wave_idx} station={row_dict.get('station_code', '')} "
+                f"M={float(row_dict.get('Magnitude', np.nan)):.1f}"
+            )
+            axes[0].set_title(title)
+            fig.tight_layout()
+            fig.savefig(diagnostics_dir / f"waveform_pick_check_{plot_idx:03d}.png", dpi=160)
+            plt.close(fig)
+
+
 def _write_string_or_numeric_dataset(group: h5py.Group, name: str, values, compression: str | None = None, compression_opts: int | None = None):
     arr = np.asarray(values)
     kwargs = {}
@@ -959,6 +1156,9 @@ def build_year_dataset(
     diting_target_half_window_seconds: float = 10.0,
     diting_window_seconds: float = 100.0,
     velocity_highpass_hz: float = 0.05,
+    diagnostics_dir: Path | None = None,
+    n_diagnostic_plots: int = 24,
+    diagnostic_random_seed: int = 2024,
 ) -> dict[str, int]:
     year_dir = waveform_root / str(year)
     outer_archives = sorted(year_dir.glob("*.tar"))
@@ -1077,6 +1277,14 @@ def build_year_dataset(
 
     event_df.to_csv(output_events_csv, index=False)
     station_df.to_csv(output_stations_csv, index=False)
+    if diagnostics_dir is not None and not station_df.empty:
+        write_pick_diagnostics(
+            station_df=station_df,
+            hdf5_path=output_hdf5,
+            diagnostics_dir=diagnostics_dir,
+            n_waveform_plots=n_diagnostic_plots,
+            random_seed=diagnostic_random_seed,
+        )
     return dict(stats)
 
 

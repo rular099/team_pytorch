@@ -37,6 +37,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--diting_target_half_window_seconds", type=float, default=10.0, help="Coarse pick +/- this window is sent to DiTing.")
     parser.add_argument("--diting_window_seconds", type=float, default=100.0, help="DiTing model input length; the target window is placed at the tail.")
     parser.add_argument("--velocity_highpass_hz", type=float, default=0.05, help="High-pass before acceleration integration.")
+    parser.add_argument("--diagnostics_dir", default=None, help="Directory for pick statistics and waveform QC plots. Defaults to output_dir/diagnostics_{year}.")
+    parser.add_argument("--n_diagnostic_plots", type=int, default=24, help="Number of random station waveforms to plot for manual pick QC.")
+    parser.add_argument("--diagnostic_random_seed", type=int, default=2024, help="Random seed for waveform QC plot sampling.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output files.")
     return parser.parse_args()
 
@@ -55,6 +58,7 @@ def main():
         output_hdf5 = output_dir / f"japan_{year}.hdf5"
         output_events_csv = output_dir / f"japan_{year}_events.csv"
         output_stations_csv = output_dir / f"japan_{year}_stations.csv"
+        diagnostics_dir = Path(args.diagnostics_dir).expanduser().resolve() if args.diagnostics_dir else output_dir / f"diagnostics_{year}"
 
         for path in (output_hdf5, output_events_csv, output_stations_csv):
             if path.exists() and not args.overwrite:
@@ -94,12 +98,16 @@ def main():
             diting_target_half_window_seconds=args.diting_target_half_window_seconds,
             diting_window_seconds=args.diting_window_seconds,
             velocity_highpass_hz=args.velocity_highpass_hz,
+            diagnostics_dir=diagnostics_dir,
+            n_diagnostic_plots=args.n_diagnostic_plots,
+            diagnostic_random_seed=args.diagnostic_random_seed,
         )
 
         print(f"\nYear {year} complete")
         print(f"  HDF5: {output_hdf5}")
         print(f"  Events CSV: {output_events_csv}")
         print(f"  Stations CSV: {output_stations_csv}")
+        print(f"  Diagnostics: {diagnostics_dir}")
         for key in sorted(stats):
             print(f"  {key}: {stats[key]}")
 
