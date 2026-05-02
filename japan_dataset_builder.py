@@ -578,6 +578,7 @@ def apply_repaired_and_refined_p_picks(
     final_pick: str = "stalta",
     travel_time_model: str = "constant",
     jma_table: JMATravelTimeTable | None = None,
+    ak135_model: AK135TravelTimeModel | None = None,
     jma_search_margin_seconds: float = 10.0,
     diting_model: object | None = None,
     diting_device: str = "cuda:0",
@@ -697,6 +698,7 @@ def apply_repaired_and_refined_p_picks(
         "p_pick_travel_time_fast_aligned",
         "p_pick_travel_time_slow_aligned",
         "p_pick_jma_grid_clipped",
+        "p_pick_ak135_fallback",
     ):
         if col in refined_df.columns:
             datasets[col] = refined_df[col].to_numpy(dtype=np.int64)
@@ -727,6 +729,7 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_Fit_N_Trusted": int(fit_summary["n_trusted"]),
             "P_Pick_Fit_N_Clipped": int(fit_summary.get("n_clipped", 0)),
             "P_Pick_JMA_Grid_Clipped": int(fit_summary.get("n_jma_grid_clipped", 0)),
+            "P_Pick_AK135_Fallback": int(fit_summary.get("n_ak135_fallback", 0)),
             "P_Pick_STA_Pre_S": float(stalta_pre_seconds),
             "P_Pick_STA_Post_S": float(stalta_post_seconds),
             "P_Pick_STA_STA_S": float(stalta_sta_seconds),
@@ -1303,6 +1306,26 @@ class JMATravelTimeTable:
         return _lerp(t0, t1, aw), bool(a_clipped or d_clipped or x_clipped)
 
 
+class AK135TravelTimeModel:
+    def __init__(self):
+        os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib-codex")
+        Path(os.environ["MPLCONFIGDIR"]).mkdir(parents=True, exist_ok=True)
+        from obspy.taup import TauPyModel
+
+        self.model = TauPyModel(model="ak135")
+
+    def predict_p_seconds(self, depth_km: float, distance_km: float) -> float:
+        distance_degrees = float(distance_km) / 6371.0 * 180.0 / math.pi
+        arrivals = self.model.get_travel_times(
+            source_depth_in_km=max(0.0, float(depth_km)),
+            distance_in_degree=max(0.0, distance_degrees),
+            phase_list=["p", "P", "Pg", "Pn"],
+        )
+        if not arrivals:
+            raise ValueError(f"ak135 returned no P arrivals for depth={depth_km}, distance={distance_km}")
+        return float(min(arr.time for arr in arrivals))
+
+
 def build_year_dataset(
     waveform_root: Path,
     output_hdf5: Path,
@@ -1353,10 +1376,20 @@ def build_year_dataset(
     event_rows: list[dict[str, object]] = []
     station_rows: list[dict[str, object]] = []
     jma_table = None
+    ak135_model = None
     if travel_time_model == "jma2001a":
-        jma_table = JMATravelTimeTable(jma_travel_time_zip or DEFAULT_JMA2001A_ZIP)
+        try:
+            jma_table = JMATravelTimeTable(jma_travel_time_zip or DEFAULT_JMA2001A_ZIP)
+        except Exception as exc:
+            stats["jma_table_load_failed"] = 1
+            print(f"Warning: failed to load JMA travel-time table ({exc}); falling back to ak135")
+            ak135_model = AK135TravelTimeModel()
+    elif travel_time_model == "ak135":
+        ak135_model = AK135TravelTimeModel()
     elif travel_time_model != "constant":
         raise ValueError(f"Unsupported travel_time_model: {travel_time_model}")
+    if travel_time_model == "jma2001a" and ak135_model is None:
+        ak135_model = AK135TravelTimeModel()
 
     diting_model = None
     if run_diting:
@@ -1411,6 +1444,7 @@ def build_year_dataset(
                 final_pick=final_pick,
                 travel_time_model=travel_time_model,
                 jma_table=jma_table,
+                ak135_model=ak135_model,
                 jma_search_margin_seconds=jma_search_margin_seconds,
                 diting_model=diting_model,
                 diting_device=diting_device,
@@ -1720,6 +1754,7 @@ def estimate_event_travel_time_p_picks(
     event_df: pd.DataFrame,
     travel_time_model: str = "constant",
     jma_table: JMATravelTimeTable | None = None,
+    ak135_model: AK135TravelTimeModel | None = None,
     jma_search_margin_seconds: float = 10.0,
     p_velocity_km_s: float = 6.0,
     min_velocity_km_s: float | None = None,
@@ -1771,19 +1806,57 @@ def estimate_event_travel_time_p_picks(
     observed_abs_ts = global_start_ts + df["p_pick_aligned"].to_numpy(dtype=np.float64) / sampling_rate_hz
     observed_tp_seconds = observed_abs_ts - origin_ts
     jma_clipped = np.zeros((len(df),), dtype=bool)
+    ak135_used = np.zeros((len(df),), dtype=bool)
+    pick_model = np.array([travel_time_model] * len(df), dtype=object)
     if travel_time_model == "jma2001a":
-        if jma_table is None:
-            raise ValueError("jma_table is required when travel_time_model='jma2001a'")
+        if ak135_model is None:
+            ak135_model = AK135TravelTimeModel()
         predicted = []
         for i, row in df.iterrows():
-            p_seconds, clipped = jma_table.predict_p_seconds(
-                depth_km=float(row["DEPTH"]),
-                distance_km=float(row["epicentral_distance_km"]),
-                station_height_m=float(row["station_height_m"]),
-            )
+            if jma_table is None:
+                p_seconds = ak135_model.predict_p_seconds(
+                    depth_km=float(row["DEPTH"]),
+                    distance_km=float(row["epicentral_distance_km"]),
+                )
+                clipped = True
+                ak135_used[i] = True
+                pick_model[i] = "ak135"
+            else:
+                p_seconds, clipped = jma_table.predict_p_seconds(
+                    depth_km=float(row["DEPTH"]),
+                    distance_km=float(row["epicentral_distance_km"]),
+                    station_height_m=float(row["station_height_m"]),
+                )
+                if clipped:
+                    p_seconds = ak135_model.predict_p_seconds(
+                        depth_km=float(row["DEPTH"]),
+                        distance_km=float(row["epicentral_distance_km"]),
+                    )
+                    ak135_used[i] = True
+                    pick_model[i] = "ak135"
             predicted.append(float(p_seconds) + float(travel_time_intercept_s))
             jma_clipped[i] = clipped
         predicted_tp_seconds = np.asarray(predicted, dtype=np.float64)
+        fast_tp_seconds = predicted_tp_seconds - float(jma_search_margin_seconds)
+        slow_tp_seconds = predicted_tp_seconds + float(jma_search_margin_seconds)
+        min_velocity_km_s = np.nan if min_velocity_km_s is None else float(min_velocity_km_s)
+        max_velocity_km_s = np.nan if max_velocity_km_s is None else float(max_velocity_km_s)
+    elif travel_time_model == "ak135":
+        if ak135_model is None:
+            ak135_model = AK135TravelTimeModel()
+        predicted_tp_seconds = np.asarray(
+            [
+                ak135_model.predict_p_seconds(
+                    depth_km=float(row["DEPTH"]),
+                    distance_km=float(row["epicentral_distance_km"]),
+                )
+                + float(travel_time_intercept_s)
+                for _, row in df.iterrows()
+            ],
+            dtype=np.float64,
+        )
+        ak135_used[:] = True
+        pick_model[:] = "ak135"
         fast_tp_seconds = predicted_tp_seconds - float(jma_search_margin_seconds)
         slow_tp_seconds = predicted_tp_seconds + float(jma_search_margin_seconds)
         min_velocity_km_s = np.nan if min_velocity_km_s is None else float(min_velocity_km_s)
@@ -1839,15 +1912,23 @@ def estimate_event_travel_time_p_picks(
     df["p_pick_travel_time_fast_seconds_after_origin"] = fast_tp_seconds
     df["p_pick_travel_time_slow_seconds_after_origin"] = slow_tp_seconds
     df["p_pick_jma_grid_clipped"] = jma_clipped.astype(np.int8)
+    df["p_pick_ak135_fallback"] = ak135_used.astype(np.int8)
+    df["p_pick_travel_time_model_used"] = pick_model
     df["p_pick_search_left_aligned"] = search_left
     df["p_pick_search_right_aligned"] = search_right
     df["p_pick_search_left_seconds_after_origin"] = global_start_ts + search_left.astype(np.float64) / sampling_rate_hz - origin_ts
     df["p_pick_search_right_seconds_after_origin"] = global_start_ts + search_right.astype(np.float64) / sampling_rate_hz - origin_ts
     df["p_pick_search_width_seconds"] = (search_right - search_left) / sampling_rate_hz
     df["p_pick_repaired_aligned"] = repaired_aligned
-    source_name = "jma2001a" if travel_time_model == "jma2001a" else "travel_time"
-    clipped_name = f"{source_name}_clipped"
-    df["p_pick_repaired_source"] = np.where(predicted_aligned == repaired_aligned, source_name, clipped_name)
+    if travel_time_model == "constant":
+        source_names = np.array(["travel_time"] * len(df), dtype=object)
+    else:
+        source_names = pick_model.copy()
+    df["p_pick_repaired_source"] = np.where(
+        predicted_aligned == repaired_aligned,
+        source_names,
+        np.asarray([f"{name}_clipped" for name in source_names], dtype=object),
+    )
     df["p_pick_repaired_seconds_after_origin"] = (
         global_start_ts + df["p_pick_repaired_aligned"].to_numpy(dtype=np.float64) / sampling_rate_hz - origin_ts
     )
@@ -1866,6 +1947,7 @@ def estimate_event_travel_time_p_picks(
         "n_trusted": int(np.sum(df["trigger_is_pick"].to_numpy(dtype=bool))),
         "n_clipped": int(np.sum(predicted_aligned != repaired_aligned)),
         "n_jma_grid_clipped": int(np.sum(jma_clipped)),
+        "n_ak135_fallback": int(np.sum(ak135_used)),
     }
     return df, fit_summary
 
