@@ -9,6 +9,7 @@ import sys
 import tarfile
 import zipfile
 from collections import Counter, defaultdict
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from fractions import Fraction
@@ -30,6 +31,16 @@ DIR_COMPONENT_INDEX = {name: i for i, name in enumerate(COMPONENT_ORDER)}
 OUTER_EVENT_RE = re.compile(r"(?P<event_id>\d{14})\.tar$")
 INNER_COMPONENT_RE = re.compile(r"^(?P<base>.+)\.(?P<comp>NS|EW|UD)(?P<suffix>[12]?)$")
 DEFAULT_JMA2001A_ZIP = Path(__file__).resolve().parent / "resources" / "jma_travel_times" / "tjma2001h.zip"
+
+
+@contextmanager
+def _suppress_stdout_stderr(enabled: bool):
+    if not enabled:
+        yield
+        return
+    with open(os.devnull, "w") as devnull:
+        with redirect_stdout(devnull), redirect_stderr(devnull):
+            yield
 
 
 @dataclass
@@ -874,6 +885,7 @@ def run_diting_single_station(
     p_th: float,
     s_th: float,
     d_th: float,
+    quiet: bool = True,
 ) -> tuple[float, float]:
     from obspy import Stream, Trace, UTCDateTime
     from dtbench.inference.dt_infer import diting_dpk_inference
@@ -889,30 +901,31 @@ def run_diting_single_station(
         trace.stats.starttime = UTCDateTime(0)
         stream.append(trace)
 
-    infer_res = diting_dpk_inference(
-        data=stream,
-        data_name=str(station_code),
-        data_type="stream",
-        model=model,
-        model_output_type="diting",
-        device=device,
-        batch_size=batch_size,
-        preprocess="default",
-        postprocess="nms",
-        output_format="default",
-        p_th=p_th,
-        s_th=s_th,
-        d_th=d_th,
-        window_length=10000,
-        step_size=2000,
-        radius_A=300,
-        radius_B=300,
-        pair_score=0.5,
-        joint_metric="p_union",
-        nms_pos_reduce="earliest",
-        nms_score_reduce="p_union",
-        process_len=10,
-    )
+    with _suppress_stdout_stderr(quiet):
+        infer_res = diting_dpk_inference(
+            data=stream,
+            data_name=str(station_code),
+            data_type="stream",
+            model=model,
+            model_output_type="diting",
+            device=device,
+            batch_size=batch_size,
+            preprocess="default",
+            postprocess="nms",
+            output_format="default",
+            p_th=p_th,
+            s_th=s_th,
+            d_th=d_th,
+            window_length=10000,
+            step_size=2000,
+            radius_A=300,
+            radius_B=300,
+            pair_score=0.5,
+            joint_metric="p_union",
+            nms_pos_reduce="earliest",
+            nms_score_reduce="p_union",
+            process_len=10,
+        )
 
     best_idx = np.nan
     best_score = np.nan
@@ -947,6 +960,7 @@ def add_diting_picks_to_event(
     velocity_highpass_hz: float,
     search_left_col: str | None = None,
     search_right_col: str | None = None,
+    show_progress: bool = True,
 ) -> pd.DataFrame:
     df = event_df.copy().reset_index(drop=True)
     for col in (
@@ -961,7 +975,18 @@ def add_diting_picks_to_event(
     ):
         df[col] = "" if col.endswith("_error") else np.nan
 
-    for idx, row in df.iterrows():
+    event_id = str(df["EVENT"].iloc[0]) if "EVENT" in df.columns and not df.empty else "event"
+    rows_iter = df.iterrows()
+    if show_progress and len(df) > 1:
+        rows_iter = tqdm(
+            rows_iter,
+            total=len(df),
+            desc=f"{event_id} stations",
+            unit="station",
+            leave=False,
+            position=1,
+        )
+    for idx, row in rows_iter:
         wave_idx = int(row["wave_idx"])
         start = int(record_start_sample[wave_idx])
         valid_end = start + int(valid_n_samples[wave_idx])
@@ -998,6 +1023,7 @@ def add_diting_picks_to_event(
                     p_th=p_th,
                     s_th=s_th,
                     d_th=d_th,
+                    quiet=True,
                 )
                 if not np.isfinite(pred_idx):
                     df.loc[idx, f"diting_{suffix}_error"] = "no_p_pick"
@@ -1527,7 +1553,7 @@ def build_year_dataset(
         _write_string_or_numeric_dataset(meta_grp, "waveform_root", np.array([str(waveform_root)], dtype=object))
         meta_grp.create_dataset("year", data=year)
 
-        for outer_tar_path in tqdm(outer_archives, desc=f"year {year}", unit="event"):
+        for outer_tar_path in tqdm(outer_archives, desc=f"year {year}", unit="event", position=0):
             stats["events_seen"] += 1
             archive_relpath = str(outer_tar_path.relative_to(waveform_root))
             try:
