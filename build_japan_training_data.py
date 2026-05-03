@@ -40,6 +40,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stalta_lta_seconds", type=float, default=1.0, help="LTA window length in seconds.")
     parser.add_argument("--stalta_threshold_ratio", type=float, default=2.5, help="STA/LTA threshold ratio.")
     parser.add_argument("--stalta_feature", choices=["vertical", "norm"], default="vertical", help="STA/LTA characteristic function.")
+    parser.add_argument("--stalta_highpass_hz", type=float, default=0.5, help="High-pass frequency applied before STA/LTA. Set <=0 to disable.")
+    parser.add_argument("--no_stalta_boundary_pick", action="store_true", help="Disable STA/LTA picks inside the initial LTA warm-up interval.")
     parser.add_argument("--run_diting", action="store_true", help="Run DiTing P-pickers for acceleration and integrated velocity windows.")
     parser.add_argument("--ditingbench_root", default=None, help="Path to ditingbench root. Added to sys.path when set.")
     parser.add_argument("--diting_model_name", default="diting1200m", help="Model name passed to dtbench.models.get_model.")
@@ -109,6 +111,8 @@ def main():
             stalta_lta_seconds=args.stalta_lta_seconds,
             stalta_threshold_ratio=args.stalta_threshold_ratio,
             stalta_feature=args.stalta_feature,
+            stalta_highpass_hz=args.stalta_highpass_hz,
+            stalta_allow_boundary_pick=not args.no_stalta_boundary_pick,
             run_diting=args.run_diting,
             ditingbench_root=args.ditingbench_root,
             diting_model_name=args.diting_model_name,

@@ -604,6 +604,8 @@ def apply_repaired_and_refined_p_picks(
     stalta_lta_seconds: float = 1.0,
     stalta_threshold_ratio: float = 0.2,
     stalta_feature: str = "vertical",
+    stalta_highpass_hz: float = 0.5,
+    stalta_allow_boundary_pick: bool = True,
 ) -> tuple[dict[str, np.ndarray | object], dict[str, object], pd.DataFrame]:
     station_df = pd.DataFrame(station_rows)
     if pick_mode == "trigger_repair":
@@ -643,6 +645,8 @@ def apply_repaired_and_refined_p_picks(
         lta_seconds=stalta_lta_seconds,
         threshold_ratio=stalta_threshold_ratio,
         feature=stalta_feature,
+        highpass_hz=stalta_highpass_hz,
+        allow_boundary_pick=stalta_allow_boundary_pick,
         search_left_col="p_pick_search_left_aligned",
         search_right_col="p_pick_search_right_aligned",
     )
@@ -730,6 +734,10 @@ def apply_repaired_and_refined_p_picks(
     datasets["stalta_ratio_at_pick"] = refined_df["stalta_ratio_at_pick"].to_numpy(dtype=np.float64)
     datasets["stalta_search_left_aligned"] = refined_df["stalta_search_left_aligned"].to_numpy(dtype=np.int64)
     datasets["stalta_search_right_aligned"] = refined_df["stalta_search_right_aligned"].to_numpy(dtype=np.int64)
+    if "stalta_boundary_mode" in refined_df.columns:
+        datasets["stalta_boundary_mode"] = refined_df["stalta_boundary_mode"].to_numpy(dtype=np.int8)
+    if "stalta_boundary_warmup_search" in refined_df.columns:
+        datasets["stalta_boundary_warmup_search"] = refined_df["stalta_boundary_warmup_search"].to_numpy(dtype=np.int8)
 
     event_meta = event_meta.copy()
     event_meta.update(
@@ -761,6 +769,8 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_STA_LTA_S": float(stalta_lta_seconds),
             "P_Pick_STA_Threshold": float(stalta_threshold_ratio),
             "P_Pick_STA_Feature": stalta_feature,
+            "P_Pick_STA_Highpass_Hz": float(stalta_highpass_hz),
+            "P_Pick_STA_Allow_Boundary_Pick": int(stalta_allow_boundary_pick),
             "P_Pick_DiTing_Enabled": int(diting_model is not None),
             "P_Pick_DiTing_Target_Half_Window_S": float(diting_target_half_window_seconds),
             "P_Pick_DiTing_Window_S": float(diting_window_seconds),
@@ -794,6 +804,8 @@ def prepare_diting_input_window(
     velocity_highpass_hz: float = 0.05,
     search_left_aligned: int | None = None,
     search_right_aligned: int | None = None,
+    record_start_aligned: int = 0,
+    valid_n_samples: int | None = None,
 ) -> tuple[np.ndarray, int, int]:
     target_fs = 100.0
     if not math.isclose(sampling_rate_hz, target_fs):
@@ -801,11 +813,15 @@ def prepare_diting_input_window(
         coarse_pick = int(round(coarse_pick_aligned * target_fs / sampling_rate_hz))
         search_left = None if search_left_aligned is None else int(round(search_left_aligned * target_fs / sampling_rate_hz))
         search_right = None if search_right_aligned is None else int(round(search_right_aligned * target_fs / sampling_rate_hz))
+        record_start = int(round(record_start_aligned * target_fs / sampling_rate_hz))
+        valid_n = None if valid_n_samples is None else int(round(valid_n_samples * target_fs / sampling_rate_hz))
     else:
         waveform = waveform_aligned_mps2.copy()
         coarse_pick = int(coarse_pick_aligned)
         search_left = search_left_aligned
         search_right = search_right_aligned
+        record_start = int(record_start_aligned)
+        valid_n = None if valid_n_samples is None else int(valid_n_samples)
 
     if search_left is not None and search_right is not None:
         crop_start = max(0, min(int(search_left), int(search_right)))
@@ -814,21 +830,27 @@ def prepare_diting_input_window(
         half = int(round(target_half_window_seconds * target_fs))
         crop_start = max(0, coarse_pick - half)
         crop_end = min(waveform.shape[0], coarse_pick + half)
-    crop = waveform[crop_start:crop_end].astype(np.float64, copy=False)
-    if crop.size:
-        crop = detrend(crop, axis=0, type="linear")
-        crop = crop - np.mean(crop, axis=0, keepdims=True)
 
+    if valid_n is None:
+        valid_n = waveform.shape[0] - record_start
+    record_start = int(np.clip(record_start, 0, waveform.shape[0]))
+    valid_end = min(waveform.shape[0], record_start + max(0, int(valid_n)))
+    processed = np.zeros_like(waveform, dtype=np.float64)
+    valid = waveform[record_start:valid_end].astype(np.float64, copy=True)
+    if valid.size:
+        valid = detrend(valid, axis=0, type="linear")
+        valid = valid - np.mean(valid, axis=0, keepdims=True)
     if mode == "velocity":
-        if crop.shape[0] > 32 and velocity_highpass_hz > 0:
-            sos = butter(4, velocity_highpass_hz, btype="highpass", fs=target_fs, output="sos")
-            crop = sosfiltfilt(sos, crop, axis=0)
-        crop = cumulative_trapezoid(crop, dx=1.0 / target_fs, axis=0, initial=0.0)
-        if crop.size:
-            crop = detrend(crop, axis=0, type="linear")
-            crop = crop - np.mean(crop, axis=0, keepdims=True)
+        if valid.size:
+            valid = _highpass_if_requested(valid, target_fs, velocity_highpass_hz)
+            valid = cumulative_trapezoid(valid, dx=1.0 / target_fs, axis=0, initial=0.0)
+            valid = detrend(valid, axis=0, type="linear")
+            valid = valid - np.mean(valid, axis=0, keepdims=True)
     elif mode != "acceleration":
         raise ValueError(f"Unsupported DiTing mode: {mode}")
+    if valid.size:
+        processed[record_start:valid_end] = valid
+    crop = processed[crop_start:crop_end]
 
     model_n = int(round(model_window_seconds * target_fs))
     window = np.zeros((model_n, 3), dtype=np.float32)
@@ -964,6 +986,8 @@ def add_diting_picks_to_event(
                     velocity_highpass_hz=velocity_highpass_hz,
                     search_left_aligned=search_left,
                     search_right_aligned=search_right,
+                    record_start_aligned=start,
+                    valid_n_samples=int(valid_n_samples[wave_idx]),
                 )
                 pred_idx, score = run_diting_single_station(
                     model=model,
@@ -1195,14 +1219,20 @@ def write_pick_diagnostics(
             if right <= left:
                 continue
             t = (np.arange(left, right) - record_start) / sr_hz
-            vertical = waveform[left:right, 2]
-            norm = np.linalg.norm(waveform[left:right], axis=1)
+            acceleration = waveform[left:right, 2]
+            velocity = _acceleration_to_velocity_for_plot(
+                waveform_aligned_mps2=waveform,
+                record_start_sample=record_start,
+                valid_n_samples=valid_n,
+                sampling_rate_hz=sr_hz,
+                highpass_hz=0.05,
+            )[left:right, 2]
 
             fig, axes = plt.subplots(2, 1, figsize=(11, 5.4), sharex=True)
-            axes[0].plot(t, vertical, color="0.2", linewidth=0.8)
+            axes[0].plot(t, acceleration, color="0.2", linewidth=0.8)
             axes[0].set_ylabel("UD m/s^2")
-            axes[1].plot(t, norm, color="0.2", linewidth=0.8)
-            axes[1].set_ylabel("norm m/s^2")
+            axes[1].plot(t, velocity, color="0.2", linewidth=0.8)
+            axes[1].set_ylabel("UD m/s")
             axes[1].set_xlabel("seconds after station record start")
 
             if left < record_start:
@@ -1434,6 +1464,8 @@ def build_year_dataset(
     stalta_lta_seconds: float = 1.0,
     stalta_threshold_ratio: float = 0.2,
     stalta_feature: str = "vertical",
+    stalta_highpass_hz: float = 0.5,
+    stalta_allow_boundary_pick: bool = True,
     run_diting: bool = False,
     ditingbench_root: str | None = None,
     diting_model_name: str = "diting1200m",
@@ -1551,6 +1583,8 @@ def build_year_dataset(
                 stalta_lta_seconds=stalta_lta_seconds,
                 stalta_threshold_ratio=stalta_threshold_ratio,
                 stalta_feature=stalta_feature,
+                stalta_highpass_hz=stalta_highpass_hz,
+                stalta_allow_boundary_pick=stalta_allow_boundary_pick,
             )
             event_rows.append(event_meta)
             station_rows.extend(refined_station_df.to_dict(orient="records"))
@@ -2086,6 +2120,40 @@ def _moving_average_same(x: np.ndarray, window: int) -> np.ndarray:
     return np.convolve(x, kernel, mode="same")
 
 
+def _highpass_if_requested(waveform: np.ndarray, sampling_rate_hz: float, highpass_hz: float) -> np.ndarray:
+    out = waveform.astype(np.float64, copy=True)
+    if highpass_hz <= 0:
+        return out
+    if highpass_hz >= 0.5 * sampling_rate_hz:
+        raise ValueError(f"highpass_hz ({highpass_hz}) must be below Nyquist ({0.5 * sampling_rate_hz})")
+    if out.shape[0] <= 24:
+        return detrend(out, axis=0, type="constant")
+    sos = butter(4, highpass_hz, btype="highpass", fs=sampling_rate_hz, output="sos")
+    return sosfiltfilt(sos, out, axis=0)
+
+
+def _acceleration_to_velocity_for_plot(
+    waveform_aligned_mps2: np.ndarray,
+    record_start_sample: int,
+    valid_n_samples: int,
+    sampling_rate_hz: float,
+    highpass_hz: float = 0.05,
+) -> np.ndarray:
+    velocity = np.zeros_like(waveform_aligned_mps2, dtype=np.float64)
+    start = int(record_start_sample)
+    end = min(waveform_aligned_mps2.shape[0], start + int(valid_n_samples))
+    if end <= start:
+        return velocity
+    valid = waveform_aligned_mps2[start:end].astype(np.float64, copy=True)
+    valid = detrend(valid, axis=0, type="linear")
+    valid = valid - np.mean(valid, axis=0, keepdims=True)
+    valid = _highpass_if_requested(valid, sampling_rate_hz, highpass_hz)
+    vel = cumulative_trapezoid(valid, dx=1.0 / sampling_rate_hz, axis=0, initial=0.0)
+    vel = detrend(vel, axis=0, type="linear")
+    velocity[start:end] = vel - np.mean(vel, axis=0, keepdims=True)
+    return velocity
+
+
 def refine_pick_stalta(
     waveform_aligned: np.ndarray,
     coarse_pick_aligned: int,
@@ -2100,6 +2168,8 @@ def refine_pick_stalta(
     lta_seconds: float = 1.0,
     threshold_ratio: float = 2.5,
     feature: str = "vertical",
+    highpass_hz: float = 0.5,
+    allow_boundary_pick: bool = True,
 ) -> dict[str, int | float | str | np.ndarray]:
     if valid_n_samples is None:
         valid_n_samples = waveform_aligned.shape[0] - record_start_sample
@@ -2116,7 +2186,11 @@ def refine_pick_stalta(
             "ratio_at_pick": float("nan"),
             "method": "empty",
             "search_feature": feature,
+            "highpass_hz": float(highpass_hz),
+            "boundary_mode": 0,
+            "boundary_warmup_search": 0,
         }
+    filtered_valid = _highpass_if_requested(valid, sampling_rate_hz, highpass_hz)
 
     coarse_rel = int(np.clip(coarse_pick_aligned - start, 0, max(0, valid.shape[0] - 1)))
     if search_left_aligned is not None and search_right_aligned is not None:
@@ -2129,9 +2203,9 @@ def refine_pick_stalta(
         right = min(valid.shape[0], coarse_rel + int(round(post_seconds * sampling_rate_hz)) + 1)
 
     if feature == "vertical":
-        char = np.abs(valid[:, 2])
+        char = np.abs(filtered_valid[:, 2])
     elif feature == "norm":
-        char = np.linalg.norm(valid, axis=1)
+        char = np.linalg.norm(filtered_valid, axis=1)
     else:
         raise ValueError(f"Unsupported feature: {feature}")
 
@@ -2140,7 +2214,8 @@ def refine_pick_stalta(
     sta = _moving_average_same(char, sta_n)
     lta = _moving_average_same(char, lta_n)
     ratio = sta / np.maximum(lta, 5e-4)
-    ratio[: max(lta_n, left)] = 0.0
+    boundary_warmup_search = bool(allow_boundary_pick and left < lta_n)
+    ratio[: (left if boundary_warmup_search else max(lta_n, left))] = 0.0
 
     local_ratio = ratio[left:right]
     if local_ratio.size == 0:
@@ -2154,6 +2229,9 @@ def refine_pick_stalta(
         else:
             refined_rel = left + int(np.argmax(local_ratio))
             method = "stalta_argmax"
+    boundary_pick = bool(boundary_warmup_search and refined_rel < lta_n)
+    if boundary_pick:
+        method = method.replace("stalta_", "stalta_boundary_", 1)
 
     return {
         "refined_pick_aligned": int(start + refined_rel),
@@ -2163,6 +2241,9 @@ def refine_pick_stalta(
         "ratio_at_pick": float(ratio[refined_rel]) if ratio.size else float("nan"),
         "method": method,
         "search_feature": feature,
+        "highpass_hz": float(highpass_hz),
+        "boundary_mode": int(boundary_pick),
+        "boundary_warmup_search": int(boundary_warmup_search),
         "coarse_pick_aligned": int(coarse_pick_aligned),
     }
 
@@ -2179,6 +2260,8 @@ def refine_event_p_picks_from_arrays(
     lta_seconds: float = 1.0,
     threshold_ratio: float = 0.2,
     feature: str = "vertical",
+    highpass_hz: float = 0.5,
+    allow_boundary_pick: bool = True,
     search_left_col: str | None = None,
     search_right_col: str | None = None,
 ) -> pd.DataFrame:
@@ -2207,6 +2290,8 @@ def refine_event_p_picks_from_arrays(
             lta_seconds=lta_seconds,
             threshold_ratio=threshold_ratio,
             feature=feature,
+            highpass_hz=highpass_hz,
+            allow_boundary_pick=allow_boundary_pick,
         )
         refined_rows.append(refined)
 
@@ -2226,6 +2311,8 @@ def refine_event_p_picks_from_hdf5(
     lta_seconds: float = 1.0,
     threshold_ratio: float = 0.2,
     feature: str = "vertical",
+    highpass_hz: float = 0.5,
+    allow_boundary_pick: bool = True,
 ) -> pd.DataFrame:
     if event_df.empty:
         raise ValueError("event_df must not be empty")
@@ -2249,4 +2336,6 @@ def refine_event_p_picks_from_hdf5(
         lta_seconds=lta_seconds,
         threshold_ratio=threshold_ratio,
         feature=feature,
+        highpass_hz=highpass_hz,
+        allow_boundary_pick=allow_boundary_pick,
     )
