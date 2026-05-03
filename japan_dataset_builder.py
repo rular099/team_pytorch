@@ -1219,9 +1219,13 @@ def write_pick_diagnostics(
             if handles:
                 by_label = dict(zip(legend_labels, handles))
                 axes[0].legend(by_label.values(), by_label.keys(), fontsize=7, ncol=4)
+            epicentral_distance_km = row_dict.get("epicentral_distance_km", np.nan)
+            distance_text = ""
+            if np.isfinite(epicentral_distance_km):
+                distance_text = f" epi={float(epicentral_distance_km):.1f}km"
             title = (
                 f"{event} wave_idx={wave_idx} station={row_dict.get('station_code', '')} "
-                f"M={float(row_dict.get('Magnitude', np.nan)):.1f} "
+                f"M={float(row_dict.get('Magnitude', np.nan)):.1f}{distance_text} "
                 f"search={row_dict.get('p_pick_search_source', '')}"
             )
             axes[0].set_title(title)

@@ -13,7 +13,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--year", type=int, action="append", help="Year to process. Repeat to process multiple years. Defaults to all years found.")
     parser.add_argument("--min_stations", type=int, default=3, help="Minimum valid stations required to keep an event.")
     parser.add_argument("--target_sampling_rate", type=float, default=100.0, help="Target sampling rate in Hz.")
-    parser.add_argument("--limit_events", type=int, default=None, help="Optional cap on the number of outer event archives per year.")
+    parser.add_argument(
+        "--limit_events",
+        "--num_events",
+        dest="limit_events",
+        type=int,
+        default=None,
+        help="Optional cap on the number of outer event archives per year, useful for small-sample tests.",
+    )
     parser.add_argument("--compression_level", type=int, default=4, help="gzip compression level for output HDF5.")
     parser.add_argument("--pick_mode", choices=["trigger_repair", "travel_time"], default="travel_time", help="Coarse P-pick source before STA/LTA refinement.")
     parser.add_argument("--final_pick", choices=["travel_time", "stalta", "diting_acc", "diting_vel"], default="stalta", help="Pick source stored in p_picks for training.")
