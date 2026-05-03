@@ -683,7 +683,11 @@ def apply_repaired_and_refined_p_picks(
     final_col = final_pick_columns[final_pick]
     if final_col not in refined_df.columns:
         raise ValueError(f"final_pick={final_pick} requires --run_diting")
-    final_values = pd.to_numeric(refined_df[final_col], errors="coerce").fillna(refined_df["p_pick_repaired_aligned"]).astype(np.int64)
+    if final_pick.startswith("diting"):
+        final_fallback = refined_df["stalta_refined_pick_aligned"]
+    else:
+        final_fallback = refined_df["p_pick_repaired_aligned"]
+    final_values = pd.to_numeric(refined_df[final_col], errors="coerce").fillna(final_fallback).astype(np.int64)
     refined_df["p_pick_refined_aligned"] = final_values
     refined_df["p_pick_refined_source"] = final_pick
     refined_df["p_pick_refine_method"] = final_pick
@@ -695,13 +699,18 @@ def apply_repaired_and_refined_p_picks(
     for col in (
         "p_pick_search_left_aligned",
         "p_pick_search_right_aligned",
+        "p_pick_search_raw_left_aligned",
+        "p_pick_search_raw_right_aligned",
         "p_pick_travel_time_fast_aligned",
         "p_pick_travel_time_slow_aligned",
         "p_pick_jma_grid_clipped",
         "p_pick_ak135_fallback",
+        "p_pick_search_intersects_record",
     ):
         if col in refined_df.columns:
             datasets[col] = refined_df[col].to_numpy(dtype=np.int64)
+    if "p_pick_search_source" in refined_df.columns:
+        datasets["p_pick_search_source"] = refined_df["p_pick_search_source"].to_numpy(dtype=object)
     datasets["p_picks"] = datasets["p_pick_refined_aligned"]
     datasets["trigger_is_pick"] = refined_df["trigger_is_pick"].to_numpy(dtype=np.int8)
     datasets["p_pick_repaired_source"] = refined_df["p_pick_repaired_source"].to_numpy(dtype=object)
@@ -730,6 +739,7 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_Fit_N_Clipped": int(fit_summary.get("n_clipped", 0)),
             "P_Pick_JMA_Grid_Clipped": int(fit_summary.get("n_jma_grid_clipped", 0)),
             "P_Pick_AK135_Fallback": int(fit_summary.get("n_ak135_fallback", 0)),
+            "P_Pick_Search_Fallback": int(fit_summary.get("n_search_fallback", 0)),
             "P_Pick_STA_Pre_S": float(stalta_pre_seconds),
             "P_Pick_STA_Post_S": float(stalta_post_seconds),
             "P_Pick_STA_STA_S": float(stalta_sta_seconds),
@@ -1120,6 +1130,7 @@ def write_pick_diagnostics(
         "p_pick_diting_acc_aligned": "tab:red",
         "p_pick_diting_vel_aligned": "tab:purple",
         "p_pick_refined_aligned": "black",
+        "pga_norm_aligned_loc": "tab:olive",
     }
     labels = {
         "p_pick_trigger_aligned": "trigger",
@@ -1129,6 +1140,7 @@ def write_pick_diagnostics(
         "p_pick_diting_acc_aligned": "diting_acc",
         "p_pick_diting_vel_aligned": "diting_vel",
         "p_pick_refined_aligned": "final",
+        "pga_norm_aligned_loc": "pga",
     }
 
     with h5py.File(hdf5_path, "r") as h5:
@@ -1141,15 +1153,30 @@ def write_pick_diagnostics(
             grp = h5["data"][event]
             waveform = grp["waveforms"][wave_idx]
             sr_hz = float(row_dict["sampling_rate_hz"])
-            center = row_dict.get("p_pick_refined_aligned", row_dict.get(base_col))
-            if not np.isfinite(center):
-                center = row_dict.get(base_col)
-            center = int(center)
-            left = max(0, center - int(round(15.0 * sr_hz)))
-            right = min(waveform.shape[0], center + int(round(25.0 * sr_hz)))
+            record_start = int(row_dict.get("record_start_sample", 0))
+            valid_n = int(row_dict.get("valid_n_samples", waveform.shape[0]))
+            valid_end = min(waveform.shape[0] - 1, record_start + max(0, valid_n) - 1)
+            plot_marks = [record_start, valid_end]
+            for col in colors:
+                pick = row_dict.get(col)
+                if pick is not None and np.isfinite(pick):
+                    plot_marks.append(int(round(float(pick))))
+            for col in (
+                "p_pick_search_left_aligned",
+                "p_pick_search_right_aligned",
+                "p_pick_search_raw_left_aligned",
+                "p_pick_search_raw_right_aligned",
+            ):
+                pick = row_dict.get(col)
+                if pick is not None and np.isfinite(pick):
+                    plot_marks.append(int(round(float(pick))))
+            first_mark = max(0, min(plot_marks))
+            last_mark = min(waveform.shape[0] - 1, max(plot_marks))
+            left = max(0, min(record_start, first_mark) - int(round(5.0 * sr_hz)))
+            right = min(waveform.shape[0], last_mark + int(round(20.0 * sr_hz)))
             if right <= left:
                 continue
-            t = (np.arange(left, right) - center) / sr_hz
+            t = (np.arange(left, right) - record_start) / sr_hz
             vertical = waveform[left:right, 2]
             norm = np.linalg.norm(waveform[left:right], axis=1)
 
@@ -1158,16 +1185,26 @@ def write_pick_diagnostics(
             axes[0].set_ylabel("UD m/s^2")
             axes[1].plot(t, norm, color="0.2", linewidth=0.8)
             axes[1].set_ylabel("norm m/s^2")
-            axes[1].set_xlabel("seconds relative to final pick")
+            axes[1].set_xlabel("seconds after station record start")
+
+            if left < record_start:
+                x0 = (left - record_start) / sr_hz
+                for ax in axes:
+                    ax.axvspan(x0, 0.0, color="0.8", alpha=0.25, label="padding")
+            if right - 1 > valid_end:
+                x0 = (valid_end - record_start) / sr_hz
+                x1 = (right - 1 - record_start) / sr_hz
+                for ax in axes:
+                    ax.axvspan(x0, x1, color="0.8", alpha=0.25, label="padding")
 
             if "p_pick_search_left_aligned" in row_dict and "p_pick_search_right_aligned" in row_dict:
                 search_left = row_dict["p_pick_search_left_aligned"]
                 search_right = row_dict["p_pick_search_right_aligned"]
                 if np.isfinite(search_left) and np.isfinite(search_right):
-                    x0 = (float(min(search_left, search_right)) - center) / sr_hz
-                    x1 = (float(max(search_left, search_right)) - center) / sr_hz
+                    x0 = (float(min(search_left, search_right)) - record_start) / sr_hz
+                    x1 = (float(max(search_left, search_right)) - record_start) / sr_hz
                     for ax in axes:
-                        ax.axvspan(x0, x1, color="tab:blue", alpha=0.12, label="velocity_range")
+                        ax.axvspan(x0, x1, color="tab:blue", alpha=0.12, label="pick_search")
 
             for col, color in colors.items():
                 if col not in row_dict:
@@ -1175,7 +1212,7 @@ def write_pick_diagnostics(
                 pick = row_dict[col]
                 if not np.isfinite(pick):
                     continue
-                x = (float(pick) - center) / sr_hz
+                x = (float(pick) - record_start) / sr_hz
                 for ax in axes:
                     ax.axvline(x, color=color, linewidth=1.0, alpha=0.9, label=labels.get(col, col))
             handles, legend_labels = axes[0].get_legend_handles_labels()
@@ -1184,7 +1221,8 @@ def write_pick_diagnostics(
                 axes[0].legend(by_label.values(), by_label.keys(), fontsize=7, ncol=4)
             title = (
                 f"{event} wave_idx={wave_idx} station={row_dict.get('station_code', '')} "
-                f"M={float(row_dict.get('Magnitude', np.nan)):.1f}"
+                f"M={float(row_dict.get('Magnitude', np.nan)):.1f} "
+                f"search={row_dict.get('p_pick_search_source', '')}"
             )
             axes[0].set_title(title)
             fig.tight_layout()
@@ -1895,13 +1933,15 @@ def estimate_event_travel_time_p_picks(
     max_allowed = np.minimum(valid_end, df["pga_norm_aligned_loc"].to_numpy(dtype=np.int64) - pga_margin_samples)
     max_allowed = np.maximum(max_allowed, record_start)
     repaired_aligned = np.clip(predicted_aligned, record_start, max_allowed).astype(np.int64)
-    search_left = np.clip(np.minimum(fast_aligned, slow_aligned), record_start, valid_end).astype(np.int64)
-    search_right = np.clip(np.maximum(fast_aligned, slow_aligned), record_start, valid_end).astype(np.int64)
-    swapped = search_left > search_right
-    if np.any(swapped):
-        tmp = search_left.copy()
-        search_left[swapped] = search_right[swapped]
-        search_right[swapped] = tmp[swapped]
+    raw_search_left = np.minimum(fast_aligned, slow_aligned).astype(np.int64)
+    raw_search_right = np.maximum(fast_aligned, slow_aligned).astype(np.int64)
+    search_left = np.maximum(raw_search_left, record_start).astype(np.int64)
+    search_right = np.minimum(raw_search_right, max_allowed).astype(np.int64)
+    search_intersects_record = search_left <= search_right
+    fallback_right = np.maximum(record_start, max_allowed).astype(np.int64)
+    search_left = np.where(search_intersects_record, search_left, record_start).astype(np.int64)
+    search_right = np.where(search_intersects_record, search_right, fallback_right).astype(np.int64)
+    search_source = np.where(search_intersects_record, "travel_time_window", "valid_record_fallback")
 
     df["p_pick_observed_aligned"] = df["p_pick_aligned"].astype(np.int64)
     df["p_pick_observed_seconds_after_origin"] = observed_tp_seconds
@@ -1909,6 +1949,8 @@ def estimate_event_travel_time_p_picks(
     df["p_pick_predicted_seconds_after_origin"] = predicted_tp_seconds
     df["p_pick_travel_time_fast_aligned"] = fast_aligned
     df["p_pick_travel_time_slow_aligned"] = slow_aligned
+    df["p_pick_search_raw_left_aligned"] = raw_search_left
+    df["p_pick_search_raw_right_aligned"] = raw_search_right
     df["p_pick_travel_time_fast_seconds_after_origin"] = fast_tp_seconds
     df["p_pick_travel_time_slow_seconds_after_origin"] = slow_tp_seconds
     df["p_pick_jma_grid_clipped"] = jma_clipped.astype(np.int8)
@@ -1916,6 +1958,8 @@ def estimate_event_travel_time_p_picks(
     df["p_pick_travel_time_model_used"] = pick_model
     df["p_pick_search_left_aligned"] = search_left
     df["p_pick_search_right_aligned"] = search_right
+    df["p_pick_search_intersects_record"] = search_intersects_record.astype(np.int8)
+    df["p_pick_search_source"] = search_source
     df["p_pick_search_left_seconds_after_origin"] = global_start_ts + search_left.astype(np.float64) / sampling_rate_hz - origin_ts
     df["p_pick_search_right_seconds_after_origin"] = global_start_ts + search_right.astype(np.float64) / sampling_rate_hz - origin_ts
     df["p_pick_search_width_seconds"] = (search_right - search_left) / sampling_rate_hz
@@ -1948,6 +1992,7 @@ def estimate_event_travel_time_p_picks(
         "n_clipped": int(np.sum(predicted_aligned != repaired_aligned)),
         "n_jma_grid_clipped": int(np.sum(jma_clipped)),
         "n_ak135_fallback": int(np.sum(ak135_used)),
+        "n_search_fallback": int(np.sum(~search_intersects_record)),
     }
     return df, fit_summary
 
