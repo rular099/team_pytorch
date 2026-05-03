@@ -26,7 +26,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--final_pick", choices=["travel_time", "stalta", "diting_acc", "diting_vel"], default="stalta", help="Pick source stored in p_picks for training.")
     parser.add_argument("--travel_time_model", choices=["jma2001a", "ak135", "constant"], default="jma2001a", help="Travel-time model used by --pick_mode travel_time.")
     parser.add_argument("--jma_travel_time_zip", default=None, help="Path to JMA2001A tjma2001h.zip. If unavailable, jma2001a falls back to ak135.")
-    parser.add_argument("--jma_search_margin_seconds", type=float, default=10.0, help="Search margin around JMA/ak135 theoretical P time.")
+    parser.add_argument("--jma_search_margin_seconds", type=float, default=10.0, help="Base search half-window around JMA/ak135 theoretical P time.")
+    parser.add_argument("--jma_search_margin_per_km", type=float, default=0.03, help="Additional JMA/ak135 search half-window seconds per epicentral km.")
+    parser.add_argument("--jma_search_margin_max_seconds", type=float, default=60.0, help="Maximum JMA/ak135 search half-window in seconds.")
+    parser.add_argument("--fallback_search_half_window_seconds", type=float, default=60.0, help="Half-window around clipped travel coarse pick when the theoretical search window misses valid data.")
     parser.add_argument("--p_velocity_km_s", type=float, default=6.0, help="P-wave velocity for --pick_mode travel_time.")
     parser.add_argument("--p_velocity_min_km_s", type=float, default=3.0, help="Lower P-wave velocity bound; defines the late edge of the pick search range.")
     parser.add_argument("--p_velocity_max_km_s", type=float, default=8.0, help="Upper P-wave velocity bound; defines the early edge of the pick search range.")
@@ -93,6 +96,9 @@ def main():
             travel_time_model=args.travel_time_model,
             jma_travel_time_zip=Path(args.jma_travel_time_zip).expanduser().resolve() if args.jma_travel_time_zip else None,
             jma_search_margin_seconds=args.jma_search_margin_seconds,
+            jma_search_margin_per_km=args.jma_search_margin_per_km,
+            jma_search_margin_max_seconds=args.jma_search_margin_max_seconds,
+            fallback_search_half_window_seconds=args.fallback_search_half_window_seconds,
             p_velocity_km_s=args.p_velocity_km_s,
             p_velocity_min_km_s=args.p_velocity_min_km_s,
             p_velocity_max_km_s=args.p_velocity_max_km_s,

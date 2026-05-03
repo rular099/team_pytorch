@@ -580,6 +580,9 @@ def apply_repaired_and_refined_p_picks(
     jma_table: JMATravelTimeTable | None = None,
     ak135_model: AK135TravelTimeModel | None = None,
     jma_search_margin_seconds: float = 10.0,
+    jma_search_margin_per_km: float = 0.03,
+    jma_search_margin_max_seconds: float | None = 60.0,
+    fallback_search_half_window_seconds: float = 60.0,
     diting_model: object | None = None,
     diting_device: str = "cuda:0",
     diting_batch_size: int = 100,
@@ -616,6 +619,9 @@ def apply_repaired_and_refined_p_picks(
             travel_time_model=travel_time_model,
             jma_table=jma_table,
             jma_search_margin_seconds=jma_search_margin_seconds,
+            jma_search_margin_per_km=jma_search_margin_per_km,
+            jma_search_margin_max_seconds=jma_search_margin_max_seconds,
+            fallback_search_half_window_seconds=fallback_search_half_window_seconds,
             p_velocity_km_s=default_velocity_km_s,
             min_velocity_km_s=min_velocity_km_s,
             max_velocity_km_s=max_velocity_km_s,
@@ -669,6 +675,8 @@ def apply_repaired_and_refined_p_picks(
         datasets["p_pick_diting_vel_aligned"] = refined_df["p_pick_diting_vel_aligned"].fillna(refined_df["p_pick_repaired_aligned"]).to_numpy(dtype=np.int64)
         datasets["diting_acc_score"] = refined_df["diting_acc_score"].to_numpy(dtype=np.float64)
         datasets["diting_vel_score"] = refined_df["diting_vel_score"].to_numpy(dtype=np.float64)
+        datasets["diting_acc_probability"] = refined_df["diting_acc_probability"].to_numpy(dtype=np.float64)
+        datasets["diting_vel_probability"] = refined_df["diting_vel_probability"].to_numpy(dtype=np.float64)
         datasets["diting_acc_error"] = refined_df["diting_acc_error"].to_numpy(dtype=object)
         datasets["diting_vel_error"] = refined_df["diting_vel_error"].to_numpy(dtype=object)
 
@@ -709,6 +717,8 @@ def apply_repaired_and_refined_p_picks(
     ):
         if col in refined_df.columns:
             datasets[col] = refined_df[col].to_numpy(dtype=np.int64)
+    if "p_pick_search_margin_seconds" in refined_df.columns:
+        datasets["p_pick_search_margin_seconds"] = refined_df["p_pick_search_margin_seconds"].to_numpy(dtype=np.float64)
     if "p_pick_search_source" in refined_df.columns:
         datasets["p_pick_search_source"] = refined_df["p_pick_search_source"].to_numpy(dtype=object)
     datasets["p_picks"] = datasets["p_pick_refined_aligned"]
@@ -729,6 +739,11 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_Final_Source": final_pick,
             "P_Pick_Travel_Time_Model": fit_summary.get("travel_time_model", travel_time_model),
             "P_Pick_JMA_Search_Margin_S": float(fit_summary.get("jma_search_margin_seconds", jma_search_margin_seconds)),
+            "P_Pick_JMA_Search_Margin_Per_Km": float(fit_summary.get("jma_search_margin_per_km", jma_search_margin_per_km)),
+            "P_Pick_JMA_Search_Margin_Max_S": float(fit_summary.get("jma_search_margin_max_seconds", float("nan"))),
+            "P_Pick_Fallback_Search_Half_Window_S": float(
+                fit_summary.get("fallback_search_half_window_seconds", fallback_search_half_window_seconds)
+            ),
             "P_Pick_Fit_Default_Velocity_Km_S": float(default_velocity_km_s),
             "P_Pick_Search_Min_Velocity_Km_S": float(fit_summary.get("min_velocity_km_s", default_velocity_km_s)),
             "P_Pick_Search_Max_Velocity_Km_S": float(fit_summary.get("max_velocity_km_s", default_velocity_km_s)),
@@ -917,6 +932,8 @@ def add_diting_picks_to_event(
         "p_pick_diting_vel_aligned",
         "diting_acc_score",
         "diting_vel_score",
+        "diting_acc_probability",
+        "diting_vel_probability",
         "diting_acc_error",
         "diting_vel_error",
     ):
@@ -971,6 +988,7 @@ def add_diting_picks_to_event(
                 aligned_pick = int(np.clip(aligned_pick, start, max(start, valid_end - 1)))
                 df.loc[idx, f"p_pick_diting_{suffix}_aligned"] = aligned_pick
                 df.loc[idx, f"diting_{suffix}_score"] = score
+                df.loc[idx, f"diting_{suffix}_probability"] = score
             except Exception as exc:
                 df.loc[idx, f"diting_{suffix}_error"] = str(exc)
 
@@ -1212,9 +1230,18 @@ def write_pick_diagnostics(
                 pick = row_dict[col]
                 if not np.isfinite(pick):
                     continue
+                label = labels.get(col, col)
+                if col == "p_pick_diting_acc_aligned":
+                    prob = row_dict.get("diting_acc_probability", row_dict.get("diting_acc_score", np.nan))
+                    if np.isfinite(prob):
+                        label = f"diting_acc p={float(prob):.3f}"
+                elif col == "p_pick_diting_vel_aligned":
+                    prob = row_dict.get("diting_vel_probability", row_dict.get("diting_vel_score", np.nan))
+                    if np.isfinite(prob):
+                        label = f"diting_vel p={float(prob):.3f}"
                 x = (float(pick) - record_start) / sr_hz
                 for ax in axes:
-                    ax.axvline(x, color=color, linewidth=1.0, alpha=0.9, label=labels.get(col, col))
+                    ax.axvline(x, color=color, linewidth=1.0, alpha=0.9, label=label)
             handles, legend_labels = axes[0].get_legend_handles_labels()
             if handles:
                 by_label = dict(zip(legend_labels, handles))
@@ -1223,9 +1250,20 @@ def write_pick_diagnostics(
             distance_text = ""
             if np.isfinite(epicentral_distance_km):
                 distance_text = f" epi={float(epicentral_distance_km):.1f}km"
+            diting_score_text = ""
+            diting_scores = []
+            for key, fallback_key, name in (
+                ("diting_acc_probability", "diting_acc_score", "acc_p"),
+                ("diting_vel_probability", "diting_vel_score", "vel_p"),
+            ):
+                prob = row_dict.get(key, row_dict.get(fallback_key, np.nan))
+                if np.isfinite(prob):
+                    diting_scores.append(f"{name}={float(prob):.3f}")
+            if diting_scores:
+                diting_score_text = " " + " ".join(diting_scores)
             title = (
                 f"{event} wave_idx={wave_idx} station={row_dict.get('station_code', '')} "
-                f"M={float(row_dict.get('Magnitude', np.nan)):.1f}{distance_text} "
+                f"M={float(row_dict.get('Magnitude', np.nan)):.1f}{distance_text}{diting_score_text} "
                 f"search={row_dict.get('p_pick_search_source', '')}"
             )
             axes[0].set_title(title)
@@ -1383,6 +1421,9 @@ def build_year_dataset(
     travel_time_model: str = "jma2001a",
     jma_travel_time_zip: Path | None = None,
     jma_search_margin_seconds: float = 10.0,
+    jma_search_margin_per_km: float = 0.03,
+    jma_search_margin_max_seconds: float | None = 60.0,
+    fallback_search_half_window_seconds: float = 60.0,
     p_velocity_km_s: float = 6.0,
     p_velocity_min_km_s: float | None = None,
     p_velocity_max_km_s: float | None = None,
@@ -1488,6 +1529,9 @@ def build_year_dataset(
                 jma_table=jma_table,
                 ak135_model=ak135_model,
                 jma_search_margin_seconds=jma_search_margin_seconds,
+                jma_search_margin_per_km=jma_search_margin_per_km,
+                jma_search_margin_max_seconds=jma_search_margin_max_seconds,
+                fallback_search_half_window_seconds=fallback_search_half_window_seconds,
                 diting_model=diting_model,
                 diting_device=diting_device,
                 diting_batch_size=diting_batch_size,
@@ -1798,6 +1842,9 @@ def estimate_event_travel_time_p_picks(
     jma_table: JMATravelTimeTable | None = None,
     ak135_model: AK135TravelTimeModel | None = None,
     jma_search_margin_seconds: float = 10.0,
+    jma_search_margin_per_km: float = 0.03,
+    jma_search_margin_max_seconds: float | None = 60.0,
+    fallback_search_half_window_seconds: float = 60.0,
     p_velocity_km_s: float = 6.0,
     min_velocity_km_s: float | None = None,
     max_velocity_km_s: float | None = None,
@@ -1810,6 +1857,14 @@ def estimate_event_travel_time_p_picks(
 
     df = event_df.copy().reset_index(drop=True)
     sampling_rate_hz = float(df["sampling_rate_hz"].iloc[0])
+    if jma_search_margin_seconds < 0:
+        raise ValueError("jma_search_margin_seconds must be non-negative")
+    if jma_search_margin_per_km < 0:
+        raise ValueError("jma_search_margin_per_km must be non-negative")
+    if jma_search_margin_max_seconds is not None and jma_search_margin_max_seconds < 0:
+        raise ValueError("jma_search_margin_max_seconds must be non-negative")
+    if fallback_search_half_window_seconds < 0:
+        raise ValueError("fallback_search_half_window_seconds must be non-negative")
     origin_raw = str(df["Origin_Time(JST)"].iloc[0])
     _, origin_ts = parse_jst_timestamp(origin_raw)
     global_start_ts = pd.to_datetime(df["record_start_time_jst"], utc=True).min().timestamp()
@@ -1850,6 +1905,7 @@ def estimate_event_travel_time_p_picks(
     jma_clipped = np.zeros((len(df),), dtype=bool)
     ak135_used = np.zeros((len(df),), dtype=bool)
     pick_model = np.array([travel_time_model] * len(df), dtype=object)
+    search_margin_seconds = np.full((len(df),), np.nan, dtype=np.float64)
     if travel_time_model == "jma2001a":
         if ak135_model is None:
             ak135_model = AK135TravelTimeModel()
@@ -1879,8 +1935,14 @@ def estimate_event_travel_time_p_picks(
             predicted.append(float(p_seconds) + float(travel_time_intercept_s))
             jma_clipped[i] = clipped
         predicted_tp_seconds = np.asarray(predicted, dtype=np.float64)
-        fast_tp_seconds = predicted_tp_seconds - float(jma_search_margin_seconds)
-        slow_tp_seconds = predicted_tp_seconds + float(jma_search_margin_seconds)
+        search_margin_seconds = (
+            float(jma_search_margin_seconds)
+            + df["epicentral_distance_km"].to_numpy(dtype=np.float64) * float(jma_search_margin_per_km)
+        )
+        if jma_search_margin_max_seconds is not None:
+            search_margin_seconds = np.minimum(search_margin_seconds, float(jma_search_margin_max_seconds))
+        fast_tp_seconds = predicted_tp_seconds - search_margin_seconds
+        slow_tp_seconds = predicted_tp_seconds + search_margin_seconds
         min_velocity_km_s = np.nan if min_velocity_km_s is None else float(min_velocity_km_s)
         max_velocity_km_s = np.nan if max_velocity_km_s is None else float(max_velocity_km_s)
     elif travel_time_model == "ak135":
@@ -1899,8 +1961,14 @@ def estimate_event_travel_time_p_picks(
         )
         ak135_used[:] = True
         pick_model[:] = "ak135"
-        fast_tp_seconds = predicted_tp_seconds - float(jma_search_margin_seconds)
-        slow_tp_seconds = predicted_tp_seconds + float(jma_search_margin_seconds)
+        search_margin_seconds = (
+            float(jma_search_margin_seconds)
+            + df["epicentral_distance_km"].to_numpy(dtype=np.float64) * float(jma_search_margin_per_km)
+        )
+        if jma_search_margin_max_seconds is not None:
+            search_margin_seconds = np.minimum(search_margin_seconds, float(jma_search_margin_max_seconds))
+        fast_tp_seconds = predicted_tp_seconds - search_margin_seconds
+        slow_tp_seconds = predicted_tp_seconds + search_margin_seconds
         min_velocity_km_s = np.nan if min_velocity_km_s is None else float(min_velocity_km_s)
         max_velocity_km_s = np.nan if max_velocity_km_s is None else float(max_velocity_km_s)
     elif travel_time_model == "constant":
@@ -1923,6 +1991,7 @@ def estimate_event_travel_time_p_picks(
         predicted_tp_seconds = float(travel_time_intercept_s) + distances / float(p_velocity_km_s)
         fast_tp_seconds = float(travel_time_intercept_s) + distances / max_velocity_km_s
         slow_tp_seconds = float(travel_time_intercept_s) + distances / min_velocity_km_s
+        search_margin_seconds = np.abs(slow_tp_seconds - fast_tp_seconds) / 2.0
     else:
         raise ValueError(f"Unsupported travel_time_model: {travel_time_model}")
     predicted_abs_ts = origin_ts + predicted_tp_seconds
@@ -1942,10 +2011,13 @@ def estimate_event_travel_time_p_picks(
     search_left = np.maximum(raw_search_left, record_start).astype(np.int64)
     search_right = np.minimum(raw_search_right, max_allowed).astype(np.int64)
     search_intersects_record = search_left <= search_right
-    fallback_right = np.maximum(record_start, max_allowed).astype(np.int64)
-    search_left = np.where(search_intersects_record, search_left, record_start).astype(np.int64)
+    fallback_half_samples = int(round(float(fallback_search_half_window_seconds) * sampling_rate_hz))
+    fallback_left = np.maximum(record_start, repaired_aligned - fallback_half_samples).astype(np.int64)
+    fallback_right = np.minimum(max_allowed, repaired_aligned + fallback_half_samples).astype(np.int64)
+    fallback_left = np.minimum(fallback_left, fallback_right).astype(np.int64)
+    search_left = np.where(search_intersects_record, search_left, fallback_left).astype(np.int64)
     search_right = np.where(search_intersects_record, search_right, fallback_right).astype(np.int64)
-    search_source = np.where(search_intersects_record, "travel_time_window", "valid_record_fallback")
+    search_source = np.where(search_intersects_record, "travel_time_window", "clipped_travel_time_fallback")
 
     df["p_pick_observed_aligned"] = df["p_pick_aligned"].astype(np.int64)
     df["p_pick_observed_seconds_after_origin"] = observed_tp_seconds
@@ -1955,6 +2027,7 @@ def estimate_event_travel_time_p_picks(
     df["p_pick_travel_time_slow_aligned"] = slow_aligned
     df["p_pick_search_raw_left_aligned"] = raw_search_left
     df["p_pick_search_raw_right_aligned"] = raw_search_right
+    df["p_pick_search_margin_seconds"] = search_margin_seconds
     df["p_pick_travel_time_fast_seconds_after_origin"] = fast_tp_seconds
     df["p_pick_travel_time_slow_seconds_after_origin"] = slow_tp_seconds
     df["p_pick_jma_grid_clipped"] = jma_clipped.astype(np.int8)
@@ -1984,6 +2057,11 @@ def estimate_event_travel_time_p_picks(
     fit_summary = {
         "travel_time_model": travel_time_model,
         "jma_search_margin_seconds": float(jma_search_margin_seconds),
+        "jma_search_margin_per_km": float(jma_search_margin_per_km),
+        "jma_search_margin_max_seconds": float("nan")
+        if jma_search_margin_max_seconds is None
+        else float(jma_search_margin_max_seconds),
+        "fallback_search_half_window_seconds": float(fallback_search_half_window_seconds),
         "threshold_seconds": float(threshold_seconds),
         "default_velocity_km_s": float(p_velocity_km_s),
         "min_velocity_km_s": float(min_velocity_km_s),
