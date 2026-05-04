@@ -13,6 +13,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import pickle
 import argparse
 import json
+import math
 import time
 import torch
 import torch.optim as optim
@@ -887,6 +888,21 @@ def global_grad_norm(parameters):
     return torch.sqrt(sq_sum)
 
 
+def _pga_norm_enabled(norm_cfg):
+    return bool(norm_cfg and norm_cfg.get('enabled', False))
+
+
+def _pga_norm_values(norm_cfg):
+    return float(norm_cfg.get('mean', 0.0)), max(float(norm_cfg.get('std', 1.0)), 1e-8)
+
+
+def _maybe_unnormalize_pga(pred, norm_cfg):
+    if not _pga_norm_enabled(norm_cfg):
+        return pred
+    mean, std = _pga_norm_values(norm_cfg)
+    return pred * std + mean
+
+
 def collect_event_output_stats(outputs, labels, output_layout):
     stats = {}
     label_layout = [n for n in output_layout if n in ('mag', 'loc', 'pga')]
@@ -921,17 +937,26 @@ def collect_event_output_stats(outputs, labels, output_layout):
     return stats
 
 
-def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
+def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid, pga_target_normalization=None):
     if 'pga' not in output_layout:
         return {}
     pga_idx = output_layout.index('pga')
     pga_pred = outputs[pga_idx]
     if pga_pred.shape[-1] == 1:
-        mu = pga_pred[..., 0]
+        mu = _maybe_unnormalize_pga(pga_pred[..., 0], pga_target_normalization)
         stats = {
             'diag/pga_point_mu_mean': mu.mean().detach(),
             'diag/pga_point_mu_std': mu.std(unbiased=False).detach(),
         }
+        if _pga_norm_enabled(pga_target_normalization):
+            stats.update({
+                'diag/pga_norm_mean': torch.as_tensor(
+                    float(pga_target_normalization['mean']), device=mu.device
+                ),
+                'diag/pga_norm_std': torch.as_tensor(
+                    float(pga_target_normalization['std']), device=mu.device
+                ),
+            })
         if pga_target_valid is not None:
             mask = pga_target_valid.bool()
             if mask.any():
@@ -955,7 +980,7 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
     sigma = pga_pred[..., 2]
     alpha_probs = torch.softmax(alpha_logits, dim=-1)
     best_idx = alpha_logits.argmax(dim=-1, keepdim=True)
-    mu_best = mu.gather(-1, best_idx).squeeze(-1)
+    mu_best = _maybe_unnormalize_pga(mu.gather(-1, best_idx).squeeze(-1), pga_target_normalization)
     sigma_best = sigma.gather(-1, best_idx).squeeze(-1)
 
     stats = {
@@ -1010,6 +1035,57 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid):
                     f'diag/pga_sigma_{comp_idx}_valid_std': sigma[..., comp_idx][mask].std(unbiased=False).detach(),
                 })
     return stats
+
+
+def resolve_pga_target_normalization(training_params, train_dataset, batch_size, is_dist=False, rank=0, device='cpu'):
+    norm_cfg = training_params.get('pga_target_normalization') or {}
+    if not norm_cfg.get('enabled', False):
+        return None
+    mean = norm_cfg.get('mean', None)
+    std = norm_cfg.get('std', None)
+    needs_auto = mean in (None, 'auto') or std in (None, 'auto')
+    if not needs_auto:
+        norm_cfg['mean'] = float(mean)
+        norm_cfg['std'] = max(float(std), 1e-8)
+        return norm_cfg
+
+    stats = torch.zeros(3, dtype=torch.float64, device=device)
+    if (not is_dist) or rank == 0:
+        loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        total = 0.0
+        total_sq = 0.0
+        count = 0
+        for inputs, labels, _ in loader:
+            if not isinstance(inputs, list) or len(inputs) < 5:
+                continue
+            pga_target_valid = inputs[4].bool()
+            pga_labels = labels[-1]
+            values = pga_labels[..., 0] if pga_labels.ndim >= 3 else pga_labels
+            valid_values = values[pga_target_valid]
+            if valid_values.numel() == 0:
+                continue
+            valid_values = valid_values.double()
+            total += float(valid_values.sum().item())
+            total_sq += float((valid_values ** 2).sum().item())
+            count += int(valid_values.numel())
+        if count <= 1:
+            raise ValueError('Unable to estimate PGA normalization statistics: no valid train targets.')
+        mean_val = total / count
+        var_val = max(total_sq / count - mean_val ** 2, 1e-12)
+        stats[:] = torch.tensor([mean_val, math.sqrt(var_val), float(count)], dtype=torch.float64, device=device)
+
+    if is_dist:
+        dist.broadcast(stats, src=0)
+    norm_cfg['mean'] = float(stats[0].item())
+    norm_cfg['std'] = max(float(stats[1].item()), 1e-8)
+    norm_cfg['count'] = int(stats[2].item())
+    if (not is_dist) or rank == 0:
+        print(
+            '[pga_target_normalization] '
+            f'mean={norm_cfg["mean"]:.6f}, std={norm_cfg["std"]:.6f}, count={norm_cfg["count"]}'
+        )
+    training_params['pga_target_normalization'] = norm_cfg
+    return norm_cfg
 
 
 def collect_input_stats(inputs, labels, p_picks):
@@ -1245,7 +1321,8 @@ def maybe_dump_model_batch(input_dump_config, split_name, epoch_idx, batch_idx, 
 
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val',
-                input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None):
+                input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None,
+                pga_target_normalization=None, station_decorrelation_weight=0.0):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1300,7 +1377,15 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
                         pga_target_valid=pga_target_valid, loss_type=loss_type,
                         huber_delta=huber_delta,
+                        pga_target_normalization=pga_target_normalization,
                     )
+                if station_decorrelation_weight:
+                    decor_loss = models.station_embedding_decorrelation_loss(
+                        getattr(eval_model, '_last_station_feature_emb', None),
+                        getattr(eval_model, '_last_station_valid', None),
+                    )
+                    if decor_loss is not None:
+                        loss = loss + float(station_decorrelation_weight) * decor_loss
                 loss.backward()
                 pre_clip_global_grad = global_grad_norm(model.parameters())
                 if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
@@ -1313,7 +1398,20 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                             diag_scalars[f'diag/{key}'] = value.detach()
                     diag_scalars.update(collect_input_stats(inputs, labels, p_picks))
                     diag_scalars.update(collect_event_output_stats(outputs, labels, eval_model.output_layout))
-                    diag_scalars.update(collect_pga_output_stats(outputs, labels, eval_model.output_layout, pga_target_valid))
+                    diag_scalars.update(collect_pga_output_stats(
+                        outputs,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        pga_target_normalization=pga_target_normalization,
+                    ))
+                    if station_decorrelation_weight:
+                        decor_loss = models.station_embedding_decorrelation_loss(
+                            getattr(eval_model, '_last_station_feature_emb', None),
+                            getattr(eval_model, '_last_station_valid', None),
+                        )
+                        if decor_loss is not None and not torch.isnan(decor_loss).any():
+                            diag_scalars['diag/station_decorrelation_loss'] = decor_loss.detach()
 
                     grad_targets = {
                         'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
@@ -1393,6 +1491,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                             sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
                             pga_target_valid=pga_target_valid, loss_type=loss_type,
                             huber_delta=huber_delta,
+                            pga_target_normalization=pga_target_normalization,
                         )
                     val_running_loss += loss.item()
                     num_val_batches += 1
@@ -2253,6 +2352,20 @@ if __name__ == '__main__':
             train_dataset = util.JointGenerator(train_generators, shuffle=True, dataset_id=dataset_bias)
             val_dataset = util.JointGenerator(validation_generators, shuffle=True, dataset_id=dataset_bias)
 
+        pga_target_norm_cfg = resolve_pga_target_normalization(
+            training_params,
+            train_dataset,
+            batch_size=generator_params[0]['batch_size'],
+            is_dist=is_dist,
+            rank=rank,
+            device=device,
+        )
+        if (not is_dist) or (is_dist and rank == 0):
+            with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
+                json.dump(config, f, indent=4)
+        if is_dist:
+            dist.barrier()
+
         patience = training_params.get('lr_decay_patience', 6)
 #        lr_decay = ReduceLROnPlateau(monitor='val_loss', mode='min', patience=patience, factor=0.3, verbose=1) # need modify
         lr_decay = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=patience, verbose=1)
@@ -2293,12 +2406,20 @@ if __name__ == '__main__':
         default_full_loss = 'huber' if config['model_params'].get('output_distribution', 'mdn') == 'point' else 'mdn'
         full_loss_type = training_params.get('full_model_loss', training_params.get('loss', default_full_loss))
         full_huber_delta = float(training_params.get('full_model_huber_delta', 1.0))
+        station_decorrelation_weight = float(training_params.get('station_embedding_decorrelation_weight', 0.0))
         if (not is_dist) or rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
             station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
             if station_experiment_active and res_comps_cfg != ['pga']:
                 print('[tasks] warning: station_experiment is active; set res_comps=["pga"] for PGA-only comparison experiments')
             print(f'[loss] full_model_loss={full_loss_type}, huber_delta={full_huber_delta}')
+            if pga_target_norm_cfg is not None:
+                print(
+                    '[loss] pga_target_normalization enabled '
+                    f'mean={pga_target_norm_cfg["mean"]:.6f}, std={pga_target_norm_cfg["std"]:.6f}'
+                )
+            if station_decorrelation_weight:
+                print(f'[loss] station_embedding_decorrelation_weight={station_decorrelation_weight:g}')
             print(f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss')
         train_model(
             full_model,
@@ -2321,6 +2442,8 @@ if __name__ == '__main__':
             loss_type=full_loss_type,
             huber_delta=full_huber_delta,
             checkpoint_params=training_params.get('checkpoint', None),
+            pga_target_normalization=pga_target_norm_cfg,
+            station_decorrelation_weight=station_decorrelation_weight,
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,

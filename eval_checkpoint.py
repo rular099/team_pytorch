@@ -55,6 +55,28 @@ def _is_point_output(out_np):
     return out_np.ndim <= 1 or (out_np.ndim >= 2 and out_np.shape[-1] == 1)
 
 
+def _pga_norm_config(config):
+    cfg = config.get('training_params', {}).get('pga_target_normalization') or {}
+    if not cfg.get('enabled', False):
+        return None
+    mean = cfg.get('mean')
+    std = cfg.get('std')
+    if mean in (None, 'auto') or std in (None, 'auto'):
+        print('[WARN] PGA target normalization is enabled but mean/std are unresolved; using raw model outputs.')
+        return None
+    return float(mean), max(float(std), 1e-8)
+
+
+def _maybe_unnormalize_pga(name, arr, config):
+    if name != 'pga':
+        return arr
+    norm = _pga_norm_config(config)
+    if norm is None:
+        return arr
+    mean, std = norm
+    return arr * std + mean
+
+
 def _point_mu_from_output(name, out_np):
     if name == 'pga':
         return np.asarray(out_np)[..., 0]
@@ -430,6 +452,7 @@ def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0
                 mu = pga_out[:, :, 1]
                 best = np.argmax(alpha, axis=1)
                 mu_best = mu[np.arange(len(best)), best]
+            mu_best = _maybe_unnormalize_pga('pga', mu_best, config)
             if pga_target_valid is not None:
                 valid_pga = pga_target_valid[0].bool().cpu().numpy()
                 mu_best = mu_best[valid_pga]
@@ -549,6 +572,7 @@ def run_inference(model, dataset, device):
             out_np = results[f'{name}_pred'][-1]
             if _is_point_output(out_np):
                 mu_best = _point_mu_from_output(name, out_np)
+                mu_best = _maybe_unnormalize_pga(name, mu_best, config)
                 results[f'{name}_mu_best'].append(mu_best)
                 if name == 'loc':
                     if raw_model.loc_target_mode == 'rel' and 'loc_center' in results:
@@ -562,6 +586,7 @@ def run_inference(model, dataset, device):
                 mu = out_np[:, :, 1]
                 best = np.argmax(alpha, axis=1)
                 mu_best = mu[np.arange(len(best)), best]
+                mu_best = _maybe_unnormalize_pga(name, mu_best, config)
                 results[f'{name}_mu_best'].append(mu_best)
             else:
                 # shape: (n_mixtures, D) where D=3 for [alpha, mu, sigma] or D=7 for loc

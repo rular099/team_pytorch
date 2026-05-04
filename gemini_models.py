@@ -1174,7 +1174,7 @@ def _point_target_for_loss(y_true, y_pred, d):
 
 def point_regression_loss_full(y_pred, y_true, res_comps=None, res_weight=None,
                                pga_target_valid=None, loss_type='huber',
-                               huber_delta=1.0):
+                               huber_delta=1.0, pga_target_normalization=None):
     if res_comps is None:
         res_comps = ['mag', 'loc', 'pga']
         res_weight = np.array([1., 1., 1.])
@@ -1188,6 +1188,10 @@ def point_regression_loss_full(y_pred, y_true, res_comps=None, res_weight=None,
         else:
             d = 1
         target = _point_target_for_loss(y_true[i], pred, d).to(pred.device, dtype=pred.dtype)
+        if res_comp == 'pga' and pga_target_normalization is not None:
+            mean = float(pga_target_normalization.get('mean', 0.0))
+            std = max(float(pga_target_normalization.get('std', 1.0)), 1e-8)
+            target = (target - mean) / std
         if loss_type == 'huber':
             per_elem = F.smooth_l1_loss(pred, target, beta=huber_delta, reduction='none')
         elif loss_type == 'l1':
@@ -1208,6 +1212,24 @@ def point_regression_loss_full(y_pred, y_true, res_comps=None, res_weight=None,
             comp_loss = per_elem.mean()
         total_loss = total_loss + float(res_weight[i]) * comp_loss
     return total_loss
+
+
+def station_embedding_decorrelation_loss(station_emb, station_valid, eps=1e-8):
+    """Penalize same-event station tokens becoming nearly identical directions."""
+    if station_emb is None or station_valid is None:
+        return None
+    losses = []
+    normed = F.normalize(station_emb, p=2, dim=-1, eps=eps)
+    for sample_emb, valid in zip(normed, station_valid.bool()):
+        x = sample_emb[valid]
+        if x.shape[0] < 2:
+            continue
+        sim = torch.matmul(x, x.transpose(0, 1))
+        off_diag = sim[~torch.eye(x.shape[0], device=x.device, dtype=torch.bool)]
+        losses.append((off_diag ** 2).mean())
+    if not losses:
+        return station_emb.new_tensor(0.0)
+    return torch.stack(losses).mean()
 
 
 def clip_magnitude_mixture(mixture_output, mag_min=-2.0, mag_max=10.0):
@@ -1627,6 +1649,8 @@ class FullModel(nn.Module):
         else:
             emb = torch.cat([waveforms_emb, coords_feat], dim=-1)
         station_feature_emb = emb
+        self._last_station_feature_emb = station_feature_emb
+        self._last_station_valid = sv
 
         self._last_diag = {
             'station_adapter_raw_norm': self._mean_token_norm(raw_station_emb).detach(),
