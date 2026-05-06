@@ -29,6 +29,7 @@
 #   ATTENTION_STATION_COUNTS Optional station-count sweep, e.g. 3,5,8,12,16,25
 #   ATTENTION_TOPK     Number of top-attended station slots to save per target
 #   ATTENTION_SEED     Seed for station count sweep target selection consistency
+#   ATTENTION_CHECKPOINT_ORDER Checkpoint order when EVAL_CHECKPOINT is unset; default best,last
 #   EVAL_INPUT_STATION_SELECTION Input-station strategy: config, random, p_pick, epidist
 
 set -euo pipefail
@@ -59,6 +60,7 @@ ATTENTION_PROBE_EVENTS=${ATTENTION_PROBE_EVENTS:-0}
 ATTENTION_STATION_COUNTS=${ATTENTION_STATION_COUNTS:-}
 ATTENTION_TOPK=${ATTENTION_TOPK:-5}
 ATTENTION_SEED=${ATTENTION_SEED:-1234}
+ATTENTION_CHECKPOINT_ORDER=${ATTENTION_CHECKPOINT_ORDER:-best,last}
 EVAL_INPUT_STATION_SELECTION=${EVAL_INPUT_STATION_SELECTION:-epidist}
 
 resolve_path() {
@@ -115,6 +117,7 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
         "ATTENTION_STATION_COUNTS=$ATTENTION_STATION_COUNTS"
         "ATTENTION_TOPK=$ATTENTION_TOPK"
         "ATTENTION_SEED=$ATTENTION_SEED"
+        "ATTENTION_CHECKPOINT_ORDER=$ATTENTION_CHECKPOINT_ORDER"
         "EVAL_INPUT_STATION_SELECTION=$EVAL_INPUT_STATION_SELECTION"
     )
     if [[ -n "${DITING_PRETRAINED:-}" ]]; then
@@ -253,14 +256,30 @@ if [[ -n "${EVAL_CHECKPOINT:-}" ]]; then
     EVAL_CHECKPOINTS+=("$EVAL_CHECKPOINT")
     EVAL_TAGS+=("$(basename "$EVAL_CHECKPOINT" .pth | sed 's/^full_model_//')")
 else
-    if [[ -f "$WEIGHT_DIR/full_model_last.pth" ]]; then
-        EVAL_CHECKPOINTS+=("$WEIGHT_DIR/full_model_last.pth")
-        EVAL_TAGS+=("last")
-    fi
-    if [[ -f "$WEIGHT_DIR/full_model_best.pth" ]]; then
-        EVAL_CHECKPOINTS+=("$WEIGHT_DIR/full_model_best.pth")
-        EVAL_TAGS+=("best")
-    fi
+    IFS=',' read -r -a CHECKPOINT_ORDER <<< "$ATTENTION_CHECKPOINT_ORDER"
+    for requested_tag in "${CHECKPOINT_ORDER[@]}"; do
+        requested_tag=${requested_tag//[[:space:]]/}
+        case "$requested_tag" in
+            best)
+                if [[ -f "$WEIGHT_DIR/full_model_best.pth" ]]; then
+                    EVAL_CHECKPOINTS+=("$WEIGHT_DIR/full_model_best.pth")
+                    EVAL_TAGS+=("best")
+                fi
+                ;;
+            last)
+                if [[ -f "$WEIGHT_DIR/full_model_last.pth" ]]; then
+                    EVAL_CHECKPOINTS+=("$WEIGHT_DIR/full_model_last.pth")
+                    EVAL_TAGS+=("last")
+                fi
+                ;;
+            "")
+                ;;
+            *)
+                echo "Unsupported ATTENTION_CHECKPOINT_ORDER entry: '$requested_tag' (expected best,last)" >&2
+                exit 1
+                ;;
+        esac
+    done
     if (( ${#EVAL_CHECKPOINTS[@]} == 0 )); then
         LATEST_CHECKPOINT=$(python -c 'import glob, os, re, sys
 weight_dir = sys.argv[1]
@@ -318,7 +337,7 @@ for idx in "${!EVAL_CHECKPOINTS[@]}"; do
     mkdir -p "$(dirname "$output_txt")" "$(dirname "$output_npz")"
 
     ATTENTION_CMD=(
-        python eval_attention.py
+        python -u eval_attention.py
         --config "$EVAL_CONFIG"
         --diting_config "$DITING_CONFIG"
         --checkpoint "$checkpoint"
@@ -350,6 +369,21 @@ for idx in "${!EVAL_CHECKPOINTS[@]}"; do
     echo "[INFO] eval full checkpoint ($tag): $checkpoint"
     echo "[INFO] attention txt ($tag): $output_txt"
     echo "[INFO] attention npz ($tag): $output_npz"
+    set +e
     "${ATTENTION_CMD[@]}" >"$output_txt" 2>&1
+    status=$?
+    set -e
+    if (( status != 0 )); then
+        echo "[ERROR] attention eval failed ($tag) with exit code $status" >&2
+        echo "[ERROR] attention log tail ($tag):" >&2
+        tail -n 80 "$output_txt" >&2 || true
+        exit "$status"
+    fi
+    if [[ ! -s "$output_npz" ]]; then
+        echo "[ERROR] attention eval finished ($tag), but output npz was not created: $output_npz" >&2
+        echo "[ERROR] attention log tail ($tag):" >&2
+        tail -n 80 "$output_txt" >&2 || true
+        exit 1
+    fi
     echo "[INFO] attention eval finished ($tag); results written to $output_txt"
 done

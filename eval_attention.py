@@ -314,7 +314,14 @@ def main():
     if not all_results:
         raise RuntimeError('No attention results were produced. Check --splits and --event_indices.')
 
-    np.savez(args.output, **all_results)
+    output_dir = os.path.dirname(os.path.abspath(args.output))
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    tmp_output = f'{args.output}.tmp'
+    print(f'Saving {len(all_results)} arrays to {args.output}...')
+    with open(tmp_output, 'wb') as f:
+        np.savez(f, **all_results)
+    os.replace(tmp_output, args.output)
     print(f'Results saved to {args.output}')
 
 
