@@ -37,6 +37,7 @@ WORKDIR=${WORKDIR:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_py
 CONFIG_INPUT=${1:?Usage: bash train_light_slurm.sh <config.json> [train_light.py extra args...]}
 shift
 EXTRA_ARGS=("$@")
+EXTRA_ARG_COUNT=$#
 
 JOB_NAME=${JOB_NAME:-team-train-light}
 SLURM_PARTITION=${SLURM_PARTITION:-diting}
@@ -107,7 +108,8 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
     if [[ -n "${DITING_PRETRAINED:-}" ]]; then
         EXPORT_VARS+=("DITING_PRETRAINED=$DITING_PRETRAINED")
     fi
-    exec sbatch \
+    SBATCH_CMD=(
+        sbatch
         --job-name="$JOB_NAME" \
         --partition="$SLURM_PARTITION" \
         --nodes="$SLURM_NODES" \
@@ -119,7 +121,12 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
         --output="$SLURM_LOG_DIR/%x-%j.out" \
         --error="$SLURM_LOG_DIR/%x-%j.err" \
         --export="$(IFS=,; echo "ALL,${EXPORT_VARS[*]}")" \
-        "$0" "$CONFIG" "${EXTRA_ARGS[@]}"
+        "$0" "$CONFIG"
+    )
+    if ((EXTRA_ARG_COUNT > 0)); then
+        SBATCH_CMD+=("${EXTRA_ARGS[@]}")
+    fi
+    exec "${SBATCH_CMD[@]}"
 fi
 
 cd "$WORKDIR"
@@ -127,7 +134,11 @@ echo "[INFO] cd to: $(pwd)"
 echo "[INFO] config: $CONFIG"
 echo "[INFO] diting_config: $DITING_CONFIG"
 echo "[INFO] diting_pretrained: ${DITING_PRETRAINED:-<unset>}"
-echo "[INFO] extra args: ${EXTRA_ARGS[*]:-<none>}"
+if ((EXTRA_ARG_COUNT > 0)); then
+    echo "[INFO] extra args: ${EXTRA_ARGS[*]}"
+else
+    echo "[INFO] extra args: <none>"
+fi
 
 export COLORTERM=${COLORTERM:-truecolor}
 
@@ -241,7 +252,9 @@ TRAIN_CMD=(
 if [[ -n "${DITING_PRETRAINED:-}" ]]; then
     TRAIN_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
 fi
-TRAIN_CMD+=("${EXTRA_ARGS[@]}")
+if ((EXTRA_ARG_COUNT > 0)); then
+    TRAIN_CMD+=("${EXTRA_ARGS[@]}")
+fi
 
 echo "[INFO] MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT"
 echo "[INFO] launching: ${TRAIN_CMD[*]}"
@@ -262,7 +275,9 @@ else
     if [[ -n "${DITING_PRETRAINED:-}" ]]; then
         DIRECT_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
     fi
-    DIRECT_CMD+=("${EXTRA_ARGS[@]}")
+    if ((EXTRA_ARG_COUNT > 0)); then
+        DIRECT_CMD+=("${EXTRA_ARGS[@]}")
+    fi
     "${DIRECT_CMD[@]}"
 fi
 
@@ -319,10 +334,10 @@ print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enab
     if [[ -n "${EVAL_DEVICE:-}" ]]; then
         EVAL_CMD+=(--device "$EVAL_DEVICE")
     fi
-    for ((i = 0; i < ${#EXTRA_ARGS[@]}; i++)); do
+    for ((i = 0; i < EXTRA_ARG_COUNT; i++)); do
         case "${EXTRA_ARGS[$i]}" in
             --overfit_n)
-                if ((i + 1 < ${#EXTRA_ARGS[@]})); then
+                if ((i + 1 < EXTRA_ARG_COUNT)); then
                     EVAL_CMD+=(--overfit_n "${EXTRA_ARGS[$((i + 1))]}")
                     i=$((i + 1))
                 fi

@@ -2367,8 +2367,17 @@ if __name__ == '__main__':
             dist.barrier()
 
         patience = training_params.get('lr_decay_patience', 6)
+        lr_decay_factor = float(training_params.get('lr_decay_factor', 0.3))
+        min_lr = float(training_params.get('min_lr', 0.0))
 #        lr_decay = ReduceLROnPlateau(monitor='val_loss', mode='min', patience=patience, factor=0.3, verbose=1) # need modify
-        lr_decay = ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=patience, verbose=1)
+        lr_decay = ReduceLROnPlateau(
+            optimizer,
+            mode='min',
+            factor=lr_decay_factor,
+            patience=patience,
+            min_lr=min_lr,
+            verbose=1,
+        )
         logdir = os.path.join('logs/scalars/', training_params['weight_path'])
 
         if is_dist:
@@ -2420,7 +2429,10 @@ if __name__ == '__main__':
                 )
             if station_decorrelation_weight:
                 print(f'[loss] station_embedding_decorrelation_weight={station_decorrelation_weight:g}')
-            print(f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss')
+            print(
+                f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss '
+                f'(patience={patience}, factor={lr_decay_factor:g}, min_lr={min_lr:g})'
+            )
         train_model(
             full_model,
             train_loader,

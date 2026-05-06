@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DiTing TEAM Graph PGA Technical Exchange</title>
+<style>
+html, body { margin:0; background:#111827; color:#1f2937; font-family: Arial, "Microsoft YaHei", sans-serif; }
+.deck { height:100vh; overflow:hidden; }
+.track { display:flex; height:100vh; transition: transform .25s ease; }
+.slide { box-sizing:border-box; flex:0 0 100vw; height:100vh; background:#f8fafc; padding:3.8vh 4.3vw; display:flex; flex-direction:column; gap:2.0vh; }
+header h1 { margin:0; color:#1f4e79; font-size:3.4vh; line-height:1.15; }
+header p { margin:.7vh 0 0; color:#64748b; font-size:1.8vh; }
+ul { margin:0; padding-left:1.4em; font-size:2.05vh; line-height:1.55; }
+li { margin:.45vh 0; }
+p { font-size:1.8vh; line-height:1.45; }
+.hero, .grid2, .cards4 { flex:1; min-height:0; }
+.hero { display:grid; grid-template-columns:1fr 1fr; gap:2vw; align-items:center; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:2vw; align-items:center; }
+.grid2.wideimg { align-items:stretch; }
+.cards4 { display:grid; grid-template-columns:repeat(4, 1fr); gap:1.4vw; align-items:stretch; }
+.card { background:white; border:1px solid #d9e2ec; border-radius:8px; padding:2.2vh 1.4vw; box-shadow:0 1px 4px rgba(15,23,42,.08); }
+.card h3 { margin:0 0 1vh; color:#008080; font-size:2.15vh; }
+.card p { margin:0; font-size:1.85vh; }
+img { max-width:100%; max-height:70vh; object-fit:contain; display:block; margin:auto; }
+img.full { width:100%; max-height:78vh; }
+.note { margin:.4vh 0 0; color:#64748b; font-size:1.55vh; }
+table.dataframe { width:100%; border-collapse:collapse; font-size:1.45vh; background:white; }
+table.dataframe th { background:#1f4e79; color:white; padding:.7vh .45vw; text-align:left; }
+table.dataframe td { border-bottom:1px solid #e2e8f0; padding:.58vh .45vw; }
+.counter { position:fixed; right:1.2vw; bottom:1.5vh; color:white; font-size:1.8vh; opacity:.8; }
+.hint { position:fixed; left:1.2vw; bottom:1.5vh; color:white; font-size:1.55vh; opacity:.7; }
+@media print {
+  body { background:white; }
+  .deck, .track { height:auto; overflow:visible; display:block; }
+  .slide { page-break-after:always; width:100vw; height:56.25vw; }
+  .counter, .hint { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="deck"><main class="track" id="track"><section class='slide'><header><h1>DiTing 表征接入多台站 PGA / Event 预测</h1><p>Transformer readout 与 graph prior-residual 的实验诊断</p></header><div class='hero'><div class='card'><h3>交流目标</h3><p>说明做了什么、结果如何、问题在哪里，并请专家对数据、结构和先验设计提意见。</p></div><div class='card'><h3>主线判断</h3><p>station feature 有信号；坍塌主要发生在 full-model readout 和空间先验不足。</p></div></div></section>
+<section class='slide'><header><h1>这次希望专家帮忙看的点</h1></header><div class='grid2'><div><ul><li>P-pick 是否足够准确，是否会污染 station feature 和 PGA label 对齐。</li><li>event 信息如何进入 PGA：event query、mag/loc context、GMPE prior，还是显式震源参数。</li><li>任意 target PGA 更适合 cross-attention readout，还是 graph message passing。</li><li>小样本 overfit 诊断后，下一步验证集和消融实验如何设计。</li></ul></div><div><div class='card'><h3>特别新增</h3><p>P-pick 波形抽样页和实现级模型结构图，方便现场诊断。</p></div></div></div></section>
+<section class='slide'><header><h1>任务与数据设置</h1></header><div class='grid2'><div><ul><li>输入：多台站三分量波形、台站坐标、station_valid、target station 坐标。</li><li>输出：event-level magnitude / location；target-level PGA。</li><li>当前 Japan overfit 小样本用于结构诊断，不作为最终泛化结论。</li><li>实验包含 same-station、multi-target、holdout、fixed input/target。</li></ul></div><div><img class='' src='assets/data_overview.png' /></div></div></section>
+<section class='slide'><header><h1>数据覆盖与抽样样本</h1></header><div class='grid2 wideimg'><div><img class='' src='assets/data_overview.png' /></div><div><img class='' src='assets/sample_event_geometry.png' /></div></div></section>
+<section class='slide'><header><h1>P-pick 生成流程与元数据诊断</h1></header><div class='grid2'><div><ul><li>当前 P-pick：先用走时曲线给粗定位，再用 STA/LTA 在搜索窗内 refine。</li><li>绝大多数记录来自 stalta_threshold，少量来自 stalta_argmax。</li><li>需要专家判断：震相起跳是否合理、STA/LTA 窗口是否偏晚、远近台站是否系统性偏移。</li></ul></div><div><img class='' src='assets/ppick_metadata_stats.png' /></div></div></section>
+<section class='slide'><header><h1>P-pick 波形抽样：请专家现场看</h1></header><img class='full' src='assets/ppick_audit_waveforms.png' /><p class='note'>红虚线为当前存储 P-pick。这里只展示 pick 落在 100s HDF5 窗口内的样本；pick 在固定训练窗口外的记录需要回到原始对齐数据继续抽查。</p></section>
+<section class='slide'><header><h1>实现级模型总览</h1></header><img class='full' src='assets/architecture_implementation_detail.png' /></section>
+<section class='slide'><header><h1>原始 TEAM / query_transformer readout</h1></header><div class='grid2'><div><img class='' src='assets/architecture_team.png' /></div><div><ul><li>PGA query = target coordinate embedding + learned PGA query token。</li><li>concat 后进入 full Transformer；PGA key 被 mask，PGA 作为 query-only token。</li><li>event token 与 station token 共用 self-attention readout。</li><li>风险：读出路径要靠训练自己发现，容易走向均值解。</li></ul></div></div></section>
+<section class='slide'><header><h1>原始 full self-attention readout 的坍塌</h1></header><div class='grid2'><div><img class='' src='assets/result_transformer_ablation.png' /></div><div><table class="dataframe dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Method</th>
+      <th>Train Corr</th>
+      <th>Train slope</th>
+      <th>Val Corr</th>
+      <th>Val slope</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>query_transformer</td>
+      <td>0.624</td>
+      <td>0.000</td>
+      <td>0.345</td>
+      <td>0.000</td>
+    </tr>
+    <tr>
+      <td>mask_batch1</td>
+      <td>0.416</td>
+      <td>0.000</td>
+      <td>0.704</td>
+      <td>0.000</td>
+    </tr>
+    <tr>
+      <td>query_no_transformer</td>
+      <td>0.411</td>
+      <td>0.327</td>
+      <td>0.604</td>
+      <td>0.487</td>
+    </tr>
+    <tr>
+      <td>direct_station</td>
+      <td>0.837</td>
+      <td>0.580</td>
+      <td>0.537</td>
+      <td>0.250</td>
+    </tr>
+  </tbody>
+</table></div></div></section>
+<section class='slide'><header><h1>Attention / mask 诊断结论</h1></header><div class='grid2'><div><img class='' src='assets/variance_compression.png' /></div><div><ul><li>batch=1 mask sanity 仍然常数，跨 batch 泄露不是主因。</li><li>PGA query 后期可以 attend 到 station，但输出方差仍被压扁。</li><li>0.11111 的诊断 bug 已修：需要区分 key-type mask 与 padding 后的 effective key mask。</li><li>event 的 mag/loc 也会常数化，说明问题不只在 PGA label，而在 readout/目标路由。</li></ul></div></div></section>
+<section class='slide'><header><h1>Cross-attention readout 设计</h1></header><div class='grid2'><div><img class='' src='assets/architecture_cross_attention.png' /></div><div><ul><li>PGA Q：target coordinate embedding + learned PGA token。</li><li>K/V：station_feature_emb；key_padding_mask=~station_valid。</li><li>输出不加 query residual，使输出值更直接来自 station tokens。</li><li>可选 distance_bias：由 target-station rel xyz + distance 产生 attention bias。</li></ul></div></div></section>
+<section class='slide'><header><h1>Cross-attention 实验结果</h1></header><div class='grid2'><div><img class='' src='assets/result_cross_attention.png' /></div><div><table class="dataframe dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Experiment</th>
+      <th>Val MAE</th>
+      <th>Val Corr</th>
+      <th>Val R2</th>
+      <th>Val slope</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>pga15_cross_overfit32</td>
+      <td>0.406</td>
+      <td>0.462</td>
+      <td>-0.183</td>
+      <td>0.388</td>
+    </tr>
+    <tr>
+      <td>pga15_cross_overfit128</td>
+      <td>0.338</td>
+      <td>0.618</td>
+      <td>0.324</td>
+      <td>0.508</td>
+    </tr>
+    <tr>
+      <td>fixed_inputs_targets</td>
+      <td>0.300</td>
+      <td>0.621</td>
+      <td>0.271</td>
+      <td>0.574</td>
+    </tr>
+    <tr>
+      <td>input_targets</td>
+      <td>0.367</td>
+      <td>0.641</td>
+      <td>0.127</td>
+      <td>0.629</td>
+    </tr>
+    <tr>
+      <td>event_pga_cross_first_inputs</td>
+      <td>0.359</td>
+      <td>0.241</td>
+      <td>0.042</td>
+      <td>0.028</td>
+    </tr>
+  </tbody>
+</table></div></div></section>
+<section class='slide'><header><h1>Graph prior-residual 实现细节</h1></header><img class='full' src='assets/architecture_graph_detail.png' /></section>
+<section class='slide'><header><h1>Graph prior-residual 为什么有效</h1></header><div class='grid2'><div><img class='' src='assets/architecture_graph_prior_residual.png' /></div><div><ul><li>station_pga_prior_head 从 single-station 预训练加载，提供输入台站 PGA scale。</li><li>distance baseline 用 dist^-p 对输入台站 prior 加权，给出物理上更合理的初值。</li><li>graph message passing 只学习 residual，降低从零学习空间场的难度。</li><li>旧 graph 仍坍塌，说明“有 graph”本身不够，关键是 prior + baseline + residual 路径。</li></ul></div></div></section>
+<section class='slide'><header><h1>Graph 路线实验结果</h1></header><div class='grid2'><div><img class='' src='assets/result_graph_prior_residual.png' /></div><div><table class="dataframe dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Experiment</th>
+      <th>Val MAE</th>
+      <th>Val Corr</th>
+      <th>Val R2</th>
+      <th>Val slope</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>old graph first-inputs</td>
+      <td>0.345</td>
+      <td>-0.059</td>
+      <td>-0.041</td>
+      <td>-0.001</td>
+    </tr>
+    <tr>
+      <td>prior-residual first-inputs</td>
+      <td>0.278</td>
+      <td>0.612</td>
+      <td>0.359</td>
+      <td>0.298</td>
+    </tr>
+    <tr>
+      <td>prior-residual random-inputs</td>
+      <td>0.314</td>
+      <td>0.560</td>
+      <td>0.209</td>
+      <td>0.409</td>
+    </tr>
+    <tr>
+      <td>graph exp1 same-station</td>
+      <td>0.396</td>
+      <td>-0.911</td>
+      <td>-0.302</td>
+      <td>-0.000</td>
+    </tr>
+    <tr>
+      <td>graph exp2 multi-target</td>
+      <td>0.409</td>
+      <td>-0.013</td>
+      <td>-0.026</td>
+      <td>-0.000</td>
+    </tr>
+    <tr>
+      <td>graph exp3 holdout</td>
+      <td>0.443</td>
+      <td>-0.080</td>
+      <td>-0.001</td>
+      <td>-0.000</td>
+    </tr>
+  </tbody>
+</table></div></div></section>
+<section class='slide'><header><h1>两条路线对比</h1></header><div class='cards4'><div class='card'><h3>query_transformer</h3><p>统一 token 模型，但 PGA/event 都容易常数化。</p></div><div class='card'><h3>direct_station</h3><p>证明 station feature/head 可用，但不能处理任意 target 空间传播。</p></div><div class='card'><h3>cross-attention</h3><p>target 显式读 station，适合诊断 readout。</p></div><div class='card'><h3>graph prior-residual</h3><p>引入 single-station prior 和距离传播，当前结果最好。</p></div></div></section>
+<section class='slide'><header><h1>当前主要问题</h1></header><div class='grid2'><div><ul><li>P-pick 准确性还没有人工抽查闭环，可能影响波形窗口和 station SNR。</li><li>event mag/loc 联合训练仍会常数化，需要独立定位 event readout。</li><li>PGA pred std 仍小于 target std，模型偏保守。</li><li>验证集太小，多 seed / 多 split 后结论才稳。</li></ul></div><div><img class='' src='assets/variance_compression.png' /></div></div></section>
+<section class='slide'><header><h1>下一步实验建议</h1></header><div class='grid2'><div><ul><li>数据：做 P-pick 人工质检样本集，统计 pick 偏差和 STA/LTA 失败类型。</li><li>Cross：event cross-attention + PGA event context gate + distance bias 消融。</li><li>Graph：baseline-only / residual-only / prior-only / kNN / power p 消融。</li><li>评估：扩大 split，多 seed，记录 baseline-target corr、residual-target corr、attention top-k distance。</li></ul></div><div><div class='card'><h3>优先级</h3><p>先确认 P-pick 与 label 对齐，再做 graph/cross 的结构消融。否则模型问题和数据问题会混在一起。</p></div></div></div></section>
+<section class='slide'><header><h1>希望专家重点建议</h1></header><ul><li>P-pick 的 STA/LTA refine 是否合理，哪些样本应该剔除或降权？</li><li>PGA target 是否必须显式使用 event 信息？event 信息应如何进入模型？</li><li>距离衰减先验更适合作为 baseline、attention bias，还是 residual feature？</li><li>是否需要加入台站场地项、方位角、路径效应、区域衰减参数？</li><li>目前 overfit 诊断到哪一步可以转向更大训练集？</li></ul></section></main></div>
+<div class="hint">←/→ 翻页，F 全屏</div><div class="counter" id="counter"></div>
+<script>
+const slides = [...document.querySelectorAll('.slide')];
+let idx = 0;
+function show(i) {
+  idx = Math.max(0, Math.min(slides.length - 1, i));
+  document.getElementById('track').style.transform = `translateX(${-idx * 100}vw)`;
+  document.getElementById('counter').textContent = `${idx + 1} / ${slides.length}`;
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') show(idx + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(idx - 1);
+  if (e.key.toLowerCase() === 'f') document.documentElement.requestFullscreen?.();
+});
+show(0);
+</script>
+</body>
+</html>

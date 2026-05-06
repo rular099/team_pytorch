@@ -1,0 +1,6 @@
+| Method               |   Train MAE |   Train Corr |   Train R2 |   Train slope |   Val MAE |   Val Corr |   Val R2 |   Val slope | Note                              |
+|:---------------------|------------:|-------------:|-----------:|--------------:|----------:|-----------:|---------:|------------:|:----------------------------------|
+| query_transformer    |      0.4781 |       0.6236 |    -0.1129 |        0.0000 |    0.2414 |     0.3455 |  -0.0588 |      0.0000 | PGA query in full self-attention  |
+| mask_batch1          |      0.4717 |       0.4161 |    -0.0643 |        0.0000 |    0.2414 |     0.7043 |  -0.1453 |      0.0000 | batch=1 mask sanity               |
+| query_no_transformer |      0.4117 |       0.4106 |    -0.0521 |        0.3267 |    0.2699 |     0.6036 |  -0.3651 |      0.4868 | target coord + learned query only |
+| direct_station       |      0.2714 |       0.8373 |     0.6215 |        0.5796 |    0.3146 |     0.5373 |   0.0114 |      0.2502 | station embedding direct readout  |

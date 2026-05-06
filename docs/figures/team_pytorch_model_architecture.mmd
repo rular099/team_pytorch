@@ -1,0 +1,48 @@
+flowchart LR
+    A["日本强震事件数据<br/>HDF5<br/>多台站三分量波形 / 台站坐标 / PGA / 震级 / 震源位置"] --> B["样本构造<br/>PreloadedEventGenerator<br/>25 个输入台站<br/>15 个 PGA 目标台站"]
+
+    B --> C1["输入波形<br/>[B, 25, 3, 10000]"]
+    B --> C2["台站坐标<br/>[B, 25, 3]"]
+    B --> C3["PGA 目标台站坐标<br/>[B, 15, 3]"]
+
+    B -.-> P1["单台站多任务预训练<br/>Mag / Epicentral Distance / PGA"]
+    P1 -. "初始化 station adapter / scale path / layernorm" .-> D2
+
+    C1 --> D1["波形标准化与台站 mask<br/>station_valid"]
+    D1 --> D2["DiTing Backbone<br/>backbone_attn_pool<br/>预训练 backbone 冻结"]
+    D2 --> D3["Attention Pool Adapter<br/>patch tokens → station embedding"]
+    D3 --> E1["台站波形表征<br/>[B, 25, 1000]"]
+
+    C1 --> E2["幅值统计特征<br/>log std / rms / peak"]
+    E2 --> E3["WaveformScaleEmbedding<br/>补充绝对振幅信息"]
+
+    C2 --> E4["绝对坐标位置编码<br/>sin/cos PositionEmbedding"]
+
+    E1 --> F["台站 token 融合<br/>波形表征 + 幅值特征 + 坐标编码"]
+    E3 --> F
+    E4 --> F
+
+    F --> G1["加入 Event Token"]
+    C3 --> G2["PGA Query Token<br/>15 个目标台站坐标编码"]
+
+    G1 --> H["TEAM Transformer<br/>2 layers / 10 heads<br/>Event + Station + PGA Query Tokens"]
+    G2 --> H
+
+    H --> I1["Event Token 表征"]
+    H --> I2["PGA Query Token 表征"]
+
+    I1 --> J1["Magnitude Head<br/>MLP + PointOutput"]
+    I1 --> J2["Location Head<br/>MLP + PointOutput"]
+    I2 --> J3["PGA Head<br/>MLP + PointOutput"]
+
+    J1 --> K1["震级预测<br/>M"]
+    J2 --> K2["震源位置预测<br/>Lat / Lon / Depth"]
+    J3 --> K3["15 个目标台站 PGA 预测"]
+
+    K1 --> L["联合训练损失<br/>Huber Loss<br/>权重: Mag 0.2 / Loc 0.2 / PGA 1.0"]
+    K2 --> L
+    K3 --> L
+
+    L --> M["保存 checkpoint<br/>full_model_*.pth"]
+    M --> N["eval_checkpoint.py<br/>加载 checkpoint<br/>Train / Val 推理"]
+    N --> O["输出预测结果<br/>eval_results.npz"]

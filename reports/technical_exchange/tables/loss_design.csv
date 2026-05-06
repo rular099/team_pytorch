@@ -1,0 +1,5 @@
+Stage,Tasks,Loss,Weights,Implementation note
+single-station pretrain,"mag, epidist, pga",Huber(delta=1),0.3 / 0.3 / 0.4,Freeze encoder; train adapter + single-station heads.
+full PGA-only runs,pga,Huber(delta=1),1.0,Loss only on valid PGA targets.
+full event+PGA runs,"mag, loc, pga",Huber(delta=1),0.2 / 0.2 / 1.0,Joint readout test; mag/loc collapse is part of diagnosis.
+graph prior-residual runs,pga,Huber(delta=1),1.0,Final PGA = distance baseline + learned residual.

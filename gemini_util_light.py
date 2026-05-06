@@ -229,7 +229,8 @@ class PreloadedEventGenerator(Dataset):
                  random_input_station_count=None, pga_target_sampling=None, pga_distance_bins=None,
                  dump_debug_snapshot=False,
                  use_coords_rel=False, use_coords_abs=True,
-                 use_coords_rel_abs_fusion=False, station_experiment=None, **kwargs):
+                 use_coords_rel_abs_fusion=False, station_experiment=None,
+                 input_station_selection=None, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -302,6 +303,7 @@ class PreloadedEventGenerator(Dataset):
         self.select_first_pga_targets = (
             select_first if select_first_pga_targets is None else select_first_pga_targets
         )
+        self.input_station_selection = self._normalize_input_station_selection(input_station_selection)
         self.fake_borehole = fake_borehole
         self.scale_metadata = scale_metadata
         self.upsample_high_station_events = upsample_high_station_events
@@ -469,7 +471,77 @@ class PreloadedEventGenerator(Dataset):
         bins = np.sort(bins[np.isfinite(bins)])
         return bins if bins.size > 0 else None
 
-    def _apply_random_input_station_count(self, station_valid):
+    @staticmethod
+    def _normalize_input_station_selection(value):
+        if value is None:
+            return None
+        value = str(value).strip().lower()
+        if value in ('', 'config', 'default'):
+            return None
+        aliases = {
+            'pick': 'p_pick',
+            'ppick': 'p_pick',
+            'picks': 'p_pick',
+            'distance': 'epidist',
+            'nearest': 'epidist',
+            'nearest_epidist': 'epidist',
+            'epicentral_distance': 'epidist',
+            'random': 'random',
+            'p_pick': 'p_pick',
+            'epidist': 'epidist',
+        }
+        if value not in aliases:
+            raise ValueError(
+                'input_station_selection must be one of config/default, random, '
+                f'p_pick, epidist; got {value!r}'
+            )
+        return aliases[value]
+
+    @staticmethod
+    def _first_event_coord(target):
+        if target is None:
+            return None
+        arr = np.asarray(target, dtype=float)
+        if arr.size == 0:
+            return None
+        arr = arr.reshape(-1, arr.shape[-1])
+        if arr.shape[1] < 2:
+            return None
+        return arr[0]
+
+    @staticmethod
+    def _horizontal_distance_order(candidates, station_coords, event_coord):
+        candidates = np.asarray(candidates, dtype=np.int64)
+        if candidates.size == 0:
+            return candidates
+        if station_coords is None or event_coord is None:
+            return candidates
+        coords = np.asarray(station_coords, dtype=float)
+        event_coord = np.asarray(event_coord, dtype=float).reshape(-1)
+        if coords.ndim != 2 or coords.shape[1] < 2 or event_coord.size < 2:
+            return candidates
+        diffs = coords[candidates, :2] - event_coord[None, :2]
+        dist2 = np.sum(diffs * diffs, axis=1)
+        dist2[~np.isfinite(dist2)] = np.inf
+        return candidates[np.lexsort((candidates, dist2))]
+
+    def _input_station_order(self, candidates, station_coords=None, event_coord=None, p_picks=None):
+        candidates = np.asarray(candidates, dtype=np.int64)
+        if candidates.size == 0:
+            return candidates
+        if self.input_station_selection == 'epidist':
+            return self._horizontal_distance_order(candidates, station_coords, event_coord)
+        if self.input_station_selection == 'p_pick':
+            if p_picks is None:
+                return candidates
+            picks = np.asarray(p_picks, dtype=float)
+            order_values = picks[candidates].copy()
+            bad = np.logical_or(order_values <= 0, order_values > self.p_pick_limit)
+            order_values[bad] = np.inf
+            return candidates[np.lexsort((candidates, order_values))]
+        return candidates
+
+    def _apply_random_input_station_count(self, station_valid, metadata=None, target=None, p_picks=None):
         if self.random_input_station_count is None:
             return station_valid
 
@@ -480,7 +552,13 @@ class PreloadedEventGenerator(Dataset):
                 raise _EmptySample()
             n_inputs = int(np.random.choice(self.random_input_station_count))
             n_inputs = min(n_inputs, active.size)
-            selected = self._pick_random_subset(active, n_inputs)
+            if self.input_station_selection in ('epidist', 'p_pick'):
+                event_coord = self._first_event_coord(None if target is None else target[i])
+                coords = None if metadata is None else metadata[i]
+                picks = None if p_picks is None else p_picks[i]
+                selected = self._input_station_order(active, coords, event_coord, picks)[:n_inputs]
+            else:
+                selected = self._pick_random_subset(active, n_inputs)
             sampled_valid[i, selected] = True
         return sampled_valid
 
@@ -703,6 +781,9 @@ class PreloadedEventGenerator(Dataset):
         self.crop_start = crop_start
 
         y = np.array([self.event_metadata.get_group(ith_event)[self.target_key]]) # magnitude
+        event_target_for_input_selection = None
+        if self.coords_target:
+            event_target_for_input_selection = self.event_metadata.get_group(ith_event)[self.coord_keys].values
         true_batch_size = 1
 
         waveforms = np.zeros((true_batch_size, self.max_stations) + self.waveforms.shape[1:])  # shape (1, 25, 10000, 3)
@@ -746,7 +827,15 @@ class PreloadedEventGenerator(Dataset):
                     coeffs[self.triggers > self.waveforms.shape[1]] = 0
                     selection = np.argsort(-coeffs)
 
-                if self.select_first_inputs: # pick_time
+                if self.input_station_selection in ('epidist', 'p_pick'):
+                    event_coord = self._first_event_coord(event_target_for_input_selection)
+                    selection = self._input_station_order(
+                        selection,
+                        station_coords=self.metadata,
+                        event_coord=event_coord,
+                        p_picks=self.triggers,
+                    )
+                elif self.select_first_inputs: # pick_time
                     selection = np.argsort(self.triggers)
 
                 selection = selection[:true_max_stations_in_batch] # len tms
@@ -778,6 +867,7 @@ class PreloadedEventGenerator(Dataset):
         # corruption (NaN coord → NaN position embedding → NaN loss).
         coord_valid = ~(np.isnan(metadata).any(axis=-1) | np.isinf(metadata).any(axis=-1))
         station_valid_full &= coord_valid
+        metadata_for_input_selection = metadata.copy()
 
         magnitude = self.event_metadata.get_group(ith_event)[self.key].values.copy()
 
@@ -863,7 +953,12 @@ class PreloadedEventGenerator(Dataset):
         pick_valid_for_input = (p_picks > 0) & (p_picks < waveforms.shape[2])
         input_station_valid_for_model &= has_signal_for_input
         input_station_valid_for_model &= pick_valid_for_input
-        input_station_valid_for_model = self._apply_random_input_station_count(input_station_valid_for_model)
+        input_station_valid_for_model = self._apply_random_input_station_count(
+            input_station_valid_for_model,
+            metadata=metadata_for_input_selection,
+            target=event_target_for_input_selection,
+            p_picks=p_picks,
+        )
 
         if self.pga_targets:
             pga_values = np.zeros(

@@ -1,0 +1,6 @@
+Component,Total params,Trainable params,Status,Note
+DiTing encoder,"1,234.0M",0,Frozen,Exact count from local TEAM cross-attention instantiation.
+Station adapter,3.59M,3.59M,Trainable,Adapts frozen waveform encoder output to station embedding.
+TEAM cross-attn full model,"1,262.0M",28.0M,Trainable heads/readout only,Exact count for pga15_cross_overfit128 config.
+Graph prior-residual extra,~10.0M,~10.0M,Trainable,Analytic estimate: GraphPGAReadout ~9.02M + prior head ~1.00M.
+Graph prior-residual full model,"~1,272M",~38M,Approx.,Exact local instantiation blocked by missing dtbench in team_pytorch2 env.

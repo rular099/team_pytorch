@@ -8,11 +8,13 @@ __pycache__/
 
 # Training outputs
 runs/
+logs/
 weights_transformer_italy_plain_ensemble/
 logs_train_light_*.log
 
 # Local data artifacts
 *.hdf5
+station_cache*.csv
 event_metadata.csv
 train_ev.csv
 test_ev.csv
@@ -22,6 +24,8 @@ ISC_chinamainland_mag*_*.csv
 
 # Local scratch / backups
 *.bak
+*.pptx
+ppt_figures_bak/
 resume_codex.txt
 CLAUDE.md
 review.txt

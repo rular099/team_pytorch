@@ -7,7 +7,9 @@ Usage:
         --checkpoint weights_japan_overfit/full_model_200.pth \
         --output eval_results.npz \
         [--single_station_checkpoint weights_japan_overfit/single_station_best.pth] \
-        [--overfit_n 16] [--device cuda:0]
+        [--overfit_n 16] [--device cuda:0] [--input_station_selection epidist] \
+        [--case_station_sweep --case_station_counts 3,5,8,12,16,25] \
+        [--num_shards 4 --shard_id 0]
 """
 
 import argparse
@@ -149,7 +151,7 @@ def build_single_station_model_and_load(config, diting_args, checkpoint_path, de
     return single_model
 
 
-def build_datasets(config, overfit_n=0):
+def build_datasets(config, overfit_n=0, input_station_selection='config'):
     """Build train and val datasets, matching train_light.py logic."""
     training_params = config['training_params']
     generator_params = training_params.get('generator_params', [training_params.copy()])
@@ -242,11 +244,17 @@ def build_datasets(config, overfit_n=0):
                 shuffle=False,  # deterministic eval order
             )
             merged = {**defaults, **gp_copy}
+            if input_station_selection and input_station_selection not in ('config', 'default'):
+                merged['input_station_selection'] = input_station_selection
+                if input_station_selection == 'random':
+                    merged['select_first_inputs'] = False
+                    merged['selection_skew'] = None
             experiment = merged.get('station_experiment') or {}
             print(
                 f'[generator/{split_name}/{i}] '
                 f'select_first_inputs={merged.get("select_first_inputs", merged.get("select_first"))}, '
                 f'select_first_pga_targets={merged.get("select_first_pga_targets", merged.get("select_first"))}, '
+                f'input_station_selection={merged.get("input_station_selection", "config")}, '
                 f'integrate={merged.get("integrate", False)}, '
                 f'selection_skew={merged.get("selection_skew")}, '
                 f'pga_selection_skew={merged.get("pga_selection_skew")}, '
@@ -379,7 +387,7 @@ def diagnose_diting_features(model, dataset, device):
 
 
 @torch.no_grad()
-def diagnose_amplitude_sensitivity(model, dataset, device, scales=(0.5, 1.0, 2.0)):
+def diagnose_amplitude_sensitivity(model, dataset, device, config, scales=(0.5, 1.0, 2.0)):
     raw_model = model.module if hasattr(model, 'module') else model
     if not getattr(raw_model, 'use_amplitude_info', True):
         print(f'{"="*60}')
@@ -528,15 +536,28 @@ def diagnose_embedding_scales(model, dataset, device):
     print()
 
 
+def shard_indices(n_items, num_shards=1, shard_id=0):
+    num_shards = int(num_shards)
+    shard_id = int(shard_id)
+    if num_shards <= 1:
+        return list(range(n_items))
+    if shard_id < 0 or shard_id >= num_shards:
+        raise ValueError(f'shard_id must be in [0, {num_shards}), got {shard_id}')
+    return [idx for idx in range(n_items) if idx % num_shards == shard_id]
+
+
 @torch.no_grad()
-def run_inference(model, dataset, device):
+def run_inference(model, dataset, device, config, indices=None):
     """Run inference on all samples, collect predictions and labels."""
     raw_model = model.module if hasattr(model, 'module') else model
     head_names = raw_model.output_layout  # e.g. ['mag', 'loc', 'pga']
     results = defaultdict(list)
+    if indices is None:
+        indices = range(len(dataset))
 
-    for idx in range(len(dataset)):
+    for idx in indices:
         inputs, labels, p_picks = dataset[idx]
+        results['event_index'].append(int(idx))
 
         # Move to device
         inputs_dev = [x.unsqueeze(0).to(device) if isinstance(x, torch.Tensor) else x for x in inputs]
@@ -547,9 +568,17 @@ def run_inference(model, dataset, device):
             ptv = inputs[4]
             ptv_np = ptv.numpy() if isinstance(ptv, torch.Tensor) else np.array(ptv)
             results['pga_target_valid'].append(ptv_np)
+        if isinstance(inputs, list) and len(inputs) >= 4:
+            pga_targets = inputs[3]
+            pga_targets_np = pga_targets.numpy() if isinstance(pga_targets, torch.Tensor) else np.array(pga_targets)
+            results['pga_target_abs'].append(pga_targets_np)
         if isinstance(inputs, list) and len(inputs) >= 3:
+            station_coords = inputs[1]
+            station_coords_np = station_coords.numpy() if isinstance(station_coords, torch.Tensor) else np.array(station_coords)
+            results['station_coords_abs'].append(station_coords_np)
             station_valid = inputs[2]
             sv_np = station_valid.numpy() if isinstance(station_valid, torch.Tensor) else np.array(station_valid)
+            results['station_valid'].append(sv_np)
             results['station_valid_count'].append(int(np.asarray(sv_np).astype(bool).sum()))
         if isinstance(p_picks, dict):
             if 'loc_target_abs' in p_picks:
@@ -608,6 +637,224 @@ def run_inference(model, dataset, device):
     return dict(results)
 
 
+def _parse_int_list(value):
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        items = value
+    else:
+        items = str(value).split(',')
+    parsed = []
+    for item in items:
+        text = str(item).strip()
+        if not text:
+            continue
+        parsed.append(int(text))
+    return parsed
+
+
+def _parse_name_list(value):
+    if value is None:
+        return []
+    return [item.strip() for item in str(value).split(',') if item.strip()]
+
+
+def _dataset_random_count_records(dataset):
+    records = []
+    visited = set()
+
+    def visit(obj):
+        oid = id(obj)
+        if oid in visited:
+            return
+        visited.add(oid)
+        if hasattr(obj, 'random_input_station_count'):
+            records.append((obj, obj.random_input_station_count))
+        for child_attr in ('generators',):
+            children = getattr(obj, child_attr, None)
+            if children is not None:
+                for child in children:
+                    visit(child)
+        child = getattr(obj, 'generator', None)
+        if child is not None:
+            visit(child)
+
+    visit(dataset)
+    return records
+
+
+def _restore_random_count_records(records):
+    for obj, value in records:
+        obj.random_input_station_count = value
+
+
+def _set_random_count_records(records, count):
+    choices = [int(count)] if count is not None else None
+    for obj, _ in records:
+        obj.random_input_station_count = choices
+
+
+def select_case_event_indices(results, max_events):
+    if max_events <= 0:
+        return []
+    if 'pga_label' not in results or 'pga_mu_best' not in results:
+        n_samples = len(next(iter(results.values()))) if results else 0
+        return list(range(min(max_events, n_samples)))
+
+    labels = np.asarray(results['pga_label'])
+    preds = np.asarray(results['pga_mu_best'])
+    n_samples = labels.shape[0]
+    labels = labels.reshape(n_samples, -1)
+    preds = preds.reshape(n_samples, -1)
+    if 'pga_target_valid' in results:
+        valid = np.asarray(results['pga_target_valid']).astype(bool).reshape(n_samples, -1)
+    else:
+        valid = ~np.isnan(labels)
+
+    scored = []
+    for idx in range(n_samples):
+        mask = valid[idx]
+        if not mask.any():
+            continue
+        residual = preds[idx][mask] - labels[idx][mask]
+        scored.append((float(np.mean(np.abs(residual))), idx))
+    if not scored:
+        return list(range(min(max_events, n_samples)))
+
+    scored.sort()
+    candidates = [scored[0][1], scored[-1][1], scored[len(scored) // 2][1]]
+    if 'station_valid_count' in results:
+        counts = np.asarray(results['station_valid_count'], dtype=np.int64).reshape(-1)
+        sparse = sorted(scored, key=lambda x: (counts[x[1]], x[0]))
+        dense = sorted(scored, key=lambda x: (-counts[x[1]], x[0]))
+        candidates.extend([sparse[0][1], dense[0][1]])
+
+    selected_positions = []
+    for idx in candidates:
+        if idx not in selected_positions:
+            selected_positions.append(idx)
+        if len(selected_positions) >= max_events:
+            break
+
+    event_indices = results.get('event_index')
+    if event_indices is not None:
+        event_indices = np.asarray(event_indices, dtype=np.int64).reshape(-1)
+        return [int(event_indices[pos]) for pos in selected_positions]
+    return selected_positions
+
+
+@torch.no_grad()
+def run_station_count_sweep(model, dataset, device, config, event_indices, station_counts, seed=1234):
+    """Evaluate the same events with fixed requested input-station counts."""
+    raw_model = model.module if hasattr(model, 'module') else model
+    head_names = raw_model.output_layout
+    if 'pga' not in head_names:
+        print('[WARN] Station-count sweep skipped: model has no PGA output head.')
+        return {}
+
+    pga_head_idx = head_names.index('pga')
+    results = defaultdict(list)
+    records = _dataset_random_count_records(dataset)
+    if not records:
+        print('[WARN] Station-count sweep could not find random_input_station_count on dataset.')
+
+    rng_state = np.random.get_state()
+    try:
+        for event_idx in event_indices:
+            event_seed = int(seed) + int(event_idx) * 1009
+            for count in station_counts:
+                _set_random_count_records(records, count)
+                # Reuse the same RNG seed for every count of one event so random
+                # PGA-target selection stays comparable across the sweep.
+                np.random.seed(event_seed)
+                inputs, labels, p_picks = dataset[event_idx]
+
+                inputs_dev = [x.unsqueeze(0).to(device) if isinstance(x, torch.Tensor) else x for x in inputs]
+                outputs = model(*inputs_dev)
+                out_np = outputs[pga_head_idx].cpu().numpy().squeeze(0)
+                if _is_point_output(out_np):
+                    mu_best = _point_mu_from_output('pga', out_np)
+                else:
+                    alpha = out_np[:, :, 0]
+                    mu = out_np[:, :, 1]
+                    best = np.argmax(alpha, axis=1)
+                    mu_best = mu[np.arange(len(best)), best]
+                mu_best = _maybe_unnormalize_pga('pga', mu_best, config)
+
+                label_np = labels[pga_head_idx].numpy() if isinstance(labels[pga_head_idx], torch.Tensor) else np.array(labels[pga_head_idx])
+                pga_target_valid = None
+                if isinstance(inputs, list) and len(inputs) >= 5:
+                    pga_target_valid = _to_numpy(inputs[4]).astype(bool)
+
+                station_valid = _to_numpy(inputs[2]).astype(bool) if isinstance(inputs, list) and len(inputs) >= 3 else None
+                actual_count = int(station_valid.sum()) if station_valid is not None else -1
+
+                event_id = p_picks.get('event_id', str(event_idx)) if isinstance(p_picks, dict) else str(event_idx)
+                results['event_index'].append(int(event_idx))
+                results['event_id'].append(str(event_id))
+                results['requested_station_count'].append(int(count))
+                results['actual_station_count'].append(actual_count)
+                results['pga_label'].append(label_np)
+                results['pga_mu_best'].append(mu_best)
+                if pga_target_valid is not None:
+                    results['pga_target_valid'].append(pga_target_valid)
+                if isinstance(inputs, list) and len(inputs) >= 4:
+                    results['pga_target_abs'].append(_to_numpy(inputs[3]))
+                if station_valid is not None:
+                    results['station_valid'].append(station_valid)
+                    results['station_coords_abs'].append(_to_numpy(inputs[1]))
+                if isinstance(p_picks, dict):
+                    if 'selected_input_indices' in p_picks:
+                        results['selected_input_indices'].append(_to_numpy(p_picks['selected_input_indices']))
+                    if 'loc_target_abs' in p_picks:
+                        results['loc_label_abs'].append(_to_numpy(p_picks['loc_target_abs']))
+                    if 'loc_center' in p_picks:
+                        results['loc_center'].append(_to_numpy(p_picks['loc_center']))
+                    results['p_picks'].append(shifted_p_picks_array(p_picks))
+    finally:
+        _restore_random_count_records(records)
+        np.random.set_state(rng_state)
+
+    return dict(results)
+
+
+def print_station_count_sweep_summary(results, split_name):
+    if not results:
+        return
+    requested = np.asarray(results.get('requested_station_count', []), dtype=np.int64)
+    if requested.size == 0:
+        return
+    labels = np.asarray(results['pga_label']).reshape(requested.size, -1)
+    preds = np.asarray(results['pga_mu_best']).reshape(requested.size, -1)
+    if 'pga_target_valid' in results:
+        valid = np.asarray(results['pga_target_valid']).astype(bool).reshape(requested.size, -1)
+    else:
+        valid = ~np.isnan(labels)
+
+    print(f'\n{"="*60}')
+    print(f'  CASE STATION-COUNT SWEEP {split_name.upper()}: {requested.size} runs')
+    print(f'{"="*60}')
+    for count in sorted(set(requested.tolist())):
+        rows = requested == count
+        mask = valid[rows]
+        if not mask.any():
+            continue
+        y = labels[rows][mask]
+        p = preds[rows][mask]
+        residual = p - y
+        actual = np.asarray(results.get('actual_station_count', []), dtype=np.int64)
+        actual_text = ''
+        if actual.size == requested.size:
+            actual_text = f', actual_mean={actual[rows].mean():.1f}'
+        print(
+            f'  requested={count}: runs={int(rows.sum())}{actual_text}, '
+            f'targets={int(mask.sum())}, '
+            f'MAE={np.mean(np.abs(residual)):.4f}, '
+            f'RMSE={np.sqrt(np.mean(residual**2)):.4f}, '
+            f'bias={np.mean(residual):.4f}'
+        )
+
+
 def _single_station_valid_mask(tasks, station_valid, p_picks):
     valid = station_valid.bool().clone()
     if 'pga' in tasks:
@@ -647,13 +894,15 @@ def _single_station_targets(tasks, metadata, labels, p_picks, station_indices, s
 
 
 @torch.no_grad()
-def run_single_station_inference(model, dataset, device):
+def run_single_station_inference(model, dataset, device, indices=None):
     """Run the single-station pretrain model on every valid input station."""
     raw_model = model.module if hasattr(model, 'module') else model
     tasks = list(raw_model.tasks)
     results = defaultdict(list)
+    if indices is None:
+        indices = range(len(dataset))
 
-    for event_idx in range(len(dataset)):
+    for event_idx in indices:
         inputs, labels, p_picks = dataset[event_idx]
         waveforms, metadata, station_valid = inputs[:3]
         valid = _single_station_valid_mask(tasks, station_valid, p_picks)
@@ -895,6 +1144,26 @@ def main():
     parser.add_argument('--output', default='eval_results.npz', help='Output file for results')
     parser.add_argument('--overfit_n', type=int, default=0)
     parser.add_argument('--device', default='cuda:0' if torch.cuda.is_available() else 'cpu')
+    parser.add_argument('--input_station_selection', default='config',
+                        choices=['config', 'default', 'random', 'p_pick', 'epidist'],
+                        help='Override eval input-station ordering/subsampling. '
+                             'epidist selects nearest stations by epicentral distance.')
+    parser.add_argument('--case_station_sweep', action='store_true',
+                        help='Additionally evaluate selected events at each requested input-station count.')
+    parser.add_argument('--case_station_counts', default='3,5,8,12,16,25',
+                        help='Comma-separated requested input-station counts for --case_station_sweep.')
+    parser.add_argument('--case_splits', default='val',
+                        help='Comma-separated splits for --case_station_sweep, e.g. val or train,val.')
+    parser.add_argument('--case_event_indices', default='',
+                        help='Comma-separated event indices per split. Empty selects representative events automatically.')
+    parser.add_argument('--case_max_events', type=int, default=3,
+                        help='Number of automatically selected events per split for --case_station_sweep.')
+    parser.add_argument('--case_seed', type=int, default=1234,
+                        help='Base numpy seed used to keep PGA target selection comparable in the sweep.')
+    parser.add_argument('--num_shards', type=int, default=1,
+                        help='Split each eval dataset into this many deterministic shards.')
+    parser.add_argument('--shard_id', type=int, default=0,
+                        help='Shard id to evaluate, in [0, num_shards).')
     args = parser.parse_args()
 
     with open(args.config) as f:
@@ -918,7 +1187,11 @@ def main():
     model = build_model_and_load(config, diting_args, args.checkpoint, device)
 
     print('Building datasets...')
-    datasets = build_datasets(config, overfit_n=args.overfit_n)
+    datasets = build_datasets(
+        config,
+        overfit_n=args.overfit_n,
+        input_station_selection=args.input_station_selection,
+    )
 
     single_station_model = None
     if not args.skip_single_station:
@@ -943,21 +1216,55 @@ def main():
     # Diagnose diting features on first available dataset
     first_dataset = next(iter(datasets.values()))
     diagnose_diting_features(model, first_dataset, device)
-    diagnose_amplitude_sensitivity(model, first_dataset, device)
+    diagnose_amplitude_sensitivity(model, first_dataset, device, config)
     diagnose_embedding_scales(model, first_dataset, device)
 
     all_results = {}
+    case_station_counts = _parse_int_list(args.case_station_counts)
+    case_splits = set(_parse_name_list(args.case_splits))
+    explicit_case_indices = _parse_int_list(args.case_event_indices)
     for split_name, dataset in datasets.items():
-        print(f'\nRunning inference on {split_name} set ({len(dataset)} samples)...')
-        results = run_inference(model, dataset, device)
+        eval_indices = shard_indices(len(dataset), args.num_shards, args.shard_id)
+        shard_text = ''
+        if args.num_shards > 1:
+            shard_text = f' shard {args.shard_id}/{args.num_shards} ({len(eval_indices)} samples)'
+        print(f'\nRunning inference on {split_name} set ({len(dataset)} samples){shard_text}...')
+        results = run_inference(model, dataset, device, config, indices=eval_indices)
         print_summary(results, split_name)
         # Prefix keys with split name for saving
         for k, v in results.items():
             all_results[f'{split_name}_{k}'] = np.array(v, dtype=object)
 
+        if args.case_station_sweep and split_name in case_splits:
+            if not case_station_counts:
+                raise ValueError('--case_station_counts must contain at least one positive integer')
+            if explicit_case_indices:
+                event_indices = [idx for idx in explicit_case_indices if 0 <= idx < len(dataset)]
+            else:
+                event_indices = select_case_event_indices(results, args.case_max_events)
+            if not event_indices:
+                print(f'No valid case-study event indices selected for {split_name}; skipping station-count sweep.')
+            else:
+                print(
+                    f'\nRunning station-count sweep on {split_name}: '
+                    f'events={event_indices}, counts={case_station_counts}'
+                )
+                sweep_results = run_station_count_sweep(
+                    model,
+                    dataset,
+                    device,
+                    config,
+                    event_indices=event_indices,
+                    station_counts=case_station_counts,
+                    seed=args.case_seed,
+                )
+                print_station_count_sweep_summary(sweep_results, split_name)
+                for k, v in sweep_results.items():
+                    all_results[f'case_sweep_{split_name}_{k}'] = np.array(v, dtype=object)
+
         if single_station_model is not None:
-            print(f'\nRunning single-station inference on {split_name} set ({len(dataset)} events)...')
-            single_results = run_single_station_inference(single_station_model, dataset, device)
+            print(f'\nRunning single-station inference on {split_name} set ({len(dataset)} events){shard_text}...')
+            single_results = run_single_station_inference(single_station_model, dataset, device, indices=eval_indices)
             print_single_station_summary(single_results, split_name)
             for k, v in single_results.items():
                 all_results[f'single_{split_name}_{k}'] = np.array(v, dtype=object)

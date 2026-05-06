@@ -1,0 +1,21 @@
+flowchart LR
+    A["日本强震多台站数据"] --> B["样本构造<br/>25 输入台站<br/>15 PGA 目标台站"]
+
+    B --> C["单台站预训练<br/>Mag / 距震中距离 / PGA"]
+    C -. "初始化 adapter" .-> D
+
+    B --> D["DiTing 波形编码器<br/>backbone_attn_pool<br/>冻结预训练 backbone"]
+    D --> E["台站表征融合<br/>波形 + 幅值 + 坐标"]
+
+    E --> F["TEAM Transformer<br/>Event Token<br/>Station Tokens<br/>PGA Query Tokens"]
+
+    F --> G1["震级预测<br/>PointOutput"]
+    F --> G2["震源位置预测<br/>PointOutput"]
+    F --> G3["PGA 预测<br/>PointOutput"]
+
+    G1 --> H["三任务联合训练<br/>Huber Loss"]
+    G2 --> H
+    G3 --> H
+
+    H --> I["Checkpoint"]
+    I --> J["eval_checkpoint.py 推理"]

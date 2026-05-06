@@ -263,6 +263,24 @@ def write_json(path: Path, obj) -> None:
 def make_client(args):
     from obspy.clients.fdsn import Client
 
+    if args.routing_client:
+        name = args.routing_client.lower()
+        if name in ("iris-federator", "federator", "iris"):
+            from obspy.clients.fdsn.routing.federator_routing_client import FederatorRoutingClient
+
+            return FederatorRoutingClient("iris-federator", timeout=args.timeout)
+        if name in ("eida-routing", "eida"):
+            from obspy.clients.fdsn.routing.eidaws_routing_client import EIDAWSRoutingClient
+
+            return EIDAWSRoutingClient("eida-routing", timeout=args.timeout)
+        try:
+            from obspy.clients.fdsn.routing.routing_client import RoutingClient
+        except ImportError as exc:
+            raise ImportError(
+                "This ObsPy version does not expose a generic RoutingClient. "
+                "Use --routing-client iris-federator or --routing-client eida-routing."
+            ) from exc
+        return RoutingClient(args.routing_client, timeout=args.timeout)
     if args.fdsn_base_url:
         return Client(base_url=args.fdsn_base_url, timeout=args.timeout)
     return Client(args.fdsn_client, timeout=args.timeout)
@@ -272,6 +290,98 @@ def utc_from_timestamp(ts: float):
     from obspy import UTCDateTime
 
     return UTCDateTime(ts)
+
+
+def get_inventory(client, args, starttime, endtime, level: str):
+    return client.get_stations(
+        network=args.network,
+        station=args.station,
+        location=args.location,
+        channel=args.channels,
+        starttime=starttime,
+        endtime=endtime,
+        level=level,
+    )
+
+
+def inventory_channel_rows(inventory) -> list[dict[str, object]]:
+    rows = []
+    for net in inventory:
+        for sta in net:
+            for cha in sta.channels:
+                rows.append({
+                    "network": net.code,
+                    "station": sta.code,
+                    "location": cha.location_code or "",
+                    "channel": cha.code,
+                    "station_latitude": float(sta.latitude),
+                    "station_longitude": float(sta.longitude),
+                    "station_elevation_m": float(sta.elevation),
+                    "channel_latitude": float(cha.latitude),
+                    "channel_longitude": float(cha.longitude),
+                    "channel_elevation_m": float(cha.elevation),
+                    "depth_m": float(cha.depth),
+                    "sample_rate_hz": float(cha.sample_rate),
+                    "start_date": cha.start_date.isoformat() if cha.start_date else "",
+                    "end_date": cha.end_date.isoformat() if cha.end_date else "",
+                    "site_name": getattr(sta.site, "name", "") if sta.site is not None else "",
+                })
+    return rows
+
+
+CHANNEL_FIELDS = [
+    "network",
+    "station",
+    "location",
+    "channel",
+    "station_latitude",
+    "station_longitude",
+    "station_elevation_m",
+    "channel_latitude",
+    "channel_longitude",
+    "channel_elevation_m",
+    "depth_m",
+    "sample_rate_hz",
+    "start_date",
+    "end_date",
+    "site_name",
+]
+
+
+def probe_inventory(args, client, event: EventInfo) -> None:
+    event_dir = args.output_root / "events" / event.event_id
+    event_dir.mkdir(parents=True, exist_ok=True)
+    write_json(event_dir / "event.json", asdict(event))
+
+    origin = utc_from_timestamp(event.origin_timestamp)
+    start = origin - args.inventory_pre_seconds
+    end = origin + args.inventory_post_seconds
+    log_rows = []
+    try:
+        inventory = get_inventory(client, args, start, end, level=args.probe_level)
+        inventory.write(str(event_dir / "inventory_probe.xml"), format="STATIONXML")
+        rows = inventory_channel_rows(inventory)
+        write_csv(event_dir / "channels.csv", rows, CHANNEL_FIELDS)
+        channel_summary = {}
+        for row in rows:
+            key = (row["network"], row["location"], row["channel"])
+            channel_summary[key] = channel_summary.get(key, 0) + 1
+        summary_rows = [
+            {"network": net, "location": loc, "channel": cha, "station_count": count}
+            for (net, loc, cha), count in sorted(channel_summary.items())
+        ]
+        write_csv(event_dir / "channel_summary.csv", summary_rows, ["network", "location", "channel", "station_count"])
+        print(f"[INFO] probe wrote {len(rows)} channels for event {event.event_id} to {event_dir}")
+    except Exception as exc:
+        log_rows.append({
+            "event_id": event.event_id,
+            "network": args.network,
+            "station": args.station,
+            "status": "inventory_probe_failed",
+            "error": repr(exc),
+        })
+        write_csv(event_dir / "download_log.csv", log_rows, DOWNLOAD_LOG_FIELDS)
+        print(f"[WARN] inventory probe failed for {event.event_id}: {exc!r}", file=sys.stderr)
 
 
 def process_event(args, client, event: EventInfo, jma_table, ak135) -> dict[str, int]:
@@ -290,15 +400,7 @@ def process_event(args, client, event: EventInfo, jma_table, ak135) -> dict[str,
     write_json(event_dir / "event.json", asdict(event))
 
     try:
-        inventory = client.get_stations(
-            network=args.network,
-            station=args.station,
-            location=args.location,
-            channel=args.channels,
-            starttime=inventory_start,
-            endtime=inventory_end,
-            level="response",
-        )
+        inventory = get_inventory(client, args, inventory_start, inventory_end, level="response")
     except Exception as exc:
         log_rows.append({
             "event_id": event.event_id,
@@ -475,6 +577,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--channels", default="HN?", help="FDSN channel selector for strong-motion channels.")
     parser.add_argument("--fdsn-client", default="IRIS", help="ObsPy FDSN client name when --fdsn-base-url is unset.")
     parser.add_argument("--fdsn-base-url", default=None, help="Explicit FDSN base URL for direct provider access.")
+    parser.add_argument(
+        "--routing-client",
+        default=None,
+        help="ObsPy routing client name, e.g. iris-federator or eida-routing. Overrides --fdsn-client.",
+    )
     parser.add_argument("--timeout", type=float, default=120.0, help="FDSN request timeout in seconds.")
     parser.add_argument("--pre-seconds", type=float, default=100.0, help="Seconds before predicted P arrival.")
     parser.add_argument("--post-seconds", type=float, default=100.0, help="Seconds after predicted P arrival.")
@@ -490,6 +597,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sleep-seconds", type=float, default=0.0, help="Sleep after each successful waveform request.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing miniSEED files.")
     parser.add_argument("--dry-run", action="store_true", help="Write metadata and planned requests without downloading waveforms.")
+    parser.add_argument(
+        "--probe-inventory",
+        action="store_true",
+        help="Only query and write inventory channel listings; do not compute arrivals or download waveforms.",
+    )
+    parser.add_argument(
+        "--probe-level",
+        choices=["network", "station", "channel", "response"],
+        default="channel",
+        help="Inventory level used with --probe-inventory.",
+    )
     return parser
 
 
@@ -513,7 +631,11 @@ def main() -> int:
         try:
             event = read_event_info(archive, args.strong_root)
             print(f"[INFO] event {event.event_id} origin={event.origin_time_utc}")
-            stats = process_event(args, client, event, jma_table, ak135)
+            if args.probe_inventory:
+                probe_inventory(args, client, event)
+                stats = {"events": 1, "stations": 0, "downloaded": 0, "skipped_existing": 0, "failed": 0}
+            else:
+                stats = process_event(args, client, event, jma_table, ak135)
             summary_rows.append({"event_id": event.event_id, **stats})
             for key, value in stats.items():
                 total[key] = total.get(key, 0) + int(value)

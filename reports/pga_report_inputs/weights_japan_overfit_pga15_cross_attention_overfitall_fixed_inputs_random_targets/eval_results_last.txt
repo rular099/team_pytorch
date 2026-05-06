@@ -1,0 +1,33 @@
+============================================================
+  TRAIN set: 699 samples
+============================================================
+
+--- pga ---
+  MAE=0.2256, RMSE=0.3096 (8262/10485 valid targets)
+  Correlation: 0.8751
+  R^2: 0.7598
+  Linear fit: pred = 0.7687 * label + -0.3107
+  By input station count:
+    n=1: events=10, targets=25, MAE=0.3399, RMSE=0.4322, corr=0.5157
+    n=2-3: events=168, targets=1756, MAE=0.3259, RMSE=0.4258, corr=0.7591
+    n=4-5: events=163, targets=1749, MAE=0.2462, RMSE=0.3230, corr=0.8646
+    n=6-10: events=162, targets=1889, MAE=0.1890, RMSE=0.2527, corr=0.9189
+    n=11-15: events=94, targets=1313, MAE=0.1762, RMSE=0.2430, corr=0.9241
+    n=16+: events=102, targets=1530, MAE=0.1727, RMSE=0.2402, corr=0.9234
+
+============================================================
+  VAL set: 101 samples
+============================================================
+
+--- pga ---
+  MAE=0.2976, RMSE=0.3891 (1393/1515 valid targets)
+  Correlation: 0.7271
+  R^2: 0.5181
+  Linear fit: pred = 0.5972 * label + -0.6249
+  By input station count:
+    n=1: events=1, targets=1, MAE=0.3354, RMSE=0.3354, corr=nan
+    n=2-3: events=21, targets=271, MAE=0.3419, RMSE=0.4405, corr=0.6009
+    n=4-5: events=12, targets=158, MAE=0.3143, RMSE=0.3909, corr=0.7149
+    n=6-10: events=25, targets=340, MAE=0.2979, RMSE=0.3844, corr=0.7487
+    n=11-15: events=13, targets=188, MAE=0.2763, RMSE=0.3699, corr=0.7967
+    n=16+: events=29, targets=435, MAE=0.2727, RMSE=0.3653, corr=0.7596

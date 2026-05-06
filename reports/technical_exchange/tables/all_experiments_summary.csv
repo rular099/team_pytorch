@@ -1,0 +1,22 @@
+Group,Experiment,Route,Setting,overfit_n,n_pga,Train MAE,Train Corr,Train R2,Val MAE,Val Corr,Val R2,Val slope,Val mag MAE,Status
+TEAM,event+pga_cross,PGA+event cross-attn,random inputs/targets,unknown,15,,,,,,,,,eval failed/no PGA metrics
+TEAM,event+pga_cross_first_inputs,PGA+event cross-attn,first input stations,32-like,15,0.4245,0.5201,0.2247,0.3591,0.2408,0.0416,0.0281,0.6034,ok
+TEAM,exp1_attn_diag,full self-attn query,query_transformer + attention diagnostics,32-like,1,0.4781,0.6236,-0.1129,0.2414,0.3455,-0.0588,0.0,1.1982,ok
+TEAM,exp1_direct_station,unknown,pooled station embedding readout,32-like,1,0.4583,0.6246,-0.0033,0.3897,-0.3243,-0.2664,-0.0,1.1981,ok
+TEAM,exp1_mask_batch1,full self-attn query,batch=1 mask sanity,32-like,1,0.4717,0.4161,-0.0643,0.2414,0.7043,-0.1453,0.0,1.1989,ok
+TEAM,exp1_query_no_transformer,query only,target query without transformer,32-like,1,0.4117,0.4106,-0.0521,0.2699,0.6036,-0.3651,0.4868,1.2,ok
+TEAM,exp1_target_cross_attention,PGA cross-attn,random inputs/targets,32-like,1,,,,,,,,,eval failed/no PGA metrics
+TEAM,loc_cross_attention_overfit32,PGA+event cross-attn,random inputs/targets,32,15,1.5792,-0.0746,-7.5551,1.7302,-0.042,-13.8326,-0.0002,1.2032,ok
+TEAM,mag_cross_attention_overfit32,PGA+event cross-attn,random inputs/targets,32,15,1.5814,-0.1018,-7.5772,1.7324,-0.077,-13.8675,-0.0004,0.8761,ok
+TEAM,pga15_cross_overfit128,PGA+event cross-attn,random inputs/targets,128,15,0.2256,0.8433,0.7039,0.3377,0.6183,0.3236,0.5078,0.9555,ok
+TEAM,pga15_cross_overfit32,PGA+event cross-attn,random inputs/targets,32,15,0.2436,0.7983,0.6314,0.406,0.4615,-0.1826,0.3879,1.2,ok
+TEAM,pga15_cross_overfit32_fixed_inputs_random_targets,PGA+event cross-attn,fixed inputs; random targets,32,15,0.1762,0.9686,0.8791,0.5807,0.2563,-1.4281,0.3551,1.2005,ok
+TEAM,pga15_cross_overfit32_fixed_inputs_targets,PGA+event cross-attn,fixed inputs; fixed targets,32,15,0.0787,0.968,0.9333,0.2998,0.6214,0.2711,0.5741,1.1998,ok
+TEAM,pga15_cross_overfit32_input_targets,PGA+event cross-attn,input stations also used as targets,32,15,0.0748,0.991,0.9655,0.367,0.6409,0.1269,0.6287,1.2006,ok
+Graph,exp1_graph_single_input_same_station_pga,graph message passing,single input; same-station target,32-like,1,0.4577,-0.1341,-0.001,0.3964,-0.9109,-0.3024,-0.0,1.2,ok
+Graph,exp2_graph_single_input_multi_target_pga,graph message passing,single input; multiple targets,32-like,15,0.4864,0.2473,-0.0034,0.4095,-0.0135,-0.0259,-0.0,1.2,ok
+Graph,exp3_graph_snr_filtered_holdout_pga,graph message passing,SNR-filtered holdout targets,32-like,15,0.4798,0.0969,0.0002,0.4433,-0.0795,-0.0006,-0.0001,0.475,ok
+Graph,graph_event+pga_first_inputs,graph message passing,first input stations,32-like,15,0.4477,0.0535,0.0011,0.3491,-0.229,-0.0751,-0.0023,1.1782,ok
+Graph,graph_first_inputs,graph message passing,first input stations,32-like,15,0.4484,0.1419,0.0021,0.3452,-0.0588,-0.0413,-0.0005,1.2,ok
+Graph,graph_first_inputs_prior_residual,graph prior-residual,first input stations,32-like,15,0.4093,0.3674,0.1326,0.2784,0.6118,0.3586,0.2976,1.1999,ok
+Graph,graph_random_inputs_prior_residual,graph prior-residual,random input stations,unknown,15,0.3692,0.5003,0.223,0.3137,0.5602,0.2089,0.409,1.1999,ok

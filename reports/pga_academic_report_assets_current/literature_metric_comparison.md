@@ -1,0 +1,8 @@
+| model                         | split               | mae    | rmse   | corr   | r2     | slope   | dataset                            | note                                                  |
+|:------------------------------|:--------------------|:-------|:-------|:-------|:-------|:--------|:-----------------------------------|:------------------------------------------------------|
+| TEAM                          | reported/reproduced | fill   | fill   | fill   | fill   | fill    | Use same data/split when available | Fill from reproduced run or comparable paper setting. |
+| QuakeFormer                   | reported/reproduced | fill   | fill   | fill   | fill   | fill    | Use same data/split when available | Fill from reproduced run or comparable paper setting. |
+| Proposed model (this project) | train               | 0.2234 | 0.3073 | 0.875  | 0.7633 | 0.7634  | Project evaluation split           | Generated from eval_results.txt                       |
+| Proposed model (this project) | train               | 0.2256 | 0.3096 | 0.8751 | 0.7598 | 0.7687  | Project evaluation split           | Generated from eval_results.txt                       |
+| Proposed model (this project) | val                 | 0.2966 | 0.3875 | 0.7278 | 0.5221 | 0.5931  | Project evaluation split           | Generated from eval_results.txt                       |
+| Proposed model (this project) | val                 | 0.2976 | 0.3891 | 0.7271 | 0.5181 | 0.5972  | Project evaluation split           | Generated from eval_results.txt                       |

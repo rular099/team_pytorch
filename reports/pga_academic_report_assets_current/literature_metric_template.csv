@@ -1,0 +1,3 @@
+model,split,mae,rmse,corr,r2,slope,dataset,note
+TEAM (reported or reproduced),test,,,,,,Fill with comparable dataset/split,Only compare numerically when target definition and split are comparable.
+QuakeFormer (reported or reproduced),test,,,,,,Fill with comparable dataset/split,Use reproduced result if possible; paper tasks may differ.
