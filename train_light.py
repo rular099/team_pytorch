@@ -166,19 +166,36 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
 
 
 class SingleStationTaskDataset(torch.utils.data.Dataset):
-    """Flatten event samples to one randomly selected valid station per item."""
+    """Flatten event samples to single-station training/evaluation items."""
 
     def __init__(self, event_dataset, tasks=('mag', 'epidist', 'pga'), samples_per_event=1,
-                 station_sampling='random'):
+                 station_sampling='random', max_stations_per_event=None, station_seed=0):
         self.event_dataset = event_dataset
         self.tasks = tuple(tasks)
         self.samples_per_event = max(1, int(samples_per_event))
         self.station_sampling = station_sampling
+        self.max_stations_per_event = (
+            None if max_stations_per_event is None else int(max_stations_per_event)
+        )
+        self.station_seed = int(station_seed)
+        self.fixed_samples = None
+        if self.station_sampling in ('fixed_random', 'all'):
+            self.fixed_samples = self._build_fixed_samples()
 
     def __len__(self):
+        if self.fixed_samples is not None:
+            return len(self.fixed_samples)
         return len(self.event_dataset) * self.samples_per_event
 
     def __getitem__(self, index):
+        if self.fixed_samples is not None:
+            event_index, station_idx = self.fixed_samples[index]
+            inputs, labels, info = self.event_dataset[event_index]
+            sample = self._make_station_sample(inputs, labels, info, station_idx=station_idx)
+            if sample is None:
+                raise RuntimeError(f'Fixed single-station sample became invalid: event={event_index}, station={station_idx}')
+            return sample
+
         n_events = len(self.event_dataset)
         start = (index // self.samples_per_event) % n_events
         for offset in range(n_events):
@@ -189,12 +206,52 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
                 return sample
         raise RuntimeError('No valid single-station sample found in dataset.')
 
+    def _valid_station_indices(self, inputs, info):
+        station_valid = inputs[2]
+        valid = station_valid.bool().clone()
+        if 'pga' in self.tasks:
+            input_pga_valid = info.get('input_pga_valid')
+            if input_pga_valid is None:
+                raise KeyError(
+                    'Single-station pga task requires PreloadedEventGenerator '
+                    'to return input_pga_valid.'
+                )
+            valid &= input_pga_valid.bool()
+        return torch.nonzero(valid, as_tuple=False).flatten()
+
+    def _build_fixed_samples(self):
+        samples = []
+        for event_index in range(len(self.event_dataset)):
+            inputs, _labels, info = self.event_dataset[event_index]
+            active = self._valid_station_indices(inputs, info)
+            if active.numel() == 0:
+                continue
+            if self.station_sampling == 'all':
+                chosen = active
+            else:
+                max_count = self.max_stations_per_event
+                if max_count is None or max_count <= 0 or active.numel() <= max_count:
+                    chosen = active
+                else:
+                    rng = np.random.default_rng(self.station_seed + event_index * 1009)
+                    local = rng.choice(active.numel(), size=max_count, replace=False)
+                    local = np.sort(local)
+                    chosen = active[torch.as_tensor(local, dtype=torch.long)]
+            samples.extend((event_index, int(station_idx)) for station_idx in chosen)
+        if not samples:
+            raise RuntimeError('No valid fixed single-station samples found in dataset.')
+        return samples
+
     def _select_station(self, valid):
         active = torch.nonzero(valid, as_tuple=False).flatten()
         if active.numel() == 0:
             return None
         if self.station_sampling == 'first':
             return active[0]
+        if self.station_sampling != 'random':
+            raise ValueError(
+                f"Unsupported station_sampling={self.station_sampling!r} for dynamic single-station sampling."
+            )
         pick = np.random.randint(0, active.numel())
         return active[pick]
 
@@ -209,18 +266,17 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
             delta_xy = delta_xy * util.D2KM
         return torch.linalg.norm(delta_xy).clamp_min(0.0)
 
-    def _make_station_sample(self, inputs, labels, info):
+    def _make_station_sample(self, inputs, labels, info, station_idx=None):
         waveforms, metadata, station_valid = inputs[:3]
-        valid = station_valid.bool().clone()
-        if 'pga' in self.tasks:
-            input_pga_valid = info.get('input_pga_valid')
-            if input_pga_valid is None:
-                raise KeyError(
-                    'Single-station pga task requires PreloadedEventGenerator '
-                    'to return input_pga_valid.'
-                )
-            valid &= input_pga_valid.bool()
-        station_idx = self._select_station(valid)
+        active = self._valid_station_indices(inputs, info)
+        if station_idx is None:
+            valid = torch.zeros_like(station_valid, dtype=torch.bool)
+            valid[active] = True
+            station_idx = self._select_station(valid)
+        else:
+            station_idx = torch.as_tensor(station_idx, dtype=torch.long)
+            if not torch.any(active == station_idx):
+                return None
         if station_idx is None:
             return None
 
@@ -1989,6 +2045,12 @@ if __name__ == '__main__':
         single_tasks = single_pretrain_params.get('tasks', ['mag', 'epidist', 'pga'])
         single_samples_per_event = single_pretrain_params.get('samples_per_event', 1)
         single_station_sampling = single_pretrain_params.get('station_sampling', 'random')
+        single_val_station_sampling = single_pretrain_params.get(
+            'val_station_sampling',
+            single_station_sampling,
+        )
+        single_val_max_stations = single_pretrain_params.get('val_max_stations_per_event', None)
+        single_val_station_seed = single_pretrain_params.get('val_station_seed', config.get('seed', 42))
 
         for i, generator_param_set_src in enumerate(generator_params):
             generator_param_set = copy.deepcopy(generator_param_set_src)
@@ -2040,10 +2102,21 @@ if __name__ == '__main__':
             merged_val = {**defaults, **val_generator_param_set}
             merged_val['transform_target_only'] = False
             merged_val['pga_targets'] = 0
+            if single_val_station_sampling in ('fixed_random', 'all'):
+                # Keep validation deterministic across epochs. This generator is
+                # single-station only, so it can expose more stations than the
+                # full multi-station model input limit.
+                val_generator_param_set['random_input_station_count'] = None
+                merged_val['random_input_station_count'] = None
+                if single_val_max_stations is not None and int(single_val_max_stations) > 0:
+                    merged_val['max_stations'] = max(int(merged_val['max_stations']), int(single_val_max_stations))
             if rank == 0:
                 print(
                     f'[single/generator/val/{i}] '
                     f'tasks={single_tasks}, samples_per_event=1, '
+                    f'station_sampling={single_val_station_sampling}, '
+                    f'max_stations_per_event={single_val_max_stations}, '
+                    f'seed={single_val_station_seed}, '
                     f'cutout=({merged_val["cutout"][0]}, {merged_val["cutout"][1]})'
                 )
             event_val_generator = util.PreloadedEventGenerator(
@@ -2057,7 +2130,9 @@ if __name__ == '__main__':
                 event_val_generator,
                 tasks=single_tasks,
                 samples_per_event=1,
-                station_sampling=single_station_sampling,
+                station_sampling=single_val_station_sampling,
+                max_stations_per_event=single_val_max_stations,
+                station_seed=single_val_station_seed,
             ))
 
         if len(single_train_generators) == 1:
