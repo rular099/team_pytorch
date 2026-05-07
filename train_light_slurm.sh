@@ -15,7 +15,7 @@
 #   SLURM_NODES        Number of nodes to request when auto-submitting
 #   SLURM_GPUS_PER_NODE GPUs per node to request and pass to torchrun
 #   SLURM_CPUS_PER_TASK CPUs per task
-#   SLURM_TIME         Wallclock limit, e.g. 24:00:00
+#   SLURM_TIME         Optional wallclock limit, e.g. 24:00:00; unset by default
 #   CONDA_ENV          Conda env name to activate after module loading
 #   MODULE_UNLOAD      Optional module to unload
 #   MODULE_LOADS       Space-separated modules to load
@@ -41,10 +41,10 @@ EXTRA_ARG_COUNT=$#
 
 JOB_NAME=${JOB_NAME:-team-train-light}
 SLURM_PARTITION=${SLURM_PARTITION:-diting}
-SLURM_NODES=${SLURM_NODES:-1}
+SLURM_NODES=${SLURM_NODES:-4}
 SLURM_GPUS_PER_NODE=${SLURM_GPUS_PER_NODE:-4}
 SLURM_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK:-8}
-SLURM_TIME=${SLURM_TIME:-24:00:00}
+SLURM_TIME=${SLURM_TIME:-}
 SLURM_LOG_DIR=${SLURM_LOG_DIR:-"$WORKDIR/logs/slurm"}
 DITING_CONFIG=${DITING_CONFIG:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/diting/config/diting_1200m_backbone_attnpool.yml}
 CONDA_ENV=${CONDA_ENV:-lsm_env}
@@ -108,6 +108,10 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
     if [[ -n "${DITING_PRETRAINED:-}" ]]; then
         EXPORT_VARS+=("DITING_PRETRAINED=$DITING_PRETRAINED")
     fi
+    SBATCH_TIME_ARGS=()
+    if [[ -n "$SLURM_TIME" ]]; then
+        SBATCH_TIME_ARGS=(--time="$SLURM_TIME")
+    fi
     SBATCH_CMD=(
         sbatch
         --job-name="$JOB_NAME" \
@@ -116,7 +120,7 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
         --ntasks-per-node=1 \
         --cpus-per-task="$SLURM_CPUS_PER_TASK" \
         --gres="dcu:${SLURM_GPUS_PER_NODE}" \
-        --time="$SLURM_TIME" \
+        "${SBATCH_TIME_ARGS[@]}" \
         --chdir="$WORKDIR" \
         --output="$SLURM_LOG_DIR/%x-%j.out" \
         --error="$SLURM_LOG_DIR/%x-%j.err" \
