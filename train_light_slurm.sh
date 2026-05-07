@@ -316,11 +316,15 @@ print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enab
 
     EVAL_OUTPUT_NPZ=${EVAL_OUTPUT_NPZ:-"$WEIGHT_DIR/eval_results.npz"}
     EVAL_OUTPUT_TXT=${EVAL_OUTPUT_TXT:-"$WEIGHT_DIR/eval_results.txt"}
+    EVAL_CONFIG="$CONFIG"
+    if [[ -f "$WEIGHT_DIR/config.json" ]]; then
+        EVAL_CONFIG="$WEIGHT_DIR/config.json"
+    fi
     mkdir -p "$(dirname "$EVAL_OUTPUT_TXT")" "$(dirname "$EVAL_OUTPUT_NPZ")"
 
     EVAL_CMD=(
         python eval_checkpoint.py
-        --config "$CONFIG"
+        --config "$EVAL_CONFIG"
         --diting_config "$DITING_CONFIG"
         --checkpoint "$EVAL_CHECKPOINT"
         --output "$EVAL_OUTPUT_NPZ"

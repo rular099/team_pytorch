@@ -169,7 +169,8 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
     """Flatten event samples to single-station training/evaluation items."""
 
     def __init__(self, event_dataset, tasks=('mag', 'epidist', 'pga'), samples_per_event=1,
-                 station_sampling='random', max_stations_per_event=None, station_seed=0):
+                 station_sampling='random', max_stations_per_event=None, station_seed=0,
+                 deterministic_sampling=False):
         self.event_dataset = event_dataset
         self.tasks = tuple(tasks)
         self.samples_per_event = max(1, int(samples_per_event))
@@ -178,6 +179,7 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
             None if max_stations_per_event is None else int(max_stations_per_event)
         )
         self.station_seed = int(station_seed)
+        self.deterministic_sampling = bool(deterministic_sampling)
         self.fixed_samples = None
         if self.station_sampling in ('fixed_random', 'all'):
             self.fixed_samples = self._build_fixed_samples()
@@ -201,7 +203,7 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
         for offset in range(n_events):
             event_index = (start + offset) % n_events
             inputs, labels, info = self.event_dataset[event_index]
-            sample = self._make_station_sample(inputs, labels, info)
+            sample = self._make_station_sample(inputs, labels, info, sample_index=index)
             if sample is not None:
                 return sample
         raise RuntimeError('No valid single-station sample found in dataset.')
@@ -242,7 +244,7 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
             raise RuntimeError('No valid fixed single-station samples found in dataset.')
         return samples
 
-    def _select_station(self, valid):
+    def _select_station(self, valid, sample_index=None):
         active = torch.nonzero(valid, as_tuple=False).flatten()
         if active.numel() == 0:
             return None
@@ -252,7 +254,11 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
             raise ValueError(
                 f"Unsupported station_sampling={self.station_sampling!r} for dynamic single-station sampling."
             )
-        pick = np.random.randint(0, active.numel())
+        if self.deterministic_sampling:
+            rng = np.random.default_rng(self.station_seed + int(sample_index))
+            pick = rng.integers(0, active.numel())
+        else:
+            pick = np.random.randint(0, active.numel())
         return active[pick]
 
     @staticmethod
@@ -266,13 +272,13 @@ class SingleStationTaskDataset(torch.utils.data.Dataset):
             delta_xy = delta_xy * util.D2KM
         return torch.linalg.norm(delta_xy).clamp_min(0.0)
 
-    def _make_station_sample(self, inputs, labels, info, station_idx=None):
+    def _make_station_sample(self, inputs, labels, info, station_idx=None, sample_index=None):
         waveforms, metadata, station_valid = inputs[:3]
         active = self._valid_station_indices(inputs, info)
         if station_idx is None:
             valid = torch.zeros_like(station_valid, dtype=torch.bool)
             valid[active] = True
-            station_idx = self._select_station(valid)
+            station_idx = self._select_station(valid, sample_index=sample_index)
         else:
             station_idx = torch.as_tensor(station_idx, dtype=torch.long)
             if not torch.any(active == station_idx):
@@ -787,8 +793,8 @@ def split_event_metadata_by_selected_ids(event_metadata, selected_event_ids, cus
         raise ValueError("event_metadata must be a DataFrame when splitting selected event ids")
 
     event_key = loader.detect_event_key(event_metadata.columns)
-    selected_set = set(selected_event_ids)
-    selected_event_metadata = event_metadata[event_metadata[event_key].isin(selected_set)].copy()
+    selected_set = set(map(str, selected_event_ids))
+    selected_event_metadata = event_metadata[event_metadata[event_key].astype(str).isin(selected_set)].copy()
     unique_selected_events = selected_event_metadata.drop_duplicates(subset=event_key, keep='first').reset_index(drop=True)
 
     split_parts = {
@@ -812,30 +818,46 @@ def split_event_metadata_by_selected_ids(event_metadata, selected_event_ids, cus
     return split_event_metadata, split_event_ids
 
 
-def build_overfit_event_metadata_splits(full_data_all, generator_params, overfit_n):
+def read_overfit_event_ids(path):
+    with open(path, 'r') as f:
+        return [line.strip() for line in f if line.strip()]
+
+
+def write_overfit_event_ids(path, selected_event_ids):
+    with open(path, 'w') as f:
+        for event_id in selected_event_ids:
+            f.write(f'{event_id}\n')
+
+
+def build_overfit_event_metadata_splits(full_data_all, generator_params, overfit_n, selected_event_ids=None):
     """Select a diverse subset, then split that subset into train/dev/test."""
     event_metadata_train = []
     event_metadata_dev = []
     event_metadata_test = []
-    selected_event_ids = []
+    all_selected_event_ids = []
 
-    for all_meta, generator in zip(full_data_all, generator_params):
+    if selected_event_ids is None:
+        selected_event_ids = [None] * len(full_data_all)
+
+    for all_meta, generator, fixed_ids in zip(full_data_all, generator_params, selected_event_ids):
         all_event_metadata = all_meta[0]
-        cur_selected_event_ids = select_diverse_event_ids(
-            all_event_metadata, overfit_n, mag_key=generator.get('key', 'MA')
-        )
+        cur_selected_event_ids = fixed_ids
+        if cur_selected_event_ids is None:
+            cur_selected_event_ids = select_diverse_event_ids(
+                all_event_metadata, overfit_n, mag_key=generator.get('key', 'MA')
+            )
         split_event_metadata, _ = split_event_metadata_by_selected_ids(
             all_event_metadata,
             cur_selected_event_ids,
             custom_split=generator.get('custom_split', None),
             shuffle_train_dev=generator.get('shuffle_train_dev', False),
         )
-        selected_event_ids.append(cur_selected_event_ids)
+        all_selected_event_ids.append(cur_selected_event_ids)
         event_metadata_train.append(split_event_metadata['train'])
         event_metadata_dev.append(split_event_metadata['dev'])
         event_metadata_test.append(split_event_metadata['test'])
 
-    return event_metadata_train, event_metadata_dev, event_metadata_test, selected_event_ids
+    return event_metadata_train, event_metadata_dev, event_metadata_test, all_selected_event_ids
 
 
 def count_unique_events(event_metadata):
@@ -1851,6 +1873,7 @@ if __name__ == '__main__':
  # end diting args
 
     training_params = config['training_params']
+    args.overfit_n = args.overfit_n or int(training_params.get('overfit_n', 0))
     checkpoint_cfg = training_params.setdefault('checkpoint', {})
     checkpoint_cfg.setdefault('encoder_source', getattr(diting_args, 'pretrained', None))
     generator_params = training_params.get('generator_params', [training_params.copy()])
@@ -1942,8 +1965,18 @@ if __name__ == '__main__':
                                             decimate_events=generator.get('decimate_events', None),
                                             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
                          for data_path, generator in zip(training_params['data_path'], generator_params)]
+        fixed_overfit_ids = None
+        if training_params.get('overfit_event_ids_path'):
+            if len(full_data_all) != 1:
+                raise ValueError('overfit_event_ids_path currently supports exactly one data_path')
+            fixed_overfit_ids = [read_overfit_event_ids(training_params['overfit_event_ids_path'])]
         event_metadata_train, event_metadata_dev, event_metadata_test, selected_event_ids = \
-            build_overfit_event_metadata_splits(full_data_all, generator_params, args.overfit_n)
+            build_overfit_event_metadata_splits(
+                full_data_all,
+                generator_params,
+                args.overfit_n,
+                selected_event_ids=fixed_overfit_ids,
+            )
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for generator_param in generator_params:
             fixed_cutout = generator_param.get('cutout_end', generator_param.get('cutout_start', 0))
@@ -1965,6 +1998,10 @@ if __name__ == '__main__':
             print(f'Overfit mode enabled: selected {args.overfit_n} diverse events and re-split them for train/dev/test')
             print(f'Overfit split event counts (train/dev/test): {split_counts}')
             print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, no train/dev split shuffling; input/target station selection follows config')
+            write_overfit_event_ids(
+                os.path.join(training_params['weight_path'], 'overfit_event_ids.txt'),
+                selected_event_ids[0],
+            )
 
     if (not is_dist) or (is_dist and (rank == 0)):
         export_split_metadata(training_params['weight_path'],
@@ -2051,6 +2088,10 @@ if __name__ == '__main__':
         )
         single_val_max_stations = single_pretrain_params.get('val_max_stations_per_event', None)
         single_val_station_seed = single_pretrain_params.get('val_station_seed', config.get('seed', 42))
+        single_deterministic_sampling = single_pretrain_params.get(
+            'deterministic_sampling',
+            training_params.get('deterministic_sampling', False),
+        )
 
         for i, generator_param_set_src in enumerate(generator_params):
             generator_param_set = copy.deepcopy(generator_param_set_src)
@@ -2073,6 +2114,8 @@ if __name__ == '__main__':
                 use_coords_abs=config['model_params'].get('use_coords_abs', True),
                 use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
             )
+            if training_params.get('deterministic_sampling', False):
+                defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
             merged = {**defaults, **generator_param_set}
             merged['transform_target_only'] = False
             merged['pga_targets'] = 0
@@ -2094,6 +2137,8 @@ if __name__ == '__main__':
                 tasks=single_tasks,
                 samples_per_event=single_samples_per_event,
                 station_sampling=single_station_sampling,
+                station_seed=config.get('seed', 42),
+                deterministic_sampling=single_deterministic_sampling,
             ))
 
             val_generator_param_set = copy.deepcopy(generator_param_set_src)
@@ -2133,6 +2178,7 @@ if __name__ == '__main__':
                 station_sampling=single_val_station_sampling,
                 max_stations_per_event=single_val_max_stations,
                 station_seed=single_val_station_seed,
+                deterministic_sampling=single_deterministic_sampling,
             ))
 
         if len(single_train_generators) == 1:
@@ -2374,6 +2420,8 @@ if __name__ == '__main__':
                 use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
                 station_experiment=station_experiment_cfg,
             )
+            if training_params.get('deterministic_sampling', False):
+                defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
             # Config wins: overlay generator_param_set on top of defaults.
             merged = {**defaults, **generator_param_set}
             if rank == 0:

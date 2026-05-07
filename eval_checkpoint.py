@@ -37,6 +37,7 @@ from train_light import (
     build_overfit_event_metadata_splits,
     clean_state_dict_keys,
     load_model_state_dict_compatible,
+    read_overfit_event_ids,
 )
 
 
@@ -200,8 +201,13 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
             decimate_events=g.get('decimate_events', None),
             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
             for data_path, g in zip(training_params['data_path'], generator_params)]
+        fixed_overfit_ids = None
+        if training_params.get('overfit_event_ids_path'):
+            if len(full_data_all) != 1:
+                raise ValueError('overfit_event_ids_path currently supports exactly one data_path')
+            fixed_overfit_ids = [read_overfit_event_ids(training_params['overfit_event_ids_path'])]
         event_metadata_train, event_metadata_dev, _, _ = build_overfit_event_metadata_splits(
-            full_data_all, generator_params, overfit_n
+            full_data_all, generator_params, overfit_n, selected_event_ids=fixed_overfit_ids
         )
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for gp in generator_params:
@@ -243,6 +249,8 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
                 station_experiment=station_experiment_cfg,
                 shuffle=False,  # deterministic eval order
             )
+            if training_params.get('deterministic_sampling', False):
+                defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
             merged = {**defaults, **gp_copy}
             if input_station_selection and input_station_selection not in ('config', 'default'):
                 merged['input_station_selection'] = input_station_selection
@@ -1168,6 +1176,7 @@ def main():
 
     with open(args.config) as f:
         config = json.load(f)
+    args.overfit_n = args.overfit_n or int(config['training_params'].get('overfit_n', 0))
 
     # Reproducible evaluation
     import random

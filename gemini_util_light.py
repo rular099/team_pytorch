@@ -230,7 +230,7 @@ class PreloadedEventGenerator(Dataset):
                  dump_debug_snapshot=False,
                  use_coords_rel=False, use_coords_abs=True,
                  use_coords_rel_abs_fusion=False, station_experiment=None,
-                 input_station_selection=None, **kwargs):
+                 input_station_selection=None, deterministic_sampling_seed=None, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -304,6 +304,7 @@ class PreloadedEventGenerator(Dataset):
             select_first if select_first_pga_targets is None else select_first_pga_targets
         )
         self.input_station_selection = self._normalize_input_station_selection(input_station_selection)
+        self.deterministic_sampling_seed = deterministic_sampling_seed
         self.fake_borehole = fake_borehole
         self.scale_metadata = scale_metadata
         self.upsample_high_station_events = upsample_high_station_events
@@ -439,12 +440,43 @@ class PreloadedEventGenerator(Dataset):
         return snr
 
     @staticmethod
-    def _pick_random_subset(candidates, n):
+    def _rng_int(rng, *args):
+        return rng.integers(*args) if rng is not None else np.random.randint(*args)
+
+    @staticmethod
+    def _rng_choice(rng, values):
+        return rng.choice(values) if rng is not None else np.random.choice(values)
+
+    @staticmethod
+    def _rng_random(rng, shape):
+        return rng.random(shape) if rng is not None else np.random.random(shape)
+
+    @staticmethod
+    def _rng_shuffle(rng, values):
+        if rng is None:
+            np.random.shuffle(values)
+        else:
+            rng.shuffle(values)
+
+    def _sample_rng(self, index):
+        if self.deterministic_sampling_seed is None:
+            return None
+        if isinstance(index, tuple):
+            sample_id = int(index[0]) * 1009 + int(index[1])
+        else:
+            sample_id = int(index)
+        return np.random.default_rng(int(self.deterministic_sampling_seed) + sample_id)
+
+    @staticmethod
+    def _pick_random_subset(candidates, n, rng=None):
         candidates = np.asarray(candidates, dtype=np.int64)
         if candidates.size <= n:
             return candidates
         picked = candidates.copy()
-        np.random.shuffle(picked)
+        if rng is None:
+            np.random.shuffle(picked)
+        else:
+            rng.shuffle(picked)
         return picked[:n]
 
     @staticmethod
@@ -541,7 +573,7 @@ class PreloadedEventGenerator(Dataset):
             return candidates[np.lexsort((candidates, order_values))]
         return candidates
 
-    def _apply_random_input_station_count(self, station_valid, metadata=None, target=None, p_picks=None):
+    def _apply_random_input_station_count(self, station_valid, metadata=None, target=None, p_picks=None, rng=None):
         if self.random_input_station_count is None:
             return station_valid
 
@@ -550,7 +582,7 @@ class PreloadedEventGenerator(Dataset):
             active = np.where(station_valid[i])[0]
             if active.size == 0:
                 raise _EmptySample()
-            n_inputs = int(np.random.choice(self.random_input_station_count))
+            n_inputs = int(self._rng_choice(rng, self.random_input_station_count))
             n_inputs = min(n_inputs, active.size)
             if self.input_station_selection in ('epidist', 'p_pick'):
                 event_coord = self._first_event_coord(None if target is None else target[i])
@@ -558,7 +590,7 @@ class PreloadedEventGenerator(Dataset):
                 picks = None if p_picks is None else p_picks[i]
                 selected = self._input_station_order(active, coords, event_coord, picks)[:n_inputs]
             else:
-                selected = self._pick_random_subset(active, n_inputs)
+                selected = self._pick_random_subset(active, n_inputs, rng=rng)
             sampled_valid[i, selected] = True
         return sampled_valid
 
@@ -568,11 +600,11 @@ class PreloadedEventGenerator(Dataset):
             return rows[:, (0, 1, 3)]
         return rows[:, :3]
 
-    def _stratified_by_nearest_input_distance(self, active, target_coords, input_coords, n_targets):
+    def _stratified_by_nearest_input_distance(self, active, target_coords, input_coords, n_targets, rng=None):
         active = np.asarray(active, dtype=np.int64)
         if active.size <= n_targets or input_coords.size == 0:
             selected = active.copy()
-            np.random.shuffle(selected)
+            self._rng_shuffle(rng, selected)
             return selected[:n_targets]
 
         target_xyz = self._coords3_from_rows(target_coords[active])
@@ -594,7 +626,7 @@ class PreloadedEventGenerator(Dataset):
         bin_queues = []
         for positions in bin_positions:
             shuffled = positions.copy()
-            np.random.shuffle(shuffled)
+            self._rng_shuffle(rng, shuffled)
             bin_queues.append(list(shuffled))
 
         while len(selected_positions) < n_targets:
@@ -612,7 +644,7 @@ class PreloadedEventGenerator(Dataset):
         if len(selected_positions) < n_targets:
             used = set(selected_positions)
             remaining = np.array([j for j in range(active.size) if j not in used], dtype=np.int64)
-            np.random.shuffle(remaining)
+            self._rng_shuffle(rng, remaining)
             selected_positions.extend(int(j) for j in remaining[:n_targets - len(selected_positions)])
 
         return active[np.asarray(selected_positions, dtype=np.int64)]
@@ -721,11 +753,12 @@ class PreloadedEventGenerator(Dataset):
         # Generate indexes of the batch
         indexes = self.indexes[index:(index + 1)]
         index = self.indexes[index]
-        ith_event = self.event_keys[index]
+        rng = self._sample_rng(index)
         if self.pga_mode:
             pga_indexes = [x[1] for x in indexes]
             indexes = [x[0] for x in indexes]
             index = indexes[0]
+        ith_event = self.event_keys[index]
         with h5py.File(self.data_path, 'r') as f:
             event = self.event_metadata.get_group(ith_event)
             event_name = str(event[self.event_key].iloc[0]) # ith_event? zb
@@ -816,13 +849,13 @@ class PreloadedEventGenerator(Dataset):
             else:
                 if self.selection_skew is None or self.selection_skew <= 0:  # random select
                     selection = np.arange(0, len(self.waveforms)) # all stations
-                    np.random.shuffle(selection)
+                    self._rng_shuffle(rng, selection)
                 else:  # pick_time + randomness
                     tmp_p_picks = self.triggers.copy()
                     mask = np.logical_or(tmp_p_picks <= 0, tmp_p_picks > self.p_pick_limit)
                     tmp_p_picks[mask] = min(np.max(tmp_p_picks), self.p_pick_limit)
                     coeffs = np.exp(-tmp_p_picks / self.selection_skew)
-                    coeffs *= np.random.random(coeffs.shape)
+                    coeffs *= self._rng_random(rng, coeffs.shape)
                     coeffs[self.triggers == 0] = 0
                     coeffs[self.triggers > self.waveforms.shape[1]] = 0
                     selection = np.argsort(-coeffs)
@@ -885,8 +918,8 @@ class PreloadedEventGenerator(Dataset):
         if self.cutout:
             if self.sliding_window:
                 windowlen = self.windowlen
-                window_end = np.random.randint(max(windowlen, self.cutout[0]),
-                                              min(waveforms.shape[2], self.cutout[1]) + 1)
+                window_end = self._rng_int(rng, max(windowlen, self.cutout[0]),
+                                           min(waveforms.shape[2], self.cutout[1]) + 1)
                 waveforms = waveforms[:, :, window_end - windowlen: window_end]
 
                 cutout = window_end
@@ -896,7 +929,7 @@ class PreloadedEventGenerator(Dataset):
                 if self.cutout[0] == self.cutout[1]:
                     cutout = self.cutout[0]
                 else:
-                    cutout = np.random.randint(*self.cutout)
+                    cutout = self._rng_int(rng, *self.cutout)
                 if self.adjust_mean:
                     # Mean only over non-zero samples so that leading zero-padding
                     # is neither diluting the mean nor getting offset by it.
@@ -958,6 +991,7 @@ class PreloadedEventGenerator(Dataset):
             metadata=metadata_for_input_selection,
             target=event_target_for_input_selection,
             p_picks=p_picks,
+            rng=rng,
         )
 
         if self.pga_targets:
@@ -1008,7 +1042,7 @@ class PreloadedEventGenerator(Dataset):
                         bad = np.logical_or(active_p_picks <= 0, active_p_picks > self.p_pick_limit)
                         active_p_picks[bad] = min(np.max(active_p_picks), self.p_pick_limit)
                         coeffs = np.exp(-active_p_picks / self.pga_selection_skew)
-                        coeffs *= np.random.random(coeffs.shape)
+                        coeffs *= self._rng_random(rng, coeffs.shape)
                         active = active[np.argsort(-coeffs)]
                     elif self.pga_target_sampling in ('distance_stratified', 'distance_coverage'):
                         input_slots = np.where(input_station_valid_for_model[i])[0]
@@ -1018,9 +1052,10 @@ class PreloadedEventGenerator(Dataset):
                             metadata[i],
                             input_coords,
                             self.pga_targets,
+                            rng=rng,
                         )
                     else:
-                        np.random.shuffle(active)
+                        self._rng_shuffle(rng, active)
 
                     samples = active[:self.pga_targets]
                     n = len(samples)
@@ -1052,8 +1087,8 @@ class PreloadedEventGenerator(Dataset):
                 active = np.where(station_valid[i])[0]
                 if len(active) == 0:
                     continue
-                blind_length = np.random.randint(0, len(active))
-                np.random.shuffle(active)
+                blind_length = self._rng_int(rng, 0, len(active))
+                self._rng_shuffle(rng, active)
                 blind_mask[i, active[:blind_length]] = True
             waveforms[blind_mask] = 0
             station_valid &= ~blind_mask
