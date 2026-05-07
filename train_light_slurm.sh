@@ -108,10 +108,6 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
     if [[ -n "${DITING_PRETRAINED:-}" ]]; then
         EXPORT_VARS+=("DITING_PRETRAINED=$DITING_PRETRAINED")
     fi
-    SBATCH_TIME_ARGS=()
-    if [[ -n "$SLURM_TIME" ]]; then
-        SBATCH_TIME_ARGS=(--time="$SLURM_TIME")
-    fi
     SBATCH_CMD=(
         sbatch
         --job-name="$JOB_NAME" \
@@ -120,7 +116,11 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
         --ntasks-per-node=1 \
         --cpus-per-task="$SLURM_CPUS_PER_TASK" \
         --gres="dcu:${SLURM_GPUS_PER_NODE}" \
-        "${SBATCH_TIME_ARGS[@]}" \
+    )
+    if [[ -n "$SLURM_TIME" ]]; then
+        SBATCH_CMD+=(--time="$SLURM_TIME")
+    fi
+    SBATCH_CMD+=(
         --chdir="$WORKDIR" \
         --output="$SLURM_LOG_DIR/%x-%j.out" \
         --error="$SLURM_LOG_DIR/%x-%j.err" \
