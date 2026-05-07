@@ -1355,7 +1355,8 @@ class FullModel(nn.Module):
                  output_distribution='mdn', pga_readout_mode='query_transformer',
                  pga_attention_diagnostics=False, pga_mask_sanity_check=False,
                  graph_pga_readout=None, graph_pga_use_station_prior=True,
-                 graph_pga_use_distance_baseline=True, graph_pga_prior_hidden_dim=None):
+                 graph_pga_use_distance_baseline=True, graph_pga_prior_hidden_dim=None,
+                 graph_pga_residual_scale=1.0):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1396,6 +1397,7 @@ class FullModel(nn.Module):
         self.graph_pga_readout = graph_pga_readout
         self.graph_pga_use_station_prior = bool(graph_pga_use_station_prior)
         self.graph_pga_use_distance_baseline = bool(graph_pga_use_distance_baseline)
+        self.graph_pga_residual_scale = float(graph_pga_residual_scale)
         self.station_pga_prior_head = None
         if self.output_distribution not in ('mdn', 'point'):
             raise ValueError(
@@ -1832,6 +1834,19 @@ class FullModel(nn.Module):
                     alpha_logits, mu, sigma = self.output_model_pga(pga_emb[:, i, :])
                     pga_out_tmp.append(torch.cat([alpha_logits, mu, sigma], dim=-1))
             output_pga = torch.stack(pga_out_tmp, dim=1)
+            if self.pga_readout_mode == 'graph_message_passing' and self.output_distribution == 'point':
+                residual = output_pga[..., 0].clone()
+                valid_residual = residual[pga_target_valid.bool()]
+                if valid_residual.numel() > 0:
+                    self._last_diag['pga_residual_mean'] = valid_residual.mean().detach()
+                    self._last_diag['pga_residual_std'] = valid_residual.std(unbiased=False).detach()
+                if self.graph_pga_residual_scale != 1.0:
+                    output_pga = output_pga.clone()
+                    output_pga[..., 0] = output_pga[..., 0] * self.graph_pga_residual_scale
+                    scaled_residual = output_pga[..., 0][pga_target_valid.bool()]
+                    if scaled_residual.numel() > 0:
+                        self._last_diag['pga_scaled_residual_mean'] = scaled_residual.mean().detach()
+                        self._last_diag['pga_scaled_residual_std'] = scaled_residual.std(unbiased=False).detach()
             graph_baseline = None
             if self.pga_readout_mode == 'graph_message_passing' and self.graph_pga_use_distance_baseline:
                 graph_baseline = getattr(self.graph_pga_readout, '_last_baseline', None)
@@ -2047,6 +2062,7 @@ def build_transformer_model(max_stations,
                             graph_pga_use_distance_baseline=True,
                             graph_pga_distance_baseline_power=1.0,
                             graph_pga_prior_hidden_dim=None,
+                            graph_pga_residual_scale=1.0,
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -2175,7 +2191,8 @@ def build_transformer_model(max_stations,
                              graph_pga_readout=graph_pga_module,
                              graph_pga_use_station_prior=graph_pga_use_station_prior,
                              graph_pga_use_distance_baseline=graph_pga_use_distance_baseline,
-                             graph_pga_prior_hidden_dim=graph_pga_prior_hidden_dim)
+                             graph_pga_prior_hidden_dim=graph_pga_prior_hidden_dim,
+                             graph_pga_residual_scale=graph_pga_residual_scale)
     return full_model
 
 
