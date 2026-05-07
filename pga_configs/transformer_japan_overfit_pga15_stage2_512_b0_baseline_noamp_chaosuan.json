@@ -194,6 +194,7 @@
         ],
         "lr_decay_patience": 999,
         "deterministic_sampling": true,
-        "overfit_n": 512
+        "overfit_n": 512,
+        "overfit_event_ids_path": "pga_configs/stage2_512_event_ids.txt"
     }
 }

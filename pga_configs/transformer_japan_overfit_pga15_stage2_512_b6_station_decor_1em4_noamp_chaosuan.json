@@ -195,7 +195,7 @@
         "lr_decay_patience": 999,
         "station_embedding_decorrelation_weight": 0.0001,
         "deterministic_sampling": true,
-        "overfit_event_ids_path": "weights_japan_overfit_pga15_stage2_512_b0_baseline_noamp/overfit_event_ids.txt",
+        "overfit_event_ids_path": "pga_configs/stage2_512_event_ids.txt",
         "overfit_n": 512
     }
 }
