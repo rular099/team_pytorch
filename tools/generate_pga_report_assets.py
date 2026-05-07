@@ -70,7 +70,7 @@ def cartopy_maps_enabled() -> bool:
 
 
 def cartopy_features_enabled() -> bool:
-    return cartopy_maps_enabled() and os.environ.get("PGA_REPORT_CARTOPY_FEATURES", "0") == "1"
+    return cartopy_maps_enabled() and os.environ.get("PGA_REPORT_CARTOPY_FEATURES", "1") != "0"
 
 
 def map_subplot_kw() -> dict:
@@ -361,12 +361,14 @@ def map_extent_from_lonlat_arrays(lonlat_arrays: list[np.ndarray]) -> list[float
     return extent
 
 
-def draw_reference_map(ax, lonlat_arrays: list[np.ndarray]) -> list[float]:
+def draw_reference_map(ax, lonlat_arrays: list[np.ndarray], force_cartopy_features: bool = True) -> list[float]:
     extent = map_extent_from_lonlat_arrays(lonlat_arrays)
+    if not is_cartopy_axis(ax):
+        raise RuntimeError("Cartopy is required for report map rendering; use an environment with cached Natural Earth data.")
     if is_cartopy_axis(ax):
         ax.set_extent(extent, crs=ccrs.PlateCarree())
         ax.set_facecolor("#eaf4fb")
-        if cartopy_features_enabled():
+        if force_cartopy_features or cartopy_features_enabled():
             # Requires Natural Earth data to be available in Cartopy's data dir.
             # Keep disabled by default because many HPC nodes cannot download
             # these assets at render time.
@@ -422,10 +424,9 @@ def draw_japan_inset(ax, focus_extent: list[float]) -> None:
     # Anchor the context map to the upper-right corner so its top/right borders
     # coincide with the zoomed map frame instead of floating over the data.
     inset_bounds = [0.68, 0.68, 0.32, 0.32]
-    if is_cartopy_axis(ax):
-        inset = ax.inset_axes(inset_bounds, projection=ccrs.PlateCarree())
-    else:
-        inset = ax.inset_axes(inset_bounds)
+    if not is_cartopy_axis(ax):
+        raise RuntimeError("Cartopy is required for report map inset rendering; use an environment with cached Natural Earth data.")
+    inset = ax.inset_axes(inset_bounds, projection=ccrs.PlateCarree())
     inset.set_facecolor("#eaf4fb")
     if is_cartopy_axis(inset) and cartopy_features_enabled():
         inset.set_extent([123, 147, 24, 46], crs=ccrs.PlateCarree())
@@ -637,6 +638,17 @@ def split_order_values(values: Iterable[str]) -> list[str]:
     return [v for v in order if v in present] + sorted(v for v in present if v not in order)
 
 
+def network_label(value: object) -> str:
+    text = str(value).strip().lower()
+    if text in {"knt", "k-net", "knet"}:
+        return "K-NET"
+    if text in {"kik", "kik-net", "kiknet"}:
+        return "KiK-net"
+    if text in {"nan", "none", ""}:
+        return "Unknown"
+    return str(value)
+
+
 def plot_split_data_distributions(split_dir: Path, out_dir: Path) -> None:
     """Plot event/station distributions from split_events.csv and split_stations.csv."""
     events_path = split_dir / "split_events.csv"
@@ -678,6 +690,22 @@ def plot_split_data_distributions(split_dir: Path, out_dir: Path) -> None:
     summary = pd.DataFrame(summary_rows)
     save_df(summary, out_dir / "data_split_summary")
     table_png(summary, out_dir / "data_split_summary.png", "Training Data Summary", font_size=15)
+
+    if "source_network" in stations.columns:
+        network_rows = []
+        for network, group in stations.groupby(stations["source_network"].map(network_label), dropna=False):
+            unique_cols = [col for col in ["source_network", "station_code", "station_lat", "station_lon", "sensor_class"] if col in group.columns]
+            station_cols = [col for col in ["source_network", "station_code", "station_lat", "station_lon"] if col in group.columns]
+            sensors = ", ".join(sorted(str(x) for x in group.get("sensor_class", pd.Series(dtype=object)).dropna().unique()))
+            network_rows.append({
+                "Network": network,
+                "Unique stations": int(group[station_cols].drop_duplicates().shape[0]) if station_cols else int(group.shape[0]),
+                "Station records": int(len(group)),
+                "Sensor records": int(group[unique_cols].drop_duplicates().shape[0]) if unique_cols else int(group.shape[0]),
+                "Sensor classes": sensors,
+            })
+        network_summary = pd.DataFrame(network_rows).sort_values("Network")
+        save_df(network_summary, out_dir / "data_network_summary")
 
     fig, axes = plt.subplots(2, 2, figsize=(18, 12))
     ax = axes[0, 0]
@@ -774,29 +802,50 @@ def plot_event_station_distribution_map(events: pd.DataFrame, stations: pd.DataF
     if not {"station_lat", "station_lon"}.issubset(stations.columns):
         return
     event_points = events[["Longitude", "Latitude", "Magnitude", "split"]].dropna()
-    station_points = stations[["station_lon", "station_lat", "split"]].dropna()
+    station_cols = ["station_lon", "station_lat", "split"]
+    if "source_network" in stations.columns:
+        station_cols.append("source_network")
+    station_points = stations[station_cols].dropna(subset=["station_lon", "station_lat"])
     if event_points.empty or station_points.empty:
         return
 
     fig = plt.figure(figsize=(16, 10))
     ax = fig.add_subplot(1, 1, 1, **map_subplot_kw())
+    if not is_cartopy_axis(ax):
+        raise RuntimeError("Cartopy is required for data_event_station_map.png; install cartopy or use an environment with cached Natural Earth data.")
     event_lonlat = event_points[["Longitude", "Latitude"]].to_numpy(dtype=float)
-    station_lonlat = station_points[["station_lon", "station_lat"]].drop_duplicates().to_numpy(dtype=float)
-    draw_reference_map(ax, [event_lonlat, station_lonlat])
+    if "source_network" in station_points.columns:
+        station_points = station_points.copy()
+        station_points["Network"] = station_points["source_network"].map(network_label)
+        station_unique = station_points[["station_lon", "station_lat", "Network"]].drop_duplicates()
+    else:
+        station_unique = station_points[["station_lon", "station_lat"]].drop_duplicates()
+        station_unique["Network"] = "Stations"
+    station_lonlat = station_unique[["station_lon", "station_lat"]].to_numpy(dtype=float)
+    draw_reference_map(ax, [event_lonlat, station_lonlat], force_cartopy_features=True)
     geo_kwargs = {"transform": ccrs.PlateCarree()} if is_cartopy_axis(ax) else {}
 
-    ax.scatter(
-        station_lonlat[:, 0],
-        station_lonlat[:, 1],
-        marker="^",
-        s=22,
-        color="#4d4d4d",
-        alpha=0.42,
-        linewidth=0,
-        label=f"Stations ({len(station_lonlat)})",
-        zorder=2,
-        **geo_kwargs,
-    )
+    network_styles = {
+        "K-NET": ("#000000", "^"),
+        "KiK-net": ("#d62728", "^"),
+        "Unknown": ("#4d4d4d", "^"),
+        "Stations": ("#4d4d4d", "^"),
+    }
+    for network in sorted(station_unique["Network"].dropna().unique()):
+        subset = station_unique[station_unique["Network"] == network]
+        color, marker = network_styles.get(network, ("#4d4d4d", "^"))
+        ax.scatter(
+            subset["station_lon"],
+            subset["station_lat"],
+            marker=marker,
+            s=28 if network != "KiK-net" else 24,
+            color=color,
+            alpha=0.58,
+            linewidth=0,
+            label=f"{network} stations ({len(subset)})",
+            zorder=2,
+            **geo_kwargs,
+        )
     sc = ax.scatter(
         event_points["Longitude"],
         event_points["Latitude"],
@@ -1295,7 +1344,7 @@ def plot_case_studies(eval_file: EvalFile, out_dir: Path, split: str, max_cases:
                 if st.ndim == 2 and sv.ndim == 1:
                     st = st[sv]
             sc = draw_spatial_residual_map(ax2, coords, res, ev, station_xy=st)
-            ax2.legend(fontsize=13)
+            ax2.legend(fontsize=13, loc="lower left", frameon=True)
             cbar = fig.colorbar(sc, ax=ax2, fraction=0.046, pad=0.04)
             cbar.set_label("Residual", fontsize=15)
             cbar.ax.tick_params(labelsize=13)
@@ -1746,8 +1795,54 @@ def write_literature_metric_comparison(metrics: pd.DataFrame, csv_path: Path | N
     table_png(comparison, out_dir / "literature_metric_comparison.png", "Numerical Comparison Template", font_size=12)
 
 
+def _attention_case_indices(data: np.lib.npyio.NpzFile, split: str, max_cases: int) -> list[int]:
+    attn = np.asarray(data[f"{split}_pga_attention"], dtype=object)
+    if attn.size == 0:
+        return []
+
+    requested_key = f"{split}_requested_station_count"
+    if requested_key in data:
+        requested = np.asarray(data[requested_key], dtype=object).astype(int)
+    else:
+        requested = np.full(len(attn), -1, dtype=int)
+
+    counts = sorted(set(requested.tolist()))
+    if len(counts) > max_cases:
+        # Pick a spread across the available station-count sweep.
+        positions = np.linspace(0, len(counts) - 1, max_cases).round().astype(int)
+        counts = [counts[int(pos)] for pos in positions]
+
+    residual_key = f"{split}_pga_residual"
+    target_valid_key = f"{split}_pga_target_valid"
+    chosen: list[int] = []
+    for count in counts:
+        candidates = np.where(requested == count)[0]
+        best_idx = None
+        best_score = None
+        for idx in candidates:
+            target_valid = np.asarray(data[target_valid_key][idx], dtype=bool).reshape(-1) if target_valid_key in data else np.array([], dtype=bool)
+            residual = np.asarray(data[residual_key][idx], dtype=float).reshape(-1) if residual_key in data else np.array([], dtype=float)
+            valid_count = int(target_valid.sum()) if target_valid.size else 0
+            mae = float(np.nanmean(np.abs(residual[target_valid]))) if valid_count and residual.size else np.inf
+            score = (valid_count, -mae)
+            if best_score is None or score > best_score:
+                best_score = score
+                best_idx = int(idx)
+        if best_idx is not None:
+            chosen.append(best_idx)
+
+    if len(chosen) < max_cases:
+        for idx in range(len(attn)):
+            if idx not in chosen:
+                chosen.append(idx)
+            if len(chosen) >= max_cases:
+                break
+    return chosen[:max_cases]
+
+
 def plot_attention_exports(search_dirs: Iterable[Path], out_dir: Path, max_cases: int = 3) -> list[Path]:
     """Plot saved PGA target cross-attention maps from eval_attention_*.npz."""
+    ensure_dir(out_dir)
     outputs: list[Path] = []
     attention_paths = []
     for directory in search_dirs:
@@ -1756,6 +1851,12 @@ def plot_attention_exports(search_dirs: Iterable[Path], out_dir: Path, max_cases
             attention_paths.extend(sorted(directory.glob("eval_attention.npz")))
     seen = set()
     attention_paths = [p for p in attention_paths if not (p in seen or seen.add(p))]
+
+    # Prefer best checkpoints for presentation. Keep last/checkpoint-neutral files
+    # only when no best export is available.
+    best_paths = [path for path in attention_paths if path.stem == "eval_attention_best"]
+    if best_paths:
+        attention_paths = best_paths
 
     for attention_path in attention_paths:
         tag = attention_path.stem.replace("eval_attention_", "")
@@ -1770,8 +1871,17 @@ def plot_attention_exports(search_dirs: Iterable[Path], out_dir: Path, max_cases
             attn = np.asarray(data[f"{split}_pga_attention"], dtype=object)
             if attn.size == 0:
                 continue
-            n_cases = min(max_cases, len(attn))
-            for case_idx in range(n_cases):
+            requested_key = f"{split}_requested_station_count"
+            if requested_key in data:
+                requested_values = sorted(set(np.asarray(data[requested_key], dtype=object).astype(int).tolist()))
+                if len(requested_values) == 1:
+                    print(
+                        f"[WARN] {attention_path.name} split={split} contains only requested_station_count={requested_values[0]}; "
+                        "attention slides cannot show different input-station counts from this file.",
+                        file=sys.stderr,
+                    )
+            selected_cases = _attention_case_indices(data, split, max_cases)
+            for plot_idx, case_idx in enumerate(selected_cases, start=1):
                 station_valid = np.asarray(data[f"{split}_station_valid"][case_idx], dtype=bool)
                 station_coords = np.asarray(data[f"{split}_station_coords_abs"][case_idx], dtype=float)
                 target_coords = np.asarray(data[f"{split}_pga_target_abs"][case_idx], dtype=float)
@@ -1830,7 +1940,18 @@ def plot_attention_exports(search_dirs: Iterable[Path], out_dir: Path, max_cases
                 ax.scatter([event_lonlat[0]], [event_lonlat[1]], marker="*", s=260, color="gold", edgecolor="black", label="Event", zorder=5, **geo_kwargs)
                 event_idx = data[f"{split}_event_index"][case_idx] if f"{split}_event_index" in data else case_idx
                 req = data[f"{split}_requested_station_count"][case_idx] if f"{split}_requested_station_count" in data else "config"
-                ax.set_title(f"PGA Attention Map ({split}, {tag}, event {event_idx}, requested {req})", fontsize=22, weight="bold")
+                actual = int(station_valid.sum())
+                ax.set_title("PGA Attention Map", fontsize=22, weight="bold")
+                ax.text(
+                    0.98,
+                    0.03,
+                    f"{split}, {tag}, event {event_idx}\nrequested input stations: {req}; actual: {actual}",
+                    transform=ax.transAxes,
+                    fontsize=12,
+                    ha="right",
+                    va="bottom",
+                    bbox=dict(facecolor="white", alpha=0.88, edgecolor="#cccccc"),
+                )
                 ax.set_xlabel("Longitude", fontsize=18)
                 ax.set_ylabel("Latitude", fontsize=18)
                 ax.tick_params(labelsize=14)
@@ -1839,7 +1960,7 @@ def plot_attention_exports(search_dirs: Iterable[Path], out_dir: Path, max_cases
                 cbar.set_label("Residual", fontsize=15)
                 cbar.ax.tick_params(labelsize=13)
                 fig.tight_layout()
-                out = out_dir / f"attention_map_{case_idx + 1}_{tag}_{split}.png"
+                out = out_dir / f"attention_map_{plot_idx}_{tag}_{split}_n{req}_case{case_idx}.png"
                 fig.savefig(out, dpi=220)
                 plt.close(fig)
                 outputs.append(out)
@@ -1855,7 +1976,7 @@ def plot_attention_exports(search_dirs: Iterable[Path], out_dir: Path, max_cases
                 if valid_distances.size == 0:
                     continue
                 quantiles = [0.2, 0.5, 0.85, 0.35, 0.7]
-                desired_distance = float(np.quantile(valid_distances, quantiles[case_idx % len(quantiles)]))
+                desired_distance = float(np.quantile(valid_distances, quantiles[(plot_idx - 1) % len(quantiles)]))
                 target_slot = int(valid_target_indices[np.argmin(np.abs(valid_distances - desired_distance))])
                 target_weight = normalized_attn[target_slot]
                 target_weight_scaled = target_weight / max(float(target_weight.max()), 1e-12)
@@ -1923,12 +2044,13 @@ def plot_attention_exports(search_dirs: Iterable[Path], out_dir: Path, max_cases
                 y_res = y_pred - y_true
                 event_idx = data[f"{split}_event_index"][case_idx] if f"{split}_event_index" in data else case_idx
                 req = data[f"{split}_requested_station_count"][case_idx] if f"{split}_requested_station_count" in data else "config"
+                actual = int(station_valid.sum())
                 target_distance = float(target_distances[target_slot])
                 ax.set_title("Target-station Attention", fontsize=22, weight="bold")
                 ax.text(
                     0.98,
                     0.03,
-                    f"{split}, {tag}, event {event_idx}, requested {req}\n"
+                    f"{split}, {tag}, event {event_idx}; input stations {actual}/{req}\n"
                     f"target {target_slot}, dist {target_distance:.0f} km: true {y_true:.3f}, pred {y_pred:.3f}, res {y_res:.3f}",
                     transform=ax.transAxes,
                     fontsize=12,
@@ -1944,7 +2066,7 @@ def plot_attention_exports(search_dirs: Iterable[Path], out_dir: Path, max_cases
                 cbar.set_label("Attention weight for queried target", fontsize=15)
                 cbar.ax.tick_params(labelsize=13)
                 fig.tight_layout(rect=[0, 0, 0.98, 0.98])
-                out = out_dir / f"attention_target_{case_idx + 1}_{tag}_{split}.png"
+                out = out_dir / f"attention_target_{plot_idx}_{tag}_{split}_n{req}_case{case_idx}.png"
                 fig.savefig(out, dpi=220)
                 plt.close(fig)
                 outputs.append(out)

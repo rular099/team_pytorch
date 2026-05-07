@@ -252,6 +252,13 @@ def read_data_summary(asset_dir: Path) -> pd.DataFrame:
     return pd.DataFrame()
 
 
+def read_network_summary(asset_dir: Path) -> pd.DataFrame:
+    path = asset_dir / "data_network_summary.csv"
+    if path.exists():
+        return pd.read_csv(path)
+    return pd.DataFrame()
+
+
 def add_data_stat_cards(slide, summary: pd.DataFrame, left, top, width, height):
     if summary.empty:
         return
@@ -281,8 +288,36 @@ def sorted_numbered_images(asset_dir: Path, prefix: str) -> list[Path]:
     images = list(asset_dir.glob(f"{prefix}_*.png"))
     def key(path: Path):
         m = re.search(rf"{re.escape(prefix)}_(\d+)_", path.name)
-        return int(m.group(1)) if m else 999
+        n = re.search(r"_n(-?\d+|config)_", path.name)
+        requested = 999 if not n or n.group(1) == "config" else int(n.group(1))
+        return (int(m.group(1)) if m else 999, requested, path.name)
     return sorted(images, key=key)
+
+
+def requested_station_count_from_name(path: Path) -> int | None:
+    m = re.search(r"_n(-?\d+)_", path.name)
+    return int(m.group(1)) if m else None
+
+
+def choose_attention_examples(asset_dir: Path, max_examples: int = 4) -> list[Path]:
+    attention_all = sorted_numbered_images(asset_dir, "attention_target")
+    preferred = [path for path in attention_all if "_best_" in path.name] or attention_all
+    by_count: dict[int | None, Path] = {}
+    for path in preferred:
+        count = requested_station_count_from_name(path)
+        by_count.setdefault(count, path)
+    if len(by_count) > max_examples:
+        counts = sorted(by_count, key=lambda x: 999 if x is None else x)
+        positions = np.linspace(0, len(counts) - 1, max_examples).round().astype(int)
+        return [by_count[counts[int(pos)]] for pos in positions]
+
+    selected = list(by_count.values())
+    for path in preferred:
+        if path not in selected:
+            selected.append(path)
+        if len(selected) >= max_examples:
+            break
+    return selected
 
 
 def build_ppt(
@@ -303,6 +338,7 @@ def build_ppt(
     npz_path = report_input_dir / "eval_results_best.npz"
     single_chart, single_df = build_single_vs_multi_asset(npz_path, metrics_csv, asset_dir)
     data_summary = read_data_summary(asset_dir)
+    network_summary = read_network_summary(asset_dir)
     diagnostics_dir = diagnostics_dir or Path(os.environ.get("PGA_DIAGNOSTICS_DIR", "/opt/zb/data/japan/diagnostics_2024"))
     diagnostic_images = choose_diagnostic_images(diagnostics_dir, limit=10)
     team_diagram = team_diagram or Path("../team_diagram.png")
@@ -452,6 +488,25 @@ def build_ppt(
     ], Inches(6.85), Inches(1.22), Inches(5.85), Inches(4.75), 15)
 
     slide = prs.slides.add_slide(blank)
+    add_title(slide, "数据来源：NIED K-NET 与 KiK-net")
+    add_box(slide, Inches(0.75), Inches(1.28), Inches(5.75), Inches(1.35),
+            "K-NET\n地表强震动台网", LIGHT_BLUE, BLUE, 18)
+    add_box(slide, Inches(6.85), Inches(1.28), Inches(5.75), Inches(1.35),
+            "KiK-net\n地表 + 井下强震动台网", RGBColor(255, 238, 218), RGBColor(190, 95, 20), 18)
+    add_bullets(slide, [
+        "记录量：三分量强震加速度记录；本项目使用其波形、台站位置和 PGA 标签",
+        "仪器与布设：K-NET 主要为标准化地表强震仪，约 20 km 间距覆盖日本，1996 年 6 月开始运行",
+        "仪器与布设：KiK-net 与 Hi-net 共址，每站通常有地表和井下强震仪，井下传感器位于钻孔底部",
+        "关系：二者均由 NIED 运行，目标都是记录破坏性强震动；KiK-net 补充了垂向阵列和地下场地信息",
+        "区别：K-NET 更偏地表自由场和城市/公共设施覆盖；KiK-net 站点通常地基更硬，且包含 borehole/surface 成对记录",
+    ], Inches(0.92), Inches(2.9), Inches(7.05), Inches(3.7), 15)
+    if not network_summary.empty:
+        display = network_summary[["Network", "Unique stations", "Station records", "Sensor classes"]].copy()
+        display.columns = ["Network", "Stations", "Records", "Sensor classes"]
+        add_table(slide, display, Inches(8.25), Inches(3.05), Inches(4.25), Inches(2.05), 11)
+    add_footer(slide, "Sources: NIED K-NET/KiK-net overview; Aoi, Kunugi & Fujiwara (2004).")
+
+    slide = prs.slides.add_slide(blank)
     add_title(slide, "训练数据分布：事件与台站记录")
     add_data_stat_cards(slide, data_summary, Inches(0.65), Inches(1.25), Inches(2.35), Inches(4.8))
     fit_image(slide, asset_dir / "data_distribution_overview.png", Inches(3.15), Inches(1.08), Inches(9.7), Inches(5.95))
@@ -466,7 +521,7 @@ def build_ppt(
     slide = prs.slides.add_slide(blank)
     add_title(slide, "训练数据分布：事件与台站空间覆盖")
     fit_image(slide, asset_dir / "data_event_station_map.png", Inches(0.55), Inches(1.05), Inches(12.25), Inches(5.95))
-    add_footer(slide, "Events colored by magnitude; station locations are deduplicated from station records.")
+    add_footer(slide, "Events colored by magnitude; K-NET and KiK-net stations are deduplicated and shown with different colors.")
 
     # 13
     slide = prs.slides.add_slide(blank)
@@ -565,13 +620,9 @@ def build_ppt(
 
     # 28
     attention_all = sorted_numbered_images(asset_dir, "attention_target")
-    attention_all = [path for path in attention_all if not path.name.startswith("attention_target_1_")]
-    if attention_all:
-        rng = np.random.default_rng(2026)
-        selected_idx = rng.choice(len(attention_all), size=min(4, len(attention_all)), replace=False)
-        attention_examples = [attention_all[int(i)] for i in selected_idx]
-    else:
-        attention_examples = []
+    attention_examples = choose_attention_examples(asset_dir, max_examples=4)
+    attention_counts = sorted({c for c in (requested_station_count_from_name(path) for path in attention_examples) if c is not None})
+    attention_count_text = ", ".join(str(c) for c in attention_counts) if attention_counts else "未写入文件名"
 
     if attention_examples:
         for idx, attention_image in enumerate(attention_examples, start=1):
@@ -583,15 +634,15 @@ def build_ppt(
                     "红圈是当前正在计算 PGA 的目标台站",
                     "三角形表示输入台站，大小/颜色表示该目标台站 query 对输入台站的 attention 权重",
                     "红线连接 attention 最高的输入台站，用来直观看模型依赖哪些观测",
-                    f"当前 attention npz 去掉第 1 个后剩余 {len(attention_all)} 个事件示例；本稿随机展示其中 {len(attention_examples)} 个",
+                    f"本稿优先选取不同输入台站数量的样例；当前展示 requested count: {attention_count_text}",
                 ], Inches(8.15), Inches(1.35), Inches(4.45), Inches(4.8), 15)
             else:
                 add_bullets(slide, [
                     "同一解释口径：一个目标台站 query，一组输入台站 key/value",
-                    "目标台站在不同事件中覆盖不同震中距，用于观察 attention 是否更偏近场或局部台站",
-                    "当前导出的 attention 结果只包含 requested station count = 3",
+                    "目标台站覆盖不同震中距，用于观察 attention 是否更偏近场或局部输入台站",
+                    f"可用 attention target 图共 {len(attention_all)} 张；PPT 选取 {len(attention_examples)} 张",
                 ], Inches(8.15), Inches(1.35), Inches(4.45), Inches(4.8), 15)
-            add_footer(slide, "Attention uses model_last because eval_attention_best.npz was not produced.")
+            add_footer(slide, "Attention examples prefer eval_attention_best.npz; fall back to last only when best is unavailable.")
     else:
         slide = prs.slides.add_slide(blank)
         add_title(slide, "Attention 可视化：PGA target 关注哪些输入台站")
@@ -626,6 +677,7 @@ def build_ppt(
         "强 PGA 动态范围仍是关键问题：需要关注 slope、强 PGA bin 的 Bias",
         "文献对比目前只做方法定位；没有 TEAM/QuakeFormer 同数据集复现，不能做严格数值排名",
         "当前数据集 P pick 不够精准，需要更高质量的数据集来训练模型在小秒数窗口下的能力",
+        "K-NET/KiK-net 记录中 P pick 前可用冗余较短；当前不足部分使用 0 padding，真实在线应用中对应背景噪声，后续需缩小这种训练-应用差异",
     ], Inches(0.9), Inches(1.25), Inches(11.4), Inches(4.9), 19)
 
     # 31
@@ -635,6 +687,8 @@ def build_ppt(
         "Muenchmeyer et al. (2021), The Transformer Earthquake Alerting Model, GJI.",
         "Feng, Zhu & Lu (2024), QuakeFormer: A Uniform Approach to Earthquake Ground Motion Prediction Using Masked Transformers.",
         "Boore & Atkinson (2008), Ground-motion prediction equations for PGA, PGV and PSA, Earthquake Spectra.",
+        "Aoi, Kunugi & Fujiwara (2004), Strong-motion seismograph network operated by NIED: K-NET and KiK-net.",
+        "NIED K-NET/KiK-net official overview: https://www.kyoshin.bosai.go.jp/en/about_kyoshin/",
     ]
     add_bullets(slide, refs, Inches(0.85), Inches(1.25), Inches(11.6), Inches(4.8), 16)
 
