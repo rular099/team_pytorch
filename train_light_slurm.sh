@@ -16,16 +16,17 @@
 #   SLURM_GPUS_PER_NODE GPUs per node to request and pass to torchrun
 #   SLURM_CPUS_PER_TASK CPUs per task
 #   SLURM_TIME         Optional wallclock limit, e.g. 24:00:00; unset by default
+#   RUN_LOG_DIR        Optional run log dir; defaults to logs/<weight_path>
 #   CONDA_ENV          Conda env name to activate after module loading
 #   MODULE_UNLOAD      Optional module to unload
 #   MODULE_LOADS       Space-separated modules to load
 #   RESET_WEIGHT_PATH  Delete training_params.weight_path before training when set to 1
 #   RUN_EVAL           Run eval_checkpoint.py after successful training when set to 1
-#   EVAL_CHECKPOINT    Optional checkpoint path; defaults to full_model_last.pth, then best, then latest epoch checkpoint
+#   EVAL_CHECKPOINT    Optional checkpoint path; when unset, evaluates both full_model_last.pth and full_model_best.pth if present
 #   EVAL_SINGLE_STATION_CHECKPOINT Optional single-station checkpoint path; defaults to best/last under weight_path
 #   EVAL_DEVICE        Optional eval device, e.g. cuda:0
-#   EVAL_OUTPUT_TXT    Optional eval stdout/stderr path; defaults to weight_path/eval_results.txt
-#   EVAL_OUTPUT_NPZ    Optional eval npz path; defaults to weight_path/eval_results.npz
+#   EVAL_OUTPUT_TXT    Optional eval stdout/stderr path; only valid with EVAL_CHECKPOINT
+#   EVAL_OUTPUT_NPZ    Optional eval npz path; only valid with EVAL_CHECKPOINT
 
 set -euo pipefail
 
@@ -216,6 +217,11 @@ case "$WEIGHT_PATH" in
     /*) WEIGHT_DIR="$WEIGHT_PATH" ;;
     *) WEIGHT_DIR="$WORKDIR/$WEIGHT_PATH" ;;
 esac
+WEIGHT_LOG_NAME=${WEIGHT_PATH#./}
+case "$WEIGHT_LOG_NAME" in
+    /*) WEIGHT_LOG_NAME=$(basename "$WEIGHT_LOG_NAME") ;;
+esac
+RUN_LOG_DIR=${RUN_LOG_DIR:-"$WORKDIR/logs/$WEIGHT_LOG_NAME"}
 
 if command -v torchrun >/dev/null 2>&1; then
     TORCHRUN_BIN=(torchrun)
@@ -285,23 +291,15 @@ else
     "${DIRECT_CMD[@]}"
 fi
 
+mkdir -p "$RUN_LOG_DIR"
+RUN_CONFIG="$CONFIG"
+if [[ -f "$WEIGHT_DIR/config.json" ]]; then
+    RUN_CONFIG="$WEIGHT_DIR/config.json"
+fi
+cp "$RUN_CONFIG" "$RUN_LOG_DIR/config.json"
+echo "[INFO] run config copied to: $RUN_LOG_DIR/config.json"
+
 if [[ "$RUN_EVAL" == "1" ]]; then
-    EVAL_CHECKPOINT=${EVAL_CHECKPOINT:-$(python -c 'import glob, os, re, sys
-weight_dir = sys.argv[1]
-for name in ("full_model_last.pth", "full_model_best.pth"):
-    path = os.path.join(weight_dir, name)
-    if os.path.exists(path):
-        print(path)
-        sys.exit(0)
-paths = glob.glob(os.path.join(weight_dir, "full_model_*.pth"))
-def epoch(path):
-    m = re.search(r"full_model_(\d+)\.pth$", os.path.basename(path))
-    return int(m.group(1)) if m else -1
-print(max(paths, key=epoch) if paths else "")' "$WEIGHT_DIR")}
-    if [[ -z "$EVAL_CHECKPOINT" || ! -f "$EVAL_CHECKPOINT" ]]; then
-        echo "Eval checkpoint not found under $WEIGHT_DIR" >&2
-        exit 1
-    fi
     SINGLE_STATION_ENABLED=$(python -c 'import json, sys
 cfg = json.load(open(sys.argv[1]))
 print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enabled", False) else "0")' "$CONFIG")
@@ -318,49 +316,91 @@ print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enab
         fi
     fi
 
-    EVAL_OUTPUT_NPZ=${EVAL_OUTPUT_NPZ:-"$WEIGHT_DIR/eval_results.npz"}
-    EVAL_OUTPUT_TXT=${EVAL_OUTPUT_TXT:-"$WEIGHT_DIR/eval_results.txt"}
     EVAL_CONFIG="$CONFIG"
     if [[ -f "$WEIGHT_DIR/config.json" ]]; then
         EVAL_CONFIG="$WEIGHT_DIR/config.json"
     fi
-    mkdir -p "$(dirname "$EVAL_OUTPUT_TXT")" "$(dirname "$EVAL_OUTPUT_NPZ")"
 
-    EVAL_CMD=(
-        python eval_checkpoint.py
-        --config "$EVAL_CONFIG"
-        --diting_config "$DITING_CONFIG"
-        --checkpoint "$EVAL_CHECKPOINT"
-        --output "$EVAL_OUTPUT_NPZ"
-    )
-    if [[ -n "${DITING_PRETRAINED:-}" ]]; then
-        EVAL_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
+    EVAL_CHECKPOINT_PATHS=()
+    EVAL_CHECKPOINT_LABELS=()
+    if [[ -n "${EVAL_CHECKPOINT:-}" ]]; then
+        if [[ ! -f "$EVAL_CHECKPOINT" ]]; then
+            echo "Eval checkpoint not found: $EVAL_CHECKPOINT" >&2
+            exit 1
+        fi
+        EVAL_CHECKPOINT_PATHS+=("$EVAL_CHECKPOINT")
+        EVAL_CHECKPOINT_LABELS+=("custom")
+    else
+        for spec in "last:full_model_last.pth" "best:full_model_best.pth"; do
+            label=${spec%%:*}
+            filename=${spec#*:}
+            path="$WEIGHT_DIR/$filename"
+            if [[ -f "$path" ]]; then
+                EVAL_CHECKPOINT_PATHS+=("$path")
+                EVAL_CHECKPOINT_LABELS+=("$label")
+            else
+                echo "[WARN] eval checkpoint missing, skipping: $path" >&2
+            fi
+        done
     fi
-    if [[ -n "${EVAL_SINGLE_STATION_CHECKPOINT:-}" ]]; then
-        EVAL_CMD+=(--single_station_checkpoint "$EVAL_SINGLE_STATION_CHECKPOINT")
+    if (( ${#EVAL_CHECKPOINT_PATHS[@]} == 0 )); then
+        echo "No eval checkpoints found under $WEIGHT_DIR" >&2
+        exit 1
     fi
-    if [[ -n "${EVAL_DEVICE:-}" ]]; then
-        EVAL_CMD+=(--device "$EVAL_DEVICE")
+    if (( ${#EVAL_CHECKPOINT_PATHS[@]} > 1 )) && { [[ -n "${EVAL_OUTPUT_TXT:-}" ]] || [[ -n "${EVAL_OUTPUT_NPZ:-}" ]]; }; then
+        echo "EVAL_OUTPUT_TXT/EVAL_OUTPUT_NPZ can only be used when EVAL_CHECKPOINT selects one checkpoint." >&2
+        exit 1
     fi
-    for ((i = 0; i < EXTRA_ARG_COUNT; i++)); do
-        case "${EXTRA_ARGS[$i]}" in
-            --overfit_n)
-                if ((i + 1 < EXTRA_ARG_COUNT)); then
-                    EVAL_CMD+=(--overfit_n "${EXTRA_ARGS[$((i + 1))]}")
-                    i=$((i + 1))
-                fi
-                ;;
-            --overfit_n=*)
-                EVAL_CMD+=("${EXTRA_ARGS[$i]}")
-                ;;
-        esac
+
+    for idx in "${!EVAL_CHECKPOINT_PATHS[@]}"; do
+        EVAL_CHECKPOINT_PATH=${EVAL_CHECKPOINT_PATHS[$idx]}
+        EVAL_LABEL=${EVAL_CHECKPOINT_LABELS[$idx]}
+        if [[ "$EVAL_LABEL" == "custom" ]]; then
+            EVAL_OUTPUT_NPZ_PATH=${EVAL_OUTPUT_NPZ:-"$RUN_LOG_DIR/eval_results_custom.npz"}
+            EVAL_OUTPUT_TXT_PATH=${EVAL_OUTPUT_TXT:-"$RUN_LOG_DIR/eval_results_custom.txt"}
+        else
+            EVAL_OUTPUT_NPZ_PATH="$RUN_LOG_DIR/eval_results_${EVAL_LABEL}.npz"
+            EVAL_OUTPUT_TXT_PATH="$RUN_LOG_DIR/eval_results_${EVAL_LABEL}.txt"
+        fi
+        mkdir -p "$(dirname "$EVAL_OUTPUT_TXT_PATH")" "$(dirname "$EVAL_OUTPUT_NPZ_PATH")"
+
+        EVAL_CMD=(
+            python eval_checkpoint.py
+            --config "$EVAL_CONFIG"
+            --diting_config "$DITING_CONFIG"
+            --checkpoint "$EVAL_CHECKPOINT_PATH"
+            --output "$EVAL_OUTPUT_NPZ_PATH"
+        )
+        if [[ -n "${DITING_PRETRAINED:-}" ]]; then
+            EVAL_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
+        fi
+        if [[ -n "${EVAL_SINGLE_STATION_CHECKPOINT:-}" ]]; then
+            EVAL_CMD+=(--single_station_checkpoint "$EVAL_SINGLE_STATION_CHECKPOINT")
+        fi
+        if [[ -n "${EVAL_DEVICE:-}" ]]; then
+            EVAL_CMD+=(--device "$EVAL_DEVICE")
+        fi
+        for ((i = 0; i < EXTRA_ARG_COUNT; i++)); do
+            case "${EXTRA_ARGS[$i]}" in
+                --overfit_n)
+                    if ((i + 1 < EXTRA_ARG_COUNT)); then
+                        EVAL_CMD+=(--overfit_n "${EXTRA_ARGS[$((i + 1))]}")
+                        i=$((i + 1))
+                    fi
+                    ;;
+                --overfit_n=*)
+                    EVAL_CMD+=("${EXTRA_ARGS[$i]}")
+                    ;;
+            esac
+        done
+
+        echo "[INFO] running eval ($EVAL_LABEL): ${EVAL_CMD[*]}"
+        echo "[INFO] eval config copied to: $RUN_LOG_DIR/config.json"
+        echo "[INFO] eval full checkpoint: $EVAL_CHECKPOINT_PATH"
+        echo "[INFO] eval single-station checkpoint: ${EVAL_SINGLE_STATION_CHECKPOINT:-<disabled>}"
+        echo "[INFO] eval txt: $EVAL_OUTPUT_TXT_PATH"
+        echo "[INFO] eval npz: $EVAL_OUTPUT_NPZ_PATH"
+        "${EVAL_CMD[@]}" >"$EVAL_OUTPUT_TXT_PATH" 2>&1
+        echo "[INFO] eval finished ($EVAL_LABEL); results written to $EVAL_OUTPUT_TXT_PATH"
     done
-
-    echo "[INFO] running eval: ${EVAL_CMD[*]}"
-    echo "[INFO] eval full checkpoint: $EVAL_CHECKPOINT"
-    echo "[INFO] eval single-station checkpoint: ${EVAL_SINGLE_STATION_CHECKPOINT:-<disabled>}"
-    echo "[INFO] eval txt: $EVAL_OUTPUT_TXT"
-    echo "[INFO] eval npz: $EVAL_OUTPUT_NPZ"
-    "${EVAL_CMD[@]}" >"$EVAL_OUTPUT_TXT" 2>&1
-    echo "[INFO] eval finished; results written to $EVAL_OUTPUT_TXT"
 fi
