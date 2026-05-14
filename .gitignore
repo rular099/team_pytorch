@@ -14,6 +14,7 @@ logs_train_light_*.log
 
 # Local data artifacts
 *.hdf5
+hinet_velocity_downloads/
 station_cache*.csv
 event_metadata.csv
 train_ev.csv

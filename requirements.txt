@@ -1,6 +1,7 @@
 apex
 einops
 h5py
+HinetPy
 matplotlib
 mup
 numpy
