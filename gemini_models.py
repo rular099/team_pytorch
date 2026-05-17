@@ -1172,9 +1172,45 @@ def _point_target_for_loss(y_true, y_pred, d):
     return y_true.reshape(y_true.shape[0], -1, d)[:, 0, :].reshape_as(y_pred)
 
 
+def _pga_loss_weight_tensor(target_raw, valid_mask, per_elem, pga_loss_weighting):
+    if not pga_loss_weighting or not pga_loss_weighting.get('enabled', False):
+        return None, None
+
+    mode = normalize(pga_loss_weighting.get('mode', 'threshold'))
+    base_weight = float(pga_loss_weighting.get('base_weight', 1.0))
+    strong_weight = float(pga_loss_weighting.get('strong_weight', 1.0))
+    if base_weight <= 0 or strong_weight <= 0:
+        raise ValueError('pga_loss_weighting base_weight and strong_weight must be positive.')
+
+    weights = torch.full_like(per_elem, base_weight)
+    if mode == 'threshold':
+        threshold = float(pga_loss_weighting.get('threshold', -1.2))
+        strong = target_raw.to(per_elem.device, dtype=per_elem.dtype) >= threshold
+        while strong.ndim < per_elem.ndim:
+            strong = strong.unsqueeze(-1)
+        weights = torch.where(strong, torch.full_like(weights, strong_weight), weights)
+    else:
+        raise ValueError(f"Unsupported pga_loss_weighting mode {mode!r}")
+
+    if valid_mask is None:
+        valid_f = torch.ones_like(per_elem)
+    else:
+        valid_f = valid_mask.to(per_elem.device).bool()
+        while valid_f.ndim < per_elem.ndim:
+            valid_f = valid_f.unsqueeze(-1)
+        valid_f = valid_f.to(per_elem.dtype)
+
+    if pga_loss_weighting.get('normalize_mean', True):
+        denom = (weights * valid_f).sum().clamp_min(1.0)
+    else:
+        denom = valid_f.sum().clamp_min(1.0)
+    return weights, denom
+
+
 def point_regression_loss_full(y_pred, y_true, res_comps=None, res_weight=None,
                                pga_target_valid=None, loss_type='huber',
-                               huber_delta=1.0, pga_target_normalization=None):
+                               huber_delta=1.0, pga_target_normalization=None,
+                               pga_loss_weighting=None):
     if res_comps is None:
         res_comps = ['mag', 'loc', 'pga']
         res_weight = np.array([1., 1., 1.])
@@ -1188,6 +1224,7 @@ def point_regression_loss_full(y_pred, y_true, res_comps=None, res_weight=None,
         else:
             d = 1
         target = _point_target_for_loss(y_true[i], pred, d).to(pred.device, dtype=pred.dtype)
+        target_raw = target
         if res_comp == 'pga' and pga_target_normalization is not None:
             mean = float(pga_target_normalization.get('mean', 0.0))
             std = max(float(pga_target_normalization.get('std', 1.0)), 1e-8)
@@ -1206,8 +1243,14 @@ def point_regression_loss_full(y_pred, y_true, res_comps=None, res_weight=None,
             while mask.ndim < per_elem.ndim:
                 mask = mask.unsqueeze(-1)
             mask_f = mask.to(per_elem.dtype)
-            denom = mask_f.sum().clamp_min(1.0)
-            comp_loss = (per_elem * mask_f).sum() / denom
+            pga_weights, weighted_denom = _pga_loss_weight_tensor(
+                target_raw, pga_target_valid, per_elem, pga_loss_weighting
+            )
+            if pga_weights is not None:
+                comp_loss = (per_elem * mask_f * pga_weights).sum() / weighted_denom
+            else:
+                denom = mask_f.sum().clamp_min(1.0)
+                comp_loss = (per_elem * mask_f).sum() / denom
         else:
             comp_loss = per_elem.mean()
         total_loss = total_loss + float(res_weight[i]) * comp_loss

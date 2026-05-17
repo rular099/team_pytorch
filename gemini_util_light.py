@@ -227,6 +227,7 @@ class PreloadedEventGenerator(Dataset):
                  pga_mode=False, p_pick_limit=5000, coord_keys=None, upsample_high_station_events=None,
                  no_event_token=False, pga_selection_skew=None,
                  random_input_station_count=None, pga_target_sampling=None, pga_distance_bins=None,
+                 pga_label_stratified_threshold=None, pga_label_strong_fraction=0.5,
                  dump_debug_snapshot=False,
                  use_coords_rel=False, use_coords_abs=True,
                  use_coords_rel_abs_fusion=False, station_experiment=None,
@@ -289,13 +290,19 @@ class PreloadedEventGenerator(Dataset):
         self.pga_selection_skew = pga_selection_skew
         self.random_input_station_count = self._normalize_station_count_choices(random_input_station_count)
         self.pga_target_sampling = pga_target_sampling
-        valid_pga_target_sampling = {None, 'random', 'distance_stratified', 'distance_coverage'}
+        valid_pga_target_sampling = {None, 'random', 'distance_stratified', 'distance_coverage', 'label_stratified'}
         if self.pga_target_sampling not in valid_pga_target_sampling:
             raise ValueError(
                 f'pga_target_sampling must be one of {sorted(x for x in valid_pga_target_sampling if x)}, '
                 f'got {self.pga_target_sampling!r}'
             )
         self.pga_distance_bins = self._normalize_distance_bins(pga_distance_bins)
+        self.pga_label_stratified_threshold = (
+            None if pga_label_stratified_threshold is None else float(pga_label_stratified_threshold)
+        )
+        self.pga_label_strong_fraction = float(pga_label_strong_fraction)
+        if not (0.0 <= self.pga_label_strong_fraction <= 1.0):
+            raise ValueError('pga_label_strong_fraction must be between 0 and 1.')
         self.integrate = integrate
         self.sampling_rate = sampling_rate
         self.select_first = select_first
@@ -648,6 +655,47 @@ class PreloadedEventGenerator(Dataset):
             selected_positions.extend(int(j) for j in remaining[:n_targets - len(selected_positions)])
 
         return active[np.asarray(selected_positions, dtype=np.int64)]
+
+    def _label_stratified_pga_targets(self, active, pga_values, n_targets, rng=None):
+        active = np.asarray(active, dtype=np.int64)
+        if active.size <= n_targets:
+            selected = active.copy()
+            self._rng_shuffle(rng, selected)
+            return selected[:n_targets]
+
+        labels = np.asarray(pga_values[active], dtype=float)
+        finite = np.isfinite(labels)
+        if not finite.any():
+            selected = active.copy()
+            self._rng_shuffle(rng, selected)
+            return selected[:n_targets]
+
+        if self.pga_label_stratified_threshold is None:
+            threshold = float(np.quantile(labels[finite], 0.8))
+        else:
+            threshold = self.pga_label_stratified_threshold
+
+        strong = active[finite & (labels >= threshold)]
+        weak = active[~(finite & (labels >= threshold))]
+        self._rng_shuffle(rng, strong)
+        self._rng_shuffle(rng, weak)
+
+        n_strong = int(np.ceil(n_targets * self.pga_label_strong_fraction))
+        if strong.size > 0 and self.pga_label_strong_fraction > 0:
+            n_strong = max(1, n_strong)
+        n_strong = min(n_strong, strong.size, n_targets)
+
+        selected = list(strong[:n_strong])
+        remaining_slots = n_targets - len(selected)
+        if remaining_slots > 0:
+            selected.extend(weak[:remaining_slots])
+        remaining_slots = n_targets - len(selected)
+        if remaining_slots > 0:
+            selected.extend(strong[n_strong:n_strong + remaining_slots])
+
+        selected = np.asarray(selected, dtype=np.int64)
+        self._rng_shuffle(rng, selected)
+        return selected[:n_targets]
 
     def _apply_station_experiment_inputs(self, waveforms, p_picks, station_valid, pga_valid_input):
         cfg = self.station_experiment
@@ -1051,6 +1099,13 @@ class PreloadedEventGenerator(Dataset):
                             active,
                             metadata[i],
                             input_coords,
+                            self.pga_targets,
+                            rng=rng,
+                        )
+                    elif self.pga_target_sampling == 'label_stratified':
+                        active = self._label_stratified_pga_targets(
+                            active,
+                            pga[i],
                             self.pga_targets,
                             rng=rng,
                         )

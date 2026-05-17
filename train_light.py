@@ -829,6 +829,18 @@ def write_overfit_event_ids(path, selected_event_ids):
             f.write(f'{event_id}\n')
 
 
+def indexed_config_override(overrides, index):
+    if overrides is None:
+        return {}
+    if isinstance(overrides, list):
+        if index >= len(overrides) or overrides[index] is None:
+            return {}
+        return dict(overrides[index])
+    if isinstance(overrides, dict):
+        return dict(overrides)
+    raise ValueError('generator override config must be a dict, a list of dicts, or null.')
+
+
 def build_overfit_event_metadata_splits(full_data_all, generator_params, overfit_n, selected_event_ids=None):
     """Select a diverse subset, then split that subset into train/dev/test."""
     event_metadata_train = []
@@ -1400,7 +1412,8 @@ def maybe_dump_model_batch(input_dump_config, split_name, epoch_idx, batch_idx, 
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val',
                 input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None,
-                pga_target_normalization=None, station_decorrelation_weight=0.0):
+                pga_target_normalization=None, station_decorrelation_weight=0.0,
+                pga_loss_weighting=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1456,6 +1469,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         pga_target_valid=pga_target_valid, loss_type=loss_type,
                         huber_delta=huber_delta,
                         pga_target_normalization=pga_target_normalization,
+                        pga_loss_weighting=pga_loss_weighting,
                     )
                 if station_decorrelation_weight:
                     decor_loss = models.station_embedding_decorrelation_loss(
@@ -1570,6 +1584,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                             pga_target_valid=pga_target_valid, loss_type=loss_type,
                             huber_delta=huber_delta,
                             pga_target_normalization=pga_target_normalization,
+                            pga_loss_weighting=pga_loss_weighting,
                         )
                     val_running_loss += loss.item()
                     num_val_batches += 1
@@ -2394,6 +2409,8 @@ if __name__ == '__main__':
 
         train_generators = []
         validation_generators = []
+        train_generator_overrides = training_params.get('train_generator_overrides', None)
+        validation_generator_overrides = training_params.get('validation_generator_overrides', None)
 
         for i, generator_param_set in enumerate(generator_params):
             noise_seconds = generator_param_set.get('noise_seconds', 5)
@@ -2423,7 +2440,8 @@ if __name__ == '__main__':
             if training_params.get('deterministic_sampling', False):
                 defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
             # Config wins: overlay generator_param_set on top of defaults.
-            merged = {**defaults, **generator_param_set}
+            train_override = indexed_config_override(train_generator_overrides, i)
+            merged = {**defaults, **generator_param_set, **train_override}
             if rank == 0:
                 experiment = merged.get('station_experiment') or {}
                 print(
@@ -2433,6 +2451,7 @@ if __name__ == '__main__':
                     f'integrate={merged.get("integrate", False)}, '
                     f'selection_skew={merged.get("selection_skew")}, '
                     f'pga_selection_skew={merged.get("pga_selection_skew")}, '
+                    f'pga_target_sampling={merged.get("pga_target_sampling")}, '
                     f'max_stations={merged.get("max_stations")}, '
                     f'station_experiment={experiment.get("mode") if experiment.get("enabled") else None}, '
                     f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
@@ -2446,7 +2465,8 @@ if __name__ == '__main__':
 
             old_oversample = generator_param_set.get('oversample', 1)
             generator_param_set['oversample'] = 1 if overfit_mode else 4
-            merged_val = {**defaults, **generator_param_set}
+            validation_override = indexed_config_override(validation_generator_overrides, i)
+            merged_val = {**defaults, **generator_param_set, **validation_override}
             if rank == 0:
                 experiment_val = merged_val.get('station_experiment') or {}
                 print(
@@ -2456,6 +2476,7 @@ if __name__ == '__main__':
                     f'integrate={merged_val.get("integrate", False)}, '
                     f'selection_skew={merged_val.get("selection_skew")}, '
                     f'pga_selection_skew={merged_val.get("pga_selection_skew")}, '
+                    f'pga_target_sampling={merged_val.get("pga_target_sampling")}, '
                     f'max_stations={merged_val.get("max_stations")}, '
                     f'station_experiment={experiment_val.get("mode") if experiment_val.get("enabled") else None}, '
                     f'cutout=({merged_val["cutout"][0]}, {merged_val["cutout"][1]})'
@@ -2539,6 +2560,7 @@ if __name__ == '__main__':
         full_loss_type = training_params.get('full_model_loss', training_params.get('loss', default_full_loss))
         full_huber_delta = float(training_params.get('full_model_huber_delta', 1.0))
         station_decorrelation_weight = float(training_params.get('station_embedding_decorrelation_weight', 0.0))
+        pga_loss_weighting = training_params.get('pga_loss_weighting', None)
         if (not is_dist) or rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
             station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
@@ -2552,6 +2574,8 @@ if __name__ == '__main__':
                 )
             if station_decorrelation_weight:
                 print(f'[loss] station_embedding_decorrelation_weight={station_decorrelation_weight:g}')
+            if pga_loss_weighting and pga_loss_weighting.get('enabled', False):
+                print(f'[loss] pga_loss_weighting={pga_loss_weighting}')
             print(
                 f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss '
                 f'(patience={patience}, factor={lr_decay_factor:g}, min_lr={min_lr:g})'
@@ -2579,6 +2603,7 @@ if __name__ == '__main__':
             checkpoint_params=training_params.get('checkpoint', None),
             pga_target_normalization=pga_target_norm_cfg,
             station_decorrelation_weight=station_decorrelation_weight,
+            pga_loss_weighting=pga_loss_weighting,
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,
