@@ -300,6 +300,70 @@ class TransformerBlock(nn.Module):
         return x
 
 
+class CrossAttentionRefinementBlock(nn.Module):
+    """Additional cross-attention refinement layer for query readouts."""
+
+    def __init__(self, emb_dim, n_heads, att_dropout=0.0, distance_bias=False,
+                 distance_hidden_dim=64, ffn_hidden_dim=None):
+        super().__init__()
+        self.query_norm = nn.LayerNorm(emb_dim)
+        self.kv_norm = nn.LayerNorm(emb_dim)
+        self.attn = nn.MultiheadAttention(
+            embed_dim=emb_dim,
+            num_heads=n_heads,
+            dropout=att_dropout,
+            batch_first=True,
+        )
+        self.attn_out_norm = nn.LayerNorm(emb_dim)
+        if ffn_hidden_dim is None:
+            ffn_hidden_dim = emb_dim
+        self.ffn = nn.Sequential(
+            nn.Linear(emb_dim, int(ffn_hidden_dim)),
+            nn.GELU(),
+            nn.Linear(int(ffn_hidden_dim), emb_dim),
+        )
+        self.ffn_norm = nn.LayerNorm(emb_dim)
+        self.distance_bias = bool(distance_bias)
+        if self.distance_bias:
+            self.distance_mlp = nn.Sequential(
+                nn.Linear(4, distance_hidden_dim),
+                nn.GELU(),
+                nn.Linear(distance_hidden_dim, 1),
+            )
+            nn.init.zeros_(self.distance_mlp[-1].weight)
+            nn.init.zeros_(self.distance_mlp[-1].bias)
+        else:
+            self.distance_mlp = None
+
+    def _distance_attn_mask(self, query_coords, station_coords):
+        if self.distance_mlp is None:
+            return None
+        if query_coords is None or station_coords is None:
+            raise ValueError('query_coords and station_coords are required when distance_bias=True.')
+        rel = query_coords[:, :, None, :] - station_coords[:, None, :, :]
+        dist = torch.linalg.norm(rel, dim=-1, keepdim=True)
+        geom = torch.cat([rel, dist], dim=-1)
+        bias = self.distance_mlp(geom).squeeze(-1)
+        return bias.repeat_interleave(self.attn.num_heads, dim=0)
+
+    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None):
+        q = self.query_norm(query)
+        kv = self.kv_norm(station_emb)
+        attn_mask = self._distance_attn_mask(query_coords, station_coords)
+        out, attn = self.attn(
+            q,
+            kv,
+            kv,
+            key_padding_mask=~station_valid.bool(),
+            attn_mask=attn_mask,
+            need_weights=True,
+            average_attn_weights=True,
+        )
+        query = self.attn_out_norm(query + out)
+        query = self.ffn_norm(query + self.ffn(query))
+        return query, attn
+
+
 class CrossAttentionReadout(nn.Module):
     """Single-direction query-to-station readout.
 
@@ -308,8 +372,13 @@ class CrossAttentionReadout(nn.Module):
     readout a cleaner diagnostic for whether station information is usable.
     """
 
-    def __init__(self, emb_dim, n_heads, att_dropout=0.0, distance_bias=False, distance_hidden_dim=64):
+    def __init__(self, emb_dim, n_heads, att_dropout=0.0, distance_bias=False,
+                 distance_hidden_dim=64, readout_layers=1, ffn_hidden_dim=None):
         super().__init__()
+        readout_layers = int(readout_layers)
+        if readout_layers < 1:
+            raise ValueError(f'readout_layers must be >= 1, got {readout_layers}')
+        self.readout_layers = readout_layers
         self.query_norm = nn.LayerNorm(emb_dim)
         self.kv_norm = nn.LayerNorm(emb_dim)
         self.attn = nn.MultiheadAttention(
@@ -330,13 +399,21 @@ class CrossAttentionReadout(nn.Module):
             nn.init.zeros_(self.distance_mlp[-1].bias)
         else:
             self.distance_mlp = None
+        self.extra_layers = nn.ModuleList([
+            CrossAttentionRefinementBlock(
+                emb_dim,
+                n_heads,
+                att_dropout=att_dropout,
+                distance_bias=distance_bias,
+                distance_hidden_dim=distance_hidden_dim,
+                ffn_hidden_dim=ffn_hidden_dim,
+            )
+            for _ in range(readout_layers - 1)
+        ])
         self._last_attention = None
+        self._last_attentions = []
 
-    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None):
-        q = self.query_norm(query)
-        kv = self.kv_norm(station_emb)
-        key_padding_mask = ~station_valid.bool()
-        attn_mask = None
+    def _distance_attn_mask(self, query_coords, station_coords):
         if self.distance_mlp is not None:
             if query_coords is None or station_coords is None:
                 raise ValueError('query_coords and station_coords are required when distance_bias=True.')
@@ -344,8 +421,14 @@ class CrossAttentionReadout(nn.Module):
             dist = torch.linalg.norm(rel, dim=-1, keepdim=True)
             geom = torch.cat([rel, dist], dim=-1)
             bias = self.distance_mlp(geom).squeeze(-1)
-            bias = bias.repeat_interleave(self.attn.num_heads, dim=0)
-            attn_mask = bias
+            return bias.repeat_interleave(self.attn.num_heads, dim=0)
+        return None
+
+    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None):
+        q = self.query_norm(query)
+        kv = self.kv_norm(station_emb)
+        key_padding_mask = ~station_valid.bool()
+        attn_mask = self._distance_attn_mask(query_coords, station_coords)
         out, attn = self.attn(
             q,
             kv,
@@ -355,8 +438,20 @@ class CrossAttentionReadout(nn.Module):
             need_weights=True,
             average_attn_weights=True,
         )
-        self._last_attention = attn.detach()
-        return self.out_norm(out)
+        query = self.out_norm(out)
+        attentions = [attn.detach()]
+        for layer in self.extra_layers:
+            query, attn = layer(
+                query,
+                station_emb,
+                station_valid,
+                query_coords=query_coords,
+                station_coords=station_coords,
+            )
+            attentions.append(attn.detach())
+        self._last_attention = attentions[-1]
+        self._last_attentions = attentions
+        return query
 
 
 # Calculates and concatenates sinusoidal embeddings for lat, lon and depth
@@ -1313,6 +1408,8 @@ class FullModel(nn.Module):
                  pga_attention_diagnostics=False, pga_mask_sanity_check=False,
                  readout_n_heads=1, readout_dropout=0.0, query_token_init_range=0.02,
                  pga_distance_bias=False, pga_distance_bias_hidden_dim=64,
+                 readout_layers=1, pga_readout_layers=None, event_readout_layers=None,
+                 readout_ffn_hidden_dim=None,
                  pga_use_event_context=False, pga_event_context_init_gate=0.0):
         super().__init__()
         self.waveform_model = waveform_model
@@ -1353,6 +1450,10 @@ class FullModel(nn.Module):
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
+        if pga_readout_layers is None:
+            pga_readout_layers = readout_layers
+        if event_readout_layers is None:
+            event_readout_layers = readout_layers
         if self.output_distribution not in ('mdn', 'point'):
             raise ValueError(
                 f"output_distribution must be 'mdn' or 'point', got {self.output_distribution!r}."
@@ -1415,9 +1516,15 @@ class FullModel(nn.Module):
             att_dropout=readout_dropout,
             distance_bias=pga_distance_bias,
             distance_hidden_dim=pga_distance_bias_hidden_dim,
+            readout_layers=pga_readout_layers,
+            ffn_hidden_dim=readout_ffn_hidden_dim,
         )
         self.event_cross_attention = CrossAttentionReadout(
-            emb_dim, readout_n_heads, att_dropout=readout_dropout
+            emb_dim,
+            readout_n_heads,
+            att_dropout=readout_dropout,
+            readout_layers=event_readout_layers,
+            ffn_hidden_dim=readout_ffn_hidden_dim,
         )
         if self.pga_use_event_context:
             self.pga_event_context_proj = nn.Linear(emb_dim, emb_dim)
@@ -2052,6 +2159,10 @@ def build_transformer_model(max_stations,
                             query_token_init_range=0.02,
                             pga_distance_bias=False,
                             pga_distance_bias_hidden_dim=64,
+                            readout_layers=1,
+                            pga_readout_layers=None,
+                            event_readout_layers=None,
+                            readout_ffn_hidden_dim=None,
                             pga_use_event_context=False,
                             pga_event_context_init_gate=0.0,
                             pga_attention_diagnostics=False,
@@ -2176,6 +2287,10 @@ def build_transformer_model(max_stations,
                              query_token_init_range=query_token_init_range,
                              pga_distance_bias=pga_distance_bias,
                              pga_distance_bias_hidden_dim=pga_distance_bias_hidden_dim,
+                             readout_layers=readout_layers,
+                             pga_readout_layers=pga_readout_layers,
+                             event_readout_layers=event_readout_layers,
+                             readout_ffn_hidden_dim=readout_ffn_hidden_dim,
                              pga_use_event_context=pga_use_event_context,
                              pga_event_context_init_gate=pga_event_context_init_gate,
                              pga_attention_diagnostics=pga_attention_diagnostics,
