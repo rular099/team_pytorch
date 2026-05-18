@@ -304,8 +304,14 @@ class CrossAttentionRefinementBlock(nn.Module):
     """Additional cross-attention refinement layer for query readouts."""
 
     def __init__(self, emb_dim, n_heads, att_dropout=0.0, distance_bias=False,
-                 distance_hidden_dim=64, ffn_hidden_dim=None):
+                 distance_hidden_dim=64, ffn_hidden_dim=None,
+                 residual_gates=False, residual_gate_init=0.0,
+                 ffn_gate_init=None, inject_base_query=False,
+                 query_injection_gate_init=1.0, use_ffn=True):
         super().__init__()
+        self.residual_gates = bool(residual_gates)
+        self.inject_base_query = bool(inject_base_query)
+        self.use_ffn = bool(use_ffn)
         self.query_norm = nn.LayerNorm(emb_dim)
         self.kv_norm = nn.LayerNorm(emb_dim)
         self.attn = nn.MultiheadAttention(
@@ -315,13 +321,28 @@ class CrossAttentionRefinementBlock(nn.Module):
             batch_first=True,
         )
         self.attn_out_norm = nn.LayerNorm(emb_dim)
+        if self.residual_gates:
+            self.attn_gate = nn.Parameter(torch.tensor(float(residual_gate_init)))
+            if ffn_gate_init is None:
+                ffn_gate_init = residual_gate_init
+            self.ffn_gate = nn.Parameter(torch.tensor(float(ffn_gate_init)))
+        else:
+            self.attn_gate = None
+            self.ffn_gate = None
+        if self.inject_base_query:
+            self.query_injection_gate = nn.Parameter(torch.tensor(float(query_injection_gate_init)))
+        else:
+            self.query_injection_gate = None
         if ffn_hidden_dim is None:
             ffn_hidden_dim = emb_dim
-        self.ffn = nn.Sequential(
-            nn.Linear(emb_dim, int(ffn_hidden_dim)),
-            nn.GELU(),
-            nn.Linear(int(ffn_hidden_dim), emb_dim),
-        )
+        if self.use_ffn:
+            self.ffn = nn.Sequential(
+                nn.Linear(emb_dim, int(ffn_hidden_dim)),
+                nn.GELU(),
+                nn.Linear(int(ffn_hidden_dim), emb_dim),
+            )
+        else:
+            self.ffn = None
         self.ffn_norm = nn.LayerNorm(emb_dim)
         self.distance_bias = bool(distance_bias)
         if self.distance_bias:
@@ -346,8 +367,12 @@ class CrossAttentionRefinementBlock(nn.Module):
         bias = self.distance_mlp(geom).squeeze(-1)
         return bias.repeat_interleave(self.attn.num_heads, dim=0)
 
-    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None):
-        q = self.query_norm(query)
+    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None,
+                base_query=None):
+        query_for_attention = query
+        if self.query_injection_gate is not None and base_query is not None:
+            query_for_attention = query_for_attention + self.query_injection_gate * base_query
+        q = self.query_norm(query_for_attention)
         kv = self.kv_norm(station_emb)
         attn_mask = self._distance_attn_mask(query_coords, station_coords)
         out, attn = self.attn(
@@ -359,8 +384,14 @@ class CrossAttentionRefinementBlock(nn.Module):
             need_weights=True,
             average_attn_weights=True,
         )
-        query = self.attn_out_norm(query + out)
-        query = self.ffn_norm(query + self.ffn(query))
+        if self.attn_gate is not None:
+            query = query + self.attn_gate * out
+            if self.ffn is not None:
+                query = query + self.ffn_gate * self.ffn(self.ffn_norm(query))
+        else:
+            query = self.attn_out_norm(query + out)
+            if self.ffn is not None:
+                query = self.ffn_norm(query + self.ffn(query))
         return query, attn
 
 
@@ -373,12 +404,17 @@ class CrossAttentionReadout(nn.Module):
     """
 
     def __init__(self, emb_dim, n_heads, att_dropout=0.0, distance_bias=False,
-                 distance_hidden_dim=64, readout_layers=1, ffn_hidden_dim=None):
+                 distance_hidden_dim=64, readout_layers=1, ffn_hidden_dim=None,
+                 first_residual=False, first_residual_gate_init=None,
+                 residual_gates=False, residual_gate_init=0.0,
+                 ffn_gate_init=None, inject_base_query=False,
+                 query_injection_gate_init=1.0, use_ffn=True):
         super().__init__()
         readout_layers = int(readout_layers)
         if readout_layers < 1:
             raise ValueError(f'readout_layers must be >= 1, got {readout_layers}')
         self.readout_layers = readout_layers
+        self.first_residual = bool(first_residual)
         self.query_norm = nn.LayerNorm(emb_dim)
         self.kv_norm = nn.LayerNorm(emb_dim)
         self.attn = nn.MultiheadAttention(
@@ -388,6 +424,10 @@ class CrossAttentionReadout(nn.Module):
             batch_first=True,
         )
         self.out_norm = nn.LayerNorm(emb_dim)
+        if first_residual_gate_init is None:
+            self.first_residual_gate = None
+        else:
+            self.first_residual_gate = nn.Parameter(torch.tensor(float(first_residual_gate_init)))
         self.distance_bias = bool(distance_bias)
         if self.distance_bias:
             self.distance_mlp = nn.Sequential(
@@ -407,6 +447,12 @@ class CrossAttentionReadout(nn.Module):
                 distance_bias=distance_bias,
                 distance_hidden_dim=distance_hidden_dim,
                 ffn_hidden_dim=ffn_hidden_dim,
+                residual_gates=residual_gates,
+                residual_gate_init=residual_gate_init,
+                ffn_gate_init=ffn_gate_init,
+                inject_base_query=inject_base_query,
+                query_injection_gate_init=query_injection_gate_init,
+                use_ffn=use_ffn,
             )
             for _ in range(readout_layers - 1)
         ])
@@ -438,7 +484,14 @@ class CrossAttentionReadout(nn.Module):
             need_weights=True,
             average_attn_weights=True,
         )
-        query = self.out_norm(out)
+        base_query = query
+        if self.first_residual:
+            if self.first_residual_gate is None:
+                query = self.out_norm(query + out)
+            else:
+                query = self.out_norm(query + self.first_residual_gate * out)
+        else:
+            query = self.out_norm(out)
         attentions = [attn.detach()]
         for layer in self.extra_layers:
             query, attn = layer(
@@ -447,6 +500,7 @@ class CrossAttentionReadout(nn.Module):
                 station_valid,
                 query_coords=query_coords,
                 station_coords=station_coords,
+                base_query=base_query,
             )
             attentions.append(attn.detach())
         self._last_attention = attentions[-1]
@@ -1410,6 +1464,11 @@ class FullModel(nn.Module):
                  pga_distance_bias=False, pga_distance_bias_hidden_dim=64,
                  readout_layers=1, pga_readout_layers=None, event_readout_layers=None,
                  readout_ffn_hidden_dim=None,
+                 readout_first_residual=False, readout_first_residual_gate_init=None,
+                 readout_residual_gates=False, readout_residual_gate_init=0.0,
+                 readout_ffn_gate_init=None, readout_inject_base_query=False,
+                 readout_query_injection_gate_init=1.0, readout_use_ffn=True,
+                 station_context_mode='off',
                  pga_use_event_context=False, pga_event_context_init_gate=0.0):
         super().__init__()
         self.waveform_model = waveform_model
@@ -1447,6 +1506,7 @@ class FullModel(nn.Module):
         self.output_distribution = output_distribution
         self.pga_readout_mode = pga_readout_mode
         self.event_readout_mode = event_readout_mode
+        self.station_context_mode = station_context_mode or 'off'
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
@@ -1481,6 +1541,13 @@ class FullModel(nn.Module):
                 "'event_cross_attention', 'direct_station_pool', "
                 f"got {self.event_readout_mode!r}."
             )
+        if self.station_context_mode not in ('off', 'transformer_pre_readout'):
+            raise ValueError(
+                "station_context_mode must be one of 'off', 'transformer_pre_readout', "
+                f"got {self.station_context_mode!r}."
+            )
+        if self.station_context_mode != 'off' and self.transformer is None:
+            raise ValueError('station_context_mode requires skip_transformer=False.')
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -1518,6 +1585,14 @@ class FullModel(nn.Module):
             distance_hidden_dim=pga_distance_bias_hidden_dim,
             readout_layers=pga_readout_layers,
             ffn_hidden_dim=readout_ffn_hidden_dim,
+            first_residual=readout_first_residual,
+            first_residual_gate_init=readout_first_residual_gate_init,
+            residual_gates=readout_residual_gates,
+            residual_gate_init=readout_residual_gate_init,
+            ffn_gate_init=readout_ffn_gate_init,
+            inject_base_query=readout_inject_base_query,
+            query_injection_gate_init=readout_query_injection_gate_init,
+            use_ffn=readout_use_ffn,
         )
         self.event_cross_attention = CrossAttentionReadout(
             emb_dim,
@@ -1525,6 +1600,14 @@ class FullModel(nn.Module):
             att_dropout=readout_dropout,
             readout_layers=event_readout_layers,
             ffn_hidden_dim=readout_ffn_hidden_dim,
+            first_residual=readout_first_residual,
+            first_residual_gate_init=readout_first_residual_gate_init,
+            residual_gates=readout_residual_gates,
+            residual_gate_init=readout_residual_gate_init,
+            ffn_gate_init=readout_ffn_gate_init,
+            inject_base_query=readout_inject_base_query,
+            query_injection_gate_init=readout_query_injection_gate_init,
+            use_ffn=readout_use_ffn,
         )
         if self.pga_use_event_context:
             self.pga_event_context_proj = nn.Linear(emb_dim, emb_dim)
@@ -1668,6 +1751,25 @@ class FullModel(nn.Module):
         pooled = (station_emb * weights).sum(dim=1) / denom
         return pooled.unsqueeze(1).expand(-1, n_pga, -1)
 
+    def _station_memory_for_readout(self, station_feature_emb, station_mask):
+        if self.station_context_mode == 'off':
+            self._last_station_context_emb = station_feature_emb
+            return station_feature_emb
+
+        station_context_emb = self.transformer(station_feature_emb.float(), padding_mask=station_mask)
+        station_context_emb = station_context_emb * station_mask.unsqueeze(-1).to(station_context_emb.dtype)
+        self._last_station_context_emb = station_context_emb
+        self._last_diag['station_context_mode'] = station_context_emb.new_tensor(1.0).detach()
+        self._last_diag['station_context_emb_norm'] = self._mean_token_norm(station_context_emb).detach()
+        self._last_diag['station_context_delta_norm'] = (
+            self._mean_token_norm(station_context_emb - station_feature_emb)
+        ).detach()
+        self._last_diag['station_context_cosine_mean'] = self._masked_pairwise_cosine_mean(
+            station_context_emb,
+            station_mask,
+        ).detach()
+        return station_context_emb
+
     def _record_pga_mask_diag(self, att_mask, padding_mask, station_mask, pga_target_valid):
         if not self.pga_mask_sanity_check:
             return
@@ -1801,6 +1903,7 @@ class FullModel(nn.Module):
         station_feature_emb = emb
         self._last_station_feature_emb = station_feature_emb
         self._last_station_valid = sv
+        station_mask = sv  # (batch, n_stations) — comes from explicit station_valid input
 
         self._last_diag = {
             'station_adapter_raw_norm': self._mean_token_norm(raw_station_emb).detach(),
@@ -1812,6 +1915,7 @@ class FullModel(nn.Module):
             'coords_abs_mean': coords_abs.abs().mean().detach(),
             'coords_rel_mean': coords_rel.abs().mean().detach(),
             'coord_fusion_mode': 0.0 if self.coord_fusion_mode == 'add' else 1.0,
+            'station_context_mode': emb.new_tensor(0.0).detach(),
         }
         if scale_emb is not None:
             scale_norm = self._mean_token_norm(scale_emb)
@@ -1828,10 +1932,10 @@ class FullModel(nn.Module):
             ).detach()
         if not self.alternative_coords_embedding:
             self._last_diag['coords_emb_norm'] = self._mean_token_norm(coords_emb).detach()
+        station_memory_emb = self._station_memory_for_readout(station_feature_emb, station_mask)
 
         # padding_mask: True=valid position, used for key masking + output zeroing (matches TF `mask`)
         # att_mask: True=attendable as key, used only for additional key masking (matches TF `att_mask`)
-        station_mask = sv  # (batch, n_stations) — comes from explicit station_valid input
         transformer_emb = None
         pga_readout_emb = None
 
@@ -1846,12 +1950,12 @@ class FullModel(nn.Module):
 
             n_pga = pga_emb.shape[1]
             if self.pga_readout_mode == 'direct_station':
-                pga_readout_emb = self._direct_station_pga_embedding(station_feature_emb, sv, n_pga)
+                pga_readout_emb = self._direct_station_pga_embedding(station_memory_emb, sv, n_pga)
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(2.0).detach()
             elif self.pga_readout_mode == 'target_cross_attention':
                 pga_readout_emb = self.pga_cross_attention(
                     pga_query_emb,
-                    station_feature_emb,
+                    station_memory_emb,
                     sv,
                     query_coords=pga_targets_abs,
                     station_coords=coords_abs,
@@ -1896,12 +2000,12 @@ class FullModel(nn.Module):
         outputs = []
         if not self.no_event_token:
             if self.event_readout_mode == 'event_cross_attention':
-                event_query = self.event_query_token.expand(station_feature_emb.shape[0], 1, -1)
-                event_emb = self.event_cross_attention(event_query, station_feature_emb, sv).squeeze(1)
+                event_query = self.event_query_token.expand(station_memory_emb.shape[0], 1, -1)
+                event_emb = self.event_cross_attention(event_query, station_memory_emb, sv).squeeze(1)
                 self._record_cross_attention_diag('event_cross', self.event_cross_attention, sv)
                 self._last_diag['event_readout_mode'] = event_emb.new_tensor(1.0).detach()
             elif self.event_readout_mode == 'direct_station_pool':
-                event_emb = self._direct_station_pga_embedding(station_feature_emb, sv, 1).squeeze(1)
+                event_emb = self._direct_station_pga_embedding(station_memory_emb, sv, 1).squeeze(1)
                 self._last_diag['event_readout_mode'] = event_emb.new_tensor(2.0).detach()
             else:
                 if self.skip_transformer:
@@ -2163,6 +2267,15 @@ def build_transformer_model(max_stations,
                             pga_readout_layers=None,
                             event_readout_layers=None,
                             readout_ffn_hidden_dim=None,
+                            readout_first_residual=False,
+                            readout_first_residual_gate_init=None,
+                            readout_residual_gates=False,
+                            readout_residual_gate_init=0.0,
+                            readout_ffn_gate_init=None,
+                            readout_inject_base_query=False,
+                            readout_query_injection_gate_init=1.0,
+                            readout_use_ffn=True,
+                            station_context_mode='off',
                             pga_use_event_context=False,
                             pga_event_context_init_gate=0.0,
                             pga_attention_diagnostics=False,
@@ -2291,6 +2404,15 @@ def build_transformer_model(max_stations,
                              pga_readout_layers=pga_readout_layers,
                              event_readout_layers=event_readout_layers,
                              readout_ffn_hidden_dim=readout_ffn_hidden_dim,
+                             readout_first_residual=readout_first_residual,
+                             readout_first_residual_gate_init=readout_first_residual_gate_init,
+                             readout_residual_gates=readout_residual_gates,
+                             readout_residual_gate_init=readout_residual_gate_init,
+                             readout_ffn_gate_init=readout_ffn_gate_init,
+                             readout_inject_base_query=readout_inject_base_query,
+                             readout_query_injection_gate_init=readout_query_injection_gate_init,
+                             readout_use_ffn=readout_use_ffn,
+                             station_context_mode=station_context_mode,
                              pga_use_event_context=pga_use_event_context,
                              pga_event_context_init_gate=pga_event_context_init_gate,
                              pga_attention_diagnostics=pga_attention_diagnostics,
