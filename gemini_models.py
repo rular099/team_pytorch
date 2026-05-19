@@ -1853,6 +1853,54 @@ class FullModel(nn.Module):
         self._last_diag[f'{prefix}_attn_entropy_ratio'] = (entropy / (max_entropy + 1e-8)).detach()
         self._last_diag[f'{prefix}_attn_max_weight'] = attn.max(dim=-1).values.mean().detach()
 
+    def _record_readout_gate_diag(self, prefix, readout):
+        try:
+            ref = next(readout.parameters())
+        except StopIteration:
+            return
+
+        def add_scalar(name, value):
+            if torch.is_tensor(value):
+                self._last_diag[name] = value.detach()
+            else:
+                self._last_diag[name] = ref.new_tensor(float(value)).detach()
+
+        add_scalar(f'{prefix}_readout_layers', getattr(readout, 'readout_layers', 1))
+        add_scalar(f'{prefix}_first_residual_enabled', getattr(readout, 'first_residual', False))
+        first_gate = getattr(readout, 'first_residual_gate', None)
+        if first_gate is not None:
+            add_scalar(f'{prefix}_first_residual_gate', first_gate)
+
+        attn_gates = []
+        ffn_gates = []
+        injection_gates = []
+        for idx, layer in enumerate(getattr(readout, 'extra_layers', []), start=1):
+            attn_gate = getattr(layer, 'attn_gate', None)
+            if attn_gate is not None:
+                add_scalar(f'{prefix}_extra_layer{idx}_attn_gate', attn_gate)
+                attn_gates.append(attn_gate.detach())
+            ffn_gate = getattr(layer, 'ffn_gate', None)
+            if ffn_gate is not None:
+                add_scalar(f'{prefix}_extra_layer{idx}_ffn_gate', ffn_gate)
+                ffn_gates.append(ffn_gate.detach())
+            injection_gate = getattr(layer, 'query_injection_gate', None)
+            if injection_gate is not None:
+                add_scalar(f'{prefix}_extra_layer{idx}_query_injection_gate', injection_gate)
+                injection_gates.append(injection_gate.detach())
+
+        if attn_gates:
+            attn_stack = torch.stack(attn_gates)
+            add_scalar(f'{prefix}_extra_attn_gate_mean', attn_stack.mean())
+            add_scalar(f'{prefix}_extra_attn_gate_max_abs', attn_stack.abs().max())
+        if ffn_gates:
+            ffn_stack = torch.stack(ffn_gates)
+            add_scalar(f'{prefix}_extra_ffn_gate_mean', ffn_stack.mean())
+            add_scalar(f'{prefix}_extra_ffn_gate_max_abs', ffn_stack.abs().max())
+        if injection_gates:
+            injection_stack = torch.stack(injection_gates)
+            add_scalar(f'{prefix}_extra_query_injection_gate_mean', injection_stack.mean())
+            add_scalar(f'{prefix}_extra_query_injection_gate_max_abs', injection_stack.abs().max())
+
 
     def _extract_scale_features(self, waveform):
         # waveform: (B, S, C, T). Match the per-channel time-axis normalization
@@ -1961,6 +2009,7 @@ class FullModel(nn.Module):
                     station_coords=coords_abs,
                 )
                 self._record_cross_attention_diag('pga_cross', self.pga_cross_attention, sv)
+                self._record_readout_gate_diag('pga_cross', self.pga_cross_attention)
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(3.0).detach()
             elif self.pga_readout_mode == 'query_no_transformer':
                 pga_readout_emb = pga_query_emb
@@ -2003,6 +2052,7 @@ class FullModel(nn.Module):
                 event_query = self.event_query_token.expand(station_memory_emb.shape[0], 1, -1)
                 event_emb = self.event_cross_attention(event_query, station_memory_emb, sv).squeeze(1)
                 self._record_cross_attention_diag('event_cross', self.event_cross_attention, sv)
+                self._record_readout_gate_diag('event_cross', self.event_cross_attention)
                 self._last_diag['event_readout_mode'] = event_emb.new_tensor(1.0).detach()
             elif self.event_readout_mode == 'direct_station_pool':
                 event_emb = self._direct_station_pga_embedding(station_memory_emb, sv, 1).squeeze(1)
