@@ -134,6 +134,55 @@ pga_configs/transformer_japan_overfit_pga15_stage2_512_b46_pga_norm_amp_pga08_st
 pga_configs/transformer_japan_overfit_pga15_stage2_512_b47_pga_norm_amp_pga08_strongw2_xattn4_gate0_stationctx_chaosuan.json
 ```
 
+## b36-b47 Result
+
+Results below use the lower-Val-MAE checkpoint for each experiment. This is an
+overfit/capacity experiment, so the Train MAE and slope are as important as Val
+MAE.
+
+| Exp | Main factor | Ckpt | Train MAE | Val MAE | Val slope | Val bias | Top20 MAE | Top20 bias |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| b32 ref | clean xattn4 collapse | best | 0.4388 | 0.4462 | 0.0745 | 0.0157 | 0.6883 | -0.6883 |
+| b36 | gate0 | best | 0.1018 | 0.3163 | 0.5204 | 0.0123 | 0.4481 | -0.4053 |
+| b37 | gate0 + first residual | last | **0.0589** | **0.2964** | 0.5251 | -0.0036 | 0.4642 | -0.4261 |
+| b38 | gate0 + inject query | last | 0.0784 | 0.3194 | 0.5149 | 0.0239 | 0.4595 | -0.4111 |
+| b39 | gate0 + no FFN | last | 0.0941 | 0.3204 | 0.5814 | -0.0462 | 0.4814 | -0.4222 |
+| b40 | gate0 + distance bias | best | 0.1585 | 0.3247 | 0.4997 | -0.1032 | 0.5534 | -0.5378 |
+| b41 | gate0 + station context | last | 0.4620 | 0.4540 | 0.0000 | 0.0659 | 0.7092 | -0.7092 |
+| b35 ref | strong xattn4 collapse | last | 0.4566 | 0.4577 | 0.1094 | 0.1554 | 0.5125 | -0.5121 |
+| b42 | strong + gate0 | last | 0.1205 | 0.3429 | 0.5513 | -0.0517 | 0.5032 | -0.4641 |
+| b43 | strong + gate0 + first residual | last | **0.0600** | **0.2966** | 0.5548 | 0.0421 | 0.3928 | -0.3458 |
+| b44 | strong + gate0 + inject query | best | 0.0971 | 0.3329 | 0.5350 | 0.0649 | 0.4104 | -0.3470 |
+| b45 | strong + gate0 + no FFN | best | 0.0953 | 0.3332 | 0.5662 | 0.0592 | 0.4025 | -0.3288 |
+| b46 | strong + gate0 + distance bias | last | 0.0929 | 0.3290 | 0.5389 | 0.0451 | 0.4248 | -0.3683 |
+| b47 | strong + gate0 + station context | best | 0.4621 | 0.4470 | 0.0244 | 0.0686 | 0.6837 | -0.6837 |
+
+Interpretation:
+
+- `readout_residual_gates=true` with zero-initialized gates fixes the train-set
+  collapse. b32 to b36 improves Train MAE from 0.4388 to 0.1018; b35 to b42
+  improves Train MAE from 0.4566 to 0.1205.
+- The first-layer query residual is the strongest single improvement. b37 and
+  b43 both reach about 0.296 Val MAE and about 0.06 Train MAE.
+- Per-layer base-query injection is not the main missing factor. It helps keep
+  the model trainable but does not beat first residual.
+- The extra FFN is not the collapse source. Removing it does not beat b37/b43.
+- Readout distance bias does not help this batch and hurts clean strong-PGA
+  bias in b40.
+- Current `station_context_mode=transformer_pre_readout` is not usable for
+  downstream RoPE yet. b41/b47 collapse to nearly constant predictions. The
+  station-context path needs its own gated/identity bypass before RoPE tests.
+
+Current recommendation:
+
+- Use b43 as the new balanced structural anchor: it keeps strong-PGA weighting,
+  fixes multi-layer train fit, and has the best global Val MAE in this batch.
+- Keep b29-last as the strong-PGA calibration reference because its top20 MAE
+  and bias remain more aggressive (`0.2756 / -0.1265`) despite poor global Val
+  MAE.
+- Do not run RoPE on the current station-context path before adding a gated or
+  zero-init station-context bypass.
+
 ## Metrics
 
 Report both train and validation:
@@ -146,13 +195,8 @@ Report both train and validation:
 
 ## Decision Rules
 
-- b36/b42 are the primary sanity checks. If gate0 recovers one-layer train fit,
-  the collapse is mostly from non-identity extra layers.
-- If b36/b42 still collapse, inspect implementation or optimizer dynamics before
-  running the rest of the position-information block.
-- b37/b43 isolate first-layer query residual.
-- b38/b44 isolate per-layer target query/position injection.
-- b39/b45 isolate the extra FFN path.
-- b40/b46 test explicit readout geometry.
-- b41/b47 test station-station interaction and should be treated as the
-  no-RoPE station-context control for later RoPE experiments.
+- b36/b42 confirmed that non-identity extra layers were the main collapse
+  trigger.
+- b37/b43 confirmed that first-layer query residual is the most useful fix.
+- b41/b47 showed that station context cannot be used as the RoPE control until
+  that path has its own stable residual/gate design.
