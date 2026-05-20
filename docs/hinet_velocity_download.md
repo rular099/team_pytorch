@@ -53,8 +53,11 @@ hinet_velocity_downloads/
     hinet_kiknet_station_matches.csv
   raw/
     <event_id>/
-      *.cnt
+      *.cnt                  # merged event window if catwin32 is available
       *.ch
+      segments/
+        *.cnt                # one-minute Hi-net files kept if merge fails
+        *.euc.ch
   responses/
     <event_id>/
       *.ch
@@ -72,10 +75,12 @@ hinet_velocity_downloads/
         download_manifest.csv
 ```
 
-Raw Hi-net `.cnt` files are kept as the authoritative waveform archive. MiniSEED
-files are raw-count cuts around the theoretical P arrival and are written only
-when conversion succeeds. The manifest records conversion failures without
-discarding raw downloads.
+Raw Hi-net `.cnt` files are kept as the authoritative waveform archive. If
+HinetPy downloads the one-minute files but local `catwin32` merging fails, the
+manifest records `raw_status=downloaded_unmerged` and keeps the segment files
+under `raw/<event_id>/segments/`. MiniSEED station cuts are written from the
+merged file when available, or directly from the raw segments with a pure Python
+WIN32 parser when `catwin32` is unavailable.
 
 ## Station Matching
 
@@ -147,6 +152,24 @@ python tools/download_hinet_velocity.py \
   --seed 42 \
   --output-root hinet_velocity_smoke
 ```
+
+### QC Plot: Acceleration vs Hi-net Velocity
+
+After a smoke test, draw matched K-NET/KiK-net acceleration and Hi-net velocity
+for manual timing checks:
+
+```bash
+python tools/plot_hinet_accel_velocity_qc.py \
+  --event-id 20240101185300 \
+  --station ISKH01 \
+  --output-dir hinet_velocity_qc
+```
+
+The script defaults to the `--hdf5` and `--output-root` values recorded in
+`download_hinet.sh`, shows theoretical P +/- 50 s, marks all training P-pick
+variants, and writes `qc_summary.csv` with each pick's offset from the
+theoretical P time. It first uses MiniSEED if present, then falls back to raw
+Hi-net `*.cnt` plus `*.ch` files when MiniSEED was not produced.
 
 Use `--dry-run` to plan windows and matching without downloading waveforms. If
 the Hi-net inventory cache does not exist yet, real network access is still

@@ -1,8 +1,40 @@
 # TEAM PyTorch 当前项目状态
 
-更新日期：2026-05-05
+更新日期：2026-05-20
 
 本文档记录当前 `team_pytorch` 项目的工程状态、已完成实验、主要结论和下一步建议。当前工作重点已经从早期的 PGA 坍塌排查，转到基于 `target_cross_attention` readout 的 PGA 全数据训练。
+
+## 0. 最新数据管线状态（2026-05-20）
+
+新增 Hi-net velocity 数据检查与下载容错流程，用于核对 Japan 训练集加速度波形和 Hi-net 速度波形的绝对时间关系。
+
+当前相关入口：
+
+| 文件 | 状态 |
+| --- | --- |
+| `tools/download_hinet_velocity.py` | 根据训练 HDF5 中的事件和台站，下载匹配 Hi-net velocity raw WIN32 数据，并写 station-level MiniSEED。 |
+| `tools/plot_hinet_accel_velocity_qc.py` | 画同一事件/台站的训练加速度与 Hi-net 速度，上下两行按理论 P 到时对齐，并标出训练数据中的各类 P pick。 |
+| `docs/hinet_velocity_download.md` | 记录下载、fallback、MiniSEED 和 QC 绘图用法。 |
+
+关键实现细节：
+
+- HinetPy 的一分钟 `.cnt/.euc.ch` 临时文件现在落到
+  `output-root/raw/<event_id>/segments/`，不再污染仓库当前目录。
+- 若本机缺少 `catwin32` 导致合并 raw WIN32 失败，manifest 记录
+  `raw_status=downloaded_unmerged`，并保留 segments 作为权威 raw 数据。
+- MiniSEED 写出不再强依赖 `catwin32/win2sac_32`。当只有 raw segments
+  可用时，脚本用纯 Python WIN32 parser 抽取匹配 Hi-net 台站的 U/N/E
+  分量，写出 raw-count MiniSEED。
+- `plot_hinet_accel_velocity_qc.py` 默认以理论 P 到时为 `t=0`，窗口为
+  P 前后各 50 秒，输出 PNG 和 `qc_summary.csv`。summary 中包含各类
+  training pick 相对理论 P 的秒差，便于批量筛查台站时间标记偏移。
+
+已做离线验证：
+
+- `python -m py_compile tools/download_hinet_velocity.py tools/plot_hinet_accel_velocity_qc.py`
+- 用已有 `202401011852/1853/1854...cnt` 和 `01_01_20240101.euc.ch`
+  离线写出 `ISKH01/ISKH02/ISKH03` 的三分量 MiniSEED，ObsPy 可读回。
+- QC 样例显示部分训练 pick 相对理论 P 存在约 50 秒量级偏移，符合当前数据检查动机。
 
 ## 1. 当前目标
 
@@ -290,4 +322,3 @@ bash eval_checkpoint_slurm.sh weights_japan_full_pga15_b1_b3_b5_b7_noamp_lr/conf
 2. 如果动态范围仍压缩，考虑专门设计 slope/range calibration loss，但应作为第二阶段实验。
 3. station decor 当前 `1e-4` 效果弱，不建议直接加入主线；如继续研究，需要单独调权重。
 4. AdamW 暂不作为当前主线，避免和 b1/b3/b5/b7 组合因素混杂。
-

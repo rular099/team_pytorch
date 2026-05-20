@@ -19,6 +19,7 @@ import inspect
 import math
 import os
 import shutil
+import struct
 import sys
 import time
 from dataclasses import dataclass
@@ -69,6 +70,15 @@ class EventInfo:
     depth_km: float
     magnitude: float | None
     origin_source: str
+
+
+@dataclass(frozen=True)
+class RawDownloadResult:
+    cnt_path: Path | None
+    ch_path: Path | None
+    segment_paths: tuple[Path, ...]
+    raw_status: str
+    raw_error: str
 
 
 def _decode_array(values):
@@ -412,9 +422,48 @@ def hinet_time_string(dt: datetime) -> str:
     return dt.astimezone(JST).strftime("%Y%m%d%H%M")
 
 
-def download_raw_event(args, client, event: EventInfo, arrivals: pd.DataFrame) -> tuple[Path | None, Path | None, str, str]:
+def _list_segment_cnts(segment_dir: Path) -> tuple[Path, ...]:
+    return tuple(sorted(p for p in segment_dir.glob("*.cnt") if p.is_file()))
+
+
+def _find_segment_channel_table(segment_dir: Path) -> Path | None:
+    candidates = sorted([p for p in segment_dir.glob("*.euc.ch") if p.is_file()])
+    candidates.extend(sorted([p for p in segment_dir.glob("*.ch") if p.is_file() and p not in candidates]))
+    return candidates[0] if candidates else None
+
+
+def _call_hinet_in_directory(
+    client,
+    network: str,
+    starttime: str,
+    span: int,
+    data: Path,
+    ctable: Path,
+    outdir: Path,
+    cwd: Path,
+) -> None:
+    cwd.mkdir(parents=True, exist_ok=True)
+    old_cwd = Path.cwd()
+    try:
+        os.chdir(cwd)
+        call_get_continuous_waveform(
+            client=client,
+            network=network,
+            starttime=starttime,
+            span=span,
+            data=data,
+            ctable=ctable,
+            outdir=outdir,
+        )
+    finally:
+        os.chdir(old_cwd)
+
+
+def download_raw_event(args, client, event: EventInfo, arrivals: pd.DataFrame) -> RawDownloadResult:
     event_raw_dir = args.output_root / "raw" / event.event_id
     event_raw_dir.mkdir(parents=True, exist_ok=True)
+    segment_dir = event_raw_dir / "segments"
+    segment_dir.mkdir(parents=True, exist_ok=True)
 
     start_ts = float(arrivals["cut_start_timestamp"].min())
     end_ts = float(arrivals["cut_end_timestamp"].max())
@@ -427,26 +476,45 @@ def download_raw_event(args, client, event: EventInfo, arrivals: pd.DataFrame) -
     cnt_path = event_raw_dir / cnt_name
     ch_path = event_raw_dir / ch_name
 
+    if args.overwrite_raw:
+        for path in (cnt_path, ch_path):
+            if path.exists():
+                path.unlink()
+        if segment_dir.exists():
+            shutil.rmtree(segment_dir)
+        segment_dir.mkdir(parents=True, exist_ok=True)
+
     if cnt_path.exists() and ch_path.exists() and not args.overwrite_raw:
-        return cnt_path, ch_path, "skipped_existing", ""
+        return RawDownloadResult(cnt_path, ch_path, tuple(), "skipped_existing", "")
     if args.dry_run:
-        return None, None, "dry_run", ""
+        return RawDownloadResult(None, None, tuple(), "dry_run", "")
 
     stations = sorted(set(str(x) for x in arrivals["hinet_station"]))
     select_hinet_stations(client, args.hinet_network, stations)
 
     try:
-        call_get_continuous_waveform(
+        _call_hinet_in_directory(
             client=client,
             network=args.hinet_network,
             starttime=hinet_time_string(request_start_dt),
             span=span_min,
-            data=cnt_name,
-            ctable=ch_name,
+            data=cnt_path,
+            ctable=ch_path,
             outdir=event_raw_dir,
+            cwd=segment_dir,
         )
     except Exception as exc:
-        return None, None, "download_failed", repr(exc)
+        segment_paths = _list_segment_cnts(segment_dir)
+        segment_ch_path = _find_segment_channel_table(segment_dir)
+        if segment_paths and segment_ch_path is not None:
+            return RawDownloadResult(
+                None,
+                segment_ch_path,
+                segment_paths,
+                "downloaded_unmerged",
+                f"merge_failed:{exc!r}",
+            )
+        return RawDownloadResult(None, segment_ch_path, segment_paths, "download_failed", repr(exc))
 
     if not cnt_path.exists():
         found = list(event_raw_dir.glob("*.cnt"))
@@ -455,8 +523,24 @@ def download_raw_event(args, client, event: EventInfo, arrivals: pd.DataFrame) -
         found = list(event_raw_dir.glob("*.ch"))
         ch_path = found[0] if found else ch_path
     if not cnt_path.exists() or not ch_path.exists():
-        return None, None, "download_missing_files", f"missing cnt={cnt_path.exists()} ch={ch_path.exists()}"
-    return cnt_path, ch_path, "downloaded", ""
+        segment_paths = _list_segment_cnts(segment_dir)
+        segment_ch_path = _find_segment_channel_table(segment_dir)
+        if segment_paths and segment_ch_path is not None:
+            return RawDownloadResult(
+                None,
+                segment_ch_path,
+                segment_paths,
+                "downloaded_unmerged",
+                f"missing merged cnt={cnt_path.exists()} ch={ch_path.exists()}",
+            )
+        return RawDownloadResult(
+            None,
+            segment_ch_path,
+            segment_paths,
+            "download_missing_files",
+            f"missing cnt={cnt_path.exists()} ch={ch_path.exists()}",
+        )
+    return RawDownloadResult(cnt_path, ch_path, tuple(), "downloaded", "")
 
 
 def select_hinet_stations(client, network: str, stations: list[str]) -> None:
@@ -487,8 +571,8 @@ def call_get_continuous_waveform(client, network: str, starttime: str, span: int
         "code": network,
         "starttime": starttime,
         "span": span,
-        "data": data,
-        "ctable": ctable,
+        "data": str(data),
+        "ctable": str(ctable),
         "outdir": str(outdir),
     }
     sig = inspect.signature(method)
@@ -585,6 +669,300 @@ def safe_station_code(value: str) -> str:
     return text[:8] if len(text) > 8 else text
 
 
+def bcd_to_int(value: int) -> int:
+    return (value >> 4) * 10 + (value & 0x0F)
+
+
+def parse_hinet_vm_timestamp(buf: bytes) -> float:
+    if len(buf) < 8:
+        raise ValueError("timestamp buffer too short")
+    dt = datetime(
+        bcd_to_int(buf[0]) * 100 + bcd_to_int(buf[1]),
+        bcd_to_int(buf[2]),
+        bcd_to_int(buf[3]),
+        bcd_to_int(buf[4]),
+        bcd_to_int(buf[5]),
+        bcd_to_int(buf[6]),
+        tzinfo=JST,
+    )
+    return dt.timestamp()
+
+
+def decode_win32_diffs(first: int, encoded: bytes, datawide: float, srate: int) -> np.ndarray:
+    if srate <= 0:
+        return np.asarray([], dtype=np.int32)
+    values = np.empty(srate, dtype=np.int64)
+    values[0] = first
+    if datawide == 0.5:
+        previous = first
+        idx = 1
+        for i, byte in enumerate(encoded):
+            high = byte >> 4
+            if high & 0x8:
+                high -= 0x10
+            previous += high
+            if idx < srate:
+                values[idx] = previous
+                idx += 1
+            low = byte & 0x0F
+            if low & 0x8:
+                low -= 0x10
+            previous += low
+            if i == len(encoded) - 1 and srate % 2 == 0:
+                break
+            if idx < srate:
+                values[idx] = previous
+                idx += 1
+        return values[:idx].astype(np.int32, copy=False)
+    if datawide == 1:
+        diffs = np.frombuffer(encoded, dtype=np.int8).astype(np.int64)
+    elif datawide == 2:
+        diffs = np.frombuffer(encoded, dtype=">i2").astype(np.int64)
+    elif datawide == 3:
+        diffs = np.empty(len(encoded) // 3, dtype=np.int64)
+        for i in range(diffs.size):
+            raw = int.from_bytes(encoded[3 * i:3 * i + 3], "big", signed=False)
+            if raw & 0x800000:
+                raw -= 0x1000000
+            diffs[i] = raw
+    elif datawide == 4:
+        diffs = np.frombuffer(encoded, dtype=">i4").astype(np.int64)
+    else:
+        raise NotImplementedError(f"Unsupported WIN32 data width: {datawide}")
+    n = min(diffs.size + 1, srate)
+    if n > 1:
+        values[1:n] = first + np.cumsum(diffs[: n - 1])
+    return values[:n].astype(np.int32, copy=False)
+
+
+def read_hinet_vm_cnt_segments(cnt_paths: Iterable[Path], channel_ids: set[str]) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    wanted = {str(channel_id).lower() for channel_id in channel_ids}
+    values_by_channel: dict[str, list[np.ndarray]] = {channel_id: [] for channel_id in wanted}
+    times_by_channel: dict[str, list[np.ndarray]] = {channel_id: [] for channel_id in wanted}
+    for path in sorted(cnt_paths):
+        data = path.read_bytes()
+        offset = 4 if len(data) > 20 and data[:4] == b"\x00\x00\x00\x00" else 0
+        while offset + 16 <= len(data):
+            try:
+                record_ts = parse_hinet_vm_timestamp(data[offset:offset + 8])
+            except Exception:
+                break
+            payload_len = struct.unpack(">i", data[offset + 12:offset + 16])[0]
+            payload_start = offset + 16
+            payload_end = payload_start + payload_len
+            if payload_len <= 0 or payload_end > len(data):
+                break
+            cursor = payload_start
+            while cursor + 10 <= payload_end:
+                if data[cursor:cursor + 2] in (b"\x01\x01", b"\x01\x03"):
+                    cursor += 2
+                channel_id = f"{data[cursor]:02x}{data[cursor + 1]:02x}"
+                raw_width = data[cursor + 2] >> 4
+                srate = int(data[cursor + 3])
+                cursor += 4
+                datawide = 0.5 if raw_width == 0 else float(raw_width)
+                encoded_len = srate // 2 if raw_width == 0 else (srate - 1) * raw_width
+                if cursor + 4 + encoded_len > payload_end:
+                    break
+                first = struct.unpack(">i", data[cursor:cursor + 4])[0]
+                cursor += 4
+                encoded = data[cursor:cursor + encoded_len]
+                cursor += encoded_len
+                if channel_id not in wanted:
+                    continue
+                decoded = decode_win32_diffs(first, encoded, datawide, srate)
+                if decoded.size == 0:
+                    continue
+                values_by_channel[channel_id].append(decoded)
+                times_by_channel[channel_id].append(record_ts + np.arange(decoded.size, dtype=np.float64) / float(srate))
+            offset = payload_end
+
+    out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for channel_id in wanted:
+        if values_by_channel[channel_id]:
+            t = np.concatenate(times_by_channel[channel_id])
+            y = np.concatenate(values_by_channel[channel_id])
+            order = np.argsort(t)
+            out[channel_id] = (t[order], y[order])
+    return out
+
+
+def infer_sampling_rate_hz(times: np.ndarray) -> float:
+    if times.size < 2:
+        return 100.0
+    diffs = np.diff(times)
+    diffs = diffs[np.isfinite(diffs) & (diffs > 0)]
+    if diffs.size == 0:
+        return 100.0
+    return float(round(1.0 / float(np.median(diffs)), 6))
+
+
+def contiguous_slices(times: np.ndarray, sampling_rate_hz: float) -> list[slice]:
+    if times.size == 0:
+        return []
+    if times.size == 1:
+        return [slice(0, 1)]
+    max_gap = 1.5 / max(float(sampling_rate_hz), 1.0)
+    breaks = np.flatnonzero(np.diff(times) > max_gap) + 1
+    starts = np.r_[0, breaks]
+    stops = np.r_[breaks, times.size]
+    return [slice(int(start), int(stop)) for start, stop in zip(starts, stops) if stop > start]
+
+
+def make_trace(data: np.ndarray, start_timestamp: float, sampling_rate_hz: float, hinet_station: str, component: str, channel: str):
+    from obspy import Trace, UTCDateTime
+
+    tr = Trace(data=np.asarray(data, dtype=np.int32))
+    tr.stats.network = str(hinet_station).split(".", 1)[0][:2] or "HN"
+    tr.stats.station = safe_station_code(str(hinet_station).split(".")[-1])
+    tr.stats.location = ""
+    tr.stats.channel = channel
+    tr.stats.starttime = UTCDateTime(float(start_timestamp))
+    tr.stats.sampling_rate = float(sampling_rate_hz)
+    tr.stats.mseed = {"dataquality": "D"}
+    tr.stats.hinet_component = component
+    return tr
+
+
+def traces_for_channel(
+    times: np.ndarray,
+    values: np.ndarray,
+    cut_start: float,
+    cut_end: float,
+    pad: bool,
+    hinet_station: str,
+    component: str,
+    out_channel: str,
+) -> list:
+    sampling_rate_hz = infer_sampling_rate_hz(times)
+    if pad:
+        npts = max(1, int(math.ceil((cut_end - cut_start) * sampling_rate_hz)))
+        data = np.zeros(npts, dtype=np.int32)
+        sample_idx = np.rint((times - cut_start) * sampling_rate_hz).astype(np.int64)
+        mask = (sample_idx >= 0) & (sample_idx < npts)
+        data[sample_idx[mask]] = values[mask].astype(np.int32, copy=False)
+        return [make_trace(data, cut_start, sampling_rate_hz, hinet_station, component, out_channel)]
+
+    mask = (times >= cut_start) & (times <= cut_end)
+    if not np.any(mask):
+        return []
+    t = times[mask]
+    y = values[mask].astype(np.int32, copy=False)
+    traces = []
+    for part in contiguous_slices(t, sampling_rate_hz):
+        traces.append(make_trace(y[part], float(t[part][0]), sampling_rate_hz, hinet_station, component, out_channel))
+    return traces
+
+
+def write_station_mseed_from_series(args, arr: pd.Series, station_channels: pd.DataFrame, series_by_id: dict[str, tuple[np.ndarray, np.ndarray]], out_path: Path) -> dict[str, object]:
+    from obspy import Stream
+
+    traces = []
+    component_ids = []
+    component_names = []
+    for _, ch in station_channels.iterrows():
+        comp = str(ch.get("component", "")).strip().upper()
+        out_channel = COMPONENT_MAP.get(comp)
+        channel_id = str(ch["channel_id"]).lower()
+        if out_channel is None or channel_id not in series_by_id:
+            continue
+        times, values = series_by_id[channel_id]
+        new_traces = traces_for_channel(
+            times=times,
+            values=values,
+            cut_start=float(arr["cut_start_timestamp"]),
+            cut_end=float(arr["cut_end_timestamp"]),
+            pad=bool(args.pad_mseed),
+            hinet_station=str(arr["hinet_station"]),
+            component=comp,
+            out_channel=out_channel,
+        )
+        if new_traces:
+            traces.extend(new_traces)
+            component_ids.append(str(ch["channel_id"]))
+            component_names.append(comp)
+    if not traces:
+        return {"mseed_status": "no_matching_traces", "mseed_error": "", "mseed_path": ""}
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    Stream(traces=traces).write(str(out_path), format="MSEED")
+    n_components = len(set(component_names))
+    return {
+        "mseed_status": "written" if n_components >= 3 else "partial_written",
+        "mseed_error": "",
+        "mseed_path": str(out_path),
+        "mseed_trace_count": len(traces),
+        "mseed_component_count": n_components,
+        "mseed_channel_ids": ",".join(component_ids),
+    }
+
+
+def convert_event_segments_to_mseed(
+    args,
+    event: EventInfo,
+    cnt_paths: Iterable[Path],
+    ch_path: Path,
+    arrivals: pd.DataFrame,
+    source: str = "python_win32",
+    inherited_error: str = "",
+) -> pd.DataFrame:
+    mseed_dir = args.output_root / "mseed" / event.event_id
+    mseed_dir.mkdir(parents=True, exist_ok=True)
+    ctable = read_channel_table(ch_path)
+    ctable_path = args.output_root / "responses" / event.event_id / f"{ch_path.stem}.channels.csv"
+    write_csv(ctable_path, ctable.to_dict(orient="records"), list(ctable.columns) if not ctable.empty else ["channel_id"])
+
+    hinet_stations = set(arrivals["hinet_station"].astype(str))
+    wanted_rows = ctable[
+        ctable["hinet_station"].astype(str).isin(hinet_stations)
+        & ctable["component"].astype(str).str.strip().str.upper().isin(list(COMPONENT_MAP))
+    ].copy()
+    wanted_ids = {str(x).lower() for x in wanted_rows["channel_id"]} if not wanted_rows.empty else set()
+    rows: list[dict[str, object]] = []
+    if not wanted_ids:
+        out = arrivals.copy()
+        out["mseed_status"] = "no_channels_in_ctable"
+        out["mseed_error"] = inherited_error
+        out["mseed_path"] = ""
+        out["mseed_source"] = source
+        return out
+
+    try:
+        series_by_id = read_hinet_vm_cnt_segments(tuple(cnt_paths), wanted_ids)
+    except Exception as exc:
+        out = arrivals.copy()
+        out["mseed_status"] = "python_win_read_failed"
+        out["mseed_error"] = f"{inherited_error}; {exc!r}".strip("; ")
+        out["mseed_path"] = ""
+        out["mseed_source"] = source
+        return out
+
+    for _, arr in arrivals.iterrows():
+        row = dict(arr)
+        station_channels = wanted_rows[wanted_rows["hinet_station"].astype(str) == str(arr["hinet_station"])]
+        if station_channels.empty:
+            row.update({"mseed_status": "no_channels_in_ctable", "mseed_error": inherited_error, "mseed_path": "", "mseed_source": source})
+            rows.append(row)
+            continue
+        out_path = mseed_dir / f"{arr['knet_station']}__{arr['hinet_station']}.mseed".replace("/", "_")
+        try:
+            result = write_station_mseed_from_series(args, arr, station_channels, series_by_id, out_path)
+            result["mseed_source"] = source
+            if inherited_error and result.get("mseed_status") in {"written", "partial_written"}:
+                result["mseed_error"] = ""
+                result["mseed_fallback_note"] = inherited_error
+            row.update(result)
+        except Exception as exc:
+            row.update({
+                "mseed_status": "write_failed",
+                "mseed_error": f"{inherited_error}; {exc!r}".strip("; "),
+                "mseed_path": "",
+                "mseed_source": source,
+            })
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
 def convert_event_to_mseed(args, event: EventInfo, cnt_path: Path, ch_path: Path, arrivals: pd.DataFrame) -> pd.DataFrame:
     mseed_dir = args.output_root / "mseed" / event.event_id
     mseed_dir.mkdir(parents=True, exist_ok=True)
@@ -597,10 +975,15 @@ def convert_event_to_mseed(args, event: EventInfo, cnt_path: Path, ch_path: Path
 
         stream = read(str(cnt_path), format="WIN", century=args.win_century)
     except Exception as exc:
-        out = arrivals.copy()
-        out["mseed_status"] = "win_read_failed"
-        out["mseed_error"] = repr(exc)
-        return out
+        return convert_event_segments_to_mseed(
+            args,
+            event,
+            [cnt_path],
+            ch_path,
+            arrivals,
+            source="python_win32_after_obspy_failed",
+            inherited_error=f"obspy_win_read_failed:{exc!r}",
+        )
 
     rows: list[dict[str, object]] = []
     for _, arr in arrivals.iterrows():
@@ -650,7 +1033,9 @@ def convert_event_to_mseed(args, event: EventInfo, cnt_path: Path, ch_path: Path
                 "mseed_error": "",
                 "mseed_path": str(out_path),
                 "mseed_trace_count": len(traces),
+                "mseed_component_count": len(traces),
                 "mseed_channel_ids": ",".join(component_ids),
+                "mseed_source": "obspy_win",
             })
         except Exception as exc:
             row.update({"mseed_status": "write_failed", "mseed_error": repr(exc), "mseed_path": ""})
@@ -774,19 +1159,31 @@ def process_events(args) -> None:
                 summary_rows.append({"event_id": event_id, "status": "no_matched_stations", "stations": 0})
                 continue
             write_dataframe(args.output_root / "manifests" / "events" / event_id / "arrivals.csv", arrivals)
-            cnt_path, ch_path, raw_status, raw_error = download_raw_event(args, client, event, arrivals)
-            arrivals["raw_status"] = raw_status
-            arrivals["raw_error"] = raw_error
-            arrivals["raw_count_path"] = "" if cnt_path is None else str(cnt_path)
-            arrivals["channel_table_path"] = "" if ch_path is None else str(ch_path)
+            raw = download_raw_event(args, client, event, arrivals)
+            arrivals["raw_status"] = raw.raw_status
+            arrivals["raw_error"] = raw.raw_error
+            arrivals["raw_count_path"] = "" if raw.cnt_path is None else str(raw.cnt_path)
+            arrivals["raw_segment_paths"] = ";".join(str(path) for path in raw.segment_paths)
+            arrivals["raw_segment_count"] = len(raw.segment_paths)
+            arrivals["channel_table_path"] = "" if raw.ch_path is None else str(raw.ch_path)
 
-            if ch_path is not None:
-                arrivals["response_status"] = cache_response_files(args, ch_path, event_id)
+            if raw.ch_path is not None:
+                arrivals["response_status"] = cache_response_files(args, raw.ch_path, event_id)
             else:
                 arrivals["response_status"] = "not_available"
 
-            if cnt_path is not None and ch_path is not None and args.write_mseed:
-                arrivals = convert_event_to_mseed(args, event, cnt_path, ch_path, arrivals)
+            if raw.cnt_path is not None and raw.ch_path is not None and args.write_mseed:
+                arrivals = convert_event_to_mseed(args, event, raw.cnt_path, raw.ch_path, arrivals)
+            elif raw.segment_paths and raw.ch_path is not None and args.write_mseed:
+                arrivals = convert_event_segments_to_mseed(
+                    args,
+                    event,
+                    raw.segment_paths,
+                    raw.ch_path,
+                    arrivals,
+                    source="python_win32_segments",
+                    inherited_error=raw.raw_error,
+                )
             elif not args.write_mseed:
                 arrivals["mseed_status"] = "disabled"
             elif args.dry_run:
@@ -798,9 +1195,9 @@ def process_events(args) -> None:
             all_rows.append(arrivals)
             summary_rows.append({
                 "event_id": event_id,
-                "status": raw_status,
+                "status": raw.raw_status,
                 "stations": len(arrivals),
-                "raw_error": raw_error,
+                "raw_error": raw.raw_error,
             })
             if args.sleep_seconds > 0 and not args.dry_run:
                 time.sleep(args.sleep_seconds)
