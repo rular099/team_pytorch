@@ -618,6 +618,31 @@ def stations_to_rows(stations: list[StationTrace], event_meta: dict[str, object]
     return rows
 
 
+def _valid_aligned_pick_mask(df: pd.DataFrame, pick_col: str) -> np.ndarray:
+    if pick_col not in df.columns:
+        return np.zeros(len(df), dtype=bool)
+    picks = pd.to_numeric(df[pick_col], errors="coerce").to_numpy(dtype=np.float64)
+    starts = pd.to_numeric(df["record_start_sample"], errors="coerce").to_numpy(dtype=np.float64)
+    valid_n = pd.to_numeric(df["valid_n_samples"], errors="coerce").to_numpy(dtype=np.float64)
+    ends = starts + valid_n
+    return np.isfinite(picks) & np.isfinite(starts) & np.isfinite(ends) & (picks >= starts) & (picks < ends)
+
+
+def _filter_station_level_datasets(
+    datasets: dict[str, np.ndarray | object],
+    keep_mask: np.ndarray,
+    n_station_rows: int,
+) -> dict[str, np.ndarray | object]:
+    keep_mask = np.asarray(keep_mask, dtype=bool)
+    filtered: dict[str, np.ndarray | object] = {}
+    for key, values in datasets.items():
+        if isinstance(values, np.ndarray) and values.ndim > 0 and values.shape[0] == n_station_rows:
+            filtered[key] = values[keep_mask]
+        else:
+            filtered[key] = values
+    return filtered
+
+
 def apply_repaired_and_refined_p_picks(
     event_meta: dict[str, object],
     station_rows: list[dict[str, object]],
@@ -723,14 +748,8 @@ def apply_repaired_and_refined_p_picks(
             search_left_col="p_pick_search_left_aligned",
             search_right_col="p_pick_search_right_aligned",
         )
-        datasets["p_pick_diting_acc_aligned"] = refined_df["p_pick_diting_acc_aligned"].fillna(refined_df["p_pick_repaired_aligned"]).to_numpy(dtype=np.int64)
-        datasets["p_pick_diting_vel_aligned"] = refined_df["p_pick_diting_vel_aligned"].fillna(refined_df["p_pick_repaired_aligned"]).to_numpy(dtype=np.int64)
-        datasets["diting_acc_score"] = refined_df["diting_acc_score"].to_numpy(dtype=np.float64)
-        datasets["diting_vel_score"] = refined_df["diting_vel_score"].to_numpy(dtype=np.float64)
-        datasets["diting_acc_probability"] = refined_df["diting_acc_probability"].to_numpy(dtype=np.float64)
-        datasets["diting_vel_probability"] = refined_df["diting_vel_probability"].to_numpy(dtype=np.float64)
-        datasets["diting_acc_error"] = refined_df["diting_acc_error"].to_numpy(dtype=object)
-        datasets["diting_vel_error"] = refined_df["diting_vel_error"].to_numpy(dtype=object)
+        refined_df["diting_acc_pick_valid"] = _valid_aligned_pick_mask(refined_df, "p_pick_diting_acc_aligned").astype(np.int8)
+        refined_df["diting_vel_pick_valid"] = _valid_aligned_pick_mask(refined_df, "p_pick_diting_vel_aligned").astype(np.int8)
 
     final_pick_columns = {
         "travel_time": "p_pick_repaired_aligned",
@@ -738,20 +757,77 @@ def apply_repaired_and_refined_p_picks(
         "diting_acc": "p_pick_diting_acc_aligned",
         "diting_vel": "p_pick_diting_vel_aligned",
     }
-    if final_pick not in final_pick_columns:
+    if final_pick not in final_pick_columns and final_pick != "diting_vel_then_acc":
         raise ValueError(f"Unsupported final_pick: {final_pick}")
-    final_col = final_pick_columns[final_pick]
-    if final_col not in refined_df.columns:
-        raise ValueError(f"final_pick={final_pick} requires --run_diting")
-    if final_pick.startswith("diting"):
-        final_fallback = refined_df["stalta_refined_pick_aligned"]
+
+    initial_station_count = len(refined_df)
+    final_filter_name = "none"
+    final_filter_keep = np.ones(initial_station_count, dtype=bool)
+    diting_acc_valid_count = int(refined_df["diting_acc_pick_valid"].sum()) if "diting_acc_pick_valid" in refined_df.columns else 0
+    diting_vel_valid_count = int(refined_df["diting_vel_pick_valid"].sum()) if "diting_vel_pick_valid" in refined_df.columns else 0
+    final_from_vel_count = 0
+    final_from_acc_count = 0
+
+    if final_pick == "diting_vel_then_acc":
+        required_cols = (
+            "p_pick_diting_vel_aligned",
+            "p_pick_diting_acc_aligned",
+            "diting_vel_pick_valid",
+            "diting_acc_pick_valid",
+        )
+        missing = [col for col in required_cols if col not in refined_df.columns]
+        if missing:
+            raise ValueError(f"final_pick={final_pick} requires --run_diting; missing {missing}")
+        vel_values = pd.to_numeric(refined_df["p_pick_diting_vel_aligned"], errors="coerce").to_numpy(dtype=np.float64)
+        acc_values = pd.to_numeric(refined_df["p_pick_diting_acc_aligned"], errors="coerce").to_numpy(dtype=np.float64)
+        vel_valid = refined_df["diting_vel_pick_valid"].to_numpy(dtype=bool)
+        acc_valid = refined_df["diting_acc_pick_valid"].to_numpy(dtype=bool)
+        final_filter_keep = vel_valid | acc_valid
+        final_values = np.where(vel_valid, vel_values, np.where(acc_valid, acc_values, np.nan))
+        final_sources = np.where(vel_valid, "diting_vel", np.where(acc_valid, "diting_acc", "no_diting_pick"))
+        refined_df["p_pick_refined_aligned"] = final_values
+        refined_df["p_pick_refined_source"] = final_sources
+        refined_df["p_pick_refine_method"] = final_pick
+        refined_df["p_pick_aligned"] = final_values
+        final_filter_name = final_pick
+        final_from_vel_count = int(np.sum(vel_valid))
+        final_from_acc_count = int(np.sum(~vel_valid & acc_valid))
+        datasets = _filter_station_level_datasets(datasets, final_filter_keep, initial_station_count)
+        refined_df = refined_df.loc[final_filter_keep].copy().reset_index(drop=True)
     else:
-        final_fallback = refined_df["p_pick_repaired_aligned"]
-    final_values = pd.to_numeric(refined_df[final_col], errors="coerce").fillna(final_fallback).astype(np.int64)
-    refined_df["p_pick_refined_aligned"] = final_values
-    refined_df["p_pick_refined_source"] = final_pick
-    refined_df["p_pick_refine_method"] = final_pick
-    refined_df["p_pick_aligned"] = final_values
+        final_col = final_pick_columns[final_pick]
+        if final_col not in refined_df.columns:
+            raise ValueError(f"final_pick={final_pick} requires --run_diting")
+        if final_pick.startswith("diting"):
+            final_fallback = refined_df["stalta_refined_pick_aligned"]
+        else:
+            final_fallback = refined_df["p_pick_repaired_aligned"]
+        final_values = pd.to_numeric(refined_df[final_col], errors="coerce").fillna(final_fallback).astype(np.int64)
+        refined_df["p_pick_refined_aligned"] = final_values
+        refined_df["p_pick_refined_source"] = final_pick
+        refined_df["p_pick_refine_method"] = final_pick
+        refined_df["p_pick_aligned"] = final_values
+
+    refined_df["wave_idx"] = np.arange(len(refined_df), dtype=np.int64)
+    for col in ("p_pick_refined_aligned", "p_pick_aligned"):
+        refined_df[col] = pd.to_numeric(refined_df[col], errors="coerce").astype(np.int64)
+
+    for col in (
+        "p_pick_diting_acc_aligned",
+        "p_pick_diting_vel_aligned",
+        "diting_acc_score",
+        "diting_vel_score",
+        "diting_acc_probability",
+        "diting_vel_probability",
+    ):
+        if col in refined_df.columns:
+            datasets[col] = pd.to_numeric(refined_df[col], errors="coerce").to_numpy(dtype=np.float64)
+    for col in ("diting_acc_pick_valid", "diting_vel_pick_valid"):
+        if col in refined_df.columns:
+            datasets[col] = refined_df[col].to_numpy(dtype=np.int8)
+    for col in ("diting_acc_error", "diting_vel_error"):
+        if col in refined_df.columns:
+            datasets[col] = refined_df[col].to_numpy(dtype=object)
 
     datasets["p_pick_trigger_aligned"] = refined_df["p_pick_trigger_aligned"].to_numpy(dtype=np.int64)
     datasets["p_pick_repaired_aligned"] = refined_df["p_pick_repaired_aligned"].to_numpy(dtype=np.int64)
@@ -805,11 +881,26 @@ def apply_repaired_and_refined_p_picks(
         datasets["stalta_boundary_warmup_search"] = refined_df["stalta_boundary_warmup_search"].to_numpy(dtype=np.int8)
 
     event_meta = event_meta.copy()
+    event_meta["N_Stations"] = int(len(refined_df))
+    if "source_network" in refined_df.columns and not refined_df.empty:
+        event_meta["Source_Mix"] = ",".join(sorted(set(refined_df["source_network"].astype(str))))
+    elif "source_network" in refined_df.columns:
+        event_meta["Source_Mix"] = ""
+    if "source_mix" in refined_df.columns:
+        refined_df["source_mix"] = event_meta["Source_Mix"]
     event_meta.update(
         {
             "P_Pick_Trigger_Threshold_S": float(threshold_seconds),
             "P_Pick_Mode": pick_mode,
             "P_Pick_Final_Source": final_pick,
+            "P_Pick_Final_Filter": final_filter_name,
+            "P_Pick_Final_Filter_Initial_Stations": int(initial_station_count),
+            "P_Pick_Final_Filter_Kept_Stations": int(len(refined_df)),
+            "P_Pick_Final_Filter_Dropped_Stations": int(initial_station_count - len(refined_df)),
+            "P_Pick_Final_From_DiTing_Vel": int(final_from_vel_count),
+            "P_Pick_Final_From_DiTing_Acc": int(final_from_acc_count),
+            "P_Pick_DiTing_Vel_Valid": int(diting_vel_valid_count),
+            "P_Pick_DiTing_Acc_Valid": int(diting_acc_valid_count),
             "P_Pick_Travel_Time_Model": fit_summary.get("travel_time_model", travel_time_model),
             "P_Pick_JMA_Search_Margin_S": float(fit_summary.get("jma_search_margin_seconds", jma_search_margin_seconds)),
             "P_Pick_JMA_Search_Margin_Per_Km": float(fit_summary.get("jma_search_margin_per_km", jma_search_margin_per_km)),
@@ -1817,6 +1908,13 @@ def build_year_dataset(
                 stalta_highpass_hz=stalta_highpass_hz,
                 stalta_allow_boundary_pick=stalta_allow_boundary_pick,
             )
+            final_pick_dropped = int(event_meta.get("P_Pick_Final_Filter_Dropped_Stations", 0))
+            if final_pick_dropped:
+                stats["stations_dropped_no_final_pick"] += final_pick_dropped
+            if len(refined_station_df) < min_stations:
+                stats["events_dropped_after_final_pick_filter"] += 1
+                stats["stations_dropped_after_final_pick_filter"] += len(refined_station_df)
+                continue
             event_rows.append(event_meta)
             station_rows.extend(refined_station_df.to_dict(orient="records"))
 
@@ -1848,7 +1946,7 @@ def build_year_dataset(
                     )
 
             stats["events_written"] += 1
-            stats["stations_written"] += len(stations)
+            stats["stations_written"] += len(refined_station_df)
 
         event_df = pd.DataFrame(event_rows)
         station_df = pd.DataFrame(station_rows)

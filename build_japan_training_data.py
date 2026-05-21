@@ -23,7 +23,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--compression_level", type=int, default=4, help="gzip compression level for output HDF5.")
     parser.add_argument("--pick_mode", choices=["trigger_repair", "travel_time"], default="travel_time", help="Coarse P-pick source before STA/LTA refinement.")
-    parser.add_argument("--final_pick", choices=["travel_time", "stalta", "diting_acc", "diting_vel"], default="stalta", help="Pick source stored in p_picks for training.")
+    parser.add_argument(
+        "--final_pick",
+        choices=["travel_time", "stalta", "diting_acc", "diting_vel", "diting_vel_then_acc"],
+        default="stalta",
+        help=(
+            "Pick source stored in p_picks for training. "
+            "diting_vel_then_acc keeps only stations with DiTing velocity picks, "
+            "falling back to DiTing acceleration picks when velocity picks are missing."
+        ),
+    )
     parser.add_argument("--travel_time_model", choices=["jma2001a", "ak135", "constant"], default="jma2001a", help="Travel-time model used by --pick_mode travel_time.")
     parser.add_argument("--jma_travel_time_zip", default=None, help="Path to JMA2001A tjma2001h.zip. If unavailable, jma2001a falls back to ak135.")
     parser.add_argument("--jma_search_margin_seconds", type=float, default=10.0, help="Base search half-window around JMA/ak135 theoretical P time.")

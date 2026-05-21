@@ -6,7 +6,7 @@
 
 ## 0. 最新数据管线状态（2026-05-21）
 
-新增 JMA hypocenter origin time 校正流程、Japan 训练集重建脚本，以及 Hi-net velocity 数据检查与下载容错流程。当前判断是：加速度和速度波形在图上基本对齐，原先约 50 秒量级的理论 P 偏差主要来自部分训练集事件 origin time 只有分钟精度，而不是台站波形时间标记错误。
+新增 JMA hypocenter origin time 校正流程、Japan 训练集重建脚本，以及 Hi-net velocity 数据检查与下载容错流程。当前判断是：加速度和速度波形在图上基本对齐，原先约 50 秒量级的理论 P 偏差主要来自部分训练集事件 origin time 只有分钟精度，而不是台站波形时间标记错误。最新训练集构建策略新增严格 DiTing pick 模式：优先使用 velocity DiTing P pick，缺失时使用 acceleration DiTing P pick，两者都缺失的 station 不写入训练集。
 
 当前相关入口：
 
@@ -14,9 +14,10 @@
 | --- | --- |
 | `tools/fetch_jma_hypocenters.py` | 从 JMA daily hypocenter 页面抓取秒级震源时刻，并与训练集事件按时间、经纬度、深度、震级匹配，生成 origin correction CSV。 |
 | `jma_origin_corrections/japan_2024_origin_corrections.csv` | 2024 年 Japan 训练集 origin time 校正表。当前 1004 个训练事件中 981 个 accepted、19 个 ambiguous、4 个 no candidate。 |
-| `build_japan_training_data.py` | 新增 `--origin_corrections_csv`，在理论 P 到时和 pick 修复前先应用 JMA 秒级 origin time。 |
+| `build_japan_training_data.py` | 新增 `--origin_corrections_csv` 和 `--final_pick diting_vel_then_acc`，在理论 P 到时和 pick 修复前先应用 JMA 秒级 origin time，并可按 DiTing pick 可用性过滤 station。 |
 | `rebuild_japan_training_data.sh` | 本地重建训练集脚本，默认使用 JMA correction CSV，并可选择 DiTing pick 或 STA/LTA final pick。 |
 | `rebuild_japan_training_data_server.sh` | 服务器重建训练集脚本，基于服务器路径和 checkpoint 默认值，可自动生成缺失的 JMA correction CSV。 |
+| `rebuild_japan_training_data_server_diting_vel_acc.sh` | 服务器严格 DiTing pick 数据集重建 preset，默认输出到 `/opt/zb/data/japan_origin_corrected_diting_vel_acc`。 |
 | `tools/download_hinet_velocity.py` | 根据训练 HDF5 中的事件和台站，下载匹配 Hi-net velocity raw WIN32 数据，并写 station-level MiniSEED。 |
 | `tools/plot_hinet_accel_velocity_qc.py` | 画同一事件/台站的训练加速度与 Hi-net 速度，上下两行按理论 P 到时对齐，并标出训练数据中的各类 P pick。 |
 | `docs/hinet_velocity_download.md` | 记录下载、fallback、MiniSEED 和 QC 绘图用法。 |
@@ -32,6 +33,14 @@
   `Origin_Time(JST)_Raw`、`Origin_Time_Correction_Source`、
   `Origin_Time_Correction_Status`、`Origin_Time_Correction_S` 和
   `Origin_Time_JMA_Event_ID`。
+- `--final_pick diting_vel_then_acc` 会优先把 `p_pick_diting_vel_aligned`
+  写入 `p_picks`；若 velocity pick 缺失但 `p_pick_diting_acc_aligned`
+  有效，则使用 acceleration pick；两者都缺失的 station 会在写 HDF5
+  前过滤掉。过滤后若 event 剩余 station 数小于 `--min_stations`，整个
+  event 会被跳过。
+- DiTing candidate pick 不再在 HDF5 中用 repaired/STALTA pick 回填；
+  `diting_vel_pick_valid` 和 `diting_acc_pick_valid` 显式记录候选 pick
+  是否存在且落在有效记录范围内。训练代码仍只读取原有 `p_picks` 字段。
 - 训练集 HDF5 和事件 CSV 新增理论 P 覆盖诊断字段，包括理论 P 是否落在原始记录内、是否落在允许窗口内、相对记录起止的秒差，以及 pick clipping 原因。
 - `theoretical_p_record_coverage_summary.csv` 和
   `theoretical_p_record_offset_hist.png` 用于批量检查理论 P 与记录窗口的关系。
@@ -50,7 +59,7 @@
 已做离线验证：
 
 - `python -m py_compile build_japan_training_data.py japan_dataset_builder.py tools/download_hinet_velocity.py tools/fetch_jma_hypocenters.py tools/plot_hinet_accel_velocity_qc.py`
-- `bash -n rebuild_japan_training_data.sh rebuild_japan_training_data_server.sh`
+- `bash -n rebuild_japan_training_data.sh rebuild_japan_training_data_server.sh rebuild_japan_training_data_server_diting_vel_acc.sh`
 - 用已有 `202401011852/1853/1854...cnt` 和 `01_01_20240101.euc.ch`
   离线写出 `ISKH01/ISKH02/ISKH03` 的三分量 MiniSEED，ObsPy 可读回。
 - JMA correction 抓取覆盖 2024 年训练事件：`matched=981`、`ambiguous=19`、
