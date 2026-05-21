@@ -1,23 +1,41 @@
 # TEAM PyTorch 当前项目状态
 
-更新日期：2026-05-20
+更新日期：2026-05-21
 
-本文档记录当前 `team_pytorch` 项目的工程状态、已完成实验、主要结论和下一步建议。当前工作重点已经从早期的 PGA 坍塌排查，转到基于 `target_cross_attention` readout 的 PGA 全数据训练。
+本文档记录当前 `team_pytorch` 项目的工程状态、已完成实验、主要结论和下一步建议。当前工程重点包括基于 `target_cross_attention` readout 的 PGA 全数据训练，以及 Japan 训练集 origin time 校正、理论 P 到时诊断和 Hi-net velocity 对照检查。
 
-## 0. 最新数据管线状态（2026-05-20）
+## 0. 最新数据管线状态（2026-05-21）
 
-新增 Hi-net velocity 数据检查与下载容错流程，用于核对 Japan 训练集加速度波形和 Hi-net 速度波形的绝对时间关系。
+新增 JMA hypocenter origin time 校正流程、Japan 训练集重建脚本，以及 Hi-net velocity 数据检查与下载容错流程。当前判断是：加速度和速度波形在图上基本对齐，原先约 50 秒量级的理论 P 偏差主要来自部分训练集事件 origin time 只有分钟精度，而不是台站波形时间标记错误。
 
 当前相关入口：
 
 | 文件 | 状态 |
 | --- | --- |
+| `tools/fetch_jma_hypocenters.py` | 从 JMA daily hypocenter 页面抓取秒级震源时刻，并与训练集事件按时间、经纬度、深度、震级匹配，生成 origin correction CSV。 |
+| `jma_origin_corrections/japan_2024_origin_corrections.csv` | 2024 年 Japan 训练集 origin time 校正表。当前 1004 个训练事件中 981 个 accepted、19 个 ambiguous、4 个 no candidate。 |
+| `build_japan_training_data.py` | 新增 `--origin_corrections_csv`，在理论 P 到时和 pick 修复前先应用 JMA 秒级 origin time。 |
+| `rebuild_japan_training_data.sh` | 本地重建训练集脚本，默认使用 JMA correction CSV，并可选择 DiTing pick 或 STA/LTA final pick。 |
+| `rebuild_japan_training_data_server.sh` | 服务器重建训练集脚本，基于服务器路径和 checkpoint 默认值，可自动生成缺失的 JMA correction CSV。 |
 | `tools/download_hinet_velocity.py` | 根据训练 HDF5 中的事件和台站，下载匹配 Hi-net velocity raw WIN32 数据，并写 station-level MiniSEED。 |
 | `tools/plot_hinet_accel_velocity_qc.py` | 画同一事件/台站的训练加速度与 Hi-net 速度，上下两行按理论 P 到时对齐，并标出训练数据中的各类 P pick。 |
 | `docs/hinet_velocity_download.md` | 记录下载、fallback、MiniSEED 和 QC 绘图用法。 |
 
 关键实现细节：
 
+- `fetch_jma_hypocenters.py` 已生成
+  `jma_origin_corrections/japan_2024_origin_corrections.csv` 和 summary。accepted
+  校正的 median 为 `+28.2 s`，p05/p95 为 `+0.9/+56.7 s`。例如
+  `20240101185300` 从训练集原始 `2024-01-01T18:53:00+09:00` 校正为
+  JMA `2024-01-01T18:53:49.900+09:00`。
+- `japan_dataset_builder.py` 在应用 origin correction 时保留原始 origin 字段，并写入
+  `Origin_Time(JST)_Raw`、`Origin_Time_Correction_Source`、
+  `Origin_Time_Correction_Status`、`Origin_Time_Correction_S` 和
+  `Origin_Time_JMA_Event_ID`。
+- 训练集 HDF5 和事件 CSV 新增理论 P 覆盖诊断字段，包括理论 P 是否落在原始记录内、是否落在允许窗口内、相对记录起止的秒差，以及 pick clipping 原因。
+- `theoretical_p_record_coverage_summary.csv` 和
+  `theoretical_p_record_offset_hist.png` 用于批量检查理论 P 与记录窗口的关系。
+- `download_hinet_velocity.py` 新增 `--origin-corrections`，Hi-net 下载窗口也使用同一套秒级 origin correction，避免训练集重建和速度下载使用不同的起点。
 - HinetPy 的一分钟 `.cnt/.euc.ch` 临时文件现在落到
   `output-root/raw/<event_id>/segments/`，不再污染仓库当前目录。
 - 若本机缺少 `catwin32` 导致合并 raw WIN32 失败，manifest 记录
@@ -31,10 +49,14 @@
 
 已做离线验证：
 
-- `python -m py_compile tools/download_hinet_velocity.py tools/plot_hinet_accel_velocity_qc.py`
+- `python -m py_compile build_japan_training_data.py japan_dataset_builder.py tools/download_hinet_velocity.py tools/fetch_jma_hypocenters.py tools/plot_hinet_accel_velocity_qc.py`
+- `bash -n rebuild_japan_training_data.sh rebuild_japan_training_data_server.sh`
 - 用已有 `202401011852/1853/1854...cnt` 和 `01_01_20240101.euc.ch`
   离线写出 `ISKH01/ISKH02/ISKH03` 的三分量 MiniSEED，ObsPy 可读回。
-- QC 样例显示部分训练 pick 相对理论 P 存在约 50 秒量级偏移，符合当前数据检查动机。
+- JMA correction 抓取覆盖 2024 年训练事件：`matched=981`、`ambiguous=19`、
+  `no_candidate=4`、`accepted_count=981`。
+- QC 样例显示加速度和速度波形基本对齐；用 JMA 秒级 origin time 后，理论 P
+  与人工可见 P 波的系统性大偏差应显著减小。
 
 ## 1. 当前目标
 

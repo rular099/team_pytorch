@@ -1,0 +1,15 @@
+{
+  "training_event_count": 1004,
+  "jma_catalog_count": 207097,
+  "match_status_counts": {
+    "matched": 981,
+    "ambiguous": 19,
+    "no_candidate": 4
+  },
+  "accepted_count": 981,
+  "output_csv": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/jma_origin_corrections/japan_2024_origin_corrections.csv",
+  "catalog_csv": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/jma_origin_corrections/jma_2024_daily_catalog.csv",
+  "accepted_correction_median_s": 28.200000047683716,
+  "accepted_correction_p05_s": 0.9000000953674316,
+  "accepted_correction_p95_s": 56.700000047683716
+}

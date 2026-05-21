@@ -138,6 +138,34 @@ The manifest records:
 - `cut_start_jst`;
 - `cut_end_jst`.
 
+Some K-NET/KiK-net event headers only preserve origin time to the minute. Before
+large Hi-net downloads, fetch JMA daily hypocenters and create a second-level
+origin correction table:
+
+```bash
+python tools/fetch_jma_hypocenters.py \
+  --hdf5 /path/to/japan_2024.hdf5 \
+  --output-csv jma_origin_corrections/japan_2024_origin_corrections.csv \
+  --catalog-csv jma_origin_corrections/jma_2024_daily_catalog.csv \
+  --summary-json jma_origin_corrections/japan_2024_origin_corrections_summary.json \
+  --cache-dir jma_origin_corrections/cache
+```
+
+Then pass the accepted corrections to the Hi-net downloader:
+
+```bash
+python tools/download_hinet_velocity.py \
+  --hdf5 /path/to/japan_2024.hdf5 \
+  --origin-corrections jma_origin_corrections/japan_2024_origin_corrections.csv \
+  --mode smoketest \
+  --num-events 3 \
+  --output-root hinet_velocity_smoke
+```
+
+The downloader filters to `accepted==1` by default. Use
+`--use-unaccepted-origin-corrections` only for manually reviewed ambiguous
+matches.
+
 ## Commands
 
 ### Smoke Test

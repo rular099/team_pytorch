@@ -184,7 +184,45 @@ def load_station_table(hdf5_path: Path) -> pd.DataFrame:
     return station_df
 
 
-def load_events(hdf5_path: Path, selected_event_ids: set[str] | None) -> dict[str, EventInfo]:
+def load_origin_corrections(path: Path | None, require_accepted: bool = True) -> dict[str, dict[str, object]]:
+    if path is None:
+        return {}
+    df = pd.read_csv(path, dtype={"event_id": str, "EVENT": str, "jma_event_id": str})
+    if df.empty:
+        return {}
+    event_key = find_column(df.columns, ["event_id", "EVENT", "KiK_File", "#EventID"])
+    ts_key = find_column(df.columns, ["origin_timestamp_corrected", "jma_origin_timestamp"], required=False)
+    time_key = find_column(df.columns, ["origin_time_jst_corrected", "jma_origin_time_jst"], required=False)
+    if ts_key is None and time_key is None:
+        raise KeyError(f"{path} must contain origin_timestamp_corrected/jma_origin_timestamp or origin_time_jst_corrected/jma_origin_time_jst")
+    if require_accepted and "accepted" in df.columns:
+        df = df[pd.to_numeric(df["accepted"], errors="coerce").fillna(0).astype(int) == 1].copy()
+    out: dict[str, dict[str, object]] = {}
+    for _, row in df.iterrows():
+        event_id = str(row[event_key])
+        if ts_key is not None and not pd.isna(row[ts_key]):
+            origin_ts = float(row[ts_key])
+            origin_dt = datetime.fromtimestamp(origin_ts, tz=JST)
+            origin_iso = origin_dt.isoformat(timespec="milliseconds")
+        else:
+            origin_iso, origin_ts, _ = parse_origin_time(row[time_key], event_id)
+        if time_key is not None and not pd.isna(row[time_key]):
+            origin_iso = str(row[time_key])
+        out[event_id] = {
+            "origin_time_jst": origin_iso,
+            "origin_timestamp": origin_ts,
+            "match_status": row.get("match_status", ""),
+            "origin_time_correction_s": row.get("origin_time_correction_s", ""),
+            "source": str(path),
+        }
+    return out
+
+
+def load_events(
+    hdf5_path: Path,
+    selected_event_ids: set[str] | None,
+    origin_corrections: dict[str, dict[str, object]] | None = None,
+) -> dict[str, EventInfo]:
     event_df = load_event_table(hdf5_path)
     event_key = find_column(event_df.columns, ["EVENT", "KiK_File", "#EventID"])
     lat_key = find_column(event_df.columns, ["Latitude", "LAT", "lat", "event_lat"])
@@ -204,6 +242,13 @@ def load_events(hdf5_path: Path, selected_event_ids: set[str] | None) -> dict[st
             continue
         origin_value = row[origin_key] if origin_key else None
         origin_iso, origin_ts, origin_source = parse_origin_time(origin_value, event_id)
+        if origin_corrections and event_id in origin_corrections:
+            correction = origin_corrections[event_id]
+            origin_iso = str(correction["origin_time_jst"])
+            origin_ts = float(correction["origin_timestamp"])
+            status = correction.get("match_status", "")
+            delta = correction.get("origin_time_correction_s", "")
+            origin_source = f"jma_origin_correction:{status}:delta_s={delta}"
         events[event_id] = EventInfo(
             event_id=event_id,
             origin_time_jst=origin_iso,
@@ -1062,6 +1107,21 @@ def build_event_arrivals(
     accepted = matches[matches["accepted"].astype(int) == 1].copy()
     accepted = accepted.sort_values("match_distance_km").drop_duplicates("knet_station")
     merged = event_stations.merge(accepted, left_on=station_key, right_on="knet_station", how="inner")
+    optional_training_cols = (
+        "record_start_time_jst",
+        "trigger_time_jst",
+        "record_start_sample",
+        "valid_n_samples",
+        "sampling_rate_hz",
+        "p_pick_predicted_seconds_after_origin",
+        "p_pick_theoretical_record_offset_seconds",
+        "p_pick_theoretical_inside_record",
+        "p_pick_theoretical_inside_allowed_window",
+        "p_pick_repair_clip_reason",
+        "p_pick_repaired_source",
+        "p_pick_search_source",
+        "p_pick_refined_source",
+    )
     rows: list[dict[str, object]] = []
     for _, row in merged.iterrows():
         p_seconds, model, fallback, epi_km = predict_p_seconds(
@@ -1073,7 +1133,7 @@ def build_event_arrivals(
             ak135,
         )
         ppick_ts = event.origin_timestamp + p_seconds
-        rows.append({
+        out = {
             "event_id": event.event_id,
             "origin_time_jst": event.origin_time_jst,
             "origin_timestamp": event.origin_timestamp,
@@ -1104,7 +1164,26 @@ def build_event_arrivals(
             "cut_end_jst": datetime.fromtimestamp(ppick_ts + post_seconds, tz=JST).isoformat(),
             "travel_time_model": model,
             "travel_time_status": "fallback" if fallback else "ok",
-        })
+        }
+        for col in optional_training_cols:
+            if col in row.index:
+                value = row[col]
+                out[f"training_{col}"] = "" if pd.isna(value) else value
+        if "record_start_time_jst" in row.index and "valid_n_samples" in row.index and "sampling_rate_hz" in row.index:
+            try:
+                record_start = pd.Timestamp(row["record_start_time_jst"])
+                if record_start.tzinfo is None:
+                    record_start = record_start.tz_localize(JST)
+                record_start_ts = float(record_start.timestamp())
+                sampling_rate_hz = float(row["sampling_rate_hz"])
+                valid_n_samples = int(row["valid_n_samples"])
+                record_end_ts = record_start_ts + max(valid_n_samples - 1, 0) / sampling_rate_hz
+                out["training_record_start_minus_hinet_theoretical_p_s"] = record_start_ts - ppick_ts
+                out["training_record_end_minus_hinet_theoretical_p_s"] = record_end_ts - ppick_ts
+                out["training_hinet_theoretical_p_inside_record"] = int(record_start_ts <= ppick_ts <= record_end_ts)
+            except Exception as exc:
+                out["training_record_window_error"] = repr(exc)
+        rows.append(out)
     return pd.DataFrame(rows)
 
 
@@ -1124,7 +1203,8 @@ def write_dataframe(path: Path, df: pd.DataFrame) -> None:
 
 def process_events(args) -> None:
     selected_ids = select_event_ids(args.hdf5, args.mode, args.event_ids, args.num_events, args.seed)
-    events = load_events(args.hdf5, selected_ids)
+    origin_corrections = load_origin_corrections(args.origin_corrections, require_accepted=not args.use_unaccepted_origin_corrections)
+    events = load_events(args.hdf5, selected_ids, origin_corrections=origin_corrections)
     if selected_ids is not None:
         missing = sorted(set(selected_ids) - set(events))
         if missing:
@@ -1136,6 +1216,9 @@ def process_events(args) -> None:
     matches = build_station_matches(args, station_df, hinet_df)
     accepted_count = int((matches["accepted"].astype(int) == 1).sum()) if not matches.empty else 0
     print(f"[INFO] loaded {len(events)} events; accepted station matches: {accepted_count}/{len(matches)}")
+    if origin_corrections:
+        used_corrections = len(set(events) & set(origin_corrections))
+        print(f"[INFO] loaded {len(origin_corrections)} origin corrections; used {used_corrections} for selected events")
 
     jma_table, ak135 = build_travel_time_model(args.jma_travel_time_zip)
     client = None if args.dry_run else make_hinet_client()
@@ -1222,6 +1305,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--num-events", type=int, default=3, help="Number of events for --mode smoketest.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for --mode smoketest.")
     parser.add_argument("--event-ids", type=Path, default=None, help="Optional event-id file such as stage2_512_event_ids.txt.")
+    parser.add_argument("--origin-corrections", type=Path, default=None, help="CSV from tools/fetch_jma_hypocenters.py.")
+    parser.add_argument(
+        "--use-unaccepted-origin-corrections",
+        action="store_true",
+        help="Use all rows in --origin-corrections instead of filtering accepted==1.",
+    )
     parser.add_argument("--hinet-network", default="0101", help="Hi-net network code used by HinetPy.")
     parser.add_argument("--inventory-csv", type=Path, default=None)
     parser.add_argument("--match-csv", type=Path, default=None)
@@ -1258,6 +1347,8 @@ def main() -> int:
         args.match_csv = args.match_csv.expanduser().resolve()
     if args.event_ids is not None:
         args.event_ids = args.event_ids.expanduser().resolve()
+    if args.origin_corrections is not None:
+        args.origin_corrections = args.origin_corrections.expanduser().resolve()
     if args.jma_travel_time_zip is not None:
         args.jma_travel_time_zip = args.jma_travel_time_zip.expanduser().resolve()
     if not args.hdf5.exists():

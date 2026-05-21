@@ -30,6 +30,7 @@ COMPONENT_ORDER = ("NS", "EW", "UD")
 DIR_COMPONENT_INDEX = {name: i for i, name in enumerate(COMPONENT_ORDER)}
 OUTER_EVENT_RE = re.compile(r"(?P<event_id>\d{14})\.tar$")
 INNER_COMPONENT_RE = re.compile(r"^(?P<base>.+)\.(?P<comp>NS|EW|UD)(?P<suffix>[12]?)$")
+INNER_ARCHIVE_SUFFIXES = (".knt.tar.gz", ".kik.tar.gz")
 DEFAULT_JMA2001A_ZIP = Path(__file__).resolve().parent / "resources" / "jma_travel_times" / "tjma2001h.zip"
 
 
@@ -97,7 +98,29 @@ class StationTrace:
 
 
 def parse_jst_timestamp(time_str: str) -> tuple[datetime, float]:
-    dt = datetime.strptime(time_str, "%Y/%m/%d %H:%M:%S").replace(tzinfo=JST)
+    text = str(time_str).strip()
+    for fmt in (
+        "%Y/%m/%d %H:%M:%S.%f",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f",
+        "%Y-%m-%dT%H:%M:%S",
+    ):
+        try:
+            dt = datetime.strptime(text, fmt)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=JST)
+            dt = dt.astimezone(JST)
+            return dt, dt.timestamp()
+        except ValueError:
+            pass
+    dt = datetime.fromisoformat(text)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=JST)
+    dt = dt.astimezone(JST)
     return dt, dt.timestamp()
 
 
@@ -318,7 +341,9 @@ def _load_inner_archive_members(outer_tar_path: Path, inner_member_name: str) ->
     with tarfile.open(outer_tar_path, "r") as outer_tar:
         member = outer_tar.getmember(inner_member_name)
         payload = outer_tar.extractfile(member).read()
-    inner_bytes = io.BytesIO(gzip.decompress(payload))
+    if inner_member_name.endswith(".gz"):
+        payload = gzip.decompress(payload)
+    inner_bytes = io.BytesIO(payload)
     with tarfile.open(fileobj=inner_bytes, mode="r:") as inner_tar:
         return inner_tar.getmembers()
 
@@ -327,8 +352,18 @@ def _open_inner_archive(outer_tar_path: Path, inner_member_name: str) -> tarfile
     with tarfile.open(outer_tar_path, "r") as outer_tar:
         member = outer_tar.getmember(inner_member_name)
         payload = outer_tar.extractfile(member).read()
-    inner_bytes = io.BytesIO(gzip.decompress(payload))
+    if inner_member_name.endswith(".gz"):
+        payload = gzip.decompress(payload)
+    inner_bytes = io.BytesIO(payload)
     return tarfile.open(fileobj=inner_bytes, mode="r:")
+
+
+def _inner_source_network(inner_member_name: str) -> str:
+    if ".knt." in inner_member_name:
+        return "knt"
+    if ".kik." in inner_member_name:
+        return "kik"
+    raise ValueError(f"Cannot infer source network from inner archive name: {inner_member_name}")
 
 
 def load_station_traces_from_event_archive(
@@ -343,11 +378,13 @@ def load_station_traces_from_event_archive(
 
     station_traces: list[StationTrace] = []
     with tarfile.open(outer_tar_path, "r") as outer_tar:
-        inner_members = [m for m in outer_tar.getmembers() if m.isfile() and m.name.endswith((".knt.tar.gz", ".kik.tar.gz"))]
+        inner_members = [m for m in outer_tar.getmembers() if m.isfile() and m.name.endswith(INNER_ARCHIVE_SUFFIXES)]
         for inner_member in inner_members:
-            source_network = "knt" if inner_member.name.endswith(".knt.tar.gz") else "kik"
+            source_network = _inner_source_network(inner_member.name)
             payload = outer_tar.extractfile(inner_member).read()
-            with tarfile.open(fileobj=io.BytesIO(gzip.decompress(payload)), mode="r:") as inner_tar:
+            if inner_member.name.endswith(".gz"):
+                payload = gzip.decompress(payload)
+            with tarfile.open(fileobj=io.BytesIO(payload), mode="r:") as inner_tar:
                 grouped: dict[str, dict[str, tarfile.TarInfo]] = defaultdict(dict)
                 for member in inner_tar.getmembers():
                     if not member.isfile():
@@ -720,6 +757,7 @@ def apply_repaired_and_refined_p_picks(
     datasets["p_pick_repaired_aligned"] = refined_df["p_pick_repaired_aligned"].to_numpy(dtype=np.int64)
     datasets["p_pick_refined_aligned"] = refined_df["p_pick_refined_aligned"].to_numpy(dtype=np.int64)
     for col in (
+        "p_pick_predicted_aligned",
         "p_pick_search_left_aligned",
         "p_pick_search_right_aligned",
         "p_pick_search_raw_left_aligned",
@@ -729,13 +767,29 @@ def apply_repaired_and_refined_p_picks(
         "p_pick_jma_grid_clipped",
         "p_pick_ak135_fallback",
         "p_pick_search_intersects_record",
+        "p_pick_theoretical_inside_record",
+        "p_pick_theoretical_inside_allowed_window",
     ):
         if col in refined_df.columns:
             datasets[col] = refined_df[col].to_numpy(dtype=np.int64)
-    if "p_pick_search_margin_seconds" in refined_df.columns:
-        datasets["p_pick_search_margin_seconds"] = refined_df["p_pick_search_margin_seconds"].to_numpy(dtype=np.float64)
-    if "p_pick_search_source" in refined_df.columns:
-        datasets["p_pick_search_source"] = refined_df["p_pick_search_source"].to_numpy(dtype=object)
+    for col in (
+        "p_pick_predicted_seconds_after_origin",
+        "p_pick_search_margin_seconds",
+        "p_pick_theoretical_record_offset_seconds",
+        "p_pick_theoretical_before_record_seconds",
+        "p_pick_theoretical_after_record_seconds",
+        "p_pick_theoretical_after_allowed_window_seconds",
+    ):
+        if col in refined_df.columns:
+            datasets[col] = refined_df[col].to_numpy(dtype=np.float64)
+    for col in (
+        "p_pick_search_source",
+        "p_pick_theoretical_record_status",
+        "p_pick_repair_clip_reason",
+        "p_pick_travel_time_model_used",
+    ):
+        if col in refined_df.columns:
+            datasets[col] = refined_df[col].to_numpy(dtype=object)
     datasets["p_picks"] = datasets["p_pick_refined_aligned"]
     datasets["trigger_is_pick"] = refined_df["trigger_is_pick"].to_numpy(dtype=np.int8)
     datasets["p_pick_repaired_source"] = refined_df["p_pick_repaired_source"].to_numpy(dtype=object)
@@ -771,6 +825,11 @@ def apply_repaired_and_refined_p_picks(
             "P_Pick_Fit_Intercept_S": float(fit_summary["intercept_s"]),
             "P_Pick_Fit_N_Trusted": int(fit_summary["n_trusted"]),
             "P_Pick_Fit_N_Clipped": int(fit_summary.get("n_clipped", 0)),
+            "P_Pick_Theoretical_Inside_Record": int(fit_summary.get("n_theoretical_inside_record", 0)),
+            "P_Pick_Theoretical_Before_Record": int(fit_summary.get("n_theoretical_before_record", 0)),
+            "P_Pick_Theoretical_After_Record": int(fit_summary.get("n_theoretical_after_record", 0)),
+            "P_Pick_Theoretical_Inside_Allowed_Window": int(fit_summary.get("n_theoretical_inside_allowed_window", 0)),
+            "P_Pick_Theoretical_After_Allowed_Window": int(fit_summary.get("n_theoretical_after_allowed_window", 0)),
             "P_Pick_JMA_Grid_Clipped": int(fit_summary.get("n_jma_grid_clipped", 0)),
             "P_Pick_AK135_Fallback": int(fit_summary.get("n_ak135_fallback", 0)),
             "P_Pick_Search_Fallback": int(fit_summary.get("n_search_fallback", 0)),
@@ -1127,6 +1186,42 @@ def write_pick_diagnostics(
                 }
             ]
         ).to_csv(diagnostics_dir / "pick_search_range_summary.csv", index=False)
+    if "p_pick_theoretical_record_offset_seconds" in out_df.columns:
+        def numeric_column(name: str, default: float = np.nan) -> pd.Series:
+            values = out_df[name] if name in out_df.columns else pd.Series(default, index=out_df.index)
+            return pd.to_numeric(values, errors="coerce")
+
+        offset_s = pd.to_numeric(out_df["p_pick_theoretical_record_offset_seconds"], errors="coerce")
+        inside_record = numeric_column("p_pick_theoretical_inside_record", 0.0).fillna(0).astype(bool)
+        inside_allowed = numeric_column("p_pick_theoretical_inside_allowed_window", 0.0).fillna(0).astype(bool)
+        before_record_s = numeric_column("p_pick_theoretical_before_record_seconds")
+        after_record_s = numeric_column("p_pick_theoretical_after_record_seconds")
+        after_allowed_s = numeric_column("p_pick_theoretical_after_allowed_window_seconds")
+        finite_offset = offset_s[np.isfinite(offset_s)]
+        coverage_summary = {
+            "count": int(finite_offset.size),
+            "inside_record": int(inside_record.sum()),
+            "before_record": int((before_record_s > 0).sum()),
+            "after_record": int((after_record_s > 0).sum()),
+            "inside_allowed_window": int(inside_allowed.sum()),
+            "after_allowed_window": int((after_allowed_s > 0).sum()),
+            "median_offset_s": float(finite_offset.median()) if finite_offset.size else np.nan,
+            "p05_offset_s": float(finite_offset.quantile(0.05)) if finite_offset.size else np.nan,
+            "p95_offset_s": float(finite_offset.quantile(0.95)) if finite_offset.size else np.nan,
+            "median_before_record_s": float(before_record_s[before_record_s > 0].median())
+            if (before_record_s > 0).any()
+            else np.nan,
+            "p95_before_record_s": float(before_record_s[before_record_s > 0].quantile(0.95))
+            if (before_record_s > 0).any()
+            else np.nan,
+            "median_after_allowed_window_s": float(after_allowed_s[after_allowed_s > 0].median())
+            if (after_allowed_s > 0).any()
+            else np.nan,
+            "p95_after_allowed_window_s": float(after_allowed_s[after_allowed_s > 0].quantile(0.95))
+            if (after_allowed_s > 0).any()
+            else np.nan,
+        }
+        pd.DataFrame([coverage_summary]).to_csv(diagnostics_dir / "theoretical_p_record_coverage_summary.csv", index=False)
     out_df.to_csv(diagnostics_dir / "station_pick_differences.csv", index=False)
 
     try:
@@ -1167,6 +1262,19 @@ def write_pick_diagnostics(
         fig.tight_layout()
         fig.savefig(diagnostics_dir / f"{col}_minus_travel_time_hist.png", dpi=160)
         plt.close(fig)
+
+    if "p_pick_theoretical_record_offset_seconds" in out_df.columns:
+        offset = pd.to_numeric(out_df["p_pick_theoretical_record_offset_seconds"], errors="coerce").dropna()
+        if not offset.empty:
+            fig, ax = plt.subplots(figsize=(7, 4))
+            ax.hist(offset, bins=80, color="0.25")
+            ax.axvline(0.0, color="tab:blue", linewidth=1.2)
+            ax.set_title("theoretical P - station record start")
+            ax.set_xlabel("seconds")
+            ax.set_ylabel("count")
+            fig.tight_layout()
+            fig.savefig(diagnostics_dir / "theoretical_p_record_offset_hist.png", dpi=160)
+            plt.close(fig)
 
     if n_waveform_plots <= 0:
         return
@@ -1462,6 +1570,87 @@ class AK135TravelTimeModel:
         return float(min(arr.time for arr in arrivals))
 
 
+def load_origin_corrections(
+    corrections_csv: Path | None,
+    require_accepted: bool = True,
+) -> dict[str, dict[str, object]]:
+    if corrections_csv is None:
+        return {}
+    df = pd.read_csv(corrections_csv, dtype={"event_id": str, "EVENT": str, "jma_event_id": str})
+    if df.empty:
+        return {}
+    event_key = "event_id" if "event_id" in df.columns else "EVENT"
+    if event_key not in df.columns:
+        raise KeyError(f"{corrections_csv} must contain event_id or EVENT")
+    ts_key = None
+    for candidate in ("origin_timestamp_corrected", "jma_origin_timestamp"):
+        if candidate in df.columns:
+            ts_key = candidate
+            break
+    time_key = None
+    for candidate in ("origin_time_jst_corrected", "jma_origin_time_jst"):
+        if candidate in df.columns:
+            time_key = candidate
+            break
+    if ts_key is None and time_key is None:
+        raise KeyError(
+            f"{corrections_csv} must contain origin_timestamp_corrected/jma_origin_timestamp "
+            "or origin_time_jst_corrected/jma_origin_time_jst"
+        )
+    if require_accepted and "accepted" in df.columns:
+        df = df[pd.to_numeric(df["accepted"], errors="coerce").fillna(0).astype(int) == 1].copy()
+
+    corrections: dict[str, dict[str, object]] = {}
+    for _, row in df.iterrows():
+        event_id = str(row[event_key])
+        if ts_key is not None and not pd.isna(row[ts_key]):
+            origin_ts = float(row[ts_key])
+            origin_iso = datetime.fromtimestamp(origin_ts, tz=JST).isoformat(timespec="milliseconds")
+        else:
+            origin_dt, origin_ts = parse_jst_timestamp(str(row[time_key]))
+            origin_iso = origin_dt.isoformat(timespec="milliseconds")
+        if time_key is not None and not pd.isna(row[time_key]):
+            origin_iso = str(row[time_key])
+        corrections[event_id] = {
+            "origin_time_jst": origin_iso,
+            "origin_timestamp": origin_ts,
+            "origin_time_correction_s": row.get("origin_time_correction_s", np.nan),
+            "match_status": row.get("match_status", ""),
+            "jma_event_id": row.get("jma_event_id", ""),
+        }
+    return corrections
+
+
+def apply_origin_correction_to_event(
+    event_meta: dict[str, object],
+    station_rows: list[dict[str, object]],
+    correction: dict[str, object] | None,
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    if not correction:
+        return event_meta, station_rows
+    corrected_origin = str(correction["origin_time_jst"])
+    raw_origin = str(event_meta.get("Origin_Time(JST)", ""))
+    corrected_meta = event_meta.copy()
+    corrected_meta["Origin_Time(JST)_Raw"] = raw_origin
+    corrected_meta["Origin_Time(JST)"] = corrected_origin
+    corrected_meta["Origin_Time_Correction_Source"] = "jma_daily"
+    corrected_meta["Origin_Time_Correction_Status"] = str(correction.get("match_status", ""))
+    corrected_meta["Origin_Time_Correction_S"] = float(correction.get("origin_time_correction_s", np.nan))
+    corrected_meta["Origin_Time_JMA_Event_ID"] = str(correction.get("jma_event_id", ""))
+
+    corrected_rows: list[dict[str, object]] = []
+    for row in station_rows:
+        out = row.copy()
+        out["Origin_Time(JST)_Raw"] = out.get("Origin_Time(JST)", raw_origin)
+        out["Origin_Time(JST)"] = corrected_origin
+        out["Origin_Time_Correction_Source"] = "jma_daily"
+        out["Origin_Time_Correction_Status"] = str(correction.get("match_status", ""))
+        out["Origin_Time_Correction_S"] = float(correction.get("origin_time_correction_s", np.nan))
+        out["Origin_Time_JMA_Event_ID"] = str(correction.get("jma_event_id", ""))
+        corrected_rows.append(out)
+    return corrected_meta, corrected_rows
+
+
 def build_year_dataset(
     waveform_root: Path,
     output_hdf5: Path,
@@ -1507,6 +1696,8 @@ def build_year_dataset(
     diagnostics_dir: Path | None = None,
     n_diagnostic_plots: int = 24,
     diagnostic_random_seed: int = 2024,
+    origin_corrections_csv: Path | None = None,
+    use_unaccepted_origin_corrections: bool = False,
 ) -> dict[str, int]:
     year_dir = waveform_root / str(year)
     outer_archives = sorted(year_dir.glob("*.tar"))
@@ -1531,6 +1722,12 @@ def build_year_dataset(
         raise ValueError(f"Unsupported travel_time_model: {travel_time_model}")
     if travel_time_model == "jma2001a" and ak135_model is None:
         ak135_model = AK135TravelTimeModel()
+    origin_corrections = load_origin_corrections(
+        origin_corrections_csv,
+        require_accepted=not use_unaccepted_origin_corrections,
+    )
+    if origin_corrections:
+        stats["origin_corrections_loaded"] = len(origin_corrections)
 
     diting_model = None
     if run_diting:
@@ -1577,6 +1774,14 @@ def build_year_dataset(
 
             datasets, event_meta = build_aligned_event(stations)
             event_station_rows = stations_to_rows(stations, event_meta)
+            correction = origin_corrections.get(str(event_meta["EVENT"]))
+            event_meta, event_station_rows = apply_origin_correction_to_event(
+                event_meta,
+                event_station_rows,
+                correction,
+            )
+            if correction:
+                stats["events_origin_corrected"] += 1
             datasets, event_meta, refined_station_df = apply_repaired_and_refined_p_picks(
                 event_meta=event_meta,
                 station_rows=event_station_rows,
@@ -2065,7 +2270,26 @@ def estimate_event_travel_time_p_picks(
     valid_end = record_start + np.maximum(valid_n - 1, 0)
     max_allowed = np.minimum(valid_end, df["pga_norm_aligned_loc"].to_numpy(dtype=np.int64) - pga_margin_samples)
     max_allowed = np.maximum(max_allowed, record_start)
+    theoretical_before_record = predicted_aligned < record_start
+    theoretical_after_record = predicted_aligned > valid_end
+    theoretical_inside_record = ~(theoretical_before_record | theoretical_after_record)
+    theoretical_after_allowed = predicted_aligned > max_allowed
+    theoretical_inside_allowed = (predicted_aligned >= record_start) & (predicted_aligned <= max_allowed)
+    theoretical_record_offset_seconds = (predicted_aligned - record_start).astype(np.float64) / sampling_rate_hz
+    theoretical_before_record_seconds = np.maximum(record_start - predicted_aligned, 0).astype(np.float64) / sampling_rate_hz
+    theoretical_after_record_seconds = np.maximum(predicted_aligned - valid_end, 0).astype(np.float64) / sampling_rate_hz
+    theoretical_after_allowed_seconds = np.maximum(predicted_aligned - max_allowed, 0).astype(np.float64) / sampling_rate_hz
+    theoretical_record_status = np.where(
+        theoretical_before_record,
+        "before_record",
+        np.where(theoretical_after_record, "after_record", "inside_record"),
+    )
     repaired_aligned = np.clip(predicted_aligned, record_start, max_allowed).astype(np.int64)
+    repair_clip_reason = np.full((len(df),), "none", dtype=object)
+    repair_clip_reason[theoretical_before_record] = "before_record"
+    repair_clip_reason[theoretical_after_record] = "after_record"
+    repair_clip_reason[(~theoretical_before_record) & (~theoretical_after_record) & theoretical_after_allowed] = "after_allowed_window"
+    repair_clip_reason[predicted_aligned == repaired_aligned] = "none"
     raw_search_left = np.minimum(fast_aligned, slow_aligned).astype(np.int64)
     raw_search_right = np.maximum(fast_aligned, slow_aligned).astype(np.int64)
     search_left = np.maximum(raw_search_left, record_start).astype(np.int64)
@@ -2083,6 +2307,13 @@ def estimate_event_travel_time_p_picks(
     df["p_pick_observed_seconds_after_origin"] = observed_tp_seconds
     df["p_pick_predicted_aligned"] = predicted_aligned
     df["p_pick_predicted_seconds_after_origin"] = predicted_tp_seconds
+    df["p_pick_theoretical_record_offset_seconds"] = theoretical_record_offset_seconds
+    df["p_pick_theoretical_before_record_seconds"] = theoretical_before_record_seconds
+    df["p_pick_theoretical_after_record_seconds"] = theoretical_after_record_seconds
+    df["p_pick_theoretical_after_allowed_window_seconds"] = theoretical_after_allowed_seconds
+    df["p_pick_theoretical_inside_record"] = theoretical_inside_record.astype(np.int8)
+    df["p_pick_theoretical_inside_allowed_window"] = theoretical_inside_allowed.astype(np.int8)
+    df["p_pick_theoretical_record_status"] = theoretical_record_status
     df["p_pick_travel_time_fast_aligned"] = fast_aligned
     df["p_pick_travel_time_slow_aligned"] = slow_aligned
     df["p_pick_search_raw_left_aligned"] = raw_search_left
@@ -2101,6 +2332,7 @@ def estimate_event_travel_time_p_picks(
     df["p_pick_search_right_seconds_after_origin"] = global_start_ts + search_right.astype(np.float64) / sampling_rate_hz - origin_ts
     df["p_pick_search_width_seconds"] = (search_right - search_left) / sampling_rate_hz
     df["p_pick_repaired_aligned"] = repaired_aligned
+    df["p_pick_repair_clip_reason"] = repair_clip_reason
     if travel_time_model == "constant":
         source_names = np.array(["travel_time"] * len(df), dtype=object)
     else:
@@ -2132,6 +2364,11 @@ def estimate_event_travel_time_p_picks(
         "n_total": int(len(df)),
         "n_trusted": int(np.sum(df["trigger_is_pick"].to_numpy(dtype=bool))),
         "n_clipped": int(np.sum(predicted_aligned != repaired_aligned)),
+        "n_theoretical_inside_record": int(np.sum(theoretical_inside_record)),
+        "n_theoretical_before_record": int(np.sum(theoretical_before_record)),
+        "n_theoretical_after_record": int(np.sum(theoretical_after_record)),
+        "n_theoretical_inside_allowed_window": int(np.sum(theoretical_inside_allowed)),
+        "n_theoretical_after_allowed_window": int(np.sum(theoretical_after_allowed)),
         "n_jma_grid_clipped": int(np.sum(jma_clipped)),
         "n_ak135_fallback": int(np.sum(ak135_used)),
         "n_search_fallback": int(np.sum(~search_intersects_record)),

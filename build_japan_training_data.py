@@ -57,6 +57,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--diagnostics_dir", default=None, help="Directory for pick statistics and waveform QC plots. Defaults to output_dir/diagnostics_{year}.")
     parser.add_argument("--n_diagnostic_plots", type=int, default=24, help="Number of random station waveforms to plot for manual pick QC.")
     parser.add_argument("--diagnostic_random_seed", type=int, default=2024, help="Random seed for waveform QC plot sampling.")
+    parser.add_argument("--origin_corrections_csv", default=None, help="CSV from tools/fetch_jma_hypocenters.py with precise JMA origin times.")
+    parser.add_argument(
+        "--use_unaccepted_origin_corrections",
+        action="store_true",
+        help="Use all rows in --origin_corrections_csv instead of filtering accepted==1.",
+    )
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output files.")
     return parser.parse_args()
 
@@ -128,6 +134,8 @@ def main():
             diagnostics_dir=diagnostics_dir,
             n_diagnostic_plots=args.n_diagnostic_plots,
             diagnostic_random_seed=args.diagnostic_random_seed,
+            origin_corrections_csv=Path(args.origin_corrections_csv).expanduser().resolve() if args.origin_corrections_csv else None,
+            use_unaccepted_origin_corrections=args.use_unaccepted_origin_corrections,
         )
 
         print(f"\nYear {year} complete")
