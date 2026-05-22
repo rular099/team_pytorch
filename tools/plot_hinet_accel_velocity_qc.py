@@ -3,8 +3,8 @@
 
 The plot is anchored on the theoretical P arrival recorded by
 ``tools/download_hinet_velocity.py``.  Training-data picks are converted back to
-absolute station time and drawn on the same axis so station-clock offsets are
-visible directly.
+absolute station time; the default plot keeps only the theoretical-P line and
+uses compact axis markers for trigger/final/PGA so the waveforms stay readable.
 """
 
 from __future__ import annotations
@@ -55,32 +55,21 @@ PICK_COLUMNS = [
     "p_pick_refined_aligned",
     "pga_norm_aligned_loc",
 ]
-PICK_LABELS = {
-    "p_picks": "p_picks",
-    "p_pick_trigger_aligned": "trigger",
-    "p_pick_predicted_aligned": "travel_pred",
-    "p_pick_repaired_aligned": "travel_coarse",
-    "stalta_refined_pick_aligned": "stalta",
-    "p_pick_diting_acc_aligned": "diting_acc",
-    "p_pick_diting_vel_aligned": "diting_vel",
-    "p_pick_refined_aligned": "final",
-    "pga_norm_aligned_loc": "pga",
-}
-PICK_COLORS = {
-    "p_picks": "black",
-    "p_pick_trigger_aligned": "0.45",
-    "p_pick_predicted_aligned": "tab:cyan",
-    "p_pick_repaired_aligned": "tab:blue",
-    "stalta_refined_pick_aligned": "tab:orange",
-    "p_pick_diting_acc_aligned": "tab:red",
-    "p_pick_diting_vel_aligned": "tab:purple",
-    "p_pick_refined_aligned": "black",
-    "pga_norm_aligned_loc": "tab:olive",
-}
 SPAN_COLUMNS = [
     ("p_pick_search_left_aligned", "p_pick_search_right_aligned", "pick_search", "tab:blue"),
     ("p_pick_search_raw_left_aligned", "p_pick_search_raw_right_aligned", "raw_search", "tab:cyan"),
     ("stalta_search_left_aligned", "stalta_search_right_aligned", "stalta_search", "tab:orange"),
+]
+DEFAULT_BOTTOM_MARKERS = [
+    ("p_pick_trigger_aligned", "trigger", "0.45", 0.03),
+]
+DEFAULT_TOP_MARKERS = [
+    ("pga_norm_aligned_loc", "pga", "tab:olive", 0.03),
+]
+CANDIDATE_BOTTOM_MARKERS = [
+    ("stalta_refined_pick_aligned", "stalta", "tab:orange", 0.17),
+    ("p_pick_diting_acc_aligned", "diting_acc", "tab:red", 0.24),
+    ("p_pick_diting_vel_aligned", "diting_vel", "tab:purple", 0.31),
 ]
 
 
@@ -703,7 +692,7 @@ def load_velocity(row: pd.Series, args: argparse.Namespace) -> VelocitySeries:
     return VelocitySeries(np.array([]), np.array([]), "none", "missing_velocity", "Hi-net velocity unavailable", "", 0)
 
 
-def add_marks(ax, picks: dict[str, float], spans: dict[str, tuple[float, float]]) -> None:
+def add_search_windows(ax, spans: dict[str, tuple[float, float]]) -> None:
     span_colors = {
         "pick_search": "tab:blue",
         "raw_search": "tab:cyan",
@@ -712,10 +701,41 @@ def add_marks(ax, picks: dict[str, float], spans: dict[str, tuple[float, float]]
     for label, (x0, x1) in spans.items():
         color = span_colors.get(label, "0.5")
         ax.axvspan(x0, x1, color=color, alpha=0.10, label=label)
-    for col, x in picks.items():
-        if not np.isfinite(x):
-            continue
-        ax.axvline(x, color=PICK_COLORS.get(col, "0.2"), linewidth=1.0, alpha=0.9, label=PICK_LABELS.get(col, col))
+
+
+def add_axis_marker(ax, x: float, label: str, color: str, y_axes: float, marker: str = "^") -> None:
+    if not np.isfinite(x):
+        return
+    ax.scatter(
+        [x],
+        [y_axes],
+        transform=ax.get_xaxis_transform(),
+        marker=marker,
+        s=44,
+        color=color,
+        edgecolors="white",
+        linewidths=0.45,
+        zorder=6,
+        clip_on=False,
+        label=label,
+    )
+
+
+def first_finite_pick(picks: dict[str, float], columns: tuple[str, ...]) -> float:
+    for col in columns:
+        value = picks.get(col, np.nan)
+        if np.isfinite(value):
+            return float(value)
+    return float("nan")
+
+
+def add_compact_pick_markers(ax, picks: dict[str, float], marker_specs: list[tuple[str, str, str, float]]) -> None:
+    for col, label, color, y_axes in marker_specs:
+        add_axis_marker(ax, picks.get(col, np.nan), label, color, y_axes)
+
+
+def add_candidate_pick_markers(ax, picks: dict[str, float]) -> None:
+    add_compact_pick_markers(ax, picks, CANDIDATE_BOTTOM_MARKERS)
 
 
 def add_invalid_acceleration_shading(ax, training: TrainingStation, args: argparse.Namespace) -> None:
@@ -747,7 +767,9 @@ def plot_pair(training: TrainingStation, velocity: VelocitySeries, row: pd.Serie
     axes[0].plot(training.acceleration_t_rel, training.acceleration, color="0.20", linewidth=0.8)
     add_invalid_acceleration_shading(axes[0], training, args)
     axes[0].axvline(0.0, color="tab:green", linewidth=1.3, label="theoretical_P")
-    add_marks(axes[0], training.pick_rel_seconds, training.span_rel_seconds)
+    if args.show_search_windows:
+        add_search_windows(axes[0], training.span_rel_seconds)
+    add_compact_pick_markers(axes[0], training.pick_rel_seconds, DEFAULT_TOP_MARKERS)
     axes[0].set_ylabel("K-NET/KiK-net acc. m/s^2" if args.component != "norm" else "K-NET/KiK-net |acc.| m/s^2")
     dedupe_legend(axes[0])
 
@@ -756,13 +778,19 @@ def plot_pair(training: TrainingStation, velocity: VelocitySeries, row: pd.Serie
     else:
         axes[1].text(0.5, 0.5, f"Velocity unavailable: {velocity.status}", ha="center", va="center", transform=axes[1].transAxes, fontsize=10)
     axes[1].axvline(0.0, color="tab:green", linewidth=1.3, label="theoretical_P")
-    add_marks(axes[1], training.pick_rel_seconds, training.span_rel_seconds)
+    if args.show_search_windows:
+        add_search_windows(axes[1], training.span_rel_seconds)
+    add_compact_pick_markers(axes[1], training.pick_rel_seconds, DEFAULT_BOTTOM_MARKERS)
+    final_pick = first_finite_pick(training.pick_rel_seconds, ("p_picks", "p_pick_refined_aligned"))
+    add_axis_marker(axes[1], final_pick, "final", "black", 0.10)
+    if args.show_candidate_picks:
+        add_candidate_pick_markers(axes[1], training.pick_rel_seconds)
     axes[1].set_ylabel(velocity.label)
     axes[1].set_xlabel("seconds relative to theoretical P arrival")
     axes[1].set_xlim(-args.pre_seconds, args.post_seconds)
     dedupe_legend(axes[1])
 
-    final_offset = training.pick_rel_seconds.get("p_picks", np.nan)
+    final_offset = first_finite_pick(training.pick_rel_seconds, ("p_picks", "p_pick_refined_aligned"))
     match_distance = finite_float(row.get("match_distance_km"), default=np.nan)
     epi_distance = finite_float(row.get("epicentral_distance_km"), default=np.nan)
     title = (
@@ -802,7 +830,7 @@ def process(args: argparse.Namespace) -> pd.DataFrame:
                     "plot_path": str(plot_path),
                     "plot_status": "written" if velocity.t_rel.size else "written_missing_velocity",
                 })
-                final_offset = training.pick_rel_seconds.get("p_picks", np.nan)
+                final_offset = first_finite_pick(training.pick_rel_seconds, ("p_picks", "p_pick_refined_aligned"))
                 summary["large_pick_offset"] = int(np.isfinite(final_offset) and abs(final_offset) >= args.large_offset_seconds)
                 summary["possible_timezone_offset"] = int(np.isfinite(final_offset) and min(abs(final_offset - 9 * 3600), abs(final_offset + 9 * 3600)) <= 120)
             except Exception as exc:
@@ -836,6 +864,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--large-offset-seconds", type=float, default=20.0, help="Flag p_picks offsets larger than this threshold.")
     parser.add_argument("--prefer-written-mseed", action="store_true", help="In batch mode, plot rows with MiniSEED first.")
     parser.add_argument("--raw-search-dir", type=Path, action="append", default=[], help="Extra directory containing raw *.cnt/*.ch files.")
+    parser.add_argument("--show-candidate-picks", action="store_true", help="Also mark STALTA and DiTing candidate picks on the velocity-panel time axis.")
+    parser.add_argument("--show-search-windows", action="store_true", help="Also shade travel-time/STALTA search windows.")
     parser.add_argument("--dpi", type=int, default=160)
     return parser
 

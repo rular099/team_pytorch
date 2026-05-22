@@ -53,8 +53,11 @@
   可用时，脚本用纯 Python WIN32 parser 抽取匹配 Hi-net 台站的 U/N/E
   分量，写出 raw-count MiniSEED。
 - `plot_hinet_accel_velocity_qc.py` 默认以理论 P 到时为 `t=0`，窗口为
-  P 前后各 50 秒，输出 PNG 和 `qc_summary.csv`。summary 中包含各类
-  training pick 相对理论 P 的秒差，便于批量筛查台站时间标记偏移。
+  P 前后各 50 秒，输出 PNG 和 `qc_summary.csv`。默认图只保留 theoretical
+  P 竖线，PGA、trigger、final pick 改为时间轴小三角标记；candidate
+  picks 和 search windows 可通过 `--show-candidate-picks`、
+  `--show-search-windows` 显式打开。summary 中仍包含各类 training pick
+  相对理论 P 的秒差，便于批量筛查台站时间标记偏移。
 
 已做离线验证：
 

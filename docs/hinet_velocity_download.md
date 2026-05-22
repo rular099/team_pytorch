@@ -194,10 +194,20 @@ python tools/plot_hinet_accel_velocity_qc.py \
 ```
 
 The script defaults to the `--hdf5` and `--output-root` values recorded in
-`download_hinet.sh`, shows theoretical P +/- 50 s, marks all training P-pick
-variants, and writes `qc_summary.csv` with each pick's offset from the
-theoretical P time. It first uses MiniSEED if present, then falls back to raw
-Hi-net `*.cnt` plus `*.ch` files when MiniSEED was not produced.
+`download_hinet.sh` and shows theoretical P +/- 50 s. The default plot keeps the
+waveforms readable: theoretical P is the only vertical pick line; PGA is marked
+with a small triangle on the acceleration panel time axis; trigger and final
+training picks are marked with small triangles on the velocity panel time axis.
+`travel_pred` is not drawn separately because it is the training-side
+theoretical P estimate, and `travel_coarse` is not drawn because it is the
+clipped coarse pick derived from that estimate.
+
+`qc_summary.csv` still records every available pick offset from the theoretical
+P time. For detailed debugging, add `--show-candidate-picks` to mark STALTA and
+DiTing candidate picks on the velocity-panel time axis, and
+`--show-search-windows` to shade the travel-time/STALTA search windows. The
+script first uses MiniSEED if present, then falls back to raw Hi-net `*.cnt`
+plus `*.ch` files when MiniSEED was not produced.
 
 Use `--dry-run` to plan windows and matching without downloading waveforms. If
 the Hi-net inventory cache does not exist yet, real network access is still
