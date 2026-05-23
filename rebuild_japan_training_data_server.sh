@@ -27,6 +27,9 @@ JMA_CATALOG_CSV=${JMA_CATALOG_CSV:-$SCRIPT_DIR/jma_origin_corrections/jma_${YEAR
 JMA_SUMMARY_JSON=${JMA_SUMMARY_JSON:-$SCRIPT_DIR/jma_origin_corrections/japan_${YEAR}_origin_corrections_summary.json}
 JMA_CACHE_DIR=${JMA_CACHE_DIR:-$SCRIPT_DIR/jma_origin_corrections/cache}
 JMA_TRAVEL_TIME_ZIP=${JMA_TRAVEL_TIME_ZIP:-$SCRIPT_DIR/resources/jma_travel_times/tjma2001h.zip}
+VS30_CSV=${VS30_CSV:-}
+VS30_MAX_DISTANCE_KM=${VS30_MAX_DISTANCE_KM:-1.0}
+REQUIRE_VS30=${REQUIRE_VS30:-0}
 
 TARGET_SAMPLING_RATE=${TARGET_SAMPLING_RATE:-100}
 MIN_STATIONS=${MIN_STATIONS:-3}
@@ -77,6 +80,12 @@ fi
 
 if [[ ! -f "$JMA_TRAVEL_TIME_ZIP" ]]; then
   echo "[ERROR] JMA travel-time table not found: $JMA_TRAVEL_TIME_ZIP" >&2
+  exit 1
+fi
+
+if [[ -n "$VS30_CSV" && ! -f "$VS30_CSV" ]]; then
+  echo "[ERROR] VS30_CSV not found: $VS30_CSV" >&2
+  echo "        Set VS30_CSV= to rebuild without VS30, or point it to resources/vs30/japan_vs30_jshis_station_cache.csv." >&2
   exit 1
 fi
 
@@ -162,6 +171,16 @@ if [[ "$USE_UNACCEPTED_ORIGIN_CORRECTIONS" == "1" ]]; then
   CMD+=(--use_unaccepted_origin_corrections)
 fi
 
+if [[ -n "$VS30_CSV" ]]; then
+  CMD+=(
+    --vs30_csv "$VS30_CSV"
+    --vs30_max_distance_km "$VS30_MAX_DISTANCE_KM"
+  )
+  if [[ "$REQUIRE_VS30" == "1" ]]; then
+    CMD+=(--require_vs30)
+  fi
+fi
+
 if [[ "$RUN_DITING" == "1" ]]; then
   CMD+=(
     --run_diting
@@ -182,6 +201,11 @@ echo "[INFO] year: $YEAR"
 echo "[INFO] waveform_root: $WAVEFORM_ROOT"
 echo "[INFO] output_dir: $OUTPUT_DIR"
 echo "[INFO] origin_corrections: $ORIGIN_CORRECTIONS_CSV"
+echo "[INFO] vs30_csv: ${VS30_CSV:-<disabled>}"
+if [[ -n "$VS30_CSV" ]]; then
+  echo "[INFO] vs30_max_distance_km: $VS30_MAX_DISTANCE_KM"
+  echo "[INFO] require_vs30: $REQUIRE_VS30"
+fi
 echo "[INFO] run_diting: $RUN_DITING"
 echo "[INFO] final_pick: $FINAL_PICK"
 printf '[INFO] command:'
