@@ -231,7 +231,8 @@ class PreloadedEventGenerator(Dataset):
                  dump_debug_snapshot=False,
                  use_coords_rel=False, use_coords_abs=True,
                  use_coords_rel_abs_fusion=False, station_experiment=None,
-                 input_station_selection=None, deterministic_sampling_seed=None, **kwargs):
+                 input_station_selection=None, deterministic_sampling_seed=None,
+                 use_vs30=False, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -321,6 +322,7 @@ class PreloadedEventGenerator(Dataset):
         self.use_coords_abs = use_coords_abs
         self.use_coords_rel_abs_fusion = use_coords_rel_abs_fusion
         self.station_experiment = self._normalize_station_experiment(station_experiment)
+        self.use_vs30 = bool(use_vs30)
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
         ))
@@ -734,7 +736,7 @@ class PreloadedEventGenerator(Dataset):
 
     def _build_station_experiment_pga_targets(self, metadata, pga, pga_valid, station_valid_full,
                                               input_station_valid, selected_input_indices,
-                                              full_selected_indices):
+                                              full_selected_indices, return_indices=False):
         cfg = self.station_experiment
         if not cfg.get('enabled', False) or not self.pga_targets:
             return None
@@ -744,6 +746,7 @@ class PreloadedEventGenerator(Dataset):
         pga_values = np.zeros((input_station_valid.shape[0], self.pga_targets), dtype=np.float32)
         pga_targets = np.zeros((input_station_valid.shape[0], self.pga_targets, 3), dtype=np.float32)
         pga_target_valid = np.zeros((input_station_valid.shape[0], self.pga_targets), dtype=bool)
+        pga_target_indices = -np.ones((input_station_valid.shape[0], self.pga_targets), dtype=np.int64)
 
         for i in range(input_station_valid.shape[0]):
             input_slots = np.where(input_station_valid[i])[0]
@@ -779,8 +782,12 @@ class PreloadedEventGenerator(Dataset):
                 pga_targets[i, :n, :] = full_targets[:, (0, 1, 3)]
             pga_values[i, :n] = pga[i, selected_targets]
             pga_target_valid[i, :n] = True
+            pga_target_indices[i, :n] = selected_targets
 
-        return pga_targets, pga_values.reshape((input_station_valid.shape[0], self.pga_targets, 1)), pga_target_valid
+        result = (pga_targets, pga_values.reshape((input_station_valid.shape[0], self.pga_targets, 1)), pga_target_valid)
+        if return_indices:
+            result = result + (pga_target_indices,)
+        return result
 
     def __getitem__(self, index):
         # Iteratively skip empty samples (no station with signal after cutout).
@@ -816,7 +823,13 @@ class PreloadedEventGenerator(Dataset):
                 raise _EmptySample()
             data = {}
             for key in g_event:
-                if self.data_keys is not None and key not in self.data_keys:
+                extra_vs30_key = self.use_vs30 and key in (
+                    'vs30',
+                    'vs30_valid',
+                    'vs30_query_distance_km',
+                    'vs30_match_method',
+                )
+                if self.data_keys is not None and key not in self.data_keys and not extra_vs30_key:
                     continue
                 if key not in data:
                     data[key] = []
@@ -849,6 +862,19 @@ class PreloadedEventGenerator(Dataset):
             print('Found no picks')
             self.triggers = np.zeros(X.shape[0])
 
+        if self.use_vs30:
+            if 'vs30' in data:
+                self.vs30 = np.concatenate(data['vs30'], axis=0).astype(np.float32, copy=False)
+            else:
+                self.vs30 = np.full(X.shape[0], np.nan, dtype=np.float32)
+            if 'vs30_valid' in data:
+                self.vs30_valid = np.concatenate(data['vs30_valid'], axis=0).astype(bool, copy=False)
+            else:
+                self.vs30_valid = np.isfinite(self.vs30) & (self.vs30 > 0)
+        else:
+            self.vs30 = None
+            self.vs30_valid = None
+
         self.waveforms, self.triggers, crop_start = _crop_aligned_event_window(
             self.waveforms,
             _safe_int_array(self.triggers),
@@ -873,6 +899,12 @@ class PreloadedEventGenerator(Dataset):
         # Use NaN for PGA so that "no measurement" is unambiguous and the legal
         # log-PGA value 0 is not confused with padding.
         pga = np.full((true_batch_size, true_max_stations_in_batch), np.nan)  # shape (1, tms)
+        if self.use_vs30:
+            vs30 = np.full((true_batch_size, true_max_stations_in_batch), np.nan, dtype=np.float32)
+            vs30_valid = np.zeros((true_batch_size, true_max_stations_in_batch), dtype=bool)
+        else:
+            vs30 = None
+            vs30_valid = None
         full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1, tms)
         p_picks = np.zeros((true_batch_size, self.max_stations)) # shape (1, 25)
         selected_input_indices = -np.ones((true_batch_size, self.max_stations), dtype=np.int64)
@@ -888,6 +920,9 @@ class PreloadedEventGenerator(Dataset):
                 waveforms[i, :len(X)] = X
                 metadata[i, :len(self.metadata)] = self.metadata
                 pga[i, :len(self.pga)] = self.pga
+                if self.use_vs30:
+                    vs30[i, :len(self.vs30)] = self.vs30
+                    vs30_valid[i, :len(self.vs30_valid)] = self.vs30_valid
                 p_picks[i, :len(self.triggers)] = self.triggers
                 full_p_picks[i, :len(self.triggers)] = self.triggers
                 selected_input_indices[i, :len(X)] = np.arange(len(X), dtype=np.int64)
@@ -922,6 +957,9 @@ class PreloadedEventGenerator(Dataset):
                 selection = selection[:true_max_stations_in_batch] # len tms
                 metadata[i, :len(selection)] = self.metadata[selection]
                 pga[i, :len(selection)] = self.pga[selection]
+                if self.use_vs30:
+                    vs30[i, :len(selection)] = self.vs30[selection]
+                    vs30_valid[i, :len(selection)] = self.vs30_valid[selection]
                 full_p_picks[i, :len(selection)] = self.triggers[selection]
                 full_selected_indices[i, :len(selection)] = selection
                 station_valid_full[i, :len(selection)] = True # tms set to True
@@ -1019,6 +1057,9 @@ class PreloadedEventGenerator(Dataset):
         if not self.pga_from_inactive and not self.pga_mode: # select 1st 25 zb.
             metadata = metadata[:, :self.max_stations]
             pga = pga[:, :self.max_stations]
+            if self.use_vs30:
+                vs30 = vs30[:, :self.max_stations]
+                vs30_valid = vs30_valid[:, :self.max_stations]
             station_valid_full = station_valid_full[:, :self.max_stations]
             full_selected_indices = full_selected_indices[:, :self.max_stations]
 
@@ -1047,6 +1088,9 @@ class PreloadedEventGenerator(Dataset):
                 (true_batch_size, self.pga_targets))
             pga_targets = np.zeros((true_batch_size, self.pga_targets, 3))
             pga_target_valid = np.zeros((true_batch_size, self.pga_targets), dtype=bool)
+            if self.use_vs30:
+                pga_target_vs30 = np.zeros((true_batch_size, self.pga_targets, 1), dtype=np.float32)
+                pga_target_vs30_valid = np.zeros((true_batch_size, self.pga_targets), dtype=bool)
             if self.pga_mode:
                 for i in range(waveforms.shape[0]):
                     pga_index = pga_indexes[i]
@@ -1054,14 +1098,23 @@ class PreloadedEventGenerator(Dataset):
                         sorted_pga = pga[i, reverse_selections[i]]
                         sorted_metadata = metadata[i, reverse_selections[i]]
                         sorted_valid = pga_valid_full[i, reverse_selections[i]]
+                        if self.use_vs30:
+                            sorted_vs30 = vs30[i, reverse_selections[i]]
+                            sorted_vs30_valid = vs30_valid[i, reverse_selections[i]]
                     else:
                         sorted_pga = pga[i]
                         sorted_metadata = metadata[i]
                         sorted_valid = pga_valid_full[i]
+                        if self.use_vs30:
+                            sorted_vs30 = vs30[i]
+                            sorted_vs30_valid = vs30_valid[i]
                     sl = slice(pga_index * self.pga_targets, (pga_index + 1) * self.pga_targets)
                     pga_values_pre = sorted_pga[sl]
                     pga_valid_pre = sorted_valid[sl]
                     pga_targets_pre = sorted_metadata[sl, :]
+                    if self.use_vs30:
+                        pga_vs30_pre = sorted_vs30[sl]
+                        pga_vs30_valid_pre = sorted_vs30_valid[sl]
                     if pga_targets_pre.shape[-1] == 4:
                         pga_targets_pre = pga_targets_pre[:, (0, 1, 3)]
                     n = len(pga_values_pre)
@@ -1069,6 +1122,9 @@ class PreloadedEventGenerator(Dataset):
                     pga_values[i, :n] = np.where(pga_valid_pre, pga_values_pre, 0.0)
                     pga_targets[i, :n, :] = pga_targets_pre
                     pga_target_valid[i, :n] = pga_valid_pre
+                    if self.use_vs30:
+                        pga_target_vs30[i, :n, 0] = np.where(pga_vs30_valid_pre, pga_vs30_pre, 0.0)
+                        pga_target_vs30_valid[i, :n] = pga_vs30_valid_pre
             else:
                 # Slice station_valid to match metadata/pga slicing above (462-464).
                 if not self.pga_from_inactive:
@@ -1121,8 +1177,14 @@ class PreloadedEventGenerator(Dataset):
                         pga_targets[i, :n, :] = full_targets[:, (0, 1, 3)]
                     pga_values[i, :n] = pga[i, samples]
                     pga_target_valid[i, :n] = True
+                    if self.use_vs30:
+                        pga_target_vs30[i, :n, 0] = np.where(vs30_valid[i, samples], vs30[i, samples], 0.0)
+                        pga_target_vs30_valid[i, :n] = vs30_valid[i, samples]
                     # Unfilled slots [n:] keep value=0 and valid=False; the loss masks them.
             pga_values = pga_values.reshape((true_batch_size, self.pga_targets, 1))
+        elif self.use_vs30:
+            pga_target_vs30 = np.zeros((true_batch_size, 0, 1), dtype=np.float32)
+            pga_target_vs30_valid = np.zeros((true_batch_size, 0), dtype=bool)
 
         metadata = metadata[:, :self.max_stations]
         station_valid = input_station_valid_for_model.copy()
@@ -1164,9 +1226,24 @@ class PreloadedEventGenerator(Dataset):
                 station_valid,
                 selected_input_indices,
                 full_selected_indices_for_targets,
+                return_indices=self.use_vs30,
             )
             if experiment_targets is not None:
-                pga_targets, pga_values, pga_target_valid = experiment_targets
+                if self.use_vs30:
+                    pga_targets, pga_values, pga_target_valid, experiment_target_indices = experiment_targets
+                    pga_target_vs30 = np.zeros((true_batch_size, self.pga_targets, 1), dtype=np.float32)
+                    pga_target_vs30_valid = np.zeros((true_batch_size, self.pga_targets), dtype=bool)
+                    for i in range(true_batch_size):
+                        valid_idx = experiment_target_indices[i] >= 0
+                        target_idx = experiment_target_indices[i, valid_idx]
+                        pga_target_vs30[i, valid_idx, 0] = np.where(
+                            vs30_valid[i, target_idx],
+                            vs30[i, target_idx],
+                            0.0,
+                        )
+                        pga_target_vs30_valid[i, valid_idx] = vs30_valid[i, target_idx]
+                else:
+                    pga_targets, pga_values, pga_target_valid = experiment_targets
 
         input_pga_values = None
         input_pga_valid = None
@@ -1195,6 +1272,13 @@ class PreloadedEventGenerator(Dataset):
             metadata_new[:, :, 1] = metadata[:, :, 1]
             metadata_new[:, :, 3] = metadata[:, :, 2]
             metadata = metadata_new
+
+        if self.use_vs30:
+            station_vs30_np = vs30[:, :self.max_stations]
+            station_vs30_valid_np = vs30_valid[:, :self.max_stations]
+            station_vs30_valid_np &= np.isfinite(station_vs30_np) & (station_vs30_np > 0)
+            station_vs30_valid_np &= station_valid
+            station_vs30_np = np.where(station_vs30_valid_np, station_vs30_np, 0.0).astype(np.float32, copy=False)
 
         loc_target_abs = None
         loc_center = None
@@ -1226,6 +1310,18 @@ class PreloadedEventGenerator(Dataset):
             pga_target_valid_t = torch.from_numpy(pga_target_valid[0]).bool()
             inputs += [pga_targets, pga_target_valid_t]
             outputs += [pga_values]
+        elif self.use_vs30:
+            inputs += [
+                torch.zeros((0, 3), dtype=torch.float32),
+                torch.zeros((0,), dtype=torch.bool),
+            ]
+
+        if self.use_vs30:
+            station_vs30_t = torch.from_numpy(station_vs30_np[0, :, None]).float()
+            station_vs30_valid_t = torch.from_numpy(station_vs30_valid_np[0]).bool()
+            pga_target_vs30_t = torch.from_numpy(pga_target_vs30[0]).float()
+            pga_target_vs30_valid_t = torch.from_numpy(pga_target_vs30_valid[0]).bool()
+            inputs += [station_vs30_t, station_vs30_valid_t, pga_target_vs30_t, pga_target_vs30_valid_t]
 
         p_pick_info = {
             'shifted': torch.from_numpy(p_picks[0]).float(),
@@ -1556,6 +1652,7 @@ def generator_from_config(config, data, event_metadata, time, batch_size=64, sam
     generator_params['use_coords_rel'] = config['model_params'].get('use_coords_rel', False)
     generator_params['use_coords_abs'] = config['model_params'].get('use_coords_abs', True)
     generator_params['use_coords_rel_abs_fusion'] = config['model_params'].get('use_coords_rel_abs_fusion', False)
+    generator_params['use_vs30'] = config['model_params'].get('use_vs30', False)
     generator_params['select_first_inputs'] = generator_params.get(
         'select_first_inputs', generator_params.get('select_first', True)
     )

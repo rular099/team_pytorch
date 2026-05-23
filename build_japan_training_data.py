@@ -72,6 +72,9 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Use all rows in --origin_corrections_csv instead of filtering accepted==1.",
     )
+    parser.add_argument("--vs30_csv", default=None, help="Station-level VS30 CSV produced by tools/download_japan_vs30.py.")
+    parser.add_argument("--vs30_max_distance_km", type=float, default=1.0, help="Maximum coordinate fallback distance when station_code is missing in --vs30_csv.")
+    parser.add_argument("--require_vs30", action="store_true", help="Drop station rows without a valid VS30 value.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing output files.")
     return parser.parse_args()
 
@@ -145,6 +148,9 @@ def main():
             diagnostic_random_seed=args.diagnostic_random_seed,
             origin_corrections_csv=Path(args.origin_corrections_csv).expanduser().resolve() if args.origin_corrections_csv else None,
             use_unaccepted_origin_corrections=args.use_unaccepted_origin_corrections,
+            vs30_csv=Path(args.vs30_csv).expanduser().resolve() if args.vs30_csv else None,
+            vs30_max_distance_km=args.vs30_max_distance_km,
+            require_vs30=args.require_vs30,
         )
 
         print(f"\nYear {year} complete")

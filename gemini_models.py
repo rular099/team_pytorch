@@ -261,11 +261,11 @@ class Transformer(nn.Module):
         self.att_masking = att_masking
         self.hidden_dropout = hidden_dropout
 
-    def forward(self, x, att_mask=None, padding_mask=None):
+    def forward(self, x, att_mask=None, padding_mask=None, coords=None):
         # The inputs are already handled by the calling function.
         self._last_attentions = []
         for block in self.blocks:
-            x = block(x, att_mask, padding_mask)
+            x = block(x, att_mask, padding_mask, coords=coords)
             attn = getattr(block.attention, '_last_attention', None)
             if attn is not None:
                 self._last_attentions.append(attn)
@@ -273,9 +273,21 @@ class Transformer(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, n_heads, emb_dim, hidden_dim, att_dropout=0.0, initializer_range=0.02, eps=1e-5):
+    def __init__(self, n_heads, emb_dim, hidden_dim, att_dropout=0.0, initializer_range=0.02, eps=1e-5,
+                 use_team_rope=False, rope_coord_mode='relative_xy_km', rope_coord_scale=100.0,
+                 rope_base=10000.0, rope_lat_origin=37.0):
         super().__init__()
-        self.attention = MultiHeadSelfAttention(n_heads=n_heads, emb_dim=emb_dim, att_dropout=att_dropout, initializer_range=initializer_range)
+        self.attention = MultiHeadSelfAttention(
+            n_heads=n_heads,
+            emb_dim=emb_dim,
+            att_dropout=att_dropout,
+            initializer_range=initializer_range,
+            use_team_rope=use_team_rope,
+            rope_coord_mode=rope_coord_mode,
+            rope_coord_scale=rope_coord_scale,
+            rope_base=rope_base,
+            rope_lat_origin=rope_lat_origin,
+        )
 #        self.ffn = PointwiseFeedForward(hidden_dim=hidden_dim)
 #        self.attention = nn.MultiheadAttention(embed_dim=emb_dim, num_heads=n_heads, batch_first=True)
         self.ffn = nn.Sequential(
@@ -290,8 +302,8 @@ class TransformerBlock(nn.Module):
         self.dropout1 = nn.Dropout(0.0) #Fixed dropout
         self.dropout2 = nn.Dropout(0.0) #Fixed dropout
 
-    def forward(self, x, att_mask=None, padding_mask=None):
-        modified_x, _ = self.attention(x, attn_mask=att_mask, padding_mask=padding_mask)
+    def forward(self, x, att_mask=None, padding_mask=None, coords=None):
+        modified_x, _ = self.attention(x, attn_mask=att_mask, padding_mask=padding_mask, coords=coords)
         modified_x = self.dropout1(modified_x)
         x = self.norm1(x + modified_x)
         modified_x = self.ffn(x)
@@ -623,19 +635,86 @@ class PositionEmbedding(nn.Module):
 
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, n_heads, emb_dim, initializer_range=0.02, att_dropout=0.0, infinity=1e6):
+    def __init__(self, n_heads, emb_dim, initializer_range=0.02, att_dropout=0.0, infinity=1e6,
+                 use_team_rope=False, rope_coord_mode='relative_xy_km', rope_coord_scale=100.0,
+                 rope_base=10000.0, rope_lat_origin=37.0):
         super().__init__()
         self.n_heads = n_heads
         self.d_key = int(emb_dim // n_heads)
         self.infinity = infinity
         self.att_dropout = att_dropout
         self.initializer_range = initializer_range #Added
+        self.use_team_rope = bool(use_team_rope)
+        self.rope_coord_mode = rope_coord_mode
+        self.rope_coord_scale = float(rope_coord_scale)
+        self.rope_base = float(rope_base)
+        self.rope_lat_origin = float(rope_lat_origin)
         self.WQ = nn.Linear(emb_dim, emb_dim)
         self.WK = nn.Linear(emb_dim, emb_dim)
         self.WV = nn.Linear(emb_dim, emb_dim)
         self.WO = nn.Linear(emb_dim, emb_dim)
 
-    def forward(self, x, attn_mask=None, padding_mask=None):
+    @staticmethod
+    def _rotate_pairs(x, angles):
+        pair_count = angles.shape[-1]
+        x_pair = x.reshape(*x.shape[:-1], pair_count, 2)
+        cos = torch.cos(angles)[:, None, :, :, None]
+        sin = torch.sin(angles)[:, None, :, :, None]
+        x0 = x_pair[..., 0:1]
+        x1 = x_pair[..., 1:2]
+        rotated = torch.cat([x0 * cos - x1 * sin, x0 * sin + x1 * cos], dim=-1)
+        return rotated.reshape(*x.shape[:-1], pair_count * 2)
+
+    def _relative_xy_for_rope(self, coords, padding_mask=None):
+        coords2 = coords[:, :, :2].to(dtype=torch.float32)
+        if padding_mask is None:
+            valid = torch.ones(coords2.shape[:2], device=coords2.device, dtype=coords2.dtype)
+        else:
+            valid = padding_mask.to(device=coords2.device, dtype=coords2.dtype)
+        denom = valid.sum(dim=1, keepdim=True).clamp_min(1.0)
+        center = (coords2 * valid[:, :, None]).sum(dim=1, keepdim=True) / denom[:, :, None]
+
+        if self.rope_coord_mode == 'relative_xy_model_units':
+            xy = coords2 - center
+            return xy[:, :, 1], xy[:, :, 0]
+        if self.rope_coord_mode != 'relative_xy_km':
+            raise ValueError(
+                "rope_coord_mode must be 'relative_xy_km' or 'relative_xy_model_units', "
+                f"got {self.rope_coord_mode!r}."
+            )
+
+        rel_deg = coords2 - center
+        center_lat_deg = center[:, :, 0] + self.rope_lat_origin
+        lon_scale = torch.cos(center_lat_deg * math.pi / 180.0).clamp_min(0.1)
+        y_km = rel_deg[:, :, 0] * 111.19492664455874
+        x_km = rel_deg[:, :, 1] * 111.19492664455874 * lon_scale.squeeze(1)[:, None]
+        return x_km, y_km
+
+    def _apply_team_rope(self, q, k, coords, padding_mask=None):
+        if not self.use_team_rope or coords is None:
+            return q, k
+        rotary_dim = (self.d_key // 4) * 4
+        if rotary_dim < 4:
+            return q, k
+        pair_count_per_axis = rotary_dim // 4
+        freq_idx = torch.arange(pair_count_per_axis, device=q.device, dtype=q.dtype)
+        inv_freq = 1.0 / (self.rope_base ** (freq_idx / max(1, pair_count_per_axis)))
+        x_coord, y_coord = self._relative_xy_for_rope(coords.to(q.device), padding_mask=padding_mask)
+        x_angles = (x_coord.to(dtype=q.dtype) / self.rope_coord_scale)[:, :, None] * inv_freq[None, None, :]
+        y_angles = (y_coord.to(dtype=q.dtype) / self.rope_coord_scale)[:, :, None] * inv_freq[None, None, :]
+
+        x_slice = slice(0, 2 * pair_count_per_axis)
+        y_slice = slice(2 * pair_count_per_axis, 4 * pair_count_per_axis)
+
+        def apply_one(tensor):
+            out = tensor.clone()
+            out[..., x_slice] = self._rotate_pairs(out[..., x_slice], x_angles)
+            out[..., y_slice] = self._rotate_pairs(out[..., y_slice], y_angles)
+            return out
+
+        return apply_one(q), apply_one(k)
+
+    def forward(self, x, attn_mask=None, padding_mask=None, coords=None):
         self.stations = x.shape[1]
 
         d_key = self.d_key
@@ -648,9 +727,10 @@ class MultiHeadSelfAttention(nn.Module):
 
         k = self.WK(x)  # (batch, stations, key*n_heads)
         k = k.reshape(-1, stations, d_key, n_heads)
-        k = k.permute(0, 3, 2, 1)  # (batch, n_heads, key, stations)
+        k = k.permute(0, 3, 1, 2)  # (batch, n_heads, stations, key)
+        q, k = self._apply_team_rope(q, k, coords=coords, padding_mask=padding_mask)
 
-        score = torch.matmul(q, k) / np.sqrt(d_key)  # (batch, n_heads, stations, stations)
+        score = torch.matmul(q, k.transpose(-2, -1)) / np.sqrt(d_key)  # (batch, n_heads, stations, stations)
 
         # Key masking: prevent attending to padding stations (from padding_mask)
         # Matches TF lines 268-271: score -= ~mask * infinity
@@ -1469,7 +1549,9 @@ class FullModel(nn.Module):
                  readout_ffn_gate_init=None, readout_inject_base_query=False,
                  readout_query_injection_gate_init=1.0, readout_use_ffn=True,
                  station_context_mode='off',
-                 pga_use_event_context=False, pga_event_context_init_gate=0.0):
+                 station_context_gate_init=0.0,
+                 pga_use_event_context=False, pga_event_context_init_gate=0.0,
+                 use_vs30=False, vs30_reference_mps=760.0, vs30_init_gate=0.0):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1507,6 +1589,8 @@ class FullModel(nn.Module):
         self.pga_readout_mode = pga_readout_mode
         self.event_readout_mode = event_readout_mode
         self.station_context_mode = station_context_mode or 'off'
+        self.use_vs30 = bool(use_vs30)
+        self.vs30_reference_mps = float(vs30_reference_mps)
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
@@ -1541,13 +1625,18 @@ class FullModel(nn.Module):
                 "'event_cross_attention', 'direct_station_pool', "
                 f"got {self.event_readout_mode!r}."
             )
-        if self.station_context_mode not in ('off', 'transformer_pre_readout'):
+        if self.station_context_mode not in ('off', 'transformer_pre_readout', 'gated_transformer_pre_readout'):
             raise ValueError(
                 "station_context_mode must be one of 'off', 'transformer_pre_readout', "
+                "'gated_transformer_pre_readout', "
                 f"got {self.station_context_mode!r}."
             )
         if self.station_context_mode != 'off' and self.transformer is None:
             raise ValueError('station_context_mode requires skip_transformer=False.')
+        if self.station_context_mode == 'gated_transformer_pre_readout':
+            self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
+        else:
+            self.station_context_gate = None
 
         active_coord_modes = sum(bool(flag) for flag in (
             self.use_coords_rel, self.use_coords_abs, self.use_coords_rel_abs_fusion
@@ -1615,6 +1704,16 @@ class FullModel(nn.Module):
         else:
             self.pga_event_context_proj = None
             self.pga_event_context_gate = None
+        if self.use_vs30:
+            self.station_vs30_proj = nn.Linear(2, emb_dim)
+            self.target_vs30_proj = nn.Linear(2, emb_dim)
+            self.station_vs30_gate = nn.Parameter(torch.tensor(float(vs30_init_gate)))
+            self.target_vs30_gate = nn.Parameter(torch.tensor(float(vs30_init_gate)))
+        else:
+            self.station_vs30_proj = None
+            self.target_vs30_proj = None
+            self.station_vs30_gate = None
+            self.target_vs30_gate = None
 
         if self.n_pga_targets > 0:
             self.att_masking = True
@@ -1751,15 +1850,86 @@ class FullModel(nn.Module):
         pooled = (station_emb * weights).sum(dim=1) / denom
         return pooled.unsqueeze(1).expand(-1, n_pga, -1)
 
-    def _station_memory_for_readout(self, station_feature_emb, station_mask):
+    @staticmethod
+    def _looks_like_dataset_tensor(value):
+        if not torch.is_tensor(value):
+            return False
+        return value.dtype in (torch.int8, torch.int16, torch.int32, torch.int64, torch.long) and value.dim() <= 1
+
+    def _parse_extra_inputs(self, extra_inputs, dataset):
+        extras = list(extra_inputs)
+        if extras and self._looks_like_dataset_tensor(extras[-1]):
+            if dataset is None:
+                dataset = extras[-1]
+            extras = extras[:-1]
+        station_vs30 = station_vs30_valid = pga_target_vs30 = pga_target_vs30_valid = None
+        if extras:
+            if len(extras) != 4:
+                raise ValueError(
+                    'Expected four VS30 tensors after pga_target_valid '
+                    '(station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid); '
+                    f'got {len(extras)} extra positional inputs.'
+                )
+            station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid = extras
+        return station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid, dataset
+
+    def _vs30_feature_tensor(self, values, valid, reference_mask, ref_tensor):
+        if values is None:
+            values = ref_tensor.new_zeros(reference_mask.shape + (1,))
+            valid_mask = torch.zeros(reference_mask.shape, device=ref_tensor.device, dtype=torch.bool)
+        else:
+            values = values.to(device=ref_tensor.device, dtype=ref_tensor.dtype)
+            if values.dim() == 2:
+                values = values.unsqueeze(-1)
+            if valid is None:
+                valid_mask = torch.isfinite(values.squeeze(-1)) & (values.squeeze(-1) > 0)
+            else:
+                valid_mask = valid.to(device=ref_tensor.device).bool()
+            valid_mask = valid_mask & reference_mask.bool()
+        safe_values = torch.clamp(values.squeeze(-1), min=1.0)
+        log_vs30 = torch.log(safe_values / self.vs30_reference_mps)
+        log_vs30 = torch.where(valid_mask, log_vs30, torch.zeros_like(log_vs30))
+        return torch.stack([log_vs30, valid_mask.to(ref_tensor.dtype)], dim=-1), valid_mask
+
+    def _add_station_vs30_embedding(self, station_emb, station_vs30, station_vs30_valid, station_mask):
+        if not self.use_vs30:
+            return station_emb, station_mask.new_zeros(station_mask.shape, dtype=torch.bool)
+        features, valid = self._vs30_feature_tensor(station_vs30, station_vs30_valid, station_mask, station_emb)
+        site_emb = self.station_vs30_proj(features)
+        station_emb = station_emb + self.station_vs30_gate * site_emb * valid.unsqueeze(-1).to(station_emb.dtype)
+        return station_emb, valid
+
+    def _add_target_vs30_embedding(self, query_emb, target_vs30, target_vs30_valid, target_mask):
+        if not self.use_vs30:
+            return query_emb, target_mask.new_zeros(target_mask.shape, dtype=torch.bool)
+        features, valid = self._vs30_feature_tensor(target_vs30, target_vs30_valid, target_mask, query_emb)
+        site_emb = self.target_vs30_proj(features)
+        query_emb = query_emb + self.target_vs30_gate * site_emb * valid.unsqueeze(-1).to(query_emb.dtype)
+        return query_emb, valid
+
+    def _station_memory_for_readout(self, station_feature_emb, station_mask, coords_abs=None):
         if self.station_context_mode == 'off':
             self._last_station_context_emb = station_feature_emb
             return station_feature_emb
 
-        station_context_emb = self.transformer(station_feature_emb.float(), padding_mask=station_mask)
-        station_context_emb = station_context_emb * station_mask.unsqueeze(-1).to(station_context_emb.dtype)
+        transformer_context_emb = self.transformer(
+            station_feature_emb.float(),
+            padding_mask=station_mask,
+            coords=coords_abs,
+        )
+        transformer_context_emb = transformer_context_emb * station_mask.unsqueeze(-1).to(transformer_context_emb.dtype)
+        if self.station_context_mode == 'gated_transformer_pre_readout':
+            station_context_emb = station_feature_emb + self.station_context_gate * (
+                transformer_context_emb - station_feature_emb
+            )
+            station_context_emb = station_context_emb * station_mask.unsqueeze(-1).to(station_context_emb.dtype)
+        else:
+            station_context_emb = transformer_context_emb
         self._last_station_context_emb = station_context_emb
         self._last_diag['station_context_mode'] = station_context_emb.new_tensor(1.0).detach()
+        if self.station_context_gate is not None:
+            self._last_diag['station_context_gate'] = self.station_context_gate.detach()
+            self._last_diag['station_context_raw_emb_norm'] = self._mean_token_norm(transformer_context_emb).detach()
         self._last_diag['station_context_emb_norm'] = self._mean_token_norm(station_context_emb).detach()
         self._last_diag['station_context_delta_norm'] = (
             self._mean_token_norm(station_context_emb - station_feature_emb)
@@ -1909,7 +2079,11 @@ class FullModel(nn.Module):
 
     def forward(self, waveform_inp, metadata_inp, station_valid,
                 pga_targets_inp=None, pga_target_valid=None,
-                dataset=None, att_mask=None):
+                *extra_inputs, dataset=None, att_mask=None):
+        station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid, dataset = self._parse_extra_inputs(
+            extra_inputs,
+            dataset,
+        )
         raw_waveform = waveform_inp.clone()
         waveform_inp = self._normalize(waveform_inp, mode='std', axis=3)
         # Apply explicit masks instead of inferring "validity == nonzero".
@@ -1948,6 +2122,14 @@ class FullModel(nn.Module):
                 emb = self.coord_fusion_norm(emb)
         else:
             emb = torch.cat([waveforms_emb, coords_feat], dim=-1)
+        station_vs30_valid_mask = None
+        if self.use_vs30:
+            emb, station_vs30_valid_mask = self._add_station_vs30_embedding(
+                emb,
+                station_vs30,
+                station_vs30_valid,
+                sv,
+            )
         station_feature_emb = emb
         self._last_station_feature_emb = station_feature_emb
         self._last_station_valid = sv
@@ -1965,6 +2147,12 @@ class FullModel(nn.Module):
             'coord_fusion_mode': 0.0 if self.coord_fusion_mode == 'add' else 1.0,
             'station_context_mode': emb.new_tensor(0.0).detach(),
         }
+        if self.use_vs30:
+            station_valid_count = sv.float().sum().clamp_min(1.0)
+            self._last_diag['vs30_station_valid_ratio'] = (
+                station_vs30_valid_mask.float().sum() / station_valid_count
+            ).detach()
+            self._last_diag['vs30_station_gate'] = self.station_vs30_gate.detach()
         if scale_emb is not None:
             scale_norm = self._mean_token_norm(scale_emb)
             self._last_diag['scale_emb_norm'] = scale_norm.detach()
@@ -1980,7 +2168,7 @@ class FullModel(nn.Module):
             ).detach()
         if not self.alternative_coords_embedding:
             self._last_diag['coords_emb_norm'] = self._mean_token_norm(coords_emb).detach()
-        station_memory_emb = self._station_memory_for_readout(station_feature_emb, station_mask)
+        station_memory_emb = self._station_memory_for_readout(station_feature_emb, station_mask, coords_abs=coords_abs)
 
         # padding_mask: True=valid position, used for key masking + output zeroing (matches TF `mask`)
         # att_mask: True=attendable as key, used only for additional key masking (matches TF `att_mask`)
@@ -1995,6 +2183,18 @@ class FullModel(nn.Module):
             pga_targets_rel = (pga_targets_abs - coords_center) * ptv[:, :, None].float()
             pga_emb = self._pga_coord_embedding(pga_targets_abs, pga_targets_rel, ptv)
             pga_query_emb = pga_emb + self.pga_query_token
+            if self.use_vs30:
+                pga_query_emb, pga_vs30_valid_mask = self._add_target_vs30_embedding(
+                    pga_query_emb,
+                    pga_target_vs30,
+                    pga_target_vs30_valid,
+                    ptv,
+                )
+                target_valid_count = ptv.float().sum().clamp_min(1.0)
+                self._last_diag['vs30_target_valid_ratio'] = (
+                    pga_vs30_valid_mask.float().sum() / target_valid_count
+                ).detach()
+                self._last_diag['vs30_target_gate'] = self.target_vs30_gate.detach()
 
             n_pga = pga_emb.shape[1]
             if self.pga_readout_mode == 'direct_station':
@@ -2016,9 +2216,12 @@ class FullModel(nn.Module):
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(1.0).detach()
             else:
                 transformer_input = station_feature_emb
+                transformer_coords = coords_abs
                 if not (self.skip_transformer or self.no_event_token):
                     transformer_input = self.add_event_token(transformer_input)
+                    transformer_coords = torch.cat([coords_center, transformer_coords], dim=1)
                 transformer_input = torch.cat([transformer_input, pga_query_emb], dim=1)
+                transformer_coords = torch.cat([transformer_coords, pga_targets_abs], dim=1)
                 ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
                 pga_false = torch.zeros(station_mask.shape[0], n_pga, device=station_mask.device, dtype=torch.bool)
 
@@ -2036,7 +2239,12 @@ class FullModel(nn.Module):
                         att_mask = torch.cat([torch.ones_like(station_mask), att_mask], dim=1)
 
                 self._record_pga_mask_diag(att_mask, padding_mask, station_mask, ptv)
-                transformer_emb = self.transformer(transformer_input.float(), att_mask, padding_mask)
+                transformer_emb = self.transformer(
+                    transformer_input.float(),
+                    att_mask,
+                    padding_mask,
+                    coords=transformer_coords,
+                )
                 self._record_pga_attention_diag(
                     seq_len=transformer_emb.shape[1],
                     station_count=station_mask.shape[1],
@@ -2069,7 +2277,12 @@ class FullModel(nn.Module):
                         transformer_input = self.add_event_token(station_feature_emb)
                         ones_1 = torch.ones(station_mask.shape[0], 1, device=station_mask.device, dtype=torch.bool)
                         padding_mask = torch.cat([ones_1, station_mask], dim=1)
-                        transformer_emb = self.transformer(transformer_input.float(), padding_mask=padding_mask)
+                        transformer_coords = torch.cat([coords_center, coords_abs], dim=1)
+                        transformer_emb = self.transformer(
+                            transformer_input.float(),
+                            padding_mask=padding_mask,
+                            coords=transformer_coords,
+                        )
                     event_emb = transformer_emb[:, 0, :]  # Select event embedding
                 self._last_diag['event_readout_mode'] = event_emb.new_tensor(0.0).detach()
 
@@ -2326,8 +2539,17 @@ def build_transformer_model(max_stations,
                             readout_query_injection_gate_init=1.0,
                             readout_use_ffn=True,
                             station_context_mode='off',
+                            station_context_gate_init=0.0,
                             pga_use_event_context=False,
                             pga_event_context_init_gate=0.0,
+                            use_vs30=False,
+                            vs30_reference_mps=760.0,
+                            vs30_init_gate=0.0,
+                            use_team_rope=False,
+                            rope_coord_mode='relative_xy_km',
+                            rope_coord_scale=100.0,
+                            rope_base=10000.0,
+                            rope_lat_origin=37.0,
                             pga_attention_diagnostics=False,
                             pga_mask_sanity_check=False,
                             diting_args=None,
@@ -2339,6 +2561,11 @@ def build_transformer_model(max_stations,
 #    emb_dim = diting_args.target_width
     mad_params = mad_params.copy()  # Avoid modifying the input dicts
     ffn_params = ffn_params.copy()
+    mad_params.setdefault('use_team_rope', use_team_rope)
+    mad_params.setdefault('rope_coord_mode', rope_coord_mode)
+    mad_params.setdefault('rope_coord_scale', rope_coord_scale)
+    mad_params.setdefault('rope_base', rope_base)
+    mad_params.setdefault('rope_lat_origin', rope_lat_origin)
     if readout_n_heads is None:
         readout_n_heads = mad_params.get('n_heads', 1)
     if readout_dropout is None:
@@ -2463,8 +2690,12 @@ def build_transformer_model(max_stations,
                              readout_query_injection_gate_init=readout_query_injection_gate_init,
                              readout_use_ffn=readout_use_ffn,
                              station_context_mode=station_context_mode,
+                             station_context_gate_init=station_context_gate_init,
                              pga_use_event_context=pga_use_event_context,
                              pga_event_context_init_gate=pga_event_context_init_gate,
+                             use_vs30=use_vs30,
+                             vs30_reference_mps=vs30_reference_mps,
+                             vs30_init_gate=vs30_init_gate,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model

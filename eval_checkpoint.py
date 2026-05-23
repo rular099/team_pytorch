@@ -246,6 +246,7 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
                 use_coords_rel=config['model_params'].get('use_coords_rel', False),
                 use_coords_abs=config['model_params'].get('use_coords_abs', True),
                 use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
+                use_vs30=config['model_params'].get('use_vs30', False),
                 station_experiment=station_experiment_cfg,
                 shuffle=False,  # deterministic eval order
             )
@@ -412,6 +413,10 @@ def diagnose_amplitude_sensitivity(model, dataset, device, config, scales=(0.5, 
 
     pga_targets_inp = inputs[3].unsqueeze(0).to(device) if len(inputs) > 3 else None
     pga_target_valid = inputs[4].unsqueeze(0).to(device) if len(inputs) > 4 else None
+    extra_inputs = [
+        item.unsqueeze(0).to(device) if torch.is_tensor(item) else item
+        for item in inputs[5:]
+    ]
 
     print(f'{"="*60}')
     print('  Amplitude sensitivity diagnostics (1 sample)')
@@ -456,8 +461,12 @@ def diagnose_amplitude_sensitivity(model, dataset, device, config, scales=(0.5, 
             print(f'  cosine vs x1.0 per-station: min={cos.min():.4f}, max={cos.max():.4f}, mean={cos.mean():.4f}')
 
         outputs = raw_model(
-            scaled_waveform, metadata_inp, station_valid,
-            pga_targets_inp=pga_targets_inp, pga_target_valid=pga_target_valid
+            scaled_waveform,
+            metadata_inp,
+            station_valid,
+            pga_targets_inp,
+            pga_target_valid,
+            *extra_inputs,
         )
         if raw_model.n_pga_targets > 0:
             pga_out = outputs[-1][0].detach().cpu().numpy()

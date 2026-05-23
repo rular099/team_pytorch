@@ -1226,6 +1226,28 @@ def collect_input_stats(inputs, labels, p_picks):
             'data/pga_target_valid_ratio': pga_target_valid.float().mean().detach(),
         })
 
+    if len(inputs) >= 9 and torch.is_tensor(inputs[5]) and inputs[5].dtype not in (
+        torch.int8, torch.int16, torch.int32, torch.int64, torch.long
+    ):
+        station_vs30 = inputs[5]
+        station_vs30_valid = inputs[6].bool()
+        target_vs30 = inputs[7]
+        target_vs30_valid = inputs[8].bool()
+        stats.update({
+            'data/vs30_station_valid_ratio': station_vs30_valid.float().mean().detach(),
+            'data/vs30_target_valid_ratio': target_vs30_valid.float().mean().detach(),
+        })
+        if station_vs30_valid.any():
+            stats.update({
+                'data/vs30_station_mean': station_vs30.squeeze(-1)[station_vs30_valid].mean().detach(),
+                'data/vs30_station_std': station_vs30.squeeze(-1)[station_vs30_valid].std(unbiased=False).detach(),
+            })
+        if target_vs30_valid.any():
+            stats.update({
+                'data/vs30_target_mean': target_vs30.squeeze(-1)[target_vs30_valid].mean().detach(),
+                'data/vs30_target_std': target_vs30.squeeze(-1)[target_vs30_valid].std(unbiased=False).detach(),
+            })
+
     if event_mag is not None and event_mag.shape[-1] == 1:
         event_mag_vals = event_mag.float().reshape(event_mag.shape[0], -1).mean(dim=1)
         stats.update({
@@ -2128,6 +2150,7 @@ if __name__ == '__main__':
                 use_coords_rel=config['model_params'].get('use_coords_rel', False),
                 use_coords_abs=config['model_params'].get('use_coords_abs', True),
                 use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
+                use_vs30=config['model_params'].get('use_vs30', False),
             )
             if training_params.get('deterministic_sampling', False):
                 defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
@@ -2435,6 +2458,7 @@ if __name__ == '__main__':
                 use_coords_rel=config['model_params'].get('use_coords_rel', False),
                 use_coords_abs=config['model_params'].get('use_coords_abs', True),
                 use_coords_rel_abs_fusion=config['model_params'].get('use_coords_rel_abs_fusion', False),
+                use_vs30=config['model_params'].get('use_vs30', False),
                 station_experiment=station_experiment_cfg,
             )
             if training_params.get('deterministic_sampling', False):
@@ -2453,6 +2477,7 @@ if __name__ == '__main__':
                     f'pga_selection_skew={merged.get("pga_selection_skew")}, '
                     f'pga_target_sampling={merged.get("pga_target_sampling")}, '
                     f'max_stations={merged.get("max_stations")}, '
+                    f'use_vs30={merged.get("use_vs30", False)}, '
                     f'station_experiment={experiment.get("mode") if experiment.get("enabled") else None}, '
                     f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
                 )
@@ -2478,6 +2503,7 @@ if __name__ == '__main__':
                     f'pga_selection_skew={merged_val.get("pga_selection_skew")}, '
                     f'pga_target_sampling={merged_val.get("pga_target_sampling")}, '
                     f'max_stations={merged_val.get("max_stations")}, '
+                    f'use_vs30={merged_val.get("use_vs30", False)}, '
                     f'station_experiment={experiment_val.get("mode") if experiment_val.get("enabled") else None}, '
                     f'cutout=({merged_val["cutout"][0]}, {merged_val["cutout"][1]})'
                 )

@@ -1742,6 +1742,201 @@ def apply_origin_correction_to_event(
     return corrected_meta, corrected_rows
 
 
+def _find_optional_column(columns: Iterable[str], candidates: Iterable[str]) -> str | None:
+    lookup = {str(c).lower(): str(c) for c in columns}
+    for candidate in candidates:
+        found = lookup.get(candidate.lower())
+        if found is not None:
+            return found
+    return None
+
+
+def _find_required_column(columns: Iterable[str], candidates: Iterable[str], source: Path) -> str:
+    found = _find_optional_column(columns, candidates)
+    if found is None:
+        raise KeyError(f"{source} must contain one of {list(candidates)}; columns={list(columns)}")
+    return found
+
+
+def load_vs30_lookup(vs30_csv: Path | None) -> dict[str, object] | None:
+    if vs30_csv is None:
+        return None
+    vs30_csv = Path(vs30_csv).expanduser().resolve()
+    df = pd.read_csv(vs30_csv, dtype={"station_code": str})
+    if df.empty:
+        raise ValueError(f"VS30 CSV is empty: {vs30_csv}")
+
+    code_col = _find_required_column(df.columns, ["station_code", "Station Code", "code", "station"], vs30_csv)
+    vs30_col = _find_required_column(df.columns, ["vs30_mps", "vs30", "AVS", "avs"], vs30_csv)
+    valid_col = _find_optional_column(df.columns, ["vs30_valid", "valid", "AVS_valid"])
+    lat_col = _find_optional_column(df.columns, ["station_lat", "Station Lat.", "lat", "latitude"])
+    lon_col = _find_optional_column(df.columns, ["station_lon", "Station Long.", "lon", "longitude", "long"])
+    source_col = _find_optional_column(df.columns, ["vs30_source", "source"])
+    mesh_col = _find_optional_column(df.columns, ["vs30_mesh_code", "mesh_code", "CODE", "JCODE"])
+    dist_col = _find_optional_column(df.columns, ["vs30_query_distance_km", "query_distance_km", "distance_km"])
+
+    work = df.copy()
+    work["_station_code"] = work[code_col].astype(str).str.strip()
+    work["_vs30"] = pd.to_numeric(work[vs30_col], errors="coerce")
+    if valid_col is not None:
+        valid = pd.to_numeric(work[valid_col], errors="coerce").fillna(0).astype(int).astype(bool)
+    else:
+        valid = np.isfinite(work["_vs30"]) & (work["_vs30"] > 0)
+    work = work[valid & np.isfinite(work["_vs30"]) & (work["_vs30"] > 0)].copy()
+
+    by_code: dict[str, dict[str, object]] = {}
+    coord_rows: list[dict[str, object]] = []
+    for _, row in work.iterrows():
+        code = str(row["_station_code"])
+        record = {
+            "vs30": float(row["_vs30"]),
+            "source": str(row[source_col]) if source_col is not None and not pd.isna(row[source_col]) else str(vs30_csv),
+            "mesh_code": str(row[mesh_col]) if mesh_col is not None and not pd.isna(row[mesh_col]) else "",
+            "query_distance_km": float(pd.to_numeric(row[dist_col], errors="coerce")) if dist_col is not None else np.nan,
+            "match_method": "station_code",
+        }
+        by_code.setdefault(code, record)
+        if lat_col is not None and lon_col is not None:
+            lat = pd.to_numeric(row[lat_col], errors="coerce")
+            lon = pd.to_numeric(row[lon_col], errors="coerce")
+            if np.isfinite(lat) and np.isfinite(lon):
+                coord_rows.append(
+                    {
+                        **record,
+                        "station_lat": float(lat),
+                        "station_lon": float(lon),
+                        "match_method": "nearest_coord",
+                    }
+                )
+
+    coord_df = pd.DataFrame(coord_rows)
+    return {
+        "path": str(vs30_csv),
+        "by_code": by_code,
+        "coord_df": coord_df,
+        "rows_loaded": int(len(df)),
+        "valid_rows": int(len(work)),
+    }
+
+
+def _nearest_vs30_record(
+    lookup: dict[str, object],
+    station_lat: float,
+    station_lon: float,
+    max_distance_km: float,
+) -> dict[str, object] | None:
+    coord_df = lookup.get("coord_df")
+    if coord_df is None or not isinstance(coord_df, pd.DataFrame) or coord_df.empty:
+        return None
+    best_record = None
+    best_distance = float("inf")
+    for _, row in coord_df.iterrows():
+        distance = haversine_distance_km(
+            float(station_lat),
+            float(station_lon),
+            float(row["station_lat"]),
+            float(row["station_lon"]),
+        )
+        if distance < best_distance:
+            best_distance = distance
+            best_record = row
+    if best_record is None or best_distance > float(max_distance_km):
+        return None
+    return {
+        "vs30": float(best_record["vs30"]),
+        "source": str(best_record.get("source", "")),
+        "mesh_code": str(best_record.get("mesh_code", "")),
+        "query_distance_km": best_distance,
+        "match_method": "nearest_coord",
+    }
+
+
+def add_vs30_to_event(
+    datasets: dict[str, np.ndarray | object],
+    event_meta: dict[str, object],
+    station_df: pd.DataFrame,
+    vs30_lookup: dict[str, object],
+    max_distance_km: float = 1.0,
+    require_vs30: bool = False,
+) -> tuple[dict[str, np.ndarray | object], dict[str, object], pd.DataFrame, dict[str, int]]:
+    n_stations = len(station_df)
+    vs30 = np.full(n_stations, np.nan, dtype=np.float64)
+    vs30_valid = np.zeros(n_stations, dtype=np.int8)
+    match_distance = np.full(n_stations, np.nan, dtype=np.float64)
+    sources = np.array(["" for _ in range(n_stations)], dtype=object)
+    mesh_codes = np.array(["" for _ in range(n_stations)], dtype=object)
+    match_methods = np.array(["missing" for _ in range(n_stations)], dtype=object)
+
+    by_code: dict[str, dict[str, object]] = vs30_lookup.get("by_code", {})  # type: ignore[assignment]
+    for i, row in station_df.reset_index(drop=True).iterrows():
+        station_code = str(row.get("station_code", "")).strip()
+        record = by_code.get(station_code)
+        if record is None:
+            record = _nearest_vs30_record(
+                vs30_lookup,
+                float(row["station_lat"]),
+                float(row["station_lon"]),
+                max_distance_km=max_distance_km,
+            )
+        if record is None:
+            continue
+        value = float(record["vs30"])
+        if not np.isfinite(value) or value <= 0:
+            continue
+        vs30[i] = value
+        vs30_valid[i] = 1
+        sources[i] = str(record.get("source", ""))
+        mesh_codes[i] = str(record.get("mesh_code", ""))
+        match_distance[i] = float(record.get("query_distance_km", np.nan))
+        match_methods[i] = str(record.get("match_method", "station_code"))
+
+    datasets = dict(datasets)
+    datasets["vs30"] = vs30
+    datasets["vs30_valid"] = vs30_valid
+    datasets["vs30_query_distance_km"] = match_distance
+    datasets["vs30_source"] = sources
+    datasets["vs30_mesh_code"] = mesh_codes
+    datasets["vs30_match_method"] = match_methods
+
+    out_df = station_df.copy().reset_index(drop=True)
+    out_df["vs30_mps"] = vs30
+    out_df["vs30_valid"] = vs30_valid
+    out_df["vs30_query_distance_km"] = match_distance
+    out_df["vs30_source"] = sources
+    out_df["vs30_mesh_code"] = mesh_codes
+    out_df["vs30_match_method"] = match_methods
+
+    dropped = 0
+    if require_vs30:
+        keep = vs30_valid.astype(bool)
+        dropped = int(np.sum(~keep))
+        datasets = _filter_station_level_datasets(datasets, keep, n_stations)
+        out_df = out_df.loc[keep].copy().reset_index(drop=True)
+        out_df["wave_idx"] = np.arange(len(out_df), dtype=np.int64)
+
+    event_meta = event_meta.copy()
+    event_meta["N_Stations"] = int(len(out_df))
+    event_meta["VS30_Source_CSV"] = str(vs30_lookup.get("path", ""))
+    event_meta["VS30_Max_Distance_Km"] = float(max_distance_km)
+    event_meta["VS30_Require"] = int(require_vs30)
+    event_meta["VS30_Stations_Valid"] = int(vs30_valid.sum()) if not require_vs30 else int(len(out_df))
+    event_meta["VS30_Stations_Missing"] = int(n_stations - int(vs30_valid.sum()))
+    event_meta["VS30_Stations_Dropped"] = int(dropped)
+    if "source_network" in out_df.columns and not out_df.empty:
+        event_meta["Source_Mix"] = ",".join(sorted(set(out_df["source_network"].astype(str))))
+        out_df["source_mix"] = event_meta["Source_Mix"]
+
+    stats = {
+        "vs30_stations_seen": int(n_stations),
+        "vs30_stations_valid": int(vs30_valid.sum()),
+        "vs30_stations_missing": int(n_stations - int(vs30_valid.sum())),
+        "vs30_stations_dropped": int(dropped),
+        "vs30_events_with_any": int(vs30_valid.sum() > 0),
+        "vs30_events_missing_all": int(vs30_valid.sum() == 0),
+    }
+    return datasets, event_meta, out_df, stats
+
+
 def build_year_dataset(
     waveform_root: Path,
     output_hdf5: Path,
@@ -1789,6 +1984,9 @@ def build_year_dataset(
     diagnostic_random_seed: int = 2024,
     origin_corrections_csv: Path | None = None,
     use_unaccepted_origin_corrections: bool = False,
+    vs30_csv: Path | None = None,
+    vs30_max_distance_km: float = 1.0,
+    require_vs30: bool = False,
 ) -> dict[str, int]:
     year_dir = waveform_root / str(year)
     outer_archives = sorted(year_dir.glob("*.tar"))
@@ -1819,6 +2017,10 @@ def build_year_dataset(
     )
     if origin_corrections:
         stats["origin_corrections_loaded"] = len(origin_corrections)
+    vs30_lookup = load_vs30_lookup(vs30_csv)
+    if vs30_lookup is not None:
+        stats["vs30_rows_loaded"] = int(vs30_lookup.get("rows_loaded", 0))
+        stats["vs30_rows_valid"] = int(vs30_lookup.get("valid_rows", 0))
 
     diting_model = None
     if run_diting:
@@ -1840,6 +2042,10 @@ def build_year_dataset(
         _write_string_or_numeric_dataset(meta_grp, "alignment_mode", np.array(["earliest_record_start"], dtype=object))
         _write_string_or_numeric_dataset(meta_grp, "waveform_root", np.array([str(waveform_root)], dtype=object))
         meta_grp.create_dataset("year", data=year)
+        if vs30_lookup is not None:
+            _write_string_or_numeric_dataset(meta_grp, "vs30_csv", np.array([str(vs30_lookup.get("path", ""))], dtype=object))
+            meta_grp.create_dataset("vs30_max_distance_km", data=float(vs30_max_distance_km))
+            meta_grp.create_dataset("require_vs30", data=int(require_vs30))
 
         for outer_tar_path in tqdm(outer_archives, desc=f"year {year}", unit="event", position=0):
             stats["events_seen"] += 1
@@ -1915,6 +2121,20 @@ def build_year_dataset(
                 stats["events_dropped_after_final_pick_filter"] += 1
                 stats["stations_dropped_after_final_pick_filter"] += len(refined_station_df)
                 continue
+            if vs30_lookup is not None:
+                datasets, event_meta, refined_station_df, vs30_stats = add_vs30_to_event(
+                    datasets=datasets,
+                    event_meta=event_meta,
+                    station_df=refined_station_df,
+                    vs30_lookup=vs30_lookup,
+                    max_distance_km=vs30_max_distance_km,
+                    require_vs30=require_vs30,
+                )
+                stats.update(vs30_stats)
+                if len(refined_station_df) < min_stations:
+                    stats["events_dropped_after_vs30_filter"] += 1
+                    stats["stations_dropped_after_vs30_filter"] += int(event_meta.get("VS30_Stations_Dropped", 0))
+                    continue
             event_rows.append(event_meta)
             station_rows.extend(refined_station_df.to_dict(orient="records"))
 

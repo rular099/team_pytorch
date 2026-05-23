@@ -1,18 +1,18 @@
 # Stage2 512 Position-Information Experiment Plan: VS30 + RoPE
 
-Date: 2026-05-17
+Date: 2026-05-23
 
-This plan follows the b25-b29 strong-PGA follow-up. The user-selected strong-PGA
-candidate is b29-last, so validation MAE is not the main selection criterion for
-that line. The next question is whether location/site information improves the
-mechanism or only memorizes seen station/location priors.
+This plan follows the b43/b43_clean stage2 anchor. The next question is whether
+location/site information improves the mechanism or only memorizes seen
+station/location priors.
 
 ## Current Anchors
 
-- Clean mechanism anchor: b19 `pga_norm_amp_abs_add`.
-- Lowest global-Val-MAE reference: b21 `pga_norm_amp_pga08`.
-- Strong-PGA anchor: b29-last `pga_norm_amp_pga08_strongw2`.
-- Diagnostic references: b5, b27, b28.
+- Legacy clean mechanism anchor: b19 `pga_norm_amp_abs_add`.
+- Legacy strong-PGA reference: b29-last `pga_norm_amp_pga08_strongw2`.
+- Current structure anchor: b43 `pga_norm_amp_pga08_strongw2_xattn4_gate0_firstres`.
+- Clean-data balanced anchor: b43_clean best in
+  `weights_japan_overfit_pga15_stage2_512_b43_pga_norm_amp_pga08_strongw2_xattn4_gate0_firstres_new`.
 
 ## Key Code Caveat
 
@@ -28,58 +28,80 @@ TEAM self-attention transformer is not run before PGA prediction. Therefore,
 adding RoPE only inside `MultiHeadSelfAttention` would not affect b19/b29 PGA
 outputs unless the station tokens are explicitly contextualized before readout.
 
-The RoPE experiment must therefore include a station-context control:
+The RoPE experiment must therefore include a station-context control. The raw
+`transformer_pre_readout` path collapsed in b41/b47, so the default control for
+new experiments should be the gated identity-initialized path:
 
 ```text
 station_context_mode = off/current
-station_context_mode = transformer_pre_readout, use_team_rope = false
-station_context_mode = transformer_pre_readout, use_team_rope = true
+station_context_mode = gated_transformer_pre_readout, use_team_rope = false
+station_context_mode = gated_transformer_pre_readout, use_team_rope = true
 ```
 
-Do not compare current b19 directly against `transformer_pre_readout + RoPE` and
-interpret the whole delta as RoPE.
+Do not compare current b43 directly against `gated_transformer_pre_readout +
+RoPE` and interpret the whole delta as RoPE.
+
+## Implementation Status (2026-05-23)
+
+VS30 source and data:
+
+- Source: J-SHIS Mesh Search API, field `AVS` (30 m average S-wave velocity).
+- Downloader: `tools/download_japan_vs30.py`.
+- Downloaded station table:
+  `resources/vs30/japan_vs30_jshis_station_cache.csv`.
+- Coverage: 1489 unique station-coordinate rows, 1483 valid VS30 values.
+- Missing rows: 6 KNG20x island/near-offshore stations returned J-SHIS 404 at
+  1 km radius and are represented by `vs30_valid=0`.
+
+HDF5 construction:
+
+- `build_japan_training_data.py` accepts `--vs30_csv`,
+  `--vs30_max_distance_km`, and `--require_vs30`.
+- `japan_dataset_builder.py` writes station-aligned `vs30`, `vs30_valid`,
+  `vs30_query_distance_km`, `vs30_source`, `vs30_mesh_code`, and
+  `vs30_match_method` datasets when `--vs30_csv` is provided.
+- Default behavior is non-destructive: missing VS30 stays masked. Use
+  `--require_vs30` only for a strict ablation that drops stations without VS30.
+
+Training/model:
+
+- Generator switch: `model_params.use_vs30=true` makes
+  `PreloadedEventGenerator` append station and target VS30 tensors after
+  `pga_target_valid`; old configs keep the previous input layout.
+- Model switch: `use_vs30=false` by default. When enabled, station and target
+  VS30 use `[log(vs30 / 760), valid]` projections with separate learnable gates.
+- RoPE switch: `use_team_rope=false` by default; top-level model params are
+  forwarded into TEAM self-attention. The first pass uses
+  `rope_coord_mode="relative_xy_km"` and `rope_coord_scale=100.0`.
+- Station context now supports `gated_transformer_pre_readout` with
+  `station_context_gate_init=0.0`; this is the intended RoPE control path.
 
 ## Implementation Design
 
 ### VS30
 
-VS30 is not currently in the training graph. Local audit of
-`team_pytorch/japan_overfit.hdf5` shows event datasets only contain:
-
-```text
-coords, p_picks, pga, waveforms
-```
-
-The b19/b29 configs point to the supercomputer file
-`/public/home/test_bigmodel/seismogram/zb/team_pytorch/japan_data/japan_2024.hdf5`,
-which is not available locally. Before implementation, audit that file for VS30
-or station identifiers that can be joined to an external VS30 table.
-
-Required VS30 path:
+VS30 path:
 
 1. Data layer:
-   - support per-event `vs30` aligned with `coords`, or external station table
-     keyed by station code;
-   - if using an external table, HDF5 must expose stable station identifiers for
-     both input stations and target PGA stations;
-   - return zero-imputed VS30 plus a validity mask when `use_vs30=false` or when
-     old configs do not request VS30.
+   - support per-event `vs30` aligned with `coords`;
+   - join the external station table by `station_code`, with coordinate fallback
+     only when the code is missing;
+   - return zero-imputed VS30 plus a validity mask when old HDF5 files lack
+     VS30.
 2. Generator:
-   - extend inputs after current `[waveforms, metadata, station_valid,
-     pga_targets, pga_target_valid]` only when the model declares site features,
-     or add a backward-compatible optional dictionary path;
-   - produce `station_site_features` and `pga_target_site_features`;
-   - normalize as `log(vs30)` using train-set mean/std and keep a validity bit.
+   - extend inputs after `[waveforms, metadata, station_valid, pga_targets,
+     pga_target_valid]` only when `use_vs30=true`;
+   - produce station and target VS30 tensors plus validity masks.
 3. Model:
    - config default `use_vs30=false`;
-   - add `station_site_proj([log_vs30_norm, valid]) -> emb_dim` with a small
-     learnable gate;
-   - add `target_site_proj([log_vs30_norm, valid]) -> emb_dim` to PGA query
+   - add `station_site_proj([log(vs30 / 760), valid]) -> emb_dim` with a
+     learnable gate initialized by `vs30_init_gate`;
+   - add `target_site_proj([log(vs30 / 760), valid]) -> emb_dim` to PGA query
      embeddings with a separate gate;
    - record diagnostics for VS30 valid ratio and gate values.
 
-Fail closed: if `use_vs30=true` and target-station VS30 cannot be mapped, do not
-silently run a station-only VS30 ablation.
+Fail closed in analysis: if target VS30 valid ratio is low, do not interpret the
+run as a clean target-site VS30 ablation.
 
 ### RoPE
 
@@ -99,9 +121,11 @@ Recommended config:
 
 Implementation shape:
 
-1. Add `station_context_mode` to `FullModel`.
-2. When `station_context_mode="transformer_pre_readout"`, run the station
-   transformer on station tokens before event/PGA cross-attention.
+1. Use `station_context_mode="gated_transformer_pre_readout"` for the main
+   control. Keep raw `transformer_pre_readout` only for backward-compatible
+   debugging.
+2. In gated mode, run the station transformer on station tokens and combine it
+   as `station_feature + gate * (transformer_context - station_feature)`.
 3. Pass station coordinates into `Transformer.forward(...)`,
    `TransformerBlock.forward(...)`, and `MultiHeadSelfAttention.forward(...)`.
 4. Apply 2D continuous RoPE to Q/K before attention scores, using projected
@@ -116,17 +140,17 @@ obviously broken. They are not sufficient for claiming site generalization.
 
 | Exp | Anchor | Station context | Coord mode | VS30 | RoPE | Purpose |
 |---|---|---|---|---|---|---|
-| pos-a | b19 | off/current | abs add | off | off | reproduce clean anchor |
-| pos-b | b19 | off/current | abs add | on | off | VS30 effect without station context |
-| pos-c | b19 | transformer_pre_readout | abs add | off | off | station-context control |
-| pos-d | b19 | transformer_pre_readout | abs add | off | on | RoPE isolated against pos-c |
-| pos-e | b19 | transformer_pre_readout | abs add | on | off | VS30 under station context |
-| pos-f | b19 | transformer_pre_readout | abs add | on | on | VS30 + RoPE interaction |
-| pos-g | b29 | off/current | abs add | off | off | reproduce strong-PGA anchor |
-| pos-h | b29 | transformer_pre_readout | abs add | off | off | strong-PGA station-context control |
-| pos-i | b29 | transformer_pre_readout | abs add | on | on | strong-PGA VS30 + RoPE |
-| pos-j | b19 | transformer_pre_readout | relative/geometry-reduced | off | on | geometry reduced RoPE check |
-| pos-k | b19 | transformer_pre_readout | relative/geometry-reduced | on | on | VS30 under geometry reduction |
+| pos-a | b43_clean | off/current | abs add | off | off | reproduce clean-data anchor |
+| pos-b | b43_clean | off/current | abs add | on | off | VS30 effect without station context |
+| pos-c | b43_clean | gated_transformer_pre_readout | abs add | off | off | station-context control |
+| pos-d | b43_clean | gated_transformer_pre_readout | abs add | off | on | RoPE isolated against pos-c |
+| pos-e | b43_clean | gated_transformer_pre_readout | abs add | on | off | VS30 under station context |
+| pos-f | b43_clean | gated_transformer_pre_readout | abs add | on | on | VS30 + RoPE interaction |
+| pos-g | b43 | off/current | abs add | off | off | old-data anchor bridge |
+| pos-h | b43 | gated_transformer_pre_readout | abs add | off | off | old-data station-context control |
+| pos-i | b43 | gated_transformer_pre_readout | abs add | on | on | old-data VS30 + RoPE bridge |
+| pos-j | b43_clean | gated_transformer_pre_readout | relative/geometry-reduced | off | on | geometry-reduced RoPE check |
+| pos-k | b43_clean | gated_transformer_pre_readout | relative/geometry-reduced | on | on | VS30 under geometry reduction |
 
 ## Station/Spatial Holdout Matrix
 
@@ -137,12 +161,12 @@ spatial holdout protocol:
 |---|---|---|---|---|
 | hold-a | b19 | off/current | off | off |
 | hold-b | b19 | off/current | on | off |
-| hold-c | b19 | transformer_pre_readout | off | off |
-| hold-d | b19 | transformer_pre_readout | off | on |
-| hold-e | b19 | transformer_pre_readout | on | on |
-| hold-f | b29 | off/current | off | off |
-| hold-g | b29 | transformer_pre_readout | off | off |
-| hold-h | b29 | transformer_pre_readout | on | on |
+| hold-c | b43_clean | gated_transformer_pre_readout | off | off |
+| hold-d | b43_clean | gated_transformer_pre_readout | off | on |
+| hold-e | b43_clean | gated_transformer_pre_readout | on | on |
+| hold-f | b43 | off/current | off | off |
+| hold-g | b43 | gated_transformer_pre_readout | off | off |
+| hold-h | b43 | gated_transformer_pre_readout | on | on |
 
 Report seen-station and held-out-station metrics separately.
 
@@ -162,7 +186,8 @@ Always report train and validation:
 
 - VS30 is useful only if it helps held-out station/spatial performance, or
   reduces site-correlated residuals without simply increasing train memorization.
-- RoPE is useful only if `transformer_pre_readout + RoPE` beats the
-  `transformer_pre_readout` control on relevant train-fit and holdout metrics.
+- RoPE is useful only if `gated_transformer_pre_readout + RoPE` beats the
+  `gated_transformer_pre_readout` control on relevant train-fit and holdout
+  metrics.
 - For b29-line runs, prioritize strong-PGA fit and bias. For b19-line runs,
   prioritize mechanism clarity and balanced global metrics.
