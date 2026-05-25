@@ -63,8 +63,30 @@ HDF5 construction:
 - `japan_dataset_builder.py` writes station-aligned `vs30`, `vs30_valid`,
   `vs30_query_distance_km`, `vs30_source`, `vs30_mesh_code`, and
   `vs30_match_method` datasets when `--vs30_csv` is provided.
-- Default behavior is non-destructive: missing VS30 stays masked. Use
-  `--require_vs30` only for a strict ablation that drops stations without VS30.
+- The generic builder remains compatible with older/non-strict data when
+  `--require_vs30` is omitted, but the server rebuild presets now default to
+  `REQUIRE_VS30=1` so the final strict DiTing dataset drops station rows
+  without valid VS30.
+- Server raw waveform input defaults to
+  `/public/home/zhangbei/work_dir/zhangbei/japan_knet/<year>/*.tar`.
+- Server converted output defaults to
+  `/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted/<variant>/<year>/`.
+  The strict origin-corrected DiTing-pick + VS30 preset uses variant
+  `origin_corrected_diting_vel_acc_vs30`, so the 2000-2024 rebuild writes
+  yearly HDF5 files under
+  `/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted/origin_corrected_diting_vel_acc_vs30/<year>/`.
+- `rebuild_japan_training_data_server_diting_vel_acc.sh` defaults to all years
+  2000-2024 when neither `YEAR` nor `YEARS` is supplied. It keeps only rows
+  whose final label can be selected from `p_pick_diting_vel_aligned`, falling
+  back to `p_pick_diting_acc_aligned`, and then sanity-checks that every station
+  row has valid VS30 and every event group contains VS30 datasets.
+- Diagnostics now include VS30 coverage outputs:
+  `vs30_coverage_summary.csv`, `vs30_by_source.csv`,
+  `vs30_by_match_method.csv`, `vs30_by_network.csv`, `vs30_hist.png`,
+  `vs30_match_distance_hist.png`, and `vs30_match_method_counts.png`. Existing
+  pick-difference/sample CSVs also carry VS30 columns, and waveform diagnostic
+  titles report the station VS30 value, validity flag, match method, and query
+  distance.
 
 Training/model:
 
@@ -189,7 +211,9 @@ bash train_light_slurm.sh pga_configs/transformer_japan_overfit_pga15_stage2_512
 ```
 
 The VS30 configs assume the chaosuan HDF5 path in the configs points to a
-rebuilt clean dataset that contains `vs30` and `vs30_valid`.
+rebuilt clean dataset that contains complete `vs30` and `vs30_valid` datasets.
+The current strict rebuild target is
+`/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted/origin_corrected_diting_vel_acc_vs30/<year>/japan_<year>.hdf5`.
 
 ## Architecture Revision (2026-05-25)
 

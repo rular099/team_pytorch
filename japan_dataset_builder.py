@@ -1313,6 +1313,75 @@ def write_pick_diagnostics(
             else np.nan,
         }
         pd.DataFrame([coverage_summary]).to_csv(diagnostics_dir / "theoretical_p_record_coverage_summary.csv", index=False)
+
+    vs30_values_for_plot = None
+    vs30_dist_for_plot = None
+    vs30_method_counts_for_plot = None
+    if "vs30_valid" in out_df.columns:
+        def numeric_optional_column(name: str, default: float = np.nan) -> pd.Series:
+            values = out_df[name] if name in out_df.columns else pd.Series(default, index=out_df.index)
+            return pd.to_numeric(values, errors="coerce")
+
+        vs30_valid = numeric_optional_column("vs30_valid", 0.0).fillna(0).astype(bool)
+        vs30_col = "vs30_mps" if "vs30_mps" in out_df.columns else "vs30"
+        vs30_values = numeric_optional_column(vs30_col)
+        vs30_finite = vs30_values[vs30_valid & np.isfinite(vs30_values)]
+        vs30_dist = numeric_optional_column("vs30_query_distance_km")
+        vs30_dist_finite = vs30_dist[vs30_valid & np.isfinite(vs30_dist)]
+        vs30_values_for_plot = vs30_finite
+        vs30_dist_for_plot = vs30_dist_finite
+
+        summary = {
+            "station_rows": int(len(out_df)),
+            "valid_rows": int(vs30_valid.sum()),
+            "missing_rows": int((~vs30_valid).sum()),
+            "valid_ratio": float(vs30_valid.mean()) if len(vs30_valid) else np.nan,
+            "vs30_mean_mps": float(vs30_finite.mean()) if len(vs30_finite) else np.nan,
+            "vs30_median_mps": float(vs30_finite.median()) if len(vs30_finite) else np.nan,
+            "vs30_std_mps": float(vs30_finite.std()) if len(vs30_finite) else np.nan,
+            "vs30_p05_mps": float(vs30_finite.quantile(0.05)) if len(vs30_finite) else np.nan,
+            "vs30_p95_mps": float(vs30_finite.quantile(0.95)) if len(vs30_finite) else np.nan,
+            "vs30_min_mps": float(vs30_finite.min()) if len(vs30_finite) else np.nan,
+            "vs30_max_mps": float(vs30_finite.max()) if len(vs30_finite) else np.nan,
+            "match_distance_mean_km": float(vs30_dist_finite.mean()) if len(vs30_dist_finite) else np.nan,
+            "match_distance_median_km": float(vs30_dist_finite.median()) if len(vs30_dist_finite) else np.nan,
+            "match_distance_p95_km": float(vs30_dist_finite.quantile(0.95)) if len(vs30_dist_finite) else np.nan,
+            "match_distance_max_km": float(vs30_dist_finite.max()) if len(vs30_dist_finite) else np.nan,
+        }
+        pd.DataFrame([summary]).to_csv(diagnostics_dir / "vs30_coverage_summary.csv", index=False)
+
+        for group_col, output_name in (
+            ("vs30_source", "vs30_by_source.csv"),
+            ("vs30_match_method", "vs30_by_match_method.csv"),
+            ("source_network", "vs30_by_network.csv"),
+        ):
+            if group_col not in out_df.columns:
+                continue
+            rows = []
+            group_values = out_df[group_col].fillna("").astype(str)
+            for group_value, part_idx in group_values.groupby(group_values).groups.items():
+                part_valid = vs30_valid.loc[part_idx]
+                part_values = vs30_values.loc[part_idx]
+                part_finite = part_values[part_valid & np.isfinite(part_values)]
+                rows.append(
+                    {
+                        group_col: group_value,
+                        "station_rows": int(len(part_idx)),
+                        "valid_rows": int(part_valid.sum()),
+                        "missing_rows": int((~part_valid).sum()),
+                        "valid_ratio": float(part_valid.mean()) if len(part_valid) else np.nan,
+                        "vs30_median_mps": float(part_finite.median()) if len(part_finite) else np.nan,
+                        "vs30_p05_mps": float(part_finite.quantile(0.05)) if len(part_finite) else np.nan,
+                        "vs30_p95_mps": float(part_finite.quantile(0.95)) if len(part_finite) else np.nan,
+                    }
+                )
+            pd.DataFrame(rows).sort_values("station_rows", ascending=False).to_csv(
+                diagnostics_dir / output_name,
+                index=False,
+            )
+
+        if "vs30_match_method" in out_df.columns:
+            vs30_method_counts_for_plot = out_df["vs30_match_method"].fillna("missing").astype(str).value_counts()
     out_df.to_csv(diagnostics_dir / "station_pick_differences.csv", index=False)
 
     try:
@@ -1366,6 +1435,42 @@ def write_pick_diagnostics(
             fig.tight_layout()
             fig.savefig(diagnostics_dir / "theoretical_p_record_offset_hist.png", dpi=160)
             plt.close(fig)
+
+    if vs30_values_for_plot is not None and not vs30_values_for_plot.empty:
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.hist(vs30_values_for_plot, bins=60, color="0.25")
+        ax.axvline(float(vs30_values_for_plot.median()), color="tab:blue", linewidth=1.2, label="median")
+        ax.set_title("VS30 distribution for retained station rows")
+        ax.set_xlabel("VS30 (m/s)")
+        ax.set_ylabel("count")
+        ax.legend(fontsize=8)
+        fig.tight_layout()
+        fig.savefig(diagnostics_dir / "vs30_hist.png", dpi=160)
+        plt.close(fig)
+
+    if vs30_dist_for_plot is not None and not vs30_dist_for_plot.empty:
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.hist(vs30_dist_for_plot, bins=60, color="0.25")
+        ax.axvline(float(vs30_dist_for_plot.median()), color="tab:blue", linewidth=1.2, label="median")
+        ax.set_title("VS30 coordinate-match distance")
+        ax.set_xlabel("distance (km)")
+        ax.set_ylabel("count")
+        ax.legend(fontsize=8)
+        fig.tight_layout()
+        fig.savefig(diagnostics_dir / "vs30_match_distance_hist.png", dpi=160)
+        plt.close(fig)
+
+    if vs30_method_counts_for_plot is not None and not vs30_method_counts_for_plot.empty:
+        fig_width = max(6.5, 1.1 * len(vs30_method_counts_for_plot))
+        fig, ax = plt.subplots(figsize=(fig_width, 4))
+        vs30_method_counts_for_plot.plot(kind="bar", ax=ax, color="0.25")
+        ax.set_title("VS30 match method counts")
+        ax.set_xlabel("match method")
+        ax.set_ylabel("station rows")
+        ax.tick_params(axis="x", rotation=30)
+        fig.tight_layout()
+        fig.savefig(diagnostics_dir / "vs30_match_method_counts.png", dpi=160)
+        plt.close(fig)
 
     if n_waveform_plots <= 0:
         return
@@ -1516,10 +1621,29 @@ def write_pick_diagnostics(
                     diting_scores.append(f"{name}={float(prob):.3f}")
             if diting_scores:
                 diting_score_text = " " + " ".join(diting_scores)
+            def safe_float(value):
+                try:
+                    return float(value)
+                except (TypeError, ValueError):
+                    return float("nan")
+
+            vs30_value = safe_float(row_dict.get("vs30_mps", row_dict.get("vs30", np.nan)))
+            vs30_valid = safe_float(row_dict.get("vs30_valid", np.nan))
+            vs30_text = ""
+            if np.isfinite(vs30_value):
+                vs30_text = f" VS30={vs30_value:.0f}m/s"
+                if np.isfinite(vs30_valid):
+                    vs30_text += f" valid={int(vs30_valid > 0)}"
+                match_method = row_dict.get("vs30_match_method", "")
+                if match_method:
+                    vs30_text += f" {match_method}"
+                match_distance = safe_float(row_dict.get("vs30_query_distance_km", np.nan))
+                if np.isfinite(match_distance):
+                    vs30_text += f" d={match_distance:.3f}km"
             title = (
                 f"{event} wave_idx={wave_idx} station={row_dict.get('station_code', '')} "
                 f"M={float(row_dict.get('Magnitude', np.nan)):.1f}{distance_text}{diting_score_text} "
-                f"search={row_dict.get('p_pick_search_source', '')}"
+                f"search={row_dict.get('p_pick_search_source', '')}{vs30_text}"
             )
             axes[0].set_title(title)
             fig.tight_layout()

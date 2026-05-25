@@ -8,19 +8,30 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "$SCRIPT_DIR"
 
+if [[ -n "${YEARS:-}" ]]; then
+  for CURRENT_YEAR in $YEARS; do
+    echo "[INFO] ===== rebuilding year $CURRENT_YEAR ====="
+    YEARS= YEAR="$CURRENT_YEAR" "$0"
+  done
+  exit 0
+fi
+
 YEAR=${YEAR:-2024}
+CONVERTED_ROOT=${CONVERTED_ROOT:-/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted}
+OUTPUT_VARIANT=${OUTPUT_VARIANT:-origin_corrected}
 
 # Input waveform root must contain:
 #   ${WAVEFORM_ROOT}/${YEAR}/${event}.tar
 # where each event tar contains *.knt.tar.gz / *.kik.tar.gz component archives.
-WAVEFORM_ROOT=${WAVEFORM_ROOT:-/opt/zb/data/japan}
+WAVEFORM_ROOT=${WAVEFORM_ROOT:-/public/home/zhangbei/work_dir/zhangbei/japan_knet}
 
-# Write to a new directory by default so the old /opt/zb/data/japan/japan_2024.hdf5
-# is not overwritten accidentally. Set OUTPUT_DIR=/opt/zb/data/japan to replace it.
-OUTPUT_DIR=${OUTPUT_DIR:-/opt/zb/data/japan_origin_corrected}
+# Keep outputs organized as:
+#   ${CONVERTED_ROOT}/${OUTPUT_VARIANT}/${YEAR}/japan_${YEAR}.hdf5
+#   ${CONVERTED_ROOT}/${OUTPUT_VARIANT}/${YEAR}/diagnostics/
+OUTPUT_DIR=${OUTPUT_DIR:-$CONVERTED_ROOT/$OUTPUT_VARIANT/$YEAR}
 
 # Used only when origin corrections need to be generated on the server.
-REFERENCE_HDF5=${REFERENCE_HDF5:-/opt/zb/data/japan/japan_${YEAR}.hdf5}
+REFERENCE_HDF5=${REFERENCE_HDF5:-$CONVERTED_ROOT/reference/$YEAR/japan_${YEAR}.hdf5}
 
 ORIGIN_CORRECTIONS_CSV=${ORIGIN_CORRECTIONS_CSV:-$SCRIPT_DIR/jma_origin_corrections/japan_${YEAR}_origin_corrections.csv}
 JMA_CATALOG_CSV=${JMA_CATALOG_CSV:-$SCRIPT_DIR/jma_origin_corrections/jma_${YEAR}_daily_catalog.csv}
@@ -29,7 +40,7 @@ JMA_CACHE_DIR=${JMA_CACHE_DIR:-$SCRIPT_DIR/jma_origin_corrections/cache}
 JMA_TRAVEL_TIME_ZIP=${JMA_TRAVEL_TIME_ZIP:-$SCRIPT_DIR/resources/jma_travel_times/tjma2001h.zip}
 VS30_CSV=${VS30_CSV:-}
 VS30_MAX_DISTANCE_KM=${VS30_MAX_DISTANCE_KM:-1.0}
-REQUIRE_VS30=${REQUIRE_VS30:-0}
+REQUIRE_VS30=${REQUIRE_VS30:-1}
 
 TARGET_SAMPLING_RATE=${TARGET_SAMPLING_RATE:-100}
 MIN_STATIONS=${MIN_STATIONS:-3}
@@ -66,7 +77,7 @@ DITING_TARGET_HALF_WINDOW_SECONDS=${DITING_TARGET_HALF_WINDOW_SECONDS:-10}
 DITING_WINDOW_SECONDS=${DITING_WINDOW_SECONDS:-100}
 VELOCITY_HIGHPASS_HZ=${VELOCITY_HIGHPASS_HZ:-0.05}
 
-DIAGNOSTICS_DIR=${DIAGNOSTICS_DIR:-$OUTPUT_DIR/diagnostics_${YEAR}}
+DIAGNOSTICS_DIR=${DIAGNOSTICS_DIR:-$OUTPUT_DIR/diagnostics}
 N_DIAGNOSTIC_PLOTS=${N_DIAGNOSTIC_PLOTS:-48}
 DIAGNOSTIC_RANDOM_SEED=${DIAGNOSTIC_RANDOM_SEED:-2024}
 
