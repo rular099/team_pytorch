@@ -205,10 +205,40 @@ The next station-context/RoPE pass should not reuse the completed `pos-c` to
 | pos-r5 | `firstres_transformer_pre_readout` | on | `use_rope=true` | VS30 + synchronized RoPE interaction |
 | pos-r6 | `synchronous_station_target` | off | `use_rope=false` | evolving station memory without RoPE |
 | pos-r7 | `synchronous_station_target` | off | `use_rope=true` | evolving station memory with synchronized RoPE |
+| pos-r8 | `synchronous_station_target` | on | `use_rope=true` | strongest VS30 + synchronized station/target evolution check |
 
 Compatibility rule: if an old JSON has no `use_rope`, `use_team_rope` retains
 the previous station-only RoPE behavior. New JSON should prefer `use_rope` and
 avoid relying on `use_team_rope`.
+
+Generated configs for the revised event-split pass:
+
+| Exp | Config | Weight path |
+|---|---|---|
+| pos-r1 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_r1_b43clean_anchor_newschema_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_r1_b43clean_anchor_newschema` |
+| pos-r2 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_r2_b43clean_vs30_newschema_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_r2_b43clean_vs30_newschema` |
+| pos-r3 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_r3_b43clean_firstresctx_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_r3_b43clean_firstresctx` |
+| pos-r4 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_r4_b43clean_firstresctx_rope_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_r4_b43clean_firstresctx_rope` |
+| pos-r5 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_r5_b43clean_firstresctx_vs30_rope_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_r5_b43clean_firstresctx_vs30_rope` |
+| pos-r6 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_r6_b43clean_syncctx_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_r6_b43clean_syncctx` |
+| pos-r7 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_r7_b43clean_syncctx_rope_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_r7_b43clean_syncctx_rope` |
+| pos-r8 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_r8_b43clean_syncctx_vs30_rope_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_r8_b43clean_syncctx_vs30_rope` |
+
+Run each config with the existing single-job launcher:
+
+```bash
+bash train_light_slurm.sh pga_configs/<config>.json
+```
+
+`pos-r1` and `pos-r2` are schema controls against `pos-a` and `pos-b`.
+`pos-r3` to `pos-r5` isolate the station first-residual path and synchronized
+RoPE. `pos-r6` to `pos-r8` test whether station memory and target query should
+co-evolve layer by layer. Interpret `pos-r8` only if `pos-r6` and `pos-r7` do
+not show train-fit or slope collapse.
+
+All `pos-r` configs intentionally use a single RoPE switch,
+`model_params.use_rope`, and remove legacy `use_team_rope` keys from both the
+top-level model params and `mad_params`.
 
 ## Architecture Notes
 
