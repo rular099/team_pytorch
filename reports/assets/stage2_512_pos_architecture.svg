@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .title { font: 700 34px Arial, sans-serif; fill: #111827; }
+      .subtitle { font: 600 22px Arial, sans-serif; fill: #374151; }
+      .label { font: 600 20px Arial, sans-serif; fill: #111827; }
+      .small { font: 17px Arial, sans-serif; fill: #374151; }
+      .note { font: 16px Arial, sans-serif; fill: #4b5563; }
+      .box { fill: #ffffff; stroke: #374151; stroke-width: 2.2; rx: 10; }
+      .main { fill: #ecfdf5; stroke: #047857; }
+      .variant { fill: #eff6ff; stroke: #2563eb; }
+      .readout { fill: #fff7ed; stroke: #c2410c; }
+      .disabled { fill: #f9fafb; stroke: #9ca3af; stroke-dasharray: 9 7; }
+      .arrow { stroke: #374151; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke: #2563eb; stroke-width: 3; fill: none; stroke-dasharray: 10 8; marker-end: url(#arrow-blue); }
+      .section { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; rx: 18; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1800" height="1120" fill="#ffffff"/>
+  <text x="60" y="58" class="title">Stage2 512 station-context / VS30 / RoPE architecture</text>
+  <text x="60" y="92" class="subtitle">Current revision: use_rope synchronizes station self-attention and target-to-station readout; legacy use_team_rope stays station-only.</text>
+
+  <rect x="42" y="125" width="1716" height="255" class="section"/>
+  <text x="70" y="160" class="subtitle">1. Input station token construction</text>
+
+  <rect x="70" y="195" width="230" height="72" class="box"/>
+  <text x="90" y="224" class="label">Waveform window</text>
+  <text x="90" y="250" class="small">3 components, clipped around P</text>
+
+  <rect x="70" y="292" width="230" height="60" class="box"/>
+  <text x="90" y="328" class="label">Station abs coords</text>
+
+  <rect x="340" y="188" width="250" height="88" class="main"/>
+  <text x="365" y="219" class="label">DiTing backbone</text>
+  <text x="365" y="246" class="small">+ station adapter</text>
+
+  <rect x="340" y="292" width="250" height="60" class="main"/>
+  <text x="365" y="328" class="label">Coordinate embedding</text>
+
+  <rect x="632" y="188" width="235" height="88" class="main"/>
+  <text x="654" y="219" class="label">Amplitude scale</text>
+  <text x="654" y="246" class="small">gated scale embedding</text>
+
+  <rect x="632" y="292" width="235" height="60" class="variant"/>
+  <text x="654" y="328" class="label">Station VS30</text>
+
+  <rect x="915" y="218" width="310" height="96" class="main"/>
+  <text x="940" y="250" class="label">Station token S</text>
+  <text x="940" y="277" class="small">DiTing + coord + amplitude</text>
+  <text x="940" y="301" class="small">+ optional gated VS30</text>
+
+  <text x="1255" y="218" class="note">VS30 feature, when enabled:</text>
+  <text x="1255" y="245" class="note">[log(VS30 / 760), valid] -&gt; Linear -&gt; gate</text>
+  <text x="1255" y="275" class="note">pos-b/e/f add this to station tokens.</text>
+  <text x="1255" y="305" class="note">pos-a/c/d keep this path disabled.</text>
+
+  <path d="M300 231 L340 231" class="arrow"/>
+  <path d="M300 322 L340 322" class="arrow"/>
+  <path d="M590 232 L632 232" class="arrow"/>
+  <path d="M590 322 L915 250" class="arrow"/>
+  <path d="M867 232 L915 250" class="arrow"/>
+  <path d="M867 322 L915 285" class="dashed"/>
+
+  <rect x="42" y="410" width="1716" height="270" class="section"/>
+  <text x="70" y="445" class="subtitle">2. Station memory before PGA readout</text>
+
+  <rect x="80" y="505" width="250" height="92" class="main"/>
+  <text x="105" y="540" class="label">pos-a / pos-b</text>
+  <text x="105" y="568" class="small">Identity station memory</text>
+
+  <rect x="410" y="490" width="330" height="120" class="variant"/>
+  <text x="438" y="525" class="label">Station context options</text>
+  <text x="438" y="553" class="small">first residual station block</text>
+  <text x="438" y="580" class="small">+ gated refinement blocks</text>
+
+  <rect x="790" y="485" width="280" height="62" class="variant"/>
+  <text x="818" y="523" class="label">RoPE on TEAM Q/K</text>
+
+  <rect x="790" y="570" width="410" height="70" class="variant"/>
+  <text x="818" y="612" class="label">Legacy: S + gate * (TEAM(S) - S)</text>
+
+  <rect x="1290" y="520" width="285" height="90" class="main"/>
+  <text x="1320" y="555" class="label">Station memory</text>
+  <text x="1320" y="583" class="small">K/V for PGA readout</text>
+
+  <text x="80" y="648" class="note">Important: station-context is separate from the PGA readout first residual.</text>
+  <text x="790" y="465" class="note">New use_rope applies the same coordinate system to station and target attention.</text>
+
+  <path d="M205 380 L205 505" class="arrow"/>
+  <path d="M205 597 L1290 565" class="arrow"/>
+  <path d="M1070 314 L575 490" class="dashed"/>
+  <path d="M740 550 L790 516" class="dashed"/>
+  <path d="M930 547 L995 570" class="dashed"/>
+  <path d="M1200 605 L1290 565" class="dashed"/>
+
+  <rect x="42" y="710" width="1716" height="330" class="section"/>
+  <text x="70" y="745" class="subtitle">3. PGA target query and readout</text>
+
+  <rect x="75" y="792" width="230" height="72" class="box"/>
+  <text x="98" y="823" class="label">Target abs coords</text>
+  <text x="98" y="849" class="small">for each PGA target</text>
+
+  <rect x="75" y="892" width="230" height="64" class="variant"/>
+  <text x="98" y="931" class="label">Target VS30</text>
+
+  <rect x="360" y="792" width="310" height="90" class="main"/>
+  <text x="388" y="827" class="label">PGA target query</text>
+  <text x="388" y="855" class="small">target coord embedding</text>
+  <text x="388" y="878" class="small">+ learned query token</text>
+
+  <rect x="360" y="905" width="310" height="70" class="variant"/>
+  <text x="388" y="946" class="label">Optional gated target VS30</text>
+
+  <rect x="760" y="800" width="330" height="95" class="readout"/>
+  <text x="792" y="836" class="label">Cross-attention layer 1</text>
+  <text x="792" y="864" class="small">Q = target query</text>
+  <text x="792" y="888" class="small">K/V = station memory</text>
+
+  <rect x="1150" y="800" width="250" height="95" class="readout"/>
+  <text x="1180" y="836" class="label">First residual</text>
+  <text x="1180" y="864" class="small">LayerNorm(query</text>
+  <text x="1180" y="888" class="small">+ attn_out)</text>
+
+  <rect x="1460" y="800" width="255" height="95" class="readout"/>
+  <text x="1490" y="835" class="label">3 refinement layers</text>
+  <text x="1490" y="864" class="small">zero-init gated</text>
+  <text x="1490" y="888" class="small">attention + FFN</text>
+
+  <rect x="790" y="930" width="360" height="70" class="variant"/>
+  <text x="820" y="958" class="label">Synchronous variant</text>
+  <text x="820" y="984" class="small">repeat: update station S, then target T attends S</text>
+
+  <rect x="1210" y="930" width="300" height="70" class="main"/>
+  <text x="1242" y="972" class="label">MLP PGA head: log PGA</text>
+
+  <text x="78" y="1012" class="note">Target tokens remain query-only: they attend station memory, never other targets.</text>
+  <text x="1010" y="760" class="note">With use_rope=true, target Q and station K are both rotated before this readout attention.</text>
+
+  <path d="M305 828 L360 836" class="arrow"/>
+  <path d="M305 924 L360 940" class="dashed"/>
+  <path d="M670 836 L760 848" class="arrow"/>
+  <path d="M670 940 L760 872" class="dashed"/>
+  <path d="M1432 610 L925 800" class="arrow"/>
+  <path d="M1090 848 L1150 848" class="arrow"/>
+  <path d="M1400 848 L1460 848" class="arrow"/>
+  <path d="M1588 895 L1440 930" class="arrow"/>
+</svg>

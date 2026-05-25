@@ -1,6 +1,7 @@
 # Stage2 512 Position-Information Experiment Plan: VS30 + RoPE
 
 Date: 2026-05-23
+Updated: 2026-05-25
 
 This plan follows the b43/b43_clean stage2 anchor. The next question is whether
 location/site information improves the mechanism or only memorizes seen
@@ -29,19 +30,21 @@ adding RoPE only inside `MultiHeadSelfAttention` would not affect b19/b29 PGA
 outputs unless the station tokens are explicitly contextualized before readout.
 
 The RoPE experiment must therefore include a station-context control. The raw
-`transformer_pre_readout` path collapsed in b41/b47, so the default control for
-new experiments should be the gated identity-initialized path:
+`transformer_pre_readout` path collapsed in b41/b47, and the first smoke pass
+showed that legacy gated context barely opened. The default control for the
+next pass should be the station first-residual path:
 
 ```text
 station_context_mode = off/current
-station_context_mode = gated_transformer_pre_readout, use_team_rope = false
-station_context_mode = gated_transformer_pre_readout, use_team_rope = true
+station_context_mode = firstres_transformer_pre_readout, use_rope = false
+station_context_mode = firstres_transformer_pre_readout, use_rope = true
+station_context_mode = synchronous_station_target, use_rope = true
 ```
 
-Do not compare current b43 directly against `gated_transformer_pre_readout +
-RoPE` and interpret the whole delta as RoPE.
+Do not compare current b43 directly against station-context + RoPE and interpret
+the whole delta as RoPE.
 
-## Implementation Status (2026-05-23)
+## Implementation Status (2026-05-25)
 
 VS30 source and data:
 
@@ -70,11 +73,16 @@ Training/model:
   `pga_target_valid`; old configs keep the previous input layout.
 - Model switch: `use_vs30=false` by default. When enabled, station and target
   VS30 use `[log(vs30 / 760), valid]` projections with separate learnable gates.
-- RoPE switch: `use_team_rope=false` by default; top-level model params are
-  forwarded into TEAM self-attention. The first pass uses
-  `rope_coord_mode="relative_xy_km"` and `rope_coord_scale=100.0`.
-- Station context now supports `gated_transformer_pre_readout` with
-  `station_context_gate_init=0.0`; this is the intended RoPE control path.
+- RoPE switches:
+  - current configs should use one top-level `model_params.use_rope` switch;
+    when true, station self-attention and target-to-station PGA readout both
+    use the same continuous 2D RoPE coordinate system;
+  - legacy configs that only set `use_team_rope` keep the old behavior:
+    station self-attention can use RoPE, but PGA readout RoPE stays disabled.
+- Station context now has three useful paths: legacy
+  `gated_transformer_pre_readout`, new
+  `firstres_transformer_pre_readout` / `gated_transformer_pre_readout_firstres`,
+  and new `synchronous_station_target`.
 
 ## Implementation Design
 
@@ -105,15 +113,18 @@ run as a clean target-site VS30 ablation.
 
 ### RoPE
 
-RoPE should be added to TEAM station self-attention, not to the target
-cross-attention readout in the first pass.
+Current design: station and PGA target coordinates live in the same coordinate
+system, so the new `use_rope` switch applies RoPE to both station self-attention
+and target-to-station PGA readout. The older `use_team_rope` key remains
+supported only for backward compatibility and preserves the station-only RoPE
+semantics used by the completed `pos-a` to `pos-f` smoke runs.
 
 Recommended config:
 
 ```json
-"station_context_mode": "off",
+"use_rope": true,
+"station_context_mode": "firstres_transformer_pre_readout",
 "mad_params": {
-  "use_team_rope": false,
   "rope_coord_mode": "relative_xy_km",
   "rope_coord_scale": 100.0
 }
@@ -121,22 +132,30 @@ Recommended config:
 
 Implementation shape:
 
-1. Use `station_context_mode="gated_transformer_pre_readout"` for the main
-   control. Keep raw `transformer_pre_readout` only for backward-compatible
-   debugging.
-2. In gated mode, run the station transformer on station tokens and combine it
-   as `station_feature + gate * (transformer_context - station_feature)`.
+1. Use `station_context_mode="firstres_transformer_pre_readout"` for the main
+   station-context control. Keep raw `transformer_pre_readout` and legacy
+   `gated_transformer_pre_readout` only for backward-compatible debugging.
+2. In first-residual station context, the first station block uses the standard
+   transformer residual path; later station refinement blocks use zero-init
+   gated residuals.
 3. Pass station coordinates into `Transformer.forward(...)`,
    `TransformerBlock.forward(...)`, and `MultiHeadSelfAttention.forward(...)`.
-4. Apply 2D continuous RoPE to Q/K before attention scores, using projected
-   relative x/y station coordinates. Use station-center-relative coordinates so
-   absolute location is still controlled by the existing coordinate embedding.
+4. Pass target and station coordinates into `CrossAttentionReadout`; when
+   `use_rope=true`, rotate target Q and station K before target-to-station
+   attention scores.
 5. Keep RoPE disabled by default so old configs are unchanged.
+6. `synchronous_station_target` tests the stronger variant:
+   `S_l = station_block_l(S_{l-1})`, then
+   `T_l = target_cross_block_l(T_{l-1}, S_l)`. Targets still never attend other
+   targets.
 
 ## Event-Split Smoke Matrix
 
-These runs check that the new paths train and that the factor directions are not
-obviously broken. They are not sufficient for claiming site generalization.
+These completed runs checked that the first VS30 / station-context / RoPE paths
+trained and that the factor directions were not obviously broken. They are not
+sufficient for claiming site generalization. They used the legacy
+`gated_transformer_pre_readout` and `use_team_rope` semantics; therefore the
+RoPE rows below applied RoPE only inside station self-attention.
 
 | Exp | Anchor | Station context | Coord mode | VS30 | RoPE | Purpose |
 |---|---|---|---|---|---|---|
@@ -152,6 +171,180 @@ obviously broken. They are not sufficient for claiming site generalization.
 | pos-j | b43_clean | gated_transformer_pre_readout | relative/geometry-reduced | off | on | geometry-reduced RoPE check |
 | pos-k | b43_clean | gated_transformer_pre_readout | relative/geometry-reduced | on | on | VS30 under geometry reduction |
 
+Generated configs for the first event-split smoke pass:
+
+| Exp | Config | Weight path |
+|---|---|---|
+| pos-a | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_a_b43clean_anchor_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_a_b43clean_anchor` |
+| pos-b | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_b_b43clean_vs30_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_b_b43clean_vs30` |
+| pos-c | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_c_b43clean_gatedctx_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_c_b43clean_gatedctx` |
+| pos-d | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_d_b43clean_gatedctx_rope_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_d_b43clean_gatedctx_rope` |
+| pos-e | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_e_b43clean_gatedctx_vs30_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_e_b43clean_gatedctx_vs30` |
+| pos-f | `pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_f_b43clean_gatedctx_vs30_rope_chaosuan.json` | `weights_japan_overfit_pga15_stage2_512_pos_f_b43clean_gatedctx_vs30_rope` |
+
+Run each config with the existing single-job launcher, for example:
+
+```bash
+bash train_light_slurm.sh pga_configs/transformer_japan_overfit_pga15_stage2_512_pos_a_b43clean_anchor_chaosuan.json
+```
+
+The VS30 configs assume the chaosuan HDF5 path in the configs points to a
+rebuilt clean dataset that contains `vs30` and `vs30_valid`.
+
+## Architecture Revision (2026-05-25)
+
+The next station-context/RoPE pass should not reuse the completed `pos-c` to
+`pos-f` semantics. Use these revised controls instead:
+
+| Exp | Station context | VS30 | RoPE switch | Purpose |
+|---|---|---|---|---|
+| pos-r1 | off | off | `use_rope=false` | clean b43 anchor under new config schema |
+| pos-r2 | off | on | `use_rope=false` | VS30-only control |
+| pos-r3 | `firstres_transformer_pre_readout` | off | `use_rope=false` | station first-residual control |
+| pos-r4 | `firstres_transformer_pre_readout` | off | `use_rope=true` | synchronized station/target RoPE effect |
+| pos-r5 | `firstres_transformer_pre_readout` | on | `use_rope=true` | VS30 + synchronized RoPE interaction |
+| pos-r6 | `synchronous_station_target` | off | `use_rope=false` | evolving station memory without RoPE |
+| pos-r7 | `synchronous_station_target` | off | `use_rope=true` | evolving station memory with synchronized RoPE |
+
+Compatibility rule: if an old JSON has no `use_rope`, `use_team_rope` retains
+the previous station-only RoPE behavior. New JSON should prefer `use_rope` and
+avoid relying on `use_team_rope`.
+
+## Architecture Notes
+
+All six `pos-a` to `pos-f` configs inherit the b43/b43_clean PGA readout
+settings:
+
+```json
+"pga_readout_mode": "target_cross_attention",
+"pga_readout_layers": 4,
+"readout_first_residual": true,
+"readout_residual_gates": true,
+"readout_residual_gate_init": 0.0,
+"readout_ffn_gate_init": 0.0
+```
+
+Therefore, the station-context experiments did keep the first-layer PGA readout
+residual that was shown to be useful in b37/b43. This residual is inside the
+PGA target cross-attention readout, not inside the station-context transformer:
+the first target-to-station cross-attention layer does
+`LayerNorm(query + attn_out)`. The remaining three readout refinement layers use
+zero-initialized learnable gates for their attention and FFN residual updates.
+
+The completed smoke matrix used a legacy station-context branch:
+
+```text
+station_memory = station_feature + station_context_gate *
+                 (TEAM(station_feature) - station_feature)
+```
+
+with `station_context_gate_init=0.0`. This differs from the older b41/b47
+`transformer_pre_readout` experiments, which replaced the station memory with
+raw TEAM output and collapsed.
+
+The revised path uses station first-residual context instead: the first station
+block keeps the ordinary transformer residual connection, and later station
+blocks are zero-init gated. The synchronous variant updates station memory and
+target readout layer by layer while preserving the rule that targets are
+query-only and cannot attend other targets.
+
+![Large-font pos-a architecture and pos-b to pos-f extensions](assets/stage2_512_pos_architecture.svg)
+
+The large-font SVG version is stored at
+`reports/assets/stage2_512_pos_architecture.svg` for direct viewing or reuse in
+slides.
+
+The event/magnitude/location branch is omitted from the diagram because these
+configs train only `res_comps=["pga"]`, and PGA does not use an event-context
+gate in this matrix.
+
+### VS30 Injection
+
+When `model_params.use_vs30=true`, the generator appends four tensors after
+`pga_target_valid`: station VS30, station VS30 validity, target VS30, and target
+VS30 validity. The model converts each VS30 scalar into:
+
+```text
+[log(vs30 / 760), valid]
+```
+
+and projects it with separate station and target linear layers. The station
+projection is added to the station token before optional station context; the
+target projection is added to the PGA target query before target-to-station
+cross-attention. Both paths have separate scalar gates initialized at
+`vs30_init_gate=0.0`.
+
+### RoPE Injection
+
+For new configs, `use_rope=true` enables RoPE in both places:
+
+- station self-attention Q/K inside TEAM-style station blocks;
+- target-to-station PGA readout Q/K, with target coordinates used for Q and
+  station coordinates used for K.
+
+Coordinates are centered within each event, converted to relative x/y
+kilometers, and scaled by `rope_coord_scale=100.0`. Legacy configs that only set
+`use_team_rope=true` keep the completed smoke-run behavior: station RoPE on,
+PGA readout RoPE off.
+
+### Difference From Previous Architectures
+
+- b19/b29: single target-cross-attention readout; no four-layer gated readout
+  stack and no first-layer target-query residual.
+- b32/b35: four-layer target cross-attention without the stabilizing gated
+  residual design; these collapsed on train and validation.
+- b36/b42: zero-init gated extra readout layers, but no first-layer residual.
+- b37/b43 and `pos-a`: zero-init gated extra readout layers plus first-layer
+  target-query residual.
+- b41/b47: raw `transformer_pre_readout` station context replaces station
+  memory and collapsed.
+- completed `pos-c` to `pos-f`: legacy gated identity station context plus
+  station-only RoPE in `pos-d`/`pos-f`.
+- revised pos-r experiments: station first-residual context, optional
+  synchronized station/target RoPE, and optional synchronous station-target
+  evolution.
+
+### Pos-A To Pos-F Differences
+
+| Exp | Difference from pos-a |
+|---|---|
+| pos-a | Clean b43 anchor: no VS30, no station context, no RoPE. |
+| pos-b | Adds gated station and target VS30 embeddings; station memory remains identity. |
+| pos-c | Adds gated TEAM station context before PGA readout; no VS30 and no RoPE. |
+| pos-d | pos-c plus RoPE inside TEAM station self-attention Q/K. |
+| pos-e | pos-c plus gated station and target VS30 embeddings. |
+| pos-f | pos-c plus both VS30 embeddings and TEAM RoPE. |
+
+## Event-Split Smoke Results (2026-05-25)
+
+Strong PGA is reported on validation targets with `label >= -1.0`; weak-bin
+bias uses `label < -1.4`. Positive bias means overprediction.
+
+| Exp | Setting | Ckpt | Train MAE | Val MAE | Val slope | Val bias | Strong MAE / bias | Weak bias |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| pos-a | anchor | best | 0.0530 | 0.3259 | 0.5246 | +0.0384 | 0.4459 / -0.3843 | +0.2436 |
+| pos-b | VS30 | last | 0.0524 | 0.3250 | 0.5473 | +0.0579 | 0.4212 / -0.3453 | +0.2536 |
+| pos-c | gated context | best | 0.1226 | 0.3296 | 0.5362 | +0.0688 | 0.4100 / -0.3169 | +0.2692 |
+| pos-d | gated context + RoPE | best | 0.0711 | 0.3174 | 0.5095 | +0.0160 | 0.4651 / -0.4154 | +0.2288 |
+| pos-e | gated context + VS30 | last | 0.0444 | 0.3231 | 0.5439 | +0.0324 | 0.4494 / -0.3806 | +0.2330 |
+| pos-f | gated context + VS30 + RoPE | last | 0.0877 | 0.3137 | 0.4750 | +0.0163 | 0.4700 / -0.4247 | +0.2396 |
+
+Interpretation:
+
+- None of the new paths shows the b41/b47 collapse; PGA prediction standard
+  deviation remains nonzero.
+- VS30-only (`pos-b`) is the cleanest weak positive signal, but the gain over
+  `pos-a` is small.
+- Gated station context does not yet provide a clean capacity gain. `pos-c`
+  fits train much worse than `pos-a`.
+- The lower Val MAE of `pos-f` should not be interpreted as a RoPE/VS30 win:
+  its validation slope falls to 0.4750 and strong-PGA underprediction worsens.
+- Diagnostics show that the added information channels barely opened. The final
+  `station_context_gate` values are around zero, and `vs30_station_gate` /
+  `vs30_target_gate` remain on the order of 1e-3 to 1e-2. Therefore these runs
+  primarily prove that the paths train without collapse, not that VS30 or RoPE
+  has been effectively used.
+
 ## Station/Spatial Holdout Matrix
 
 After event-split smoke passes, repeat the informative subset under a station or
@@ -161,12 +354,13 @@ spatial holdout protocol:
 |---|---|---|---|---|
 | hold-a | b19 | off/current | off | off |
 | hold-b | b19 | off/current | on | off |
-| hold-c | b43_clean | gated_transformer_pre_readout | off | off |
-| hold-d | b43_clean | gated_transformer_pre_readout | off | on |
-| hold-e | b43_clean | gated_transformer_pre_readout | on | on |
+| hold-c | b43_clean | firstres_transformer_pre_readout | off | off |
+| hold-d | b43_clean | firstres_transformer_pre_readout | off | on |
+| hold-e | b43_clean | firstres_transformer_pre_readout | on | on |
+| hold-sync | b43_clean | synchronous_station_target | off | on |
 | hold-f | b43 | off/current | off | off |
-| hold-g | b43 | gated_transformer_pre_readout | off | off |
-| hold-h | b43 | gated_transformer_pre_readout | on | on |
+| hold-g | b43 | firstres_transformer_pre_readout | off | off |
+| hold-h | b43 | firstres_transformer_pre_readout | on | on |
 
 Report seen-station and held-out-station metrics separately.
 
@@ -186,8 +380,8 @@ Always report train and validation:
 
 - VS30 is useful only if it helps held-out station/spatial performance, or
   reduces site-correlated residuals without simply increasing train memorization.
-- RoPE is useful only if `gated_transformer_pre_readout + RoPE` beats the
-  `gated_transformer_pre_readout` control on relevant train-fit and holdout
+- RoPE is useful only if `firstres_transformer_pre_readout + RoPE` beats the
+  `firstres_transformer_pre_readout` control on relevant train-fit and holdout
   metrics.
 - For b29-line runs, prioritize strong-PGA fit and bias. For b19-line runs,
   prioritize mechanism clarity and balanced global metrics.

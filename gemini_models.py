@@ -43,6 +43,149 @@ def get_activation(activation: str):
         raise ValueError(f"Unknown activation: {activation}")
     return table[act]
 
+
+def _rope_rotate_pairs(x, angles):
+    pair_count = angles.shape[-1]
+    x_pair = x.reshape(*x.shape[:-1], pair_count, 2)
+    cos = torch.cos(angles)[:, None, :, :, None]
+    sin = torch.sin(angles)[:, None, :, :, None]
+    x0 = x_pair[..., 0:1]
+    x1 = x_pair[..., 1:2]
+    rotated = torch.cat([x0 * cos - x1 * sin, x0 * sin + x1 * cos], dim=-1)
+    return rotated.reshape(*x.shape[:-1], pair_count * 2)
+
+
+def _rope_center(coords, valid_mask=None):
+    coords2 = coords[:, :, :2].to(dtype=torch.float32)
+    if valid_mask is None:
+        valid = torch.ones(coords2.shape[:2], device=coords2.device, dtype=coords2.dtype)
+    else:
+        valid = valid_mask.to(device=coords2.device, dtype=coords2.dtype)
+    denom = valid.sum(dim=1, keepdim=True).clamp_min(1.0)
+    return (coords2 * valid[:, :, None]).sum(dim=1, keepdim=True) / denom[:, :, None]
+
+
+def _rope_relative_xy(coords, center, coord_mode='relative_xy_km', lat_origin=37.0):
+    coords2 = coords[:, :, :2].to(dtype=torch.float32)
+    if coord_mode == 'relative_xy_model_units':
+        xy = coords2 - center
+        return xy[:, :, 1], xy[:, :, 0]
+    if coord_mode != 'relative_xy_km':
+        raise ValueError(
+            "rope_coord_mode must be 'relative_xy_km' or 'relative_xy_model_units', "
+            f"got {coord_mode!r}."
+        )
+
+    rel_deg = coords2 - center
+    center_lat_deg = center[:, :, 0] + float(lat_origin)
+    lon_scale = torch.cos(center_lat_deg * math.pi / 180.0).clamp_min(0.1)
+    y_km = rel_deg[:, :, 0] * 111.19492664455874
+    x_km = rel_deg[:, :, 1] * 111.19492664455874 * lon_scale.squeeze(1)[:, None]
+    return x_km, y_km
+
+
+def _apply_continuous_rope_qk(q, k, query_coords, key_coords, key_valid=None,
+                              coord_mode='relative_xy_km', coord_scale=100.0,
+                              rope_base=10000.0, lat_origin=37.0):
+    if query_coords is None or key_coords is None:
+        return q, k
+    head_dim = q.shape[-1]
+    rotary_dim = (head_dim // 4) * 4
+    if rotary_dim < 4:
+        return q, k
+
+    pair_count_per_axis = rotary_dim // 4
+    freq_idx = torch.arange(pair_count_per_axis, device=q.device, dtype=q.dtype)
+    inv_freq = 1.0 / (float(rope_base) ** (freq_idx / max(1, pair_count_per_axis)))
+
+    center = _rope_center(key_coords.to(q.device), valid_mask=key_valid)
+    q_x, q_y = _rope_relative_xy(
+        query_coords.to(q.device),
+        center,
+        coord_mode=coord_mode,
+        lat_origin=lat_origin,
+    )
+    k_x, k_y = _rope_relative_xy(
+        key_coords.to(q.device),
+        center,
+        coord_mode=coord_mode,
+        lat_origin=lat_origin,
+    )
+
+    q_x_angles = (q_x.to(dtype=q.dtype) / float(coord_scale))[:, :, None] * inv_freq[None, None, :]
+    q_y_angles = (q_y.to(dtype=q.dtype) / float(coord_scale))[:, :, None] * inv_freq[None, None, :]
+    k_x_angles = (k_x.to(dtype=k.dtype) / float(coord_scale))[:, :, None] * inv_freq.to(dtype=k.dtype)[None, None, :]
+    k_y_angles = (k_y.to(dtype=k.dtype) / float(coord_scale))[:, :, None] * inv_freq.to(dtype=k.dtype)[None, None, :]
+
+    x_slice = slice(0, 2 * pair_count_per_axis)
+    y_slice = slice(2 * pair_count_per_axis, 4 * pair_count_per_axis)
+
+    q_out = q.clone()
+    k_out = k.clone()
+    q_out[..., x_slice] = _rope_rotate_pairs(q_out[..., x_slice], q_x_angles)
+    q_out[..., y_slice] = _rope_rotate_pairs(q_out[..., y_slice], q_y_angles)
+    k_out[..., x_slice] = _rope_rotate_pairs(k_out[..., x_slice], k_x_angles)
+    k_out[..., y_slice] = _rope_rotate_pairs(k_out[..., y_slice], k_y_angles)
+    return q_out, k_out
+
+
+def _cross_attention_with_rope(attn_module, query, key_value, key_valid,
+                               attn_mask=None, query_coords=None, key_coords=None,
+                               rope_coord_mode='relative_xy_km', rope_coord_scale=100.0,
+                               rope_base=10000.0, rope_lat_origin=37.0):
+    batch, query_len, embed_dim = query.shape
+    key_len = key_value.shape[1]
+    n_heads = attn_module.num_heads
+    head_dim = embed_dim // n_heads
+    if head_dim * n_heads != embed_dim:
+        raise ValueError(f'embed_dim={embed_dim} must be divisible by n_heads={n_heads}.')
+
+    q_weight, k_weight, v_weight = attn_module.in_proj_weight.chunk(3, dim=0)
+    if attn_module.in_proj_bias is None:
+        q_bias = k_bias = v_bias = None
+    else:
+        q_bias, k_bias, v_bias = attn_module.in_proj_bias.chunk(3, dim=0)
+
+    q = F.linear(query, q_weight, q_bias)
+    k = F.linear(key_value, k_weight, k_bias)
+    v = F.linear(key_value, v_weight, v_bias)
+
+    q = q.reshape(batch, query_len, n_heads, head_dim).permute(0, 2, 1, 3)
+    k = k.reshape(batch, key_len, n_heads, head_dim).permute(0, 2, 1, 3)
+    v = v.reshape(batch, key_len, n_heads, head_dim).permute(0, 2, 1, 3)
+
+    q, k = _apply_continuous_rope_qk(
+        q,
+        k,
+        query_coords=query_coords,
+        key_coords=key_coords,
+        key_valid=key_valid,
+        coord_mode=rope_coord_mode,
+        coord_scale=rope_coord_scale,
+        rope_base=rope_base,
+        lat_origin=rope_lat_origin,
+    )
+
+    score = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(head_dim)
+    if key_valid is not None:
+        inv_mask = (~key_valid.bool()).to(score.dtype)[:, None, None, :]
+        score = score - inv_mask * 1e6
+    if attn_mask is not None:
+        if attn_mask.dim() == 3:
+            score = score + attn_mask.reshape(batch, n_heads, query_len, key_len).to(score.dtype)
+        elif attn_mask.dim() == 2:
+            score = score + attn_mask.to(score.dtype)[None, None, :, :]
+        else:
+            raise ValueError(f'Unsupported attn_mask shape for RoPE cross-attention: {attn_mask.shape}')
+
+    weights = torch.softmax(score, dim=-1)
+    if attn_module.dropout > 0:
+        weights = F.dropout(weights, p=attn_module.dropout, training=attn_module.training)
+    out = torch.matmul(weights, v)
+    out = out.permute(0, 2, 1, 3).reshape(batch, query_len, embed_dim)
+    out = attn_module.out_proj(out)
+    return out, weights.mean(dim=1)
+
 #class MLP(nn.Module):
 #    def __init__(self, input_shape, dims=(100, 50), activation=F.relu, last_activation=None):
 #        super().__init__()
@@ -312,6 +455,83 @@ class TransformerBlock(nn.Module):
         return x
 
 
+class GatedTransformerBlock(nn.Module):
+    """Identity-initialized station self-attention block for context refinement."""
+
+    def __init__(self, n_heads, emb_dim, hidden_dim, att_dropout=0.0, initializer_range=0.02, eps=1e-5,
+                 use_team_rope=False, rope_coord_mode='relative_xy_km', rope_coord_scale=100.0,
+                 rope_base=10000.0, rope_lat_origin=37.0,
+                 residual_gate_init=0.0, ffn_gate_init=None):
+        super().__init__()
+        self.attention = MultiHeadSelfAttention(
+            n_heads=n_heads,
+            emb_dim=emb_dim,
+            att_dropout=att_dropout,
+            initializer_range=initializer_range,
+            use_team_rope=use_team_rope,
+            rope_coord_mode=rope_coord_mode,
+            rope_coord_scale=rope_coord_scale,
+            rope_base=rope_base,
+            rope_lat_origin=rope_lat_origin,
+        )
+        self.attn_gate = nn.Parameter(torch.tensor(float(residual_gate_init)))
+        if ffn_gate_init is None:
+            ffn_gate_init = residual_gate_init
+        self.ffn_gate = nn.Parameter(torch.tensor(float(ffn_gate_init)))
+        self.ffn_norm = nn.LayerNorm(emb_dim, eps=eps)
+        self.ffn = nn.Sequential(
+            nn.Linear(emb_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, emb_dim),
+        )
+
+    def forward(self, x, att_mask=None, padding_mask=None, coords=None):
+        modified_x, _ = self.attention(x, attn_mask=att_mask, padding_mask=padding_mask, coords=coords)
+        x = x + self.attn_gate * modified_x
+        x = x + self.ffn_gate * self.ffn(self.ffn_norm(x))
+        if padding_mask is not None:
+            x = x * padding_mask.unsqueeze(-1).to(x.dtype)
+        return x
+
+
+class StationContextEncoder(nn.Module):
+    """Station-only context encoder with first residual then gated refinements."""
+
+    def __init__(self, emb_dim, layers=2, mad_params=None, ffn_params=None,
+                 residual_gate_init=0.0, ffn_gate_init=0.0):
+        super().__init__()
+        mad_params = dict(mad_params or {})
+        ffn_params = dict(ffn_params or {})
+        layers = int(layers)
+        if layers < 1:
+            raise ValueError(f'station context layers must be >= 1, got {layers}')
+        self.first_block = TransformerBlock(emb_dim=emb_dim, **mad_params, **ffn_params)
+        self.extra_blocks = nn.ModuleList([
+            GatedTransformerBlock(
+                emb_dim=emb_dim,
+                residual_gate_init=residual_gate_init,
+                ffn_gate_init=ffn_gate_init,
+                **mad_params,
+                **ffn_params,
+            )
+            for _ in range(layers - 1)
+        ])
+        self._last_attentions = []
+
+    def forward(self, x, att_mask=None, padding_mask=None, coords=None):
+        self._last_attentions = []
+        x = self.first_block(x, att_mask=att_mask, padding_mask=padding_mask, coords=coords)
+        attn = getattr(self.first_block.attention, '_last_attention', None)
+        if attn is not None:
+            self._last_attentions.append(attn)
+        for block in self.extra_blocks:
+            x = block(x, att_mask=att_mask, padding_mask=padding_mask, coords=coords)
+            attn = getattr(block.attention, '_last_attention', None)
+            if attn is not None:
+                self._last_attentions.append(attn)
+        return x
+
+
 class CrossAttentionRefinementBlock(nn.Module):
     """Additional cross-attention refinement layer for query readouts."""
 
@@ -319,11 +539,19 @@ class CrossAttentionRefinementBlock(nn.Module):
                  distance_hidden_dim=64, ffn_hidden_dim=None,
                  residual_gates=False, residual_gate_init=0.0,
                  ffn_gate_init=None, inject_base_query=False,
-                 query_injection_gate_init=1.0, use_ffn=True):
+                 query_injection_gate_init=1.0, use_ffn=True,
+                 use_rope=False, rope_coord_mode='relative_xy_km',
+                 rope_coord_scale=100.0, rope_base=10000.0,
+                 rope_lat_origin=37.0):
         super().__init__()
         self.residual_gates = bool(residual_gates)
         self.inject_base_query = bool(inject_base_query)
         self.use_ffn = bool(use_ffn)
+        self.use_rope = bool(use_rope)
+        self.rope_coord_mode = rope_coord_mode
+        self.rope_coord_scale = float(rope_coord_scale)
+        self.rope_base = float(rope_base)
+        self.rope_lat_origin = float(rope_lat_origin)
         self.query_norm = nn.LayerNorm(emb_dim)
         self.kv_norm = nn.LayerNorm(emb_dim)
         self.attn = nn.MultiheadAttention(
@@ -379,15 +607,22 @@ class CrossAttentionRefinementBlock(nn.Module):
         bias = self.distance_mlp(geom).squeeze(-1)
         return bias.repeat_interleave(self.attn.num_heads, dim=0)
 
-    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None,
-                base_query=None):
-        query_for_attention = query
-        if self.query_injection_gate is not None and base_query is not None:
-            query_for_attention = query_for_attention + self.query_injection_gate * base_query
-        q = self.query_norm(query_for_attention)
-        kv = self.kv_norm(station_emb)
-        attn_mask = self._distance_attn_mask(query_coords, station_coords)
-        out, attn = self.attn(
+    def _cross_attention(self, q, kv, station_valid, attn_mask, query_coords, station_coords):
+        if self.use_rope:
+            return _cross_attention_with_rope(
+                self.attn,
+                q,
+                kv,
+                station_valid,
+                attn_mask=attn_mask,
+                query_coords=query_coords,
+                key_coords=station_coords,
+                rope_coord_mode=self.rope_coord_mode,
+                rope_coord_scale=self.rope_coord_scale,
+                rope_base=self.rope_base,
+                rope_lat_origin=self.rope_lat_origin,
+            )
+        return self.attn(
             q,
             kv,
             kv,
@@ -396,6 +631,16 @@ class CrossAttentionRefinementBlock(nn.Module):
             need_weights=True,
             average_attn_weights=True,
         )
+
+    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None,
+                base_query=None):
+        query_for_attention = query
+        if self.query_injection_gate is not None and base_query is not None:
+            query_for_attention = query_for_attention + self.query_injection_gate * base_query
+        q = self.query_norm(query_for_attention)
+        kv = self.kv_norm(station_emb)
+        attn_mask = self._distance_attn_mask(query_coords, station_coords)
+        out, attn = self._cross_attention(q, kv, station_valid, attn_mask, query_coords, station_coords)
         if self.attn_gate is not None:
             query = query + self.attn_gate * out
             if self.ffn is not None:
@@ -420,13 +665,21 @@ class CrossAttentionReadout(nn.Module):
                  first_residual=False, first_residual_gate_init=None,
                  residual_gates=False, residual_gate_init=0.0,
                  ffn_gate_init=None, inject_base_query=False,
-                 query_injection_gate_init=1.0, use_ffn=True):
+                 query_injection_gate_init=1.0, use_ffn=True,
+                 use_rope=False, rope_coord_mode='relative_xy_km',
+                 rope_coord_scale=100.0, rope_base=10000.0,
+                 rope_lat_origin=37.0):
         super().__init__()
         readout_layers = int(readout_layers)
         if readout_layers < 1:
             raise ValueError(f'readout_layers must be >= 1, got {readout_layers}')
         self.readout_layers = readout_layers
         self.first_residual = bool(first_residual)
+        self.use_rope = bool(use_rope)
+        self.rope_coord_mode = rope_coord_mode
+        self.rope_coord_scale = float(rope_coord_scale)
+        self.rope_base = float(rope_base)
+        self.rope_lat_origin = float(rope_lat_origin)
         self.query_norm = nn.LayerNorm(emb_dim)
         self.kv_norm = nn.LayerNorm(emb_dim)
         self.attn = nn.MultiheadAttention(
@@ -465,6 +718,11 @@ class CrossAttentionReadout(nn.Module):
                 inject_base_query=inject_base_query,
                 query_injection_gate_init=query_injection_gate_init,
                 use_ffn=use_ffn,
+                use_rope=use_rope,
+                rope_coord_mode=rope_coord_mode,
+                rope_coord_scale=rope_coord_scale,
+                rope_base=rope_base,
+                rope_lat_origin=rope_lat_origin,
             )
             for _ in range(readout_layers - 1)
         ])
@@ -482,20 +740,36 @@ class CrossAttentionReadout(nn.Module):
             return bias.repeat_interleave(self.attn.num_heads, dim=0)
         return None
 
-    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None):
-        q = self.query_norm(query)
-        kv = self.kv_norm(station_emb)
-        key_padding_mask = ~station_valid.bool()
-        attn_mask = self._distance_attn_mask(query_coords, station_coords)
-        out, attn = self.attn(
+    def _cross_attention(self, q, kv, station_valid, attn_mask, query_coords, station_coords):
+        if self.use_rope:
+            return _cross_attention_with_rope(
+                self.attn,
+                q,
+                kv,
+                station_valid,
+                attn_mask=attn_mask,
+                query_coords=query_coords,
+                key_coords=station_coords,
+                rope_coord_mode=self.rope_coord_mode,
+                rope_coord_scale=self.rope_coord_scale,
+                rope_base=self.rope_base,
+                rope_lat_origin=self.rope_lat_origin,
+            )
+        return self.attn(
             q,
             kv,
             kv,
-            key_padding_mask=key_padding_mask,
+            key_padding_mask=~station_valid.bool(),
             attn_mask=attn_mask,
             need_weights=True,
             average_attn_weights=True,
         )
+
+    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None):
+        q = self.query_norm(query)
+        kv = self.kv_norm(station_emb)
+        attn_mask = self._distance_attn_mask(query_coords, station_coords)
+        out, attn = self._cross_attention(q, kv, station_valid, attn_mask, query_coords, station_coords)
         base_query = query
         if self.first_residual:
             if self.first_residual_gate is None:
@@ -517,6 +791,134 @@ class CrossAttentionReadout(nn.Module):
             attentions.append(attn.detach())
         self._last_attention = attentions[-1]
         self._last_attentions = attentions
+        return query
+
+
+class SynchronousStationTargetReadout(nn.Module):
+    """Evolve station memory and target query in parallel without target-target attention."""
+
+    def __init__(self, emb_dim, n_heads, station_layers=1, mad_params=None, ffn_params=None,
+                 att_dropout=0.0, distance_bias=False, distance_hidden_dim=64,
+                 ffn_hidden_dim=None, first_residual=False, first_residual_gate_init=None,
+                 residual_gates=False, residual_gate_init=0.0, ffn_gate_init=None,
+                 inject_base_query=False, query_injection_gate_init=1.0, use_ffn=True,
+                 use_rope=False, rope_coord_mode='relative_xy_km',
+                 rope_coord_scale=100.0, rope_base=10000.0, rope_lat_origin=37.0):
+        super().__init__()
+        station_layers = int(station_layers)
+        if station_layers < 1:
+            raise ValueError(f'station_layers must be >= 1, got {station_layers}')
+        mad_params = dict(mad_params or {})
+        ffn_params = dict(ffn_params or {})
+        self.readout_layers = station_layers
+        self.first_residual = bool(first_residual)
+        self.station_first_block = TransformerBlock(emb_dim=emb_dim, **mad_params, **ffn_params)
+        self.station_extra_blocks = nn.ModuleList([
+            GatedTransformerBlock(
+                emb_dim=emb_dim,
+                residual_gate_init=residual_gate_init,
+                ffn_gate_init=ffn_gate_init,
+                **mad_params,
+                **ffn_params,
+            )
+            for _ in range(station_layers - 1)
+        ])
+        self.target_first_readout = CrossAttentionReadout(
+            emb_dim,
+            n_heads,
+            att_dropout=att_dropout,
+            distance_bias=distance_bias,
+            distance_hidden_dim=distance_hidden_dim,
+            readout_layers=1,
+            ffn_hidden_dim=ffn_hidden_dim,
+            first_residual=first_residual,
+            first_residual_gate_init=first_residual_gate_init,
+            residual_gates=residual_gates,
+            residual_gate_init=residual_gate_init,
+            ffn_gate_init=ffn_gate_init,
+            inject_base_query=inject_base_query,
+            query_injection_gate_init=query_injection_gate_init,
+            use_ffn=use_ffn,
+            use_rope=use_rope,
+            rope_coord_mode=rope_coord_mode,
+            rope_coord_scale=rope_coord_scale,
+            rope_base=rope_base,
+            rope_lat_origin=rope_lat_origin,
+        )
+        self.extra_layers = nn.ModuleList([
+            CrossAttentionRefinementBlock(
+                emb_dim,
+                n_heads,
+                att_dropout=att_dropout,
+                distance_bias=distance_bias,
+                distance_hidden_dim=distance_hidden_dim,
+                ffn_hidden_dim=ffn_hidden_dim,
+                residual_gates=residual_gates,
+                residual_gate_init=residual_gate_init,
+                ffn_gate_init=ffn_gate_init,
+                inject_base_query=inject_base_query,
+                query_injection_gate_init=query_injection_gate_init,
+                use_ffn=use_ffn,
+                use_rope=use_rope,
+                rope_coord_mode=rope_coord_mode,
+                rope_coord_scale=rope_coord_scale,
+                rope_base=rope_base,
+                rope_lat_origin=rope_lat_origin,
+            )
+            for _ in range(station_layers - 1)
+        ])
+        self.first_residual_gate = self.target_first_readout.first_residual_gate
+        self._last_attention = None
+        self._last_attentions = []
+        self._last_station_memory = None
+        self._last_station_attentions = []
+
+    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None):
+        station_state = station_emb
+        base_query = query
+        target_attentions = []
+        station_attentions = []
+
+        station_state = self.station_first_block(
+            station_state,
+            padding_mask=station_valid,
+            coords=station_coords,
+        )
+        attn = getattr(self.station_first_block.attention, '_last_attention', None)
+        if attn is not None:
+            station_attentions.append(attn)
+        query = self.target_first_readout(
+            query,
+            station_state,
+            station_valid,
+            query_coords=query_coords,
+            station_coords=station_coords,
+        )
+        target_attentions.extend(getattr(self.target_first_readout, '_last_attentions', []))
+
+        for station_block, target_block in zip(self.station_extra_blocks, self.extra_layers):
+            station_state = station_block(
+                station_state,
+                padding_mask=station_valid,
+                coords=station_coords,
+            )
+            attn = getattr(station_block.attention, '_last_attention', None)
+            if attn is not None:
+                station_attentions.append(attn)
+            query, attn = target_block(
+                query,
+                station_state,
+                station_valid,
+                query_coords=query_coords,
+                station_coords=station_coords,
+                base_query=base_query,
+            )
+            target_attentions.append(attn.detach())
+
+        self._last_station_memory = station_state
+        self._last_station_attentions = station_attentions
+        self._last_attentions = target_attentions
+        self._last_attention = target_attentions[-1] if target_attentions else None
         return query
 
 
@@ -1551,7 +1953,10 @@ class FullModel(nn.Module):
                  station_context_mode='off',
                  station_context_gate_init=0.0,
                  pga_use_event_context=False, pga_event_context_init_gate=0.0,
-                 use_vs30=False, vs30_reference_mps=760.0, vs30_init_gate=0.0):
+                 use_vs30=False, vs30_reference_mps=760.0, vs30_init_gate=0.0,
+                 use_rope=False, rope_coord_mode='relative_xy_km', rope_coord_scale=100.0,
+                 rope_base=10000.0, rope_lat_origin=37.0,
+                 station_context_encoder=None, pga_station_target_readout=None):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1591,6 +1996,9 @@ class FullModel(nn.Module):
         self.station_context_mode = station_context_mode or 'off'
         self.use_vs30 = bool(use_vs30)
         self.vs30_reference_mps = float(vs30_reference_mps)
+        self.use_rope = bool(use_rope)
+        self.station_context_encoder = station_context_encoder
+        self.pga_station_target_readout = pga_station_target_readout
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
@@ -1625,14 +2033,29 @@ class FullModel(nn.Module):
                 "'event_cross_attention', 'direct_station_pool', "
                 f"got {self.event_readout_mode!r}."
             )
-        if self.station_context_mode not in ('off', 'transformer_pre_readout', 'gated_transformer_pre_readout'):
+        firstres_station_modes = ('firstres_transformer_pre_readout', 'gated_transformer_pre_readout_firstres')
+        if self.station_context_mode not in (
+            'off',
+            'transformer_pre_readout',
+            'gated_transformer_pre_readout',
+            *firstres_station_modes,
+            'synchronous_station_target',
+        ):
             raise ValueError(
                 "station_context_mode must be one of 'off', 'transformer_pre_readout', "
-                "'gated_transformer_pre_readout', "
+                "'gated_transformer_pre_readout', 'firstres_transformer_pre_readout', "
+                "'gated_transformer_pre_readout_firstres', 'synchronous_station_target', "
                 f"got {self.station_context_mode!r}."
             )
         if self.station_context_mode != 'off' and self.transformer is None:
             raise ValueError('station_context_mode requires skip_transformer=False.')
+        if self.station_context_mode in firstres_station_modes and self.station_context_encoder is None:
+            raise ValueError(f'{self.station_context_mode} requires station_context_encoder.')
+        if self.station_context_mode == 'synchronous_station_target':
+            if self.pga_readout_mode != 'target_cross_attention':
+                raise ValueError('synchronous_station_target requires pga_readout_mode=target_cross_attention.')
+            if self.pga_station_target_readout is None:
+                raise ValueError('synchronous_station_target requires pga_station_target_readout.')
         if self.station_context_mode == 'gated_transformer_pre_readout':
             self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
         else:
@@ -1682,6 +2105,11 @@ class FullModel(nn.Module):
             inject_base_query=readout_inject_base_query,
             query_injection_gate_init=readout_query_injection_gate_init,
             use_ffn=readout_use_ffn,
+            use_rope=use_rope,
+            rope_coord_mode=rope_coord_mode,
+            rope_coord_scale=rope_coord_scale,
+            rope_base=rope_base,
+            rope_lat_origin=rope_lat_origin,
         )
         self.event_cross_attention = CrossAttentionReadout(
             emb_dim,
@@ -1907,10 +2335,47 @@ class FullModel(nn.Module):
         query_emb = query_emb + self.target_vs30_gate * site_emb * valid.unsqueeze(-1).to(query_emb.dtype)
         return query_emb, valid
 
+    def _record_station_context_diag(self, station_context_emb, station_feature_emb, station_mask,
+                                     mode_code=1.0, raw_context_emb=None):
+        self._last_station_context_emb = station_context_emb
+        self._last_diag['station_context_mode'] = station_context_emb.new_tensor(float(mode_code)).detach()
+        if raw_context_emb is not None:
+            self._last_diag['station_context_raw_emb_norm'] = self._mean_token_norm(raw_context_emb).detach()
+        self._last_diag['station_context_emb_norm'] = self._mean_token_norm(station_context_emb).detach()
+        self._last_diag['station_context_delta_norm'] = (
+            self._mean_token_norm(station_context_emb - station_feature_emb)
+        ).detach()
+        self._last_diag['station_context_cosine_mean'] = self._masked_pairwise_cosine_mean(
+            station_context_emb,
+            station_mask,
+        ).detach()
+
     def _station_memory_for_readout(self, station_feature_emb, station_mask, coords_abs=None):
         if self.station_context_mode == 'off':
             self._last_station_context_emb = station_feature_emb
             return station_feature_emb
+        if self.station_context_mode == 'synchronous_station_target':
+            self._last_station_context_emb = station_feature_emb
+            return station_feature_emb
+
+        if self.station_context_mode in (
+            'firstres_transformer_pre_readout',
+            'gated_transformer_pre_readout_firstres',
+        ):
+            station_context_emb = self.station_context_encoder(
+                station_feature_emb.float(),
+                padding_mask=station_mask,
+                coords=coords_abs,
+            )
+            station_context_emb = station_context_emb * station_mask.unsqueeze(-1).to(station_context_emb.dtype)
+            self._record_station_context_diag(
+                station_context_emb,
+                station_feature_emb,
+                station_mask,
+                mode_code=2.0,
+                raw_context_emb=station_context_emb,
+            )
+            return station_context_emb
 
         transformer_context_emb = self.transformer(
             station_feature_emb.float(),
@@ -1925,19 +2390,15 @@ class FullModel(nn.Module):
             station_context_emb = station_context_emb * station_mask.unsqueeze(-1).to(station_context_emb.dtype)
         else:
             station_context_emb = transformer_context_emb
-        self._last_station_context_emb = station_context_emb
-        self._last_diag['station_context_mode'] = station_context_emb.new_tensor(1.0).detach()
         if self.station_context_gate is not None:
             self._last_diag['station_context_gate'] = self.station_context_gate.detach()
-            self._last_diag['station_context_raw_emb_norm'] = self._mean_token_norm(transformer_context_emb).detach()
-        self._last_diag['station_context_emb_norm'] = self._mean_token_norm(station_context_emb).detach()
-        self._last_diag['station_context_delta_norm'] = (
-            self._mean_token_norm(station_context_emb - station_feature_emb)
-        ).detach()
-        self._last_diag['station_context_cosine_mean'] = self._masked_pairwise_cosine_mean(
+        self._record_station_context_diag(
             station_context_emb,
+            station_feature_emb,
             station_mask,
-        ).detach()
+            mode_code=1.0,
+            raw_context_emb=transformer_context_emb,
+        )
         return station_context_emb
 
     def _record_pga_mask_diag(self, att_mask, padding_mask, station_mask, pga_target_valid):
@@ -2201,16 +2662,38 @@ class FullModel(nn.Module):
                 pga_readout_emb = self._direct_station_pga_embedding(station_memory_emb, sv, n_pga)
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(2.0).detach()
             elif self.pga_readout_mode == 'target_cross_attention':
-                pga_readout_emb = self.pga_cross_attention(
-                    pga_query_emb,
-                    station_memory_emb,
-                    sv,
-                    query_coords=pga_targets_abs,
-                    station_coords=coords_abs,
-                )
-                self._record_cross_attention_diag('pga_cross', self.pga_cross_attention, sv)
-                self._record_readout_gate_diag('pga_cross', self.pga_cross_attention)
-                self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(3.0).detach()
+                if self.station_context_mode == 'synchronous_station_target':
+                    pga_readout_emb = self.pga_station_target_readout(
+                        pga_query_emb,
+                        station_feature_emb,
+                        sv,
+                        query_coords=pga_targets_abs,
+                        station_coords=coords_abs,
+                    )
+                    sync_station_memory = getattr(self.pga_station_target_readout, '_last_station_memory', None)
+                    if sync_station_memory is not None:
+                        self._record_station_context_diag(
+                            sync_station_memory,
+                            station_feature_emb,
+                            sv,
+                            mode_code=3.0,
+                            raw_context_emb=sync_station_memory,
+                        )
+                        station_memory_emb = sync_station_memory
+                    self._record_cross_attention_diag('pga_cross', self.pga_station_target_readout, sv)
+                    self._record_readout_gate_diag('pga_cross', self.pga_station_target_readout)
+                    self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(4.0).detach()
+                else:
+                    pga_readout_emb = self.pga_cross_attention(
+                        pga_query_emb,
+                        station_memory_emb,
+                        sv,
+                        query_coords=pga_targets_abs,
+                        station_coords=coords_abs,
+                    )
+                    self._record_cross_attention_diag('pga_cross', self.pga_cross_attention, sv)
+                    self._record_readout_gate_diag('pga_cross', self.pga_cross_attention)
+                    self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(3.0).detach()
             elif self.pga_readout_mode == 'query_no_transformer':
                 pga_readout_emb = pga_query_emb
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(1.0).detach()
@@ -2545,6 +3028,7 @@ def build_transformer_model(max_stations,
                             use_vs30=False,
                             vs30_reference_mps=760.0,
                             vs30_init_gate=0.0,
+                            use_rope=None,
                             use_team_rope=False,
                             rope_coord_mode='relative_xy_km',
                             rope_coord_scale=100.0,
@@ -2561,11 +3045,24 @@ def build_transformer_model(max_stations,
 #    emb_dim = diting_args.target_width
     mad_params = mad_params.copy()  # Avoid modifying the input dicts
     ffn_params = ffn_params.copy()
-    mad_params.setdefault('use_team_rope', use_team_rope)
-    mad_params.setdefault('rope_coord_mode', rope_coord_mode)
-    mad_params.setdefault('rope_coord_scale', rope_coord_scale)
-    mad_params.setdefault('rope_base', rope_base)
-    mad_params.setdefault('rope_lat_origin', rope_lat_origin)
+    legacy_rope_requested = bool(use_team_rope or mad_params.get('use_team_rope', False))
+    if use_rope is None:
+        station_self_rope = legacy_rope_requested
+        pga_readout_rope = False
+    else:
+        station_self_rope = bool(use_rope)
+        pga_readout_rope = bool(use_rope)
+    mad_params['use_team_rope'] = station_self_rope
+    if use_rope is None:
+        mad_params.setdefault('rope_coord_mode', rope_coord_mode)
+        mad_params.setdefault('rope_coord_scale', rope_coord_scale)
+        mad_params.setdefault('rope_base', rope_base)
+        mad_params.setdefault('rope_lat_origin', rope_lat_origin)
+    else:
+        mad_params['rope_coord_mode'] = rope_coord_mode
+        mad_params['rope_coord_scale'] = rope_coord_scale
+        mad_params['rope_base'] = rope_base
+        mad_params['rope_lat_origin'] = rope_lat_origin
     if readout_n_heads is None:
         readout_n_heads = mad_params.get('n_heads', 1)
     if readout_dropout is None:
@@ -2655,6 +3152,46 @@ def build_transformer_model(max_stations,
         hidden_dim=aux_mag_hidden_dim,
         sigma_init=aux_mag_sigma,
     ) if aux_mag_head else None
+    effective_pga_readout_layers = pga_readout_layers if pga_readout_layers is not None else readout_layers
+    station_context_encoder = None
+    if station_context_mode in (
+        'firstres_transformer_pre_readout',
+        'gated_transformer_pre_readout_firstres',
+    ):
+        station_context_encoder = StationContextEncoder(
+            emb_dim,
+            layers=effective_pga_readout_layers,
+            mad_params=mad_params,
+            ffn_params=ffn_params,
+            residual_gate_init=readout_residual_gate_init,
+            ffn_gate_init=readout_ffn_gate_init,
+        )
+    pga_station_target_readout = None
+    if station_context_mode == 'synchronous_station_target':
+        pga_station_target_readout = SynchronousStationTargetReadout(
+            emb_dim,
+            readout_n_heads,
+            station_layers=effective_pga_readout_layers,
+            mad_params=mad_params,
+            ffn_params=ffn_params,
+            att_dropout=readout_dropout,
+            distance_bias=pga_distance_bias,
+            distance_hidden_dim=pga_distance_bias_hidden_dim,
+            ffn_hidden_dim=readout_ffn_hidden_dim,
+            first_residual=readout_first_residual,
+            first_residual_gate_init=readout_first_residual_gate_init,
+            residual_gates=readout_residual_gates,
+            residual_gate_init=readout_residual_gate_init,
+            ffn_gate_init=readout_ffn_gate_init,
+            inject_base_query=readout_inject_base_query,
+            query_injection_gate_init=readout_query_injection_gate_init,
+            use_ffn=readout_use_ffn,
+            use_rope=pga_readout_rope,
+            rope_coord_mode=rope_coord_mode,
+            rope_coord_scale=rope_coord_scale,
+            rope_base=rope_base,
+            rope_lat_origin=rope_lat_origin,
+        )
     full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
@@ -2696,6 +3233,13 @@ def build_transformer_model(max_stations,
                              use_vs30=use_vs30,
                              vs30_reference_mps=vs30_reference_mps,
                              vs30_init_gate=vs30_init_gate,
+                             use_rope=pga_readout_rope,
+                             rope_coord_mode=rope_coord_mode,
+                             rope_coord_scale=rope_coord_scale,
+                             rope_base=rope_base,
+                             rope_lat_origin=rope_lat_origin,
+                             station_context_encoder=station_context_encoder,
+                             pga_station_target_readout=pga_station_target_readout,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model
