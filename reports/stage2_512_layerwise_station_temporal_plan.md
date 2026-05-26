@@ -86,9 +86,9 @@ corrections rather than forcing all useful information into `S0`.
 The model already produces event magnitude and location heads when event tokens
 are enabled. The new configs use them as low-weight auxiliary supervision:
 
-```yaml
-res_comps: [mag, loc, pga]
-res_weight: [0.02, 0.02, 1.0]
+```json
+"res_comps": ["mag", "loc", "pga"],
+"res_weight": [0.02, 0.02, 1.0]
 ```
 
 The event representation is inferred from station evidence. Source coordinates
@@ -96,23 +96,23 @@ are not fed as teacher-forced inputs to the PGA readout.
 
 ## Generated Experiment Matrix
 
-The configs are YAML files and can be launched with the unchanged single-job
+The configs are JSON files and can be launched with the unchanged single-job
 interface:
 
 ```bash
-bash train_light_slurm.sh pga_configs/<config>.yml
+bash train_light_slurm.sh pga_configs/<config>.json
 ```
 
 | Exp | Purpose | Key switches | Config |
 |---|---|---|---|
-| b53 | New-branch anchor; fixed `S0`, PGA-only loss | `station_context_mode=off`, no new losses | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b53_branch_anchor_pga_only_chaosuan.yml` |
-| b54 | Test event mag/loc auxiliary loss alone | b53 + `res_comps=[mag,loc,pga]` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b54_event_aux_chaosuan.yml` |
-| b55 | Test layerwise PGA residual refinement on fixed `S0` | b54 + `pga_layerwise_refinement=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b55_event_aux_layerpga_chaosuan.yml` |
-| b56 | Test small-gated station delta path | b54 + `station_context_mode=layerwise_station_target` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b56_event_aux_stationdelta_chaosuan.yml` |
-| b57 | Test station deltas plus layerwise PGA refinement | b56 + `pga_layerwise_refinement=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b57_event_aux_stationdelta_layerpga_chaosuan.yml` |
-| b58 | Test target-conditioned temporal pooling | b57 + `use_target_temporal_pooling=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b58_event_aux_stationdelta_layerpga_temporal_chaosuan.yml` |
-| b59 | Test synchronized station/target RoPE on the full core path | b58 + `use_rope=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b59_event_aux_stationdelta_layerpga_temporal_rope_chaosuan.yml` |
-| b60 | Test VS30 after the full core path is enabled | b59 + `use_vs30=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b60_event_aux_stationdelta_layerpga_temporal_rope_vs30_chaosuan.yml` |
+| b53 | New-branch anchor; fixed `S0`, PGA-only loss | `station_context_mode=off`, no new losses | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b53_branch_anchor_pga_only_chaosuan.json` |
+| b54 | Test event mag/loc auxiliary loss alone | b53 + `res_comps=[mag,loc,pga]` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b54_event_aux_chaosuan.json` |
+| b55 | Test layerwise PGA residual refinement on fixed `S0` | b54 + `pga_layerwise_refinement=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b55_event_aux_layerpga_chaosuan.json` |
+| b56 | Test small-gated station delta path | b54 + `station_context_mode=layerwise_station_target` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b56_event_aux_stationdelta_chaosuan.json` |
+| b57 | Test station deltas plus layerwise PGA refinement | b56 + `pga_layerwise_refinement=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b57_event_aux_stationdelta_layerpga_chaosuan.json` |
+| b58 | Test target-conditioned temporal pooling | b57 + `use_target_temporal_pooling=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b58_event_aux_stationdelta_layerpga_temporal_chaosuan.json` |
+| b59 | Test synchronized station/target RoPE on the full core path | b58 + `use_rope=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b59_event_aux_stationdelta_layerpga_temporal_rope_chaosuan.json` |
+| b60 | Test VS30 after the full core path is enabled | b59 + `use_vs30=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b60_event_aux_stationdelta_layerpga_temporal_rope_vs30_chaosuan.json` |
 
 ## How To Interpret Results
 
