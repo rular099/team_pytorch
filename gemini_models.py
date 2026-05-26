@@ -728,6 +728,7 @@ class CrossAttentionReadout(nn.Module):
         ])
         self._last_attention = None
         self._last_attentions = []
+        self._last_layer_outputs = []
 
     def _distance_attn_mask(self, query_coords, station_coords):
         if self.distance_mlp is not None:
@@ -779,6 +780,7 @@ class CrossAttentionReadout(nn.Module):
         else:
             query = self.out_norm(out)
         attentions = [attn.detach()]
+        layer_outputs = [query]
         for layer in self.extra_layers:
             query, attn = layer(
                 query,
@@ -789,8 +791,292 @@ class CrossAttentionReadout(nn.Module):
                 base_query=base_query,
             )
             attentions.append(attn.detach())
+            layer_outputs.append(query)
         self._last_attention = attentions[-1]
         self._last_attentions = attentions
+        self._last_layer_outputs = layer_outputs
+        return query
+
+
+class StationDeltaBlock(nn.Module):
+    """Pre-norm residual station update that keeps identity reachable."""
+
+    def __init__(self, n_heads, emb_dim, hidden_dim, att_dropout=0.0, initializer_range=0.02, eps=1e-5,
+                 use_team_rope=False, rope_coord_mode='relative_xy_km', rope_coord_scale=100.0,
+                 rope_base=10000.0, rope_lat_origin=37.0,
+                 residual_gate_init=1e-3, ffn_gate_init=None):
+        super().__init__()
+        self.attn_norm = nn.LayerNorm(emb_dim, eps=eps)
+        self.attention = MultiHeadSelfAttention(
+            n_heads=n_heads,
+            emb_dim=emb_dim,
+            att_dropout=att_dropout,
+            initializer_range=initializer_range,
+            use_team_rope=use_team_rope,
+            rope_coord_mode=rope_coord_mode,
+            rope_coord_scale=rope_coord_scale,
+            rope_base=rope_base,
+            rope_lat_origin=rope_lat_origin,
+        )
+        self.attn_gate = nn.Parameter(torch.tensor(float(residual_gate_init)))
+        if ffn_gate_init is None:
+            ffn_gate_init = residual_gate_init
+        self.ffn_gate = nn.Parameter(torch.tensor(float(ffn_gate_init)))
+        self.ffn_norm = nn.LayerNorm(emb_dim, eps=eps)
+        self.ffn = nn.Sequential(
+            nn.Linear(emb_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, emb_dim),
+        )
+
+    def forward(self, x, padding_mask=None, coords=None):
+        attn_out, _ = self.attention(
+            self.attn_norm(x),
+            padding_mask=padding_mask,
+            coords=coords,
+        )
+        x = x + self.attn_gate * attn_out
+        x = x + self.ffn_gate * self.ffn(self.ffn_norm(x))
+        if padding_mask is not None:
+            x = x * padding_mask.unsqueeze(-1).to(x.dtype)
+        return x
+
+
+class TargetConditionedTemporalPool(nn.Module):
+    """Target/event-conditioned pooling over per-station DiTing time tokens."""
+
+    def __init__(self, token_dim, emb_dim, hidden_dim=256, geom_hidden_dim=128,
+                 time_basis=32):
+        super().__init__()
+        self.token_dim = int(token_dim)
+        self.emb_dim = int(emb_dim)
+        self.hidden_dim = int(hidden_dim)
+        self.time_basis = int(time_basis)
+        if self.hidden_dim < 1:
+            raise ValueError(f'hidden_dim must be positive, got {hidden_dim}')
+        if self.time_basis < 1:
+            raise ValueError(f'time_basis must be positive, got {time_basis}')
+        self.token_norm = nn.LayerNorm(self.token_dim)
+        self.key_proj = nn.Linear(self.token_dim, self.hidden_dim)
+        self.value_proj = nn.Linear(self.token_dim, self.hidden_dim)
+        self.query_proj = nn.Linear(self.emb_dim, self.hidden_dim)
+        self.station_proj = nn.Linear(self.emb_dim, self.hidden_dim)
+        self.event_proj = nn.Linear(self.emb_dim, self.hidden_dim)
+        self.geom_proj = nn.Sequential(
+            nn.Linear(10, int(geom_hidden_dim)),
+            nn.GELU(),
+            nn.Linear(int(geom_hidden_dim), self.hidden_dim),
+        )
+        self.time_query_proj = nn.Linear(self.hidden_dim, self.time_basis)
+        self.out_proj = nn.Linear(self.hidden_dim, self.emb_dim)
+        nn.init.normal_(self.out_proj.weight, mean=0.0, std=1e-3)
+        nn.init.zeros_(self.out_proj.bias)
+        self._last_temporal_entropy = None
+        self._last_station_weight_entropy = None
+
+    def _time_features(self, length, device, dtype):
+        pos = torch.linspace(-1.0, 1.0, length, device=device, dtype=dtype)
+        centers = torch.linspace(-1.0, 1.0, self.time_basis, device=device, dtype=dtype)
+        width = max(2.0 / max(self.time_basis - 1, 1), 1e-3)
+        return torch.exp(-0.5 * ((pos[:, None] - centers[None, :]) / width) ** 2)
+
+    @staticmethod
+    def _geometry_features(query_coords, station_coords):
+        rel = query_coords[:, :, None, :] - station_coords[:, None, :, :]
+        dist = torch.linalg.norm(rel, dim=-1, keepdim=True)
+        query = query_coords[:, :, None, :].expand(-1, -1, station_coords.shape[1], -1)
+        station = station_coords[:, None, :, :].expand(-1, query_coords.shape[1], -1, -1)
+        return torch.cat([query, station, rel, dist], dim=-1)
+
+    def forward(self, query, station_tokens, station_emb, station_valid,
+                query_coords, station_coords, event_emb, station_attn=None):
+        if station_tokens is None:
+            raise ValueError('station temporal tokens are required for target-conditioned temporal pooling.')
+        if event_emb is None:
+            event_emb = query.new_zeros(query.shape[0], self.emb_dim)
+
+        bsz, n_station, token_len, _ = station_tokens.shape
+        n_target = query.shape[1]
+        tokens = self.token_norm(station_tokens.float())
+        key = self.key_proj(tokens)
+        value = self.value_proj(tokens)
+
+        geom = self._geometry_features(query_coords.float(), station_coords.float())
+        pair = (
+            self.query_proj(query.float())[:, :, None, :]
+            + self.station_proj(station_emb.float())[:, None, :, :]
+            + self.event_proj(event_emb.float())[:, None, None, :]
+            + self.geom_proj(geom)
+        )
+        scores = torch.einsum('bnsd,bsld->bnsl', pair, key) / math.sqrt(self.hidden_dim)
+        time_features = self._time_features(token_len, scores.device, scores.dtype)
+        time_query = self.time_query_proj(pair).to(scores.dtype)
+        scores = scores + torch.einsum('bnsr,lr->bnsl', time_query, time_features)
+
+        station_mask = station_valid.bool()[:, None, :, None]
+        scores = scores.masked_fill(~station_mask, -1e6)
+        temporal_weights = torch.softmax(scores, dim=-1)
+        temporal_context = torch.einsum('bnsl,bsld->bnsd', temporal_weights, value)
+
+        if station_attn is None:
+            station_weights = station_valid.to(query.dtype)
+            station_weights = station_weights / station_weights.sum(dim=-1, keepdim=True).clamp_min(1.0)
+            station_weights = station_weights[:, None, :].expand(bsz, n_target, n_station)
+        else:
+            station_weights = station_attn.to(query.dtype) * station_valid[:, None, :].to(query.dtype)
+            station_weights = station_weights / station_weights.sum(dim=-1, keepdim=True).clamp_min(1e-8)
+
+        pooled = torch.einsum('bns,bnsd->bnd', station_weights, temporal_context)
+        self._last_temporal_entropy = (
+            -(temporal_weights.clamp_min(1e-8) * temporal_weights.clamp_min(1e-8).log()).sum(dim=-1).mean().detach()
+        )
+        self._last_station_weight_entropy = (
+            -(station_weights.clamp_min(1e-8) * station_weights.clamp_min(1e-8).log()).sum(dim=-1).mean().detach()
+        )
+        return self.out_proj(pooled)
+
+
+class LayerwiseStationTargetReadout(nn.Module):
+    """Target-first station/target evolution with residual station updates."""
+
+    def __init__(self, emb_dim, n_heads, readout_layers=4, mad_params=None, ffn_params=None,
+                 att_dropout=0.0, distance_bias=False, distance_hidden_dim=64,
+                 ffn_hidden_dim=None, first_residual=True, first_residual_gate_init=None,
+                 residual_gates=True, residual_gate_init=1e-3, ffn_gate_init=None,
+                 station_delta_gate_init=1e-3, station_delta_ffn_gate_init=None,
+                 inject_base_query=False, query_injection_gate_init=1.0, use_ffn=True,
+                 use_rope=False, rope_coord_mode='relative_xy_km',
+                 rope_coord_scale=100.0, rope_base=10000.0, rope_lat_origin=37.0,
+                 temporal_pool=None, temporal_gate_init=1e-3):
+        super().__init__()
+        readout_layers = int(readout_layers)
+        if readout_layers < 1:
+            raise ValueError(f'readout_layers must be >= 1, got {readout_layers}')
+        mad_params = dict(mad_params or {})
+        ffn_params = dict(ffn_params or {})
+        self.readout_layers = readout_layers
+        self.first_residual = bool(first_residual)
+        self.temporal_pool = temporal_pool
+        self.target_first_readout = CrossAttentionReadout(
+            emb_dim,
+            n_heads,
+            att_dropout=att_dropout,
+            distance_bias=distance_bias,
+            distance_hidden_dim=distance_hidden_dim,
+            readout_layers=1,
+            ffn_hidden_dim=ffn_hidden_dim,
+            first_residual=first_residual,
+            first_residual_gate_init=first_residual_gate_init,
+            residual_gates=residual_gates,
+            residual_gate_init=residual_gate_init,
+            ffn_gate_init=ffn_gate_init,
+            inject_base_query=inject_base_query,
+            query_injection_gate_init=query_injection_gate_init,
+            use_ffn=use_ffn,
+            use_rope=use_rope,
+            rope_coord_mode=rope_coord_mode,
+            rope_coord_scale=rope_coord_scale,
+            rope_base=rope_base,
+            rope_lat_origin=rope_lat_origin,
+        )
+        self.station_blocks = nn.ModuleList([
+            StationDeltaBlock(
+                emb_dim=emb_dim,
+                residual_gate_init=station_delta_gate_init,
+                ffn_gate_init=station_delta_ffn_gate_init,
+                **mad_params,
+                **ffn_params,
+            )
+            for _ in range(readout_layers - 1)
+        ])
+        self.target_extra_layers = nn.ModuleList([
+            CrossAttentionRefinementBlock(
+                emb_dim,
+                n_heads,
+                att_dropout=att_dropout,
+                distance_bias=distance_bias,
+                distance_hidden_dim=distance_hidden_dim,
+                ffn_hidden_dim=ffn_hidden_dim,
+                residual_gates=residual_gates,
+                residual_gate_init=residual_gate_init,
+                ffn_gate_init=ffn_gate_init,
+                inject_base_query=inject_base_query,
+                query_injection_gate_init=query_injection_gate_init,
+                use_ffn=use_ffn,
+                use_rope=use_rope,
+                rope_coord_mode=rope_coord_mode,
+                rope_coord_scale=rope_coord_scale,
+                rope_base=rope_base,
+                rope_lat_origin=rope_lat_origin,
+            )
+            for _ in range(readout_layers - 1)
+        ])
+        self.temporal_gates = nn.ParameterList([
+            nn.Parameter(torch.tensor(float(temporal_gate_init)))
+            for _ in range(readout_layers - 1)
+        ])
+        self.first_residual_gate = self.target_first_readout.first_residual_gate
+        self._last_attention = None
+        self._last_attentions = []
+        self._last_layer_outputs = []
+        self._last_station_memory = None
+        self._last_station_attentions = []
+
+    def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None,
+                station_tokens=None, event_emb=None):
+        station_state = station_emb
+        base_query = query
+        target_attentions = []
+        station_attentions = []
+        layer_outputs = []
+
+        query = self.target_first_readout(
+            query,
+            station_state,
+            station_valid,
+            query_coords=query_coords,
+            station_coords=station_coords,
+        )
+        target_attentions.extend(getattr(self.target_first_readout, '_last_attentions', []))
+        layer_outputs.append(query)
+
+        for idx, (station_block, target_block) in enumerate(zip(self.station_blocks, self.target_extra_layers)):
+            station_state = station_block(
+                station_state,
+                padding_mask=station_valid,
+                coords=station_coords,
+            )
+            attn = getattr(station_block.attention, '_last_attention', None)
+            if attn is not None:
+                station_attentions.append(attn)
+            query, attn = target_block(
+                query,
+                station_state,
+                station_valid,
+                query_coords=query_coords,
+                station_coords=station_coords,
+                base_query=base_query,
+            )
+            target_attentions.append(attn.detach())
+            if self.temporal_pool is not None:
+                temporal_delta = self.temporal_pool(
+                    query,
+                    station_tokens,
+                    station_state,
+                    station_valid,
+                    query_coords,
+                    station_coords,
+                    event_emb,
+                    station_attn=attn,
+                )
+                query = query + self.temporal_gates[idx] * temporal_delta
+            layer_outputs.append(query)
+
+        self._last_station_memory = station_state
+        self._last_station_attentions = station_attentions
+        self._last_attentions = target_attentions
+        self._last_attention = target_attentions[-1] if target_attentions else None
+        self._last_layer_outputs = layer_outputs
         return query
 
 
@@ -1540,6 +1826,7 @@ class DitingStationAdapter(nn.Module):
     def __init__(self, encoder_dim, hidden_channels, output_dim,
                  pool_queries=4, pool_temperature=1.0, pool_dropout=0.0):
         super().__init__()
+        self.encoder_dim = encoder_dim
         self.hidden_channels = hidden_channels
         self.output_dim = output_dim
         self.pool_queries = pool_queries
@@ -1618,6 +1905,16 @@ class DitingStationAdapter(nn.Module):
         delta = self.proj_out(pooled.float())
         return self.norm(base + self.delta_scale * delta)
 
+    def temporal_tokens(self, inputs):
+        x = inputs[-1]
+        if x.dim() != 3:
+            raise ValueError(f"Expected final DiTing feature with 3 dims, got shape {tuple(x.shape)}")
+        if x.shape[-1] == self.encoder_dim:
+            return x.float()
+        if x.shape[1] == self.encoder_dim:
+            return x.transpose(1, 2).contiguous().float()
+        raise ValueError(f"Expected encoder dim {self.encoder_dim} in shape {tuple(x.shape)}")
+
 
 class BackboneAttentionPoolAdapter(nn.Module):
     """Project plain backbone patch tokens into a station embedding."""
@@ -1681,6 +1978,15 @@ class BackboneAttentionPoolAdapter(nn.Module):
         focus = torch.sum(tokens * weights.unsqueeze(-1).type_as(tokens), dim=1)
         delta = self.focus_proj(focus.float())
         return self.norm(base + self.delta_scale * delta)
+
+    def temporal_tokens(self, x):
+        if x.dim() != 3:
+            raise ValueError(f"Expected backbone features with 3 dims, got shape {tuple(x.shape)}")
+        if x.shape[1] == self.encoder_dim:
+            return x.transpose(1, 2).contiguous().float()
+        if x.shape[2] == self.encoder_dim:
+            return x.float()
+        raise ValueError(f"Expected encoder dim {self.encoder_dim} in shape {tuple(x.shape)}")
 
 
 class GlobalMaxPooling1DMasked(nn.Module):
@@ -1956,7 +2262,10 @@ class FullModel(nn.Module):
                  use_vs30=False, vs30_reference_mps=760.0, vs30_init_gate=0.0,
                  use_rope=False, rope_coord_mode='relative_xy_km', rope_coord_scale=100.0,
                  rope_base=10000.0, rope_lat_origin=37.0,
-                 station_context_encoder=None, pga_station_target_readout=None):
+                 station_context_encoder=None, pga_station_target_readout=None,
+                 pga_layerwise_refinement=False, pga_delta_mlps=None,
+                 pga_delta_output_models=None, pga_delta_gate_init=1e-3,
+                 use_target_temporal_pooling=False):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -1999,6 +2308,15 @@ class FullModel(nn.Module):
         self.use_rope = bool(use_rope)
         self.station_context_encoder = station_context_encoder
         self.pga_station_target_readout = pga_station_target_readout
+        self.pga_layerwise_refinement = bool(pga_layerwise_refinement)
+        self.pga_delta_mlps = nn.ModuleList(pga_delta_mlps or [])
+        self.pga_delta_output_models = nn.ModuleList(pga_delta_output_models or [])
+        self.pga_delta_gates = nn.ParameterList([
+            nn.Parameter(torch.tensor(float(pga_delta_gate_init)))
+            for _ in range(len(self.pga_delta_mlps))
+        ])
+        self.use_target_temporal_pooling = bool(use_target_temporal_pooling)
+        self._last_pga_layer_outputs = []
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
@@ -2040,22 +2358,28 @@ class FullModel(nn.Module):
             'gated_transformer_pre_readout',
             *firstres_station_modes,
             'synchronous_station_target',
+            'layerwise_station_target',
         ):
             raise ValueError(
                 "station_context_mode must be one of 'off', 'transformer_pre_readout', "
                 "'gated_transformer_pre_readout', 'firstres_transformer_pre_readout', "
                 "'gated_transformer_pre_readout_firstres', 'synchronous_station_target', "
+                "'layerwise_station_target', "
                 f"got {self.station_context_mode!r}."
             )
         if self.station_context_mode != 'off' and self.transformer is None:
             raise ValueError('station_context_mode requires skip_transformer=False.')
         if self.station_context_mode in firstres_station_modes and self.station_context_encoder is None:
             raise ValueError(f'{self.station_context_mode} requires station_context_encoder.')
-        if self.station_context_mode == 'synchronous_station_target':
+        if self.station_context_mode in ('synchronous_station_target', 'layerwise_station_target'):
             if self.pga_readout_mode != 'target_cross_attention':
-                raise ValueError('synchronous_station_target requires pga_readout_mode=target_cross_attention.')
+                raise ValueError(f'{self.station_context_mode} requires pga_readout_mode=target_cross_attention.')
             if self.pga_station_target_readout is None:
-                raise ValueError('synchronous_station_target requires pga_station_target_readout.')
+                raise ValueError(f'{self.station_context_mode} requires pga_station_target_readout.')
+        if self.pga_layerwise_refinement and self.output_distribution != 'point':
+            raise ValueError('pga_layerwise_refinement is implemented for point output_distribution only.')
+        if self.pga_layerwise_refinement and len(self.pga_delta_mlps) != len(self.pga_delta_output_models):
+            raise ValueError('pga_delta_mlps and pga_delta_output_models must have the same length.')
         if self.station_context_mode == 'gated_transformer_pre_readout':
             self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
         else:
@@ -2354,7 +2678,7 @@ class FullModel(nn.Module):
         if self.station_context_mode == 'off':
             self._last_station_context_emb = station_feature_emb
             return station_feature_emb
-        if self.station_context_mode == 'synchronous_station_target':
+        if self.station_context_mode in ('synchronous_station_target', 'layerwise_station_target'):
             self._last_station_context_emb = station_feature_emb
             return station_feature_emb
 
@@ -2505,7 +2829,10 @@ class FullModel(nn.Module):
         attn_gates = []
         ffn_gates = []
         injection_gates = []
-        for idx, layer in enumerate(getattr(readout, 'extra_layers', []), start=1):
+        extra_layers = getattr(readout, 'extra_layers', None)
+        if extra_layers is None:
+            extra_layers = getattr(readout, 'target_extra_layers', [])
+        for idx, layer in enumerate(extra_layers, start=1):
             attn_gate = getattr(layer, 'attn_gate', None)
             if attn_gate is not None:
                 add_scalar(f'{prefix}_extra_layer{idx}_attn_gate', attn_gate)
@@ -2538,6 +2865,53 @@ class FullModel(nn.Module):
         # by retaining channel-wise std/rms/peak plus station-level summaries.
         return extract_waveform_scale_features(waveform)
 
+    def _encode_station_waveform(self, waveform, collect_tokens=False):
+        if collect_tokens:
+            if not isinstance(self.waveform_model, nn.Sequential) or len(self.waveform_model) < 2:
+                raise ValueError('target temporal pooling requires waveform_model = encoder + adapter.')
+            features = self.waveform_model[0](waveform)
+            station_emb = self.waveform_model[1](features)
+            token_getter = getattr(self.waveform_model[1], 'temporal_tokens', None)
+            if token_getter is None:
+                raise ValueError('station adapter does not expose temporal_tokens().')
+            return station_emb, token_getter(features)
+        return self.waveform_model(waveform), None
+
+    def _apply_point_pga_head(self, pga_readout_emb, mlp=None, output_model=None):
+        mlp = self.mlp_pga if mlp is None else mlp
+        output_model = self.output_model_pga if output_model is None else output_model
+        return output_model(mlp(pga_readout_emb))
+
+    def _apply_layerwise_pga_refinement(self, layer_outputs):
+        if not layer_outputs:
+            raise ValueError('pga_layerwise_refinement requires readout layer outputs.')
+        if len(layer_outputs) - 1 > len(self.pga_delta_mlps):
+            raise ValueError(
+                f'pga_layerwise_refinement got {len(layer_outputs)} layers but only '
+                f'{len(self.pga_delta_mlps)} delta heads.'
+            )
+        cumulative = self._apply_point_pga_head(layer_outputs[0])
+        layer_preds = [cumulative]
+        for idx, layer_emb in enumerate(layer_outputs[1:]):
+            delta = self._apply_point_pga_head(
+                layer_emb,
+                mlp=self.pga_delta_mlps[idx],
+                output_model=self.pga_delta_output_models[idx],
+            )
+            cumulative = cumulative + self.pga_delta_gates[idx] * delta
+            layer_preds.append(cumulative)
+        self._last_pga_layer_outputs = layer_preds
+        if len(layer_preds) > 1:
+            deltas = [
+                (layer_preds[idx] - layer_preds[idx - 1]).abs().mean().detach()
+                for idx in range(1, len(layer_preds))
+            ]
+            self._last_diag['pga_layer_delta_abs_mean'] = torch.stack(deltas).mean()
+            gate_vals = torch.stack([gate.detach() for gate in self.pga_delta_gates[:len(deltas)]])
+            self._last_diag['pga_layer_delta_gate_mean'] = gate_vals.mean()
+            self._last_diag['pga_layer_delta_gate_max_abs'] = gate_vals.abs().max()
+        return layer_preds[-1]
+
     def forward(self, waveform_inp, metadata_inp, station_valid,
                 pga_targets_inp=None, pga_target_valid=None,
                 *extra_inputs, dataset=None, att_mask=None):
@@ -2554,7 +2928,18 @@ class FullModel(nn.Module):
         coords_abs = metadata_inp * sv[:, :, None].float()
         coords_rel, coords_center = self._make_relative_coords(coords_abs, sv)
 
-        raw_station_emb = torch.stack([self.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])] , dim=1)
+        station_token_list = []
+        raw_station_emb_list = []
+        for i in range(waveforms_masked.shape[1]):
+            station_emb_i, station_tokens_i = self._encode_station_waveform(
+                waveforms_masked[:, i, :, :],
+                collect_tokens=self.use_target_temporal_pooling,
+            )
+            raw_station_emb_list.append(station_emb_i)
+            if station_tokens_i is not None:
+                station_token_list.append(station_tokens_i)
+        raw_station_emb = torch.stack(raw_station_emb_list, dim=1)
+        station_temporal_tokens = torch.stack(station_token_list, dim=1) if station_token_list else None
         scale_emb = None
         preln_wave_emb = raw_station_emb
         waveforms_emb = self.layernorm(preln_wave_emb)
@@ -2630,6 +3015,17 @@ class FullModel(nn.Module):
         if not self.alternative_coords_embedding:
             self._last_diag['coords_emb_norm'] = self._mean_token_norm(coords_emb).detach()
         station_memory_emb = self._station_memory_for_readout(station_feature_emb, station_mask, coords_abs=coords_abs)
+        event_emb = None
+        if (
+            not self.no_event_token
+            and self.event_readout_mode == 'event_cross_attention'
+            and (self.use_target_temporal_pooling or self.station_context_mode == 'layerwise_station_target')
+        ):
+            event_query = self.event_query_token.expand(station_memory_emb.shape[0], 1, -1)
+            event_emb = self.event_cross_attention(event_query, station_memory_emb, sv).squeeze(1)
+            self._record_cross_attention_diag('event_cross', self.event_cross_attention, sv)
+            self._record_readout_gate_diag('event_cross', self.event_cross_attention)
+            self._last_diag['event_readout_mode'] = event_emb.new_tensor(1.0).detach()
 
         # padding_mask: True=valid position, used for key masking + output zeroing (matches TF `mask`)
         # att_mask: True=attendable as key, used only for additional key masking (matches TF `att_mask`)
@@ -2662,13 +3058,20 @@ class FullModel(nn.Module):
                 pga_readout_emb = self._direct_station_pga_embedding(station_memory_emb, sv, n_pga)
                 self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(2.0).detach()
             elif self.pga_readout_mode == 'target_cross_attention':
-                if self.station_context_mode == 'synchronous_station_target':
+                if self.station_context_mode in ('synchronous_station_target', 'layerwise_station_target'):
+                    readout_kwargs = {}
+                    if self.station_context_mode == 'layerwise_station_target':
+                        readout_kwargs = {
+                            'station_tokens': station_temporal_tokens,
+                            'event_emb': event_emb,
+                        }
                     pga_readout_emb = self.pga_station_target_readout(
                         pga_query_emb,
                         station_feature_emb,
                         sv,
                         query_coords=pga_targets_abs,
                         station_coords=coords_abs,
+                        **readout_kwargs,
                     )
                     sync_station_memory = getattr(self.pga_station_target_readout, '_last_station_memory', None)
                     if sync_station_memory is not None:
@@ -2676,12 +3079,32 @@ class FullModel(nn.Module):
                             sync_station_memory,
                             station_feature_emb,
                             sv,
-                            mode_code=3.0,
+                            mode_code=4.0 if self.station_context_mode == 'layerwise_station_target' else 3.0,
                             raw_context_emb=sync_station_memory,
                         )
                         station_memory_emb = sync_station_memory
                     self._record_cross_attention_diag('pga_cross', self.pga_station_target_readout, sv)
                     self._record_readout_gate_diag('pga_cross', self.pga_station_target_readout)
+                    if self.station_context_mode == 'layerwise_station_target':
+                        station_blocks = getattr(self.pga_station_target_readout, 'station_blocks', [])
+                        if station_blocks:
+                            attn_gates = torch.stack([block.attn_gate.detach() for block in station_blocks])
+                            ffn_gates = torch.stack([block.ffn_gate.detach() for block in station_blocks])
+                            self._last_diag['station_delta_attn_gate_mean'] = attn_gates.mean()
+                            self._last_diag['station_delta_attn_gate_max_abs'] = attn_gates.abs().max()
+                            self._last_diag['station_delta_ffn_gate_mean'] = ffn_gates.mean()
+                            self._last_diag['station_delta_ffn_gate_max_abs'] = ffn_gates.abs().max()
+                        temporal_pool = getattr(self.pga_station_target_readout, 'temporal_pool', None)
+                        if temporal_pool is not None:
+                            if temporal_pool._last_temporal_entropy is not None:
+                                self._last_diag['temporal_pool_entropy'] = temporal_pool._last_temporal_entropy
+                            if temporal_pool._last_station_weight_entropy is not None:
+                                self._last_diag['temporal_pool_station_weight_entropy'] = temporal_pool._last_station_weight_entropy
+                            temp_gates = torch.stack([
+                                gate.detach() for gate in self.pga_station_target_readout.temporal_gates
+                            ])
+                            self._last_diag['temporal_pool_gate_mean'] = temp_gates.mean()
+                            self._last_diag['temporal_pool_gate_max_abs'] = temp_gates.abs().max()
                     self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(4.0).detach()
                 else:
                     pga_readout_emb = self.pga_cross_attention(
@@ -2739,7 +3162,9 @@ class FullModel(nn.Module):
 
         outputs = []
         if not self.no_event_token:
-            if self.event_readout_mode == 'event_cross_attention':
+            if event_emb is not None:
+                pass
+            elif self.event_readout_mode == 'event_cross_attention':
                 event_query = self.event_query_token.expand(station_memory_emb.shape[0], 1, -1)
                 event_emb = self.event_cross_attention(event_query, station_memory_emb, sv).squeeze(1)
                 self._record_cross_attention_diag('event_cross', self.event_cross_attention, sv)
@@ -2799,16 +3224,27 @@ class FullModel(nn.Module):
             outputs.append(self.aux_mag_head(base_waveforms_emb, sv))
 
         if self.n_pga_targets:
-            pga_emb = pga_readout_emb
-            pga_emb = torch.stack([self.mlp_pga(pga_emb[:, i, :]) for i in range(pga_emb.shape[1])], dim=1)
-            pga_out_tmp = []
-            for i in range(pga_emb.shape[1]):
+            self._last_pga_layer_outputs = []
+            layer_outputs = []
+            if self.pga_readout_mode == 'target_cross_attention':
+                readout_module = (
+                    self.pga_station_target_readout
+                    if self.station_context_mode in ('synchronous_station_target', 'layerwise_station_target')
+                    else self.pga_cross_attention
+                )
+                layer_outputs = getattr(readout_module, '_last_layer_outputs', [])
+            if self.pga_layerwise_refinement:
+                output_pga = self._apply_layerwise_pga_refinement(layer_outputs)
+            else:
                 if self.output_distribution == 'point':
-                    pga_out_tmp.append(self.output_model_pga(pga_emb[:, i, :]))
+                    output_pga = self._apply_point_pga_head(pga_readout_emb)
                 else:
-                    alpha_logits, mu, sigma = self.output_model_pga(pga_emb[:, i, :])
-                    pga_out_tmp.append(torch.cat([alpha_logits, mu, sigma], dim=-1))
-            output_pga = torch.stack(pga_out_tmp, dim=1)
+                    pga_emb = torch.stack([self.mlp_pga(pga_readout_emb[:, i, :]) for i in range(pga_readout_emb.shape[1])], dim=1)
+                    pga_out_tmp = []
+                    for i in range(pga_emb.shape[1]):
+                        alpha_logits, mu, sigma = self.output_model_pga(pga_emb[:, i, :])
+                        pga_out_tmp.append(torch.cat([alpha_logits, mu, sigma], dim=-1))
+                    output_pga = torch.stack(pga_out_tmp, dim=1)
             outputs.append(output_pga)
 
         if self.dataset_bias:
@@ -3028,6 +3464,15 @@ def build_transformer_model(max_stations,
                             use_vs30=False,
                             vs30_reference_mps=760.0,
                             vs30_init_gate=0.0,
+                            station_delta_gate_init=1e-3,
+                            station_delta_ffn_gate_init=None,
+                            pga_layerwise_refinement=False,
+                            pga_delta_gate_init=1e-3,
+                            use_target_temporal_pooling=False,
+                            temporal_pool_dim=256,
+                            temporal_pool_geom_hidden_dim=128,
+                            temporal_pool_time_basis=32,
+                            temporal_pool_gate_init=1e-3,
                             use_rope=None,
                             use_team_rope=False,
                             rope_coord_mode='relative_xy_km',
@@ -3166,6 +3611,20 @@ def build_transformer_model(max_stations,
             residual_gate_init=readout_residual_gate_init,
             ffn_gate_init=readout_ffn_gate_init,
         )
+    temporal_pool = None
+    if use_target_temporal_pooling:
+        station_adapter = waveform_model[1] if isinstance(waveform_model, nn.Sequential) and len(waveform_model) > 1 else None
+        token_dim = getattr(station_adapter, 'encoder_dim', None)
+        if token_dim is None:
+            raise ValueError('use_target_temporal_pooling requires a station adapter with encoder_dim.')
+        temporal_pool = TargetConditionedTemporalPool(
+            token_dim=token_dim,
+            emb_dim=emb_dim,
+            hidden_dim=temporal_pool_dim,
+            geom_hidden_dim=temporal_pool_geom_hidden_dim,
+            time_basis=temporal_pool_time_basis,
+        )
+
     pga_station_target_readout = None
     if station_context_mode == 'synchronous_station_target':
         pga_station_target_readout = SynchronousStationTargetReadout(
@@ -3192,6 +3651,46 @@ def build_transformer_model(max_stations,
             rope_base=rope_base,
             rope_lat_origin=rope_lat_origin,
         )
+    elif station_context_mode == 'layerwise_station_target':
+        pga_station_target_readout = LayerwiseStationTargetReadout(
+            emb_dim,
+            readout_n_heads,
+            readout_layers=effective_pga_readout_layers,
+            mad_params=mad_params,
+            ffn_params=ffn_params,
+            att_dropout=readout_dropout,
+            distance_bias=pga_distance_bias,
+            distance_hidden_dim=pga_distance_bias_hidden_dim,
+            ffn_hidden_dim=readout_ffn_hidden_dim,
+            first_residual=readout_first_residual,
+            first_residual_gate_init=readout_first_residual_gate_init,
+            residual_gates=readout_residual_gates,
+            residual_gate_init=readout_residual_gate_init,
+            ffn_gate_init=readout_ffn_gate_init,
+            station_delta_gate_init=station_delta_gate_init,
+            station_delta_ffn_gate_init=station_delta_ffn_gate_init,
+            inject_base_query=readout_inject_base_query,
+            query_injection_gate_init=readout_query_injection_gate_init,
+            use_ffn=readout_use_ffn,
+            use_rope=pga_readout_rope,
+            rope_coord_mode=rope_coord_mode,
+            rope_coord_scale=rope_coord_scale,
+            rope_base=rope_base,
+            rope_lat_origin=rope_lat_origin,
+            temporal_pool=temporal_pool,
+            temporal_gate_init=temporal_pool_gate_init,
+        )
+
+    pga_delta_mlps = []
+    pga_delta_output_models = []
+    if pga_layerwise_refinement:
+        if output_distribution != 'point':
+            raise ValueError('pga_layerwise_refinement requires output_distribution=point.')
+        for _ in range(max(0, effective_pga_readout_layers - 1)):
+            pga_delta_mlps.append(MLP((emb_dim,), output_mlp_dims, activation=activation))
+            pga_delta_output_models.append(
+                PointOutput((output_mlp_dims[-1],), d=1, bias_mu=0, activation=None)
+            )
     full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
@@ -3240,6 +3739,11 @@ def build_transformer_model(max_stations,
                              rope_lat_origin=rope_lat_origin,
                              station_context_encoder=station_context_encoder,
                              pga_station_target_readout=pga_station_target_readout,
+                             pga_layerwise_refinement=pga_layerwise_refinement,
+                             pga_delta_mlps=pga_delta_mlps,
+                             pga_delta_output_models=pga_delta_output_models,
+                             pga_delta_gate_init=pga_delta_gate_init,
+                             use_target_temporal_pooling=use_target_temporal_pooling,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model

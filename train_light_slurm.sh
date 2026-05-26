@@ -2,8 +2,8 @@
 
 # Slurm/HPC launcher for team_pytorch/train_light.py.
 # Usage:
-#   bash train_light_slurm.sh <config.json> [train_light.py extra args...]
-#   AUTO_SBATCH=0 bash train_light_slurm.sh <config.json> [extra args...]
+#   bash train_light_slurm.sh <config.json|config.yml> [train_light.py extra args...]
+#   AUTO_SBATCH=0 bash train_light_slurm.sh <config.json|config.yml> [extra args...]
 #
 # Key env vars:
 #   DITING_CONFIG      YAML config for the DiTing frontend
@@ -35,7 +35,7 @@ SUBMIT_DIR=${SLURM_SUBMIT_DIR:-$PWD}
 REPO_ROOT=${REPO_ROOT:-"$SUBMIT_DIR"}
 WORKDIR=${WORKDIR:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team}
 
-CONFIG_INPUT=${1:?Usage: bash train_light_slurm.sh <config.json> [train_light.py extra args...]}
+CONFIG_INPUT=${1:?Usage: bash train_light_slurm.sh <config.json|config.yml> [train_light.py extra args...]}
 shift
 EXTRA_ARGS=("$@")
 EXTRA_ARG_COUNT=$#
@@ -61,6 +61,32 @@ resolve_path() {
         /*) printf '%s\n' "$p" ;;
         *) printf '%s\n' "$base/$p" ;;
     esac
+}
+
+config_value() {
+    local config_file=$1
+    local dotted_key=$2
+    python - "$config_file" "$dotted_key" <<'PY'
+import json
+import sys
+try:
+    import yaml
+except Exception:
+    yaml = None
+
+path, dotted = sys.argv[1], sys.argv[2]
+with open(path, "r") as f:
+    if path.endswith((".yml", ".yaml")):
+        if yaml is None:
+            raise RuntimeError("PyYAML is required to read YAML configs.")
+        cfg = yaml.safe_load(f)
+    else:
+        cfg = json.load(f)
+value = cfg
+for part in dotted.split("."):
+    value = value[part]
+print(value)
+PY
 }
 
 CONFIG=$(resolve_path "$CONFIG_INPUT" "$PWD")
@@ -195,7 +221,7 @@ if [[ -n "${CONDA_ENV:-}" ]]; then
 fi
 
 if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then
-    WEIGHT_PATH_TO_RESET=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["training_params"]["weight_path"])' "$CONFIG")
+    WEIGHT_PATH_TO_RESET=$(config_value "$CONFIG" "training_params.weight_path")
     if [[ -z "$WEIGHT_PATH_TO_RESET" || "$WEIGHT_PATH_TO_RESET" == "/" || "$WEIGHT_PATH_TO_RESET" == "." || "$WEIGHT_PATH_TO_RESET" == ".." ]]; then
         echo "Refusing to reset unsafe weight_path: '$WEIGHT_PATH_TO_RESET'" >&2
         exit 1
@@ -208,7 +234,7 @@ if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then
     rm -rf -- "$WEIGHT_DIR_TO_RESET"
 fi
 
-WEIGHT_PATH=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["training_params"]["weight_path"])' "$CONFIG")
+WEIGHT_PATH=$(config_value "$CONFIG" "training_params.weight_path")
 if [[ -z "$WEIGHT_PATH" || "$WEIGHT_PATH" == "/" || "$WEIGHT_PATH" == "." || "$WEIGHT_PATH" == ".." ]]; then
     echo "Unsafe weight_path in config: '$WEIGHT_PATH'" >&2
     exit 1
@@ -300,9 +326,19 @@ cp "$RUN_CONFIG" "$RUN_LOG_DIR/config.json"
 echo "[INFO] run config copied to: $RUN_LOG_DIR/config.json"
 
 if [[ "$RUN_EVAL" == "1" ]]; then
-    SINGLE_STATION_ENABLED=$(python -c 'import json, sys
-cfg = json.load(open(sys.argv[1]))
-print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enabled", False) else "0")' "$CONFIG")
+    SINGLE_STATION_ENABLED=$(python - "$CONFIG" <<'PY'
+import json
+import sys
+try:
+    import yaml
+except Exception:
+    yaml = None
+path = sys.argv[1]
+with open(path, "r") as f:
+    cfg = yaml.safe_load(f) if path.endswith((".yml", ".yaml")) else json.load(f)
+print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enabled", False) else "0")
+PY
+)
     if [[ -z "${EVAL_SINGLE_STATION_CHECKPOINT:-}" && "$SINGLE_STATION_ENABLED" == "1" ]]; then
         if [[ -f "$WEIGHT_DIR/single_station_best.pth" ]]; then
             EVAL_SINGLE_STATION_CHECKPOINT="$WEIGHT_DIR/single_station_best.pth"

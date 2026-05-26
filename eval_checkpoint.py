@@ -36,6 +36,7 @@ from train_light import (
     build_diting_args as load_diting_args,
     build_overfit_event_metadata_splits,
     clean_state_dict_keys,
+    load_config_file,
     load_model_state_dict_compatible,
     read_overfit_event_ids,
 )
@@ -1183,8 +1184,7 @@ def main():
                         help='Shard id to evaluate, in [0, num_shards).')
     args = parser.parse_args()
 
-    with open(args.config) as f:
-        config = json.load(f)
+    config = load_config_file(args.config)
     args.overfit_n = args.overfit_n or int(config['training_params'].get('overfit_n', 0))
 
     # Reproducible evaluation

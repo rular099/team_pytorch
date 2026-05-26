@@ -1,11 +1,18 @@
 # Stage2 512 Position-Information Experiment Plan: VS30 + RoPE
 
 Date: 2026-05-23
-Updated: 2026-05-25
+Updated: 2026-05-26
 
 This plan follows the b43/b43_clean stage2 anchor. The next question is whether
 location/site information improves the mechanism or only memorizes seen
 station/location priors.
+
+Historical note: the completed `pos-a` to `pos-f` and `pos-r1` to `pos-r8`
+configs/results should be reproduced with code commit
+`f86f4a58b14780b66a91507bb1c3e94973140c45` on branch
+`zhangb/diting-backbone-attnpool-team`. Later layerwise station-target work
+moved to branch `zhangb/layerwise-station-temporal` and is documented in
+`reports/stage2_512_layerwise_station_temporal_plan.md`.
 
 ## Current Anchors
 
@@ -215,10 +222,66 @@ rebuilt clean dataset that contains complete `vs30` and `vs30_valid` datasets.
 The current strict rebuild target is
 `/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted/origin_corrected_diting_vel_acc_vs30/<year>/japan_<year>.hdf5`.
 
-## Architecture Revision (2026-05-25)
+## Legacy Pos-A To Pos-F Architecture
+
+The `pos-a` to `pos-f` smoke runs inherit the b43/b43_clean PGA readout
+settings:
+
+```json
+"pga_readout_mode": "target_cross_attention",
+"pga_readout_layers": 4,
+"readout_first_residual": true,
+"readout_residual_gates": true,
+"readout_residual_gate_init": 0.0,
+"readout_ffn_gate_init": 0.0
+```
+
+Therefore, the station-context experiments did keep the first-layer PGA readout
+residual that was shown to be useful in b37/b43. This residual is inside the
+PGA target cross-attention readout, not inside the station-context transformer:
+the first target-to-station cross-attention layer does
+`LayerNorm(query + attn_out)`. The remaining three readout refinement layers use
+zero-initialized learnable gates for their attention and FFN residual updates.
+
+The completed smoke matrix used a legacy station-context branch:
+
+```text
+station_memory = station_feature + station_context_gate *
+                 (TEAM(station_feature) - station_feature)
+```
+
+with `station_context_gate_init=0.0`. This differs from the older b41/b47
+`transformer_pre_readout` experiments, which replaced the station memory with
+raw TEAM output and collapsed.
+
+![Legacy pos-a to pos-f architecture](assets/stage2_512_pos_architecture.svg)
+
+This SVG is specifically the legacy `pos-a` to `pos-f` architecture. It should
+not be read as the `pos-r1` to `pos-r8` architecture.
+
+### Pos-A To Pos-F Differences
+
+| Exp | Difference from pos-a |
+|---|---|
+| pos-a | Clean b43 anchor: no VS30, no station context, no RoPE. |
+| pos-b | Adds gated station and target VS30 embeddings; station memory remains identity. |
+| pos-c | Adds gated TEAM station context before PGA readout; no VS30 and no RoPE. |
+| pos-d | pos-c plus RoPE inside TEAM station self-attention Q/K. |
+| pos-e | pos-c plus gated station and target VS30 embeddings. |
+| pos-f | pos-c plus both VS30 embeddings and TEAM RoPE. |
+
+## Revised Pos-R1 To Pos-R8 Architecture And Plan
 
 The next station-context/RoPE pass should not reuse the completed `pos-c` to
 `pos-f` semantics. Use these revised controls instead:
+
+`pos-r1` and `pos-r2` keep the b43-style identity station memory path. `pos-r3`
+to `pos-r5` replace that memory with a first-residual station-context encoder.
+`pos-r6` to `pos-r8` test a stronger synchronous path in which station memory
+and target query evolve layer by layer. The figure below is the revised
+architecture for `pos-r1` to `pos-r8`.
+
+![Revised pos-r1 to pos-r8 architecture](assets/stage2_512_pos_r_architecture.svg)
 
 | Exp | Station context | VS30 | RoPE switch | Purpose |
 |---|---|---|---|---|
@@ -264,53 +327,11 @@ All `pos-r` configs intentionally use a single RoPE switch,
 `model_params.use_rope`, and remove legacy `use_team_rope` keys from both the
 top-level model params and `mad_params`.
 
-## Architecture Notes
+## Shared Injection Details
 
-All six `pos-a` to `pos-f` configs inherit the b43/b43_clean PGA readout
-settings:
-
-```json
-"pga_readout_mode": "target_cross_attention",
-"pga_readout_layers": 4,
-"readout_first_residual": true,
-"readout_residual_gates": true,
-"readout_residual_gate_init": 0.0,
-"readout_ffn_gate_init": 0.0
-```
-
-Therefore, the station-context experiments did keep the first-layer PGA readout
-residual that was shown to be useful in b37/b43. This residual is inside the
-PGA target cross-attention readout, not inside the station-context transformer:
-the first target-to-station cross-attention layer does
-`LayerNorm(query + attn_out)`. The remaining three readout refinement layers use
-zero-initialized learnable gates for their attention and FFN residual updates.
-
-The completed smoke matrix used a legacy station-context branch:
-
-```text
-station_memory = station_feature + station_context_gate *
-                 (TEAM(station_feature) - station_feature)
-```
-
-with `station_context_gate_init=0.0`. This differs from the older b41/b47
-`transformer_pre_readout` experiments, which replaced the station memory with
-raw TEAM output and collapsed.
-
-The revised path uses station first-residual context instead: the first station
-block keeps the ordinary transformer residual connection, and later station
-blocks are zero-init gated. The synchronous variant updates station memory and
-target readout layer by layer while preserving the rule that targets are
-query-only and cannot attend other targets.
-
-![Large-font pos-a architecture and pos-b to pos-f extensions](assets/stage2_512_pos_architecture.svg)
-
-The large-font SVG version is stored at
-`reports/assets/stage2_512_pos_architecture.svg` for direct viewing or reuse in
-slides.
-
-The event/magnitude/location branch is omitted from the diagram because these
-configs train only `res_comps=["pga"]`, and PGA does not use an event-context
-gate in this matrix.
+The following injection details apply across the legacy `pos-a` to `pos-f`
+matrix and the revised `pos-r1` to `pos-r8` matrix, with the RoPE compatibility
+distinction noted below.
 
 ### VS30 Injection
 
@@ -358,17 +379,6 @@ PGA readout RoPE off.
   synchronized station/target RoPE, and optional synchronous station-target
   evolution.
 
-### Pos-A To Pos-F Differences
-
-| Exp | Difference from pos-a |
-|---|---|
-| pos-a | Clean b43 anchor: no VS30, no station context, no RoPE. |
-| pos-b | Adds gated station and target VS30 embeddings; station memory remains identity. |
-| pos-c | Adds gated TEAM station context before PGA readout; no VS30 and no RoPE. |
-| pos-d | pos-c plus RoPE inside TEAM station self-attention Q/K. |
-| pos-e | pos-c plus gated station and target VS30 embeddings. |
-| pos-f | pos-c plus both VS30 embeddings and TEAM RoPE. |
-
 ## Event-Split Smoke Results (2026-05-25)
 
 Strong PGA is reported on validation targets with `label >= -1.0`; weak-bin
@@ -399,22 +409,56 @@ Interpretation:
   primarily prove that the paths train without collapse, not that VS30 or RoPE
   has been effectively used.
 
+## Revised Event-Split Results (2026-05-26)
+
+The `pos-r1` to `pos-r8` runs test the revised architecture in the new
+`use_rope` schema. The main conclusion is that the schema controls are usable,
+but both revised station-context paths hurt train fit before RoPE/VS30 can be
+interpreted cleanly.
+
+| Exp | Setting | Ckpt | Train MAE | Val MAE | Val slope | Strong MAE / bias | Weak bias |
+|---|---|---|---:|---:|---:|---:|---:|
+| pos-r1 | anchor new schema | last | 0.0520 | 0.3187 | 0.5646 | 0.4375 / -0.3456 | +0.2282 |
+| pos-r2 | VS30-only | best | 0.0552 | 0.3182 | 0.5538 | 0.4224 / -0.3471 | +0.2463 |
+| pos-r2 | VS30-only | last | 0.0403 | 0.3174 | 0.5364 | 0.4705 / -0.4139 | +0.2047 |
+| pos-r3 | firstres context | best | 0.2358 | 0.3465 | 0.5356 | 0.4728 / -0.3982 | +0.1965 |
+| pos-r4 | firstres context + RoPE | best | 0.2426 | 0.3432 | 0.4522 | 0.5097 / -0.4869 | +0.2119 |
+| pos-r5 | firstres context + VS30 + RoPE | best | 0.2235 | 0.3381 | 0.4847 | 0.4824 / -0.4496 | +0.2091 |
+| pos-r6 | synchronous context | last | 0.2501 | 0.3904 | 0.4620 | 0.4272 / -0.3736 | +0.3176 |
+| pos-r7 | synchronous context + RoPE | best | 0.2892 | 0.3728 | 0.3555 | 0.4997 / -0.4816 | +0.3391 |
+| pos-r8 | synchronous context + VS30 + RoPE | best | 0.2011 | 0.3515 | 0.4400 | 0.4885 / -0.4689 | +0.2518 |
+
+Interpretation:
+
+- `pos-r1` is the clean anchor for the new schema. It reproduces b43_clean /
+  `pos-a`-level train fit and calibration.
+- `pos-r2` is not enough to claim a VS30 gain. Its Val MAE is close to `pos-r1`,
+  but the VS30 gates stay near zero and the last checkpoint worsens strong-PGA
+  underprediction.
+- `pos-r3` to `pos-r5` and `pos-r6` to `pos-r8` are not valid RoPE/VS30
+  mechanism tests because their station-context path already fails to fit the
+  train set. The station context delta norm is large, while readout gates stay
+  near zero, indicating that station memory is being overwritten too strongly.
+- Do not take `pos-r4`, `pos-r5`, `pos-r7`, or `pos-r8` forward to
+  station/spatial holdout. Redesign station context first, likely with an outer
+  zero-init bypass gate around the whole station-context memory update.
+
 ## Station/Spatial Holdout Matrix
 
-After event-split smoke passes, repeat the informative subset under a station or
-spatial holdout protocol:
+After the `pos-r1` to `pos-r8` results, the immediate holdout subset should be
+restricted to paths that still fit train. The first-residual and synchronous
+station-context variants should be deferred until their memory update is
+stabilized.
 
 | Exp | Anchor | Station context | VS30 | RoPE |
 |---|---|---|---|---|
 | hold-a | b19 | off/current | off | off |
 | hold-b | b19 | off/current | on | off |
-| hold-c | b43_clean | firstres_transformer_pre_readout | off | off |
-| hold-d | b43_clean | firstres_transformer_pre_readout | off | on |
-| hold-e | b43_clean | firstres_transformer_pre_readout | on | on |
-| hold-sync | b43_clean | synchronous_station_target | off | on |
-| hold-f | b43 | off/current | off | off |
-| hold-g | b43 | firstres_transformer_pre_readout | off | off |
-| hold-h | b43 | firstres_transformer_pre_readout | on | on |
+| hold-c | b43_clean / pos-r1 | off/current | off | off |
+| hold-d | b43_clean / pos-r2 | off/current | on | off |
+| hold-e | redesigned station context | gated outer bypass | off | off |
+| hold-f | redesigned station context | gated outer bypass | off | on |
+| hold-g | redesigned station context | gated outer bypass | on | on |
 
 Report seen-station and held-out-station metrics separately.
 

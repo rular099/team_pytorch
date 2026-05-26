@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/>
+    </marker>
+    <style>
+      .title { font: 700 34px Arial, sans-serif; fill: #111827; }
+      .label { font: 600 24px Arial, sans-serif; fill: #111827; }
+      .small { font: 20px Arial, sans-serif; fill: #374151; }
+      .tiny { font: 18px Arial, sans-serif; fill: #4b5563; }
+      .box { fill: #f8fafc; stroke: #334155; stroke-width: 2; rx: 12; }
+      .station { fill: #e0f2fe; stroke: #0369a1; }
+      .target { fill: #fef3c7; stroke: #b45309; }
+      .head { fill: #dcfce7; stroke: #15803d; }
+      .aux { fill: #fce7f3; stroke: #be185d; }
+      .note { fill: #f3f4f6; stroke: #6b7280; }
+      .arrow { stroke: #374151; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #6b7280; stroke-width: 2.2; fill: none; stroke-dasharray: 8 7; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1400" height="900" fill="#ffffff"/>
+  <text x="50" y="58" class="title">Layerwise Station-Target Architecture, b53-b60</text>
+  <text x="50" y="94" class="small">Target first reads raw station memory S0; station memory then evolves by small residual deltas before the next target readout layer.</text>
+
+  <rect x="55" y="150" width="230" height="95" class="box station"/>
+  <text x="82" y="188" class="label">DiTing Backbone</text>
+  <text x="82" y="220" class="small">waveform tokens</text>
+
+  <rect x="335" y="150" width="245" height="95" class="box station"/>
+  <text x="365" y="188" class="label">Station Adapter</text>
+  <text x="365" y="220" class="small">attention pooling -> S0</text>
+
+  <rect x="335" y="300" width="245" height="95" class="box target"/>
+  <text x="365" y="338" class="label">Target Query T0</text>
+  <text x="365" y="370" class="small">target coord + token</text>
+
+  <rect x="640" y="138" width="270" height="118" class="box target"/>
+  <text x="666" y="178" class="label">Cross Layer 1</text>
+  <text x="666" y="212" class="small">T1 = Cross(T0, S0)</text>
+  <text x="666" y="240" class="tiny">first target residual kept</text>
+
+  <rect x="640" y="302" width="270" height="118" class="box station"/>
+  <text x="666" y="342" class="label">Station Delta 1</text>
+  <text x="666" y="376" class="small">S1 = S0 + g * Delta(S0)</text>
+  <text x="666" y="404" class="tiny">pre-norm attention + FFN</text>
+
+  <rect x="965" y="138" width="300" height="118" class="box target"/>
+  <text x="993" y="178" class="label">Cross Layers 2-4</text>
+  <text x="993" y="212" class="small">T2 attends S1</text>
+  <text x="993" y="240" class="small">T3 attends S2, T4 attends S3</text>
+
+  <rect x="965" y="302" width="300" height="118" class="box station"/>
+  <text x="993" y="342" class="label">Station Deltas 2-3</text>
+  <text x="993" y="376" class="small">S2, S3 evolve in sync</text>
+  <text x="993" y="404" class="tiny">identity reachable when gates stay near 0</text>
+
+  <rect x="640" y="500" width="300" height="120" class="box note"/>
+  <text x="666" y="538" class="label">Temporal Pooling</text>
+  <text x="666" y="572" class="small">optional target-conditioned</text>
+  <text x="666" y="600" class="tiny">uses target, station, event, geometry, time basis</text>
+
+  <rect x="1010" y="500" width="255" height="120" class="box aux"/>
+  <text x="1037" y="538" class="label">Event Token</text>
+  <text x="1037" y="572" class="small">mag / loc auxiliary heads</text>
+  <text x="1037" y="600" class="tiny">source inferred from station evidence</text>
+
+  <rect x="640" y="700" width="625" height="112" class="box head"/>
+  <text x="666" y="740" class="label">Layerwise PGA Residual Refinement</text>
+  <text x="666" y="774" class="small">pga1 = Head(T1); pga2 = pga1 + g2 * DeltaHead(T2); ...; final = pga4</text>
+  <text x="666" y="802" class="tiny">auxiliary losses supervise intermediate cumulative predictions</text>
+
+  <rect x="55" y="500" width="495" height="120" class="box note"/>
+  <text x="82" y="538" class="label">Position And Site Inputs</text>
+  <text x="82" y="572" class="small">RoPE: one switch for station and target coordinates</text>
+  <text x="82" y="600" class="small">VS30: optional station and target site embeddings</text>
+
+  <path d="M285 198 L335 198" class="arrow"/>
+  <path d="M580 198 L640 198" class="arrow"/>
+  <path d="M580 348 L640 198" class="arrow"/>
+  <path d="M775 256 L775 302" class="arrow"/>
+  <path d="M910 198 L965 198" class="arrow"/>
+  <path d="M910 362 L965 362" class="arrow"/>
+  <path d="M1115 420 L1115 500" class="dash"/>
+  <path d="M790 420 L790 500" class="dash"/>
+  <path d="M1115 256 L1115 700" class="arrow"/>
+  <path d="M790 620 L790 700" class="dash"/>
+  <path d="M550 560 L640 560" class="dash"/>
+  <path d="M1168 620 L1168 700" class="dash"/>
+
+  <text x="930" y="96" class="small">Targets never attend other targets.</text>
+  <text x="930" y="126" class="small">Station deltas and PGA deltas use learnable scalar gates.</text>
+</svg>

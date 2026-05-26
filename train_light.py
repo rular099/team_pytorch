@@ -34,6 +34,13 @@ from dtbench.training.modeling import build_interaction_indexes, parse_hps
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
+def load_config_file(path):
+    with open(path, 'r') as f:
+        if path.endswith(('.yml', '.yaml')):
+            return yaml.safe_load(f)
+        return json.load(f)
+
+
 def _normalize_optional_path(path):
     if not path:
         return path
@@ -1127,6 +1134,41 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid, p
     return stats
 
 
+def layerwise_pga_aux_loss(model, labels, output_layout, pga_target_valid, cfg,
+                           loss_type='huber', huber_delta=1.0,
+                           pga_target_normalization=None, pga_loss_weighting=None):
+    if not cfg or not cfg.get('enabled', False):
+        return None
+    layer_outputs = getattr(model, '_last_pga_layer_outputs', [])
+    if len(layer_outputs) <= 1:
+        return None
+    label_layout = [n for n in output_layout if n in ('mag', 'loc', 'pga')]
+    if 'pga' not in label_layout:
+        return None
+    pga_label = labels[label_layout.index('pga')]
+    weights = list(cfg.get('weights', [0.1] * (len(layer_outputs) - 1)))
+    if len(weights) < len(layer_outputs) - 1:
+        fill = weights[-1] if weights else 0.1
+        weights.extend([fill] * (len(layer_outputs) - 1 - len(weights)))
+    total = None
+    for weight, pred in zip(weights, layer_outputs[:-1]):
+        if float(weight) == 0.0:
+            continue
+        comp = models.point_regression_loss_full(
+            [pred],
+            [pga_label],
+            res_comps=['pga'],
+            res_weight=np.array([1.0]),
+            pga_target_valid=pga_target_valid,
+            loss_type=loss_type,
+            huber_delta=huber_delta,
+            pga_target_normalization=pga_target_normalization,
+            pga_loss_weighting=pga_loss_weighting,
+        )
+        total = comp * float(weight) if total is None else total + comp * float(weight)
+    return total
+
+
 def resolve_pga_target_normalization(training_params, train_dataset, batch_size, is_dist=False, rank=0, device='cpu'):
     norm_cfg = training_params.get('pga_target_normalization') or {}
     if not norm_cfg.get('enabled', False):
@@ -1435,7 +1477,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val',
                 input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None,
                 pga_target_normalization=None, station_decorrelation_weight=0.0,
-                pga_loss_weighting=None):
+                pga_loss_weighting=None, layerwise_pga_loss=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1493,6 +1535,19 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         pga_target_normalization=pga_target_normalization,
                         pga_loss_weighting=pga_loss_weighting,
                     )
+                    aux_loss = layerwise_pga_aux_loss(
+                        eval_model,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        layerwise_pga_loss,
+                        loss_type=loss_type,
+                        huber_delta=huber_delta,
+                        pga_target_normalization=pga_target_normalization,
+                        pga_loss_weighting=pga_loss_weighting,
+                    )
+                    if aux_loss is not None:
+                        loss = loss + aux_loss
                 if station_decorrelation_weight:
                     decor_loss = models.station_embedding_decorrelation_loss(
                         getattr(eval_model, '_last_station_feature_emb', None),
@@ -1535,6 +1590,16 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         'grad/output_model_pga': module_grad_norm(eval_model.output_model_pga),
                         'grad_rms/output_model_pga': module_grad_rms(eval_model.output_model_pga),
                     }
+                    if getattr(eval_model, 'station_context_encoder', None) is not None:
+                        grad_targets['grad/station_context_encoder'] = module_grad_norm(eval_model.station_context_encoder)
+                        grad_targets['grad_rms/station_context_encoder'] = module_grad_rms(eval_model.station_context_encoder)
+                    if getattr(eval_model, 'pga_station_target_readout', None) is not None:
+                        grad_targets['grad/pga_station_target_readout'] = module_grad_norm(eval_model.pga_station_target_readout)
+                        grad_targets['grad_rms/pga_station_target_readout'] = module_grad_rms(eval_model.pga_station_target_readout)
+                        temporal_pool = getattr(eval_model.pga_station_target_readout, 'temporal_pool', None)
+                        if temporal_pool is not None:
+                            grad_targets['grad/temporal_pool'] = module_grad_norm(temporal_pool)
+                            grad_targets['grad_rms/temporal_pool'] = module_grad_rms(temporal_pool)
                     if pre_clip_global_grad is not None and not torch.isnan(pre_clip_global_grad).any():
                         diag_scalars['grad/global_pre_clip_norm'] = pre_clip_global_grad.detach()
                     for key, value in grad_targets.items():
@@ -1608,6 +1673,19 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                             pga_target_normalization=pga_target_normalization,
                             pga_loss_weighting=pga_loss_weighting,
                         )
+                        aux_loss = layerwise_pga_aux_loss(
+                            eval_model,
+                            labels,
+                            eval_model.output_layout,
+                            pga_target_valid,
+                            layerwise_pga_loss,
+                            loss_type=loss_type,
+                            huber_delta=huber_delta,
+                            pga_target_normalization=pga_target_normalization,
+                            pga_loss_weighting=pga_loss_weighting,
+                        )
+                        if aux_loss is not None:
+                            loss = loss + aux_loss
                     val_running_loss += loss.item()
                     num_val_batches += 1
 
@@ -1892,7 +1970,7 @@ if __name__ == '__main__':
     parser.add_argument('--skip_single_station_pretrain', action='store_true')
     parser.add_argument('--single_station_only', action='store_true')
     args = parser.parse_args()
-    config = json.load(open(args.config, 'r'))
+    config = load_config_file(args.config)
     set_seed(config.get('seed', 42))
 
     is_dist, rank, world_size, local_rank = util.setup_distributed()
@@ -2587,6 +2665,7 @@ if __name__ == '__main__':
         full_huber_delta = float(training_params.get('full_model_huber_delta', 1.0))
         station_decorrelation_weight = float(training_params.get('station_embedding_decorrelation_weight', 0.0))
         pga_loss_weighting = training_params.get('pga_loss_weighting', None)
+        layerwise_pga_loss_cfg = training_params.get('layerwise_pga_loss', None)
         if (not is_dist) or rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
             station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
@@ -2602,6 +2681,8 @@ if __name__ == '__main__':
                 print(f'[loss] station_embedding_decorrelation_weight={station_decorrelation_weight:g}')
             if pga_loss_weighting and pga_loss_weighting.get('enabled', False):
                 print(f'[loss] pga_loss_weighting={pga_loss_weighting}')
+            if layerwise_pga_loss_cfg and layerwise_pga_loss_cfg.get('enabled', False):
+                print(f'[loss] layerwise_pga_loss={layerwise_pga_loss_cfg}')
             print(
                 f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss '
                 f'(patience={patience}, factor={lr_decay_factor:g}, min_lr={min_lr:g})'
@@ -2630,6 +2711,7 @@ if __name__ == '__main__':
             pga_target_normalization=pga_target_norm_cfg,
             station_decorrelation_weight=station_decorrelation_weight,
             pga_loss_weighting=pga_loss_weighting,
+            layerwise_pga_loss=layerwise_pga_loss_cfg,
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,
