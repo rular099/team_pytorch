@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#263238"/>
+    </marker>
+    <style>
+      .title { font: 700 38px Arial, sans-serif; fill: #111827; }
+      .subtitle { font: 25px Arial, sans-serif; fill: #374151; }
+      .label { font: 700 27px Arial, sans-serif; fill: #111827; }
+      .text { font: 24px Arial, sans-serif; fill: #263238; }
+      .note { font: 22px Arial, sans-serif; fill: #374151; }
+      .tiny { font: 20px Arial, sans-serif; fill: #4b5563; }
+      .box { stroke-width: 2.2; rx: 12; }
+      .wave { fill: #e0f2fe; stroke: #0369a1; }
+      .station { fill: #dcfce7; stroke: #15803d; }
+      .target { fill: #fef3c7; stroke: #b45309; }
+      .temporal { fill: #e0e7ff; stroke: #4338ca; }
+      .head { fill: #fce7f3; stroke: #be185d; }
+      .site { fill: #f3f4f6; stroke: #6b7280; }
+      .warn { fill: #fee2e2; stroke: #b91c1c; }
+      .arrow { stroke: #263238; stroke-width: 2.8; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #6b7280; stroke-width: 2.5; fill: none; stroke-dasharray: 9 7; marker-end: url(#arrow); }
+      .thin { stroke: #6b7280; stroke-width: 2.0; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1050" fill="#ffffff"/>
+  <text x="55" y="62" class="title">b58_c256 to b60_c256: Layerwise Station-Target Model With Compressed Temporal Tokens</text>
+  <text x="55" y="100" class="subtitle">The main station memory path stays unchanged; only the target-conditioned temporal pooling branch compresses DiTing time-token C before normalization.</text>
+
+  <rect x="55" y="150" width="245" height="110" class="box wave"/>
+  <text x="82" y="192" class="label">Waveforms</text>
+  <text x="82" y="228" class="text">25 stations max</text>
+
+  <rect x="355" y="140" width="285" height="130" class="box wave"/>
+  <text x="384" y="182" class="label">DiTing Backbone</text>
+  <text x="384" y="218" class="text">time tokens X</text>
+  <text x="384" y="250" class="tiny">shape: B x S x L x 1792</text>
+
+  <rect x="710" y="140" width="285" height="130" class="box station"/>
+  <text x="738" y="182" class="label">Station Adapter</text>
+  <text x="738" y="218" class="text">attention pooling</text>
+  <text x="738" y="250" class="tiny">pooled station memory S0</text>
+
+  <rect x="1065" y="140" width="250" height="130" class="box target"/>
+  <text x="1092" y="182" class="label">Target Query T0</text>
+  <text x="1092" y="218" class="text">target coord</text>
+  <text x="1092" y="250" class="tiny">plus learned token</text>
+
+  <rect x="55" y="350" width="292" height="130" class="box target"/>
+  <text x="82" y="392" class="label">Cross Layer 1</text>
+  <text x="82" y="428" class="text">T1 = Cross(T0, S0)</text>
+  <text x="82" y="460" class="tiny">first readout sees raw S0</text>
+
+  <rect x="410" y="350" width="315" height="130" class="box station"/>
+  <text x="438" y="392" class="label">Station Delta 1</text>
+  <text x="438" y="428" class="text">S1 = S0 + g * Delta(S0)</text>
+  <text x="438" y="460" class="tiny">pre-norm self-attn and FFN</text>
+
+  <rect x="790" y="350" width="345" height="130" class="box target"/>
+  <text x="818" y="392" class="label">Cross Layers 2 to 4</text>
+  <text x="818" y="428" class="text">T2 attends S1</text>
+  <text x="818" y="460" class="tiny">T3 attends S2; T4 attends S3</text>
+
+  <rect x="1200" y="350" width="330" height="130" class="box station"/>
+  <text x="1228" y="392" class="label">Station Deltas 2 to 3</text>
+  <text x="1228" y="428" class="text">S2 and S3 evolve</text>
+  <text x="1228" y="460" class="tiny">targets never attend targets</text>
+
+  <rect x="355" y="575" width="285" height="135" class="box temporal"/>
+  <text x="384" y="618" class="label">C Compression</text>
+  <text x="384" y="654" class="text">Linear: 1792 to 256</text>
+  <text x="384" y="686" class="tiny">new temporal_token_dim</text>
+
+  <rect x="710" y="575" width="285" height="135" class="box temporal"/>
+  <text x="738" y="618" class="label">Token Norm + K/V</text>
+  <text x="738" y="654" class="text">LayerNorm(256)</text>
+  <text x="738" y="686" class="tiny">then key/value projection</text>
+
+  <rect x="1065" y="575" width="330" height="135" class="box temporal"/>
+  <text x="1092" y="618" class="label">Temporal Pool</text>
+  <text x="1092" y="654" class="text">target-conditioned scores</text>
+  <text x="1092" y="682" class="tiny">query + station + event</text>
+  <text x="1092" y="706" class="tiny">geometry + time basis</text>
+
+  <rect x="1065" y="780" width="330" height="120" class="box target"/>
+  <text x="1092" y="822" class="label">Gated Target Delta</text>
+  <text x="1092" y="858" class="text">T = T + g_temp * DeltaT</text>
+  <text x="1092" y="890" class="tiny">applied after target layers 2 to 4</text>
+
+  <rect x="55" y="780" width="370" height="120" class="box site"/>
+  <text x="82" y="822" class="label">b59_c256 and b60_c256</text>
+  <text x="82" y="858" class="text">RoPE: one shared switch</text>
+  <text x="82" y="890" class="text">b60: station/target VS30</text>
+
+  <rect x="500" y="780" width="470" height="120" class="box head"/>
+  <text x="528" y="822" class="label">Layerwise PGA Refinement</text>
+  <text x="528" y="858" class="text">pga1; pga2 = pga1 + gated delta; ...</text>
+  <text x="528" y="890" class="tiny">intermediate cumulative PGA losses stay enabled</text>
+
+  <rect x="55" y="940" width="1340" height="70" class="box warn"/>
+  <text x="82" y="970" class="text">Why c256 exists: original b58-b60 normalized full X with C=1792 in fp32 and hit HIP OOM.</text>
+  <text x="82" y="1000" class="text">The c256 variants test the same temporal idea after compressing only this side branch.</text>
+
+  <path d="M300 205 L355 205" class="arrow"/>
+  <path d="M640 205 L710 205" class="arrow"/>
+  <path d="M995 205 L1065 205" class="arrow"/>
+  <path d="M1190 270 L202 350" class="arrow"/>
+  <path d="M852 270 L202 350" class="arrow"/>
+  <path d="M347 415 L410 415" class="arrow"/>
+  <path d="M725 415 L790 415" class="arrow"/>
+  <path d="M1135 415 L1200 415" class="arrow"/>
+  <path d="M498 270 L498 575" class="dash"/>
+  <path d="M640 642 L710 642" class="arrow"/>
+  <path d="M995 642 L1065 642" class="arrow"/>
+  <path d="M1195 710 L1195 780" class="arrow"/>
+  <path d="M1135 480 L1195 575" class="dash"/>
+  <path d="M1365 480 L1195 575" class="dash"/>
+  <path d="M1230 270 L1230 575" class="dash"/>
+  <path d="M875 480 L875 780" class="thin"/>
+  <path d="M1195 900 L970 840" class="dash"/>
+  <path d="M240 780 L240 480" class="dash"/>
+</svg>

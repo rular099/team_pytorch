@@ -846,16 +846,26 @@ class TargetConditionedTemporalPool(nn.Module):
     """Target/event-conditioned pooling over per-station DiTing time tokens."""
 
     def __init__(self, token_dim, emb_dim, hidden_dim=256, geom_hidden_dim=128,
-                 time_basis=32):
+                 time_basis=32, temporal_token_dim=None):
         super().__init__()
-        self.token_dim = int(token_dim)
+        self.input_token_dim = int(token_dim)
+        self.token_dim = self.input_token_dim if temporal_token_dim is None else int(temporal_token_dim)
         self.emb_dim = int(emb_dim)
         self.hidden_dim = int(hidden_dim)
         self.time_basis = int(time_basis)
+        if self.input_token_dim < 1:
+            raise ValueError(f'token_dim must be positive, got {token_dim}')
+        if self.token_dim < 1:
+            raise ValueError(f'temporal_token_dim must be positive, got {temporal_token_dim}')
         if self.hidden_dim < 1:
             raise ValueError(f'hidden_dim must be positive, got {hidden_dim}')
         if self.time_basis < 1:
             raise ValueError(f'time_basis must be positive, got {time_basis}')
+        self.token_proj = (
+            nn.Identity()
+            if self.token_dim == self.input_token_dim
+            else nn.Linear(self.input_token_dim, self.token_dim)
+        )
         self.token_norm = nn.LayerNorm(self.token_dim)
         self.key_proj = nn.Linear(self.token_dim, self.hidden_dim)
         self.value_proj = nn.Linear(self.token_dim, self.hidden_dim)
@@ -897,7 +907,8 @@ class TargetConditionedTemporalPool(nn.Module):
 
         bsz, n_station, token_len, _ = station_tokens.shape
         n_target = query.shape[1]
-        tokens = self.token_norm(station_tokens.float())
+        tokens = self.token_proj(station_tokens)
+        tokens = self.token_norm(tokens.float())
         key = self.key_proj(tokens)
         value = self.value_proj(tokens)
 
@@ -3469,6 +3480,7 @@ def build_transformer_model(max_stations,
                             pga_layerwise_refinement=False,
                             pga_delta_gate_init=1e-3,
                             use_target_temporal_pooling=False,
+                            temporal_token_dim=None,
                             temporal_pool_dim=256,
                             temporal_pool_geom_hidden_dim=128,
                             temporal_pool_time_basis=32,
@@ -3623,6 +3635,7 @@ def build_transformer_model(max_stations,
             hidden_dim=temporal_pool_dim,
             geom_hidden_dim=temporal_pool_geom_hidden_dim,
             time_basis=temporal_pool_time_basis,
+            temporal_token_dim=temporal_token_dim,
         )
 
     pga_station_target_readout = None
