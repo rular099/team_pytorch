@@ -884,6 +884,21 @@ class TargetConditionedTemporalPool(nn.Module):
         self._last_temporal_entropy = None
         self._last_station_weight_entropy = None
 
+    def compress_tokens(self, station_tokens, normalize=True):
+        """Project raw DiTing tokens before station stacking to control memory."""
+        if station_tokens.shape[-1] == self.token_dim:
+            tokens = station_tokens.float()
+        elif station_tokens.shape[-1] == self.input_token_dim:
+            tokens = self.token_proj(station_tokens.float())
+        else:
+            raise ValueError(
+                f'Expected temporal token dim {self.input_token_dim} or {self.token_dim}, '
+                f'got {station_tokens.shape[-1]}.'
+            )
+        if normalize:
+            tokens = self.token_norm(tokens.float())
+        return tokens.float()
+
     def _time_features(self, length, device, dtype):
         pos = torch.linspace(-1.0, 1.0, length, device=device, dtype=dtype)
         centers = torch.linspace(-1.0, 1.0, self.time_basis, device=device, dtype=dtype)
@@ -907,8 +922,7 @@ class TargetConditionedTemporalPool(nn.Module):
 
         bsz, n_station, token_len, _ = station_tokens.shape
         n_target = query.shape[1]
-        tokens = self.token_proj(station_tokens)
-        tokens = self.token_norm(tokens.float())
+        tokens = self.compress_tokens(station_tokens)
         key = self.key_proj(tokens)
         value = self.value_proj(tokens)
 
@@ -945,6 +959,48 @@ class TargetConditionedTemporalPool(nn.Module):
             -(station_weights.clamp_min(1e-8) * station_weights.clamp_min(1e-8).log()).sum(dim=-1).mean().detach()
         )
         return self.out_proj(pooled)
+
+
+class PGATemporalResidualHead(nn.Module):
+    """Residual PGA correction from target-conditioned pooling over raw time tokens."""
+
+    def __init__(self, token_dim, emb_dim, output_mlp_dims, activation='relu',
+                 hidden_dim=256, geom_hidden_dim=128, time_basis=32,
+                 temporal_token_dim=None, zero_init=True):
+        super().__init__()
+        self.temporal_pool = TargetConditionedTemporalPool(
+            token_dim=token_dim,
+            emb_dim=emb_dim,
+            hidden_dim=hidden_dim,
+            geom_hidden_dim=geom_hidden_dim,
+            time_basis=time_basis,
+            temporal_token_dim=temporal_token_dim,
+        )
+        self.mlp = MLP((emb_dim,), output_mlp_dims, activation=activation)
+        self.output_model = PointOutput((output_mlp_dims[-1],), d=1, bias_mu=0, activation=None)
+        if zero_init:
+            nn.init.zeros_(self.output_model.mu.weight)
+            nn.init.zeros_(self.output_model.mu.bias)
+        self._last_delta = None
+
+    def compress_tokens(self, station_tokens):
+        return self.temporal_pool.compress_tokens(station_tokens, normalize=False)
+
+    def forward(self, query, station_tokens, station_emb, station_valid,
+                query_coords, station_coords, event_emb=None, station_attn=None):
+        context = self.temporal_pool(
+            query,
+            station_tokens,
+            station_emb,
+            station_valid,
+            query_coords,
+            station_coords,
+            event_emb,
+            station_attn=station_attn,
+        )
+        delta = self.output_model(self.mlp(context))
+        self._last_delta = delta
+        return delta
 
 
 class LayerwiseStationTargetReadout(nn.Module):
@@ -2276,7 +2332,7 @@ class FullModel(nn.Module):
                  station_context_encoder=None, pga_station_target_readout=None,
                  pga_layerwise_refinement=False, pga_delta_mlps=None,
                  pga_delta_output_models=None, pga_delta_gate_init=1e-3,
-                 use_target_temporal_pooling=False):
+                 use_target_temporal_pooling=False, pga_temporal_residual_head=None):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -2327,7 +2383,11 @@ class FullModel(nn.Module):
             for _ in range(len(self.pga_delta_mlps))
         ])
         self.use_target_temporal_pooling = bool(use_target_temporal_pooling)
+        self.pga_temporal_residual_head = pga_temporal_residual_head
         self._last_pga_layer_outputs = []
+        self._last_pga_temporal_base = None
+        self._last_pga_temporal_delta = None
+        self._last_pga_temporal_final = None
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
@@ -2391,6 +2451,8 @@ class FullModel(nn.Module):
             raise ValueError('pga_layerwise_refinement is implemented for point output_distribution only.')
         if self.pga_layerwise_refinement and len(self.pga_delta_mlps) != len(self.pga_delta_output_models):
             raise ValueError('pga_delta_mlps and pga_delta_output_models must have the same length.')
+        if self.pga_temporal_residual_head is not None and self.output_distribution != 'point':
+            raise ValueError('pga_temporal_residual_head is implemented for point output_distribution only.')
         if self.station_context_mode == 'gated_transformer_pre_readout':
             self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
         else:
@@ -2876,6 +2938,14 @@ class FullModel(nn.Module):
         # by retaining channel-wise std/rms/peak plus station-level summaries.
         return extract_waveform_scale_features(waveform)
 
+    def _compress_station_temporal_tokens(self, tokens):
+        if self.pga_temporal_residual_head is not None:
+            return self.pga_temporal_residual_head.compress_tokens(tokens)
+        temporal_pool = getattr(self.pga_station_target_readout, 'temporal_pool', None)
+        if temporal_pool is not None:
+            return temporal_pool.compress_tokens(tokens, normalize=False)
+        return tokens
+
     def _encode_station_waveform(self, waveform, collect_tokens=False):
         if collect_tokens:
             if not isinstance(self.waveform_model, nn.Sequential) or len(self.waveform_model) < 2:
@@ -2885,7 +2955,7 @@ class FullModel(nn.Module):
             token_getter = getattr(self.waveform_model[1], 'temporal_tokens', None)
             if token_getter is None:
                 raise ValueError('station adapter does not expose temporal_tokens().')
-            return station_emb, token_getter(features)
+            return station_emb, self._compress_station_temporal_tokens(token_getter(features))
         return self.waveform_model(waveform), None
 
     def _apply_point_pga_head(self, pga_readout_emb, mlp=None, output_model=None):
@@ -2941,10 +3011,11 @@ class FullModel(nn.Module):
 
         station_token_list = []
         raw_station_emb_list = []
+        collect_temporal_tokens = self.use_target_temporal_pooling or self.pga_temporal_residual_head is not None
         for i in range(waveforms_masked.shape[1]):
             station_emb_i, station_tokens_i = self._encode_station_waveform(
                 waveforms_masked[:, i, :, :],
-                collect_tokens=self.use_target_temporal_pooling,
+                collect_tokens=collect_temporal_tokens,
             )
             raw_station_emb_list.append(station_emb_i)
             if station_tokens_i is not None:
@@ -3030,7 +3101,11 @@ class FullModel(nn.Module):
         if (
             not self.no_event_token
             and self.event_readout_mode == 'event_cross_attention'
-            and (self.use_target_temporal_pooling or self.station_context_mode == 'layerwise_station_target')
+            and (
+                self.use_target_temporal_pooling
+                or self.station_context_mode == 'layerwise_station_target'
+                or self.pga_temporal_residual_head is not None
+            )
         ):
             event_query = self.event_query_token.expand(station_memory_emb.shape[0], 1, -1)
             event_emb = self.event_cross_attention(event_query, station_memory_emb, sv).squeeze(1)
@@ -3236,6 +3311,9 @@ class FullModel(nn.Module):
 
         if self.n_pga_targets:
             self._last_pga_layer_outputs = []
+            self._last_pga_temporal_base = None
+            self._last_pga_temporal_delta = None
+            self._last_pga_temporal_final = None
             layer_outputs = []
             if self.pga_readout_mode == 'target_cross_attention':
                 readout_module = (
@@ -3256,6 +3334,48 @@ class FullModel(nn.Module):
                         alpha_logits, mu, sigma = self.output_model_pga(pga_emb[:, i, :])
                         pga_out_tmp.append(torch.cat([alpha_logits, mu, sigma], dim=-1))
                     output_pga = torch.stack(pga_out_tmp, dim=1)
+            if self.pga_temporal_residual_head is not None:
+                if station_temporal_tokens is None:
+                    raise ValueError('pga_temporal_residual_head requires collected station temporal tokens.')
+                if pga_readout_emb is None:
+                    raise ValueError('pga_temporal_residual_head requires a PGA readout embedding.')
+                if self.pga_readout_mode == 'target_cross_attention':
+                    residual_readout = (
+                        self.pga_station_target_readout
+                        if self.station_context_mode in ('synchronous_station_target', 'layerwise_station_target')
+                        else self.pga_cross_attention
+                    )
+                    station_attn = getattr(residual_readout, '_last_attention', None)
+                else:
+                    station_attn = None
+                temporal_delta = self.pga_temporal_residual_head(
+                    pga_readout_emb,
+                    station_temporal_tokens,
+                    station_feature_emb,
+                    sv,
+                    pga_targets_abs,
+                    coords_abs,
+                    event_emb,
+                    station_attn=station_attn,
+                )
+                self._last_pga_temporal_base = output_pga
+                self._last_pga_temporal_delta = temporal_delta
+                output_pga = output_pga + temporal_delta
+                self._last_pga_temporal_final = output_pga
+                delta_abs = temporal_delta.abs().mean()
+                base_abs = self._last_pga_temporal_base.abs().mean()
+                self._last_diag['pga_temporal_delta_abs_mean'] = delta_abs.detach()
+                self._last_diag['pga_temporal_delta_std'] = temporal_delta.std(unbiased=False).detach()
+                self._last_diag['pga_temporal_delta_base_abs_ratio'] = (
+                    delta_abs / (base_abs + 1e-8)
+                ).detach()
+                temporal_pool = self.pga_temporal_residual_head.temporal_pool
+                if temporal_pool._last_temporal_entropy is not None:
+                    self._last_diag['pga_temporal_entropy'] = temporal_pool._last_temporal_entropy
+                if temporal_pool._last_station_weight_entropy is not None:
+                    self._last_diag['pga_temporal_station_weight_entropy'] = (
+                        temporal_pool._last_station_weight_entropy
+                    )
             outputs.append(output_pga)
 
         if self.dataset_bias:
@@ -3480,6 +3600,8 @@ def build_transformer_model(max_stations,
                             pga_layerwise_refinement=False,
                             pga_delta_gate_init=1e-3,
                             use_target_temporal_pooling=False,
+                            use_pga_temporal_residual=False,
+                            pga_temporal_residual_zero_init=True,
                             temporal_token_dim=None,
                             temporal_pool_dim=256,
                             temporal_pool_geom_hidden_dim=128,
@@ -3638,6 +3760,30 @@ def build_transformer_model(max_stations,
             temporal_token_dim=temporal_token_dim,
         )
 
+    pga_temporal_residual_head = None
+    if use_pga_temporal_residual:
+        if output_distribution != 'point':
+            raise ValueError('use_pga_temporal_residual requires output_distribution=point.')
+        if use_target_temporal_pooling:
+            raise ValueError(
+                'use_pga_temporal_residual and use_target_temporal_pooling should be tested separately.'
+            )
+        station_adapter = waveform_model[1] if isinstance(waveform_model, nn.Sequential) and len(waveform_model) > 1 else None
+        token_dim = getattr(station_adapter, 'encoder_dim', None)
+        if token_dim is None:
+            raise ValueError('use_pga_temporal_residual requires a station adapter with encoder_dim.')
+        pga_temporal_residual_head = PGATemporalResidualHead(
+            token_dim=token_dim,
+            emb_dim=emb_dim,
+            output_mlp_dims=output_mlp_dims,
+            activation=activation,
+            hidden_dim=temporal_pool_dim,
+            geom_hidden_dim=temporal_pool_geom_hidden_dim,
+            time_basis=temporal_pool_time_basis,
+            temporal_token_dim=temporal_token_dim,
+            zero_init=pga_temporal_residual_zero_init,
+        )
+
     pga_station_target_readout = None
     if station_context_mode == 'synchronous_station_target':
         pga_station_target_readout = SynchronousStationTargetReadout(
@@ -3757,6 +3903,7 @@ def build_transformer_model(max_stations,
                              pga_delta_output_models=pga_delta_output_models,
                              pga_delta_gate_init=pga_delta_gate_init,
                              use_target_temporal_pooling=use_target_temporal_pooling,
+                             pga_temporal_residual_head=pga_temporal_residual_head,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model

@@ -65,7 +65,34 @@ Important details:
   time tokens using target query, station memory, event latent, station/target
   geometry, and a learned time basis.
 
-## Compressed Temporal-Token Branch
+## b53-b60 Result Summary
+
+The completed `b53` to `b60` results changed the interpretation of the first
+layerwise plan:
+
+- `b53` is the new-branch fixed-`S0` anchor and is effectively the b43-style
+  fixed-station-memory path under the new code.
+- `b54` adds low-weight event mag/loc auxiliary losses while keeping the PGA
+  forward path the same as `b53`; this remains the best anchor for the next
+  temporal-residual tests.
+- `b55` adds layerwise PGA residual refinement but does not add new station
+  information. The residual heads barely open, so it does not improve over
+  `b54`.
+- `b56` transforms `S0` through station-delta blocks. The results show that
+  this currently disrupts the useful DiTing station memory rather than exposing
+  better features.
+- `b57` combines station delta and layerwise PGA residual refinement and is
+  worse than the anchor. It should not be used as the base for further
+  temporal/RoPE/VS30 tests.
+- `b58` to `b60` did not produce valid full-model results. They should be
+  treated as memory/implementation failures of the old full temporal path, not
+  as evidence against temporal information.
+
+The key design correction is to keep the b54 PGA path intact and add a separate
+raw-token residual branch, instead of placing temporal pooling on top of the
+already-failing `b57` path.
+
+## Temporal Residual Branch
 
 The first `b58` to `b60` configs attempted target-conditioned temporal pooling
 directly on DiTing time tokens with shape:
@@ -74,23 +101,31 @@ directly on DiTing time tokens with shape:
 X: B x S x L x C, C = 1792
 ```
 
-That path hit HIP OOM inside `TargetConditionedTemporalPool` while normalizing
-the full token tensor. This is an implementation/memory failure, not evidence
-against temporal pooling, RoPE, or VS30.
+That path hit HIP OOM inside `TargetConditionedTemporalPool` while stacking and
+normalizing the full token tensor. Even the later `b58_c256` style is not the
+right scientific comparison, because it is still built on the poor `b57`
+station-delta/layerwise-PGA base.
 
-The follow-up configs `b58_c256` to `b60_c256` keep the main station-memory and
-target-readout architecture unchanged, but insert a temporal-branch-only channel
-projection before LayerNorm and key/value projection:
+The new `b62` and `b63` configs instead use this structure:
 
 ```text
-X[B,S,L,1792] -> Linear(1792, 256) -> LayerNorm(256) -> temporal K/V
+base path:       F -> station adapter -> S0 -> target cross-attention -> pga_base
+residual path:   F -> Linear(1792,256) -> target-conditioned temporal pool -> delta_pga
+final output:    pga_base + delta_pga
 ```
 
-![Compressed temporal-token branch](assets/stage2_512_layerwise_station_temporal_c256_architecture.svg)
+![Temporal residual branch](assets/stage2_512_temporal_residual_architecture.svg)
 
-This isolates the scientific question: whether target-conditioned temporal
-selection over DiTing time tokens helps once the large activation memory spike is
-removed.
+Important implementation details:
+
+- The temporal channel projection is applied per station before stacking across
+  stations, so the raw `B x S x L x 1792` activation is not materialized.
+- There is no learnable scalar gate on `delta_pga`. The branch is initialized as
+  identity by zero-initializing the final `delta_pga` projection, which keeps
+  gradients usable.
+- `b62` trains only on the final PGA output.
+- `b63` uses the same forward graph as `b62`, but adds an auxiliary residual
+  loss: `loss(delta_pga, y - stopgrad(pga_base))`.
 
 ## Layerwise PGA Refinement
 
@@ -141,9 +176,11 @@ bash train_light_slurm.sh pga_configs/<config>.json
 | b58 | Test target-conditioned temporal pooling | b57 + `use_target_temporal_pooling=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b58_event_aux_stationdelta_layerpga_temporal_chaosuan.json` |
 | b59 | Test synchronized station/target RoPE on the full core path | b58 + `use_rope=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b59_event_aux_stationdelta_layerpga_temporal_rope_chaosuan.json` |
 | b60 | Test VS30 after the full core path is enabled | b59 + `use_vs30=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b60_event_aux_stationdelta_layerpga_temporal_rope_vs30_chaosuan.json` |
-| b58_c256 | Rerun temporal pooling with compressed time-token channels | b58 + `temporal_token_dim=256` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b58_c256_event_aux_stationdelta_layerpga_temporal_chaosuan.json` |
-| b59_c256 | Test synchronized RoPE after the temporal C-compression fix | b59 + `temporal_token_dim=256` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b59_c256_event_aux_stationdelta_layerpga_temporal_rope_chaosuan.json` |
-| b60_c256 | Test VS30 after temporal C-compression and RoPE | b60 + `temporal_token_dim=256` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b60_c256_event_aux_stationdelta_layerpga_temporal_rope_vs30_chaosuan.json` |
+| b58_c256 | Superseded memory-fix attempt on the old b57 base | b58 + `temporal_token_dim=256` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b58_c256_event_aux_stationdelta_layerpga_temporal_chaosuan.json` |
+| b59_c256 | Superseded RoPE follow-up on the old b57 base | b59 + `temporal_token_dim=256` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b59_c256_event_aux_stationdelta_layerpga_temporal_rope_chaosuan.json` |
+| b60_c256 | Superseded VS30 follow-up on the old b57 base | b60 + `temporal_token_dim=256` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b60_c256_event_aux_stationdelta_layerpga_temporal_rope_vs30_chaosuan.json` |
+| b62 | Test raw-`F` temporal residual beyond the b54 fixed-`S0` path | b54 + `use_pga_temporal_residual=true`, no residual aux loss | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b62_event_aux_temporal_residual_chaosuan.json` |
+| b63 | Test whether explicit residual supervision opens the `delta_pga` branch | b62 + `pga_temporal_residual_loss.enabled=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b63_event_aux_temporal_residual_aux_chaosuan.json` |
 
 ## How To Interpret Results
 
@@ -155,16 +192,16 @@ Use adjacent comparisons, not just absolute validation MAE:
   memory updates.
 - b56 vs b54: station-delta effect without layerwise PGA residuals.
 - b57 vs b56 and b57 vs b55: whether station deltas and PGA deltas cooperate.
-- b58 to b60: if they OOM, record them as uncompressed temporal-token memory
-  failures only.
-- b58_c256 vs b57: target-conditioned temporal pooling effect after compressing
-  temporal token channels.
-- b59_c256 vs b58_c256: synchronized RoPE effect on the compressed temporal
-  path.
-- b60_c256 vs b59_c256: VS30 effect; interpret only if VS30 gates open and
-  train fit is not damaged.
+- b58 to b60: record them as old temporal-token memory/implementation failures
+  on a poor b57 base.
+- b58_c256 to b60_c256: superseded; do not prioritize unless a historical
+  comparison is explicitly needed.
+- b62 vs b54: whether raw DiTing time tokens `F` contain useful PGA residual
+  information beyond the adapter-compressed `S0`.
+- b63 vs b62: whether explicit residual supervision helps the zero-init
+  `delta_pga` branch become active.
 
 Always report train MAE, validation MAE, slope, prediction standard deviation,
 strong-PGA bias for `label >= -1.0`, weak-bin bias, and gate diagnostics:
-station delta gates, PGA delta gates, temporal pooling gates and entropy, VS30
-gates, and readout gates.
+station delta gates, PGA delta gates, temporal residual `delta_abs_mean`,
+temporal entropy, VS30 gates, and readout gates.

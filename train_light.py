@@ -1169,6 +1169,57 @@ def layerwise_pga_aux_loss(model, labels, output_layout, pga_target_valid, cfg,
     return total
 
 
+def pga_temporal_residual_aux_loss(model, labels, output_layout, pga_target_valid, cfg,
+                                   loss_type='huber', huber_delta=1.0,
+                                   pga_target_normalization=None, pga_loss_weighting=None):
+    if not cfg or not cfg.get('enabled', False):
+        return None
+    base = getattr(model, '_last_pga_temporal_base', None)
+    delta = getattr(model, '_last_pga_temporal_delta', None)
+    if base is None or delta is None:
+        return None
+    label_layout = [n for n in output_layout if n in ('mag', 'loc', 'pga')]
+    if 'pga' not in label_layout:
+        return None
+
+    pga_label = labels[label_layout.index('pga')]
+    target = models._point_target_for_loss(pga_label, delta, d=1).to(delta.device, dtype=delta.dtype)
+    target_raw = target
+    if pga_target_normalization is not None:
+        mean = float(pga_target_normalization.get('mean', 0.0))
+        std = max(float(pga_target_normalization.get('std', 1.0)), 1e-8)
+        target = (target - mean) / std
+    if cfg.get('stop_base', True):
+        residual_target = target - base.detach()
+    else:
+        residual_target = target - base
+
+    if loss_type == 'huber':
+        per_elem = F.smooth_l1_loss(delta, residual_target, beta=huber_delta, reduction='none')
+    elif loss_type == 'l1':
+        per_elem = torch.abs(delta - residual_target)
+    elif loss_type == 'mse':
+        per_elem = (delta - residual_target) ** 2
+    else:
+        raise ValueError(f"Unsupported point regression loss {loss_type!r}")
+
+    if pga_target_valid is not None:
+        mask = pga_target_valid.to(delta.device).bool()
+        while mask.ndim < per_elem.ndim:
+            mask = mask.unsqueeze(-1)
+        mask_f = mask.to(per_elem.dtype)
+        pga_weights, weighted_denom = models._pga_loss_weight_tensor(
+            target_raw, pga_target_valid, per_elem, pga_loss_weighting
+        )
+        if pga_weights is not None:
+            loss = (per_elem * mask_f * pga_weights).sum() / weighted_denom
+        else:
+            loss = (per_elem * mask_f).sum() / mask_f.sum().clamp_min(1.0)
+    else:
+        loss = per_elem.mean()
+    return float(cfg.get('weight', 0.2)) * loss
+
+
 def resolve_pga_target_normalization(training_params, train_dataset, batch_size, is_dist=False, rank=0, device='cpu'):
     norm_cfg = training_params.get('pga_target_normalization') or {}
     if not norm_cfg.get('enabled', False):
@@ -1477,7 +1528,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val',
                 input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None,
                 pga_target_normalization=None, station_decorrelation_weight=0.0,
-                pga_loss_weighting=None, layerwise_pga_loss=None):
+                pga_loss_weighting=None, layerwise_pga_loss=None,
+                pga_temporal_residual_loss=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1548,6 +1600,19 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     )
                     if aux_loss is not None:
                         loss = loss + aux_loss
+                    temporal_residual_loss = pga_temporal_residual_aux_loss(
+                        eval_model,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        pga_temporal_residual_loss,
+                        loss_type=loss_type,
+                        huber_delta=huber_delta,
+                        pga_target_normalization=pga_target_normalization,
+                        pga_loss_weighting=pga_loss_weighting,
+                    )
+                    if temporal_residual_loss is not None:
+                        loss = loss + temporal_residual_loss
                 if station_decorrelation_weight:
                     decor_loss = models.station_embedding_decorrelation_loss(
                         getattr(eval_model, '_last_station_feature_emb', None),
@@ -1600,6 +1665,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         if temporal_pool is not None:
                             grad_targets['grad/temporal_pool'] = module_grad_norm(temporal_pool)
                             grad_targets['grad_rms/temporal_pool'] = module_grad_rms(temporal_pool)
+                    if getattr(eval_model, 'pga_temporal_residual_head', None) is not None:
+                        grad_targets['grad/pga_temporal_residual_head'] = module_grad_norm(eval_model.pga_temporal_residual_head)
+                        grad_targets['grad_rms/pga_temporal_residual_head'] = module_grad_rms(eval_model.pga_temporal_residual_head)
                     if pre_clip_global_grad is not None and not torch.isnan(pre_clip_global_grad).any():
                         diag_scalars['grad/global_pre_clip_norm'] = pre_clip_global_grad.detach()
                     for key, value in grad_targets.items():
@@ -1686,6 +1754,19 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         )
                         if aux_loss is not None:
                             loss = loss + aux_loss
+                        temporal_residual_loss = pga_temporal_residual_aux_loss(
+                            eval_model,
+                            labels,
+                            eval_model.output_layout,
+                            pga_target_valid,
+                            pga_temporal_residual_loss,
+                            loss_type=loss_type,
+                            huber_delta=huber_delta,
+                            pga_target_normalization=pga_target_normalization,
+                            pga_loss_weighting=pga_loss_weighting,
+                        )
+                        if temporal_residual_loss is not None:
+                            loss = loss + temporal_residual_loss
                     val_running_loss += loss.item()
                     num_val_batches += 1
 
@@ -2666,6 +2747,7 @@ if __name__ == '__main__':
         station_decorrelation_weight = float(training_params.get('station_embedding_decorrelation_weight', 0.0))
         pga_loss_weighting = training_params.get('pga_loss_weighting', None)
         layerwise_pga_loss_cfg = training_params.get('layerwise_pga_loss', None)
+        pga_temporal_residual_loss_cfg = training_params.get('pga_temporal_residual_loss', None)
         if (not is_dist) or rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
             station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
@@ -2683,6 +2765,8 @@ if __name__ == '__main__':
                 print(f'[loss] pga_loss_weighting={pga_loss_weighting}')
             if layerwise_pga_loss_cfg and layerwise_pga_loss_cfg.get('enabled', False):
                 print(f'[loss] layerwise_pga_loss={layerwise_pga_loss_cfg}')
+            if pga_temporal_residual_loss_cfg and pga_temporal_residual_loss_cfg.get('enabled', False):
+                print(f'[loss] pga_temporal_residual_loss={pga_temporal_residual_loss_cfg}')
             print(
                 f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss '
                 f'(patience={patience}, factor={lr_decay_factor:g}, min_lr={min_lr:g})'
@@ -2712,6 +2796,7 @@ if __name__ == '__main__':
             station_decorrelation_weight=station_decorrelation_weight,
             pga_loss_weighting=pga_loss_weighting,
             layerwise_pga_loss=layerwise_pga_loss_cfg,
+            pga_temporal_residual_loss=pga_temporal_residual_loss_cfg,
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,
