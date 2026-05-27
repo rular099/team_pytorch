@@ -166,7 +166,7 @@
             ]
         },
         "single_station_pretrain": {
-            "enabled": true,
+            "enabled": false,
             "epochs": 80,
             "batch_size": 64,
             "samples_per_event": 4,
@@ -189,7 +189,8 @@
             "lr_head": 0.001,
             "clipnorm": 1.0,
             "lr_monitor": "train",
-            "station_sampling": "random"
+            "station_sampling": "random",
+            "reuse_note": "Reuse b54 single-station checkpoint; the single-station architecture/data are unchanged for b62-b67."
         },
         "generator_params": [
             {
@@ -248,7 +249,8 @@
             "enabled": true,
             "weight": 0.2,
             "stop_base": true
-        }
+        },
+        "station_pretrain_path": "weights_japan_overfit_pga15_stage2_512_b54_event_aux/single_station_best.pth"
     },
     "experiment_note": "same as b63, but temporal residual pools stations uniformly instead of reusing base cross-attention station weights"
 }

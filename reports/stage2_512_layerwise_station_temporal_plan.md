@@ -129,6 +129,12 @@ Important implementation details:
 - `b64` to `b67` are the parallel queue for the same memory scale: no smaller
   batch, no smaller hidden dimension, and no reduced-token variant beyond the
   fixed temporal projection needed by the residual branch.
+- The single-station pretrain model is identical for `b62` to `b67` and `b54`.
+  These configs therefore skip `single_station_pretrain` and load:
+  `weights_japan_overfit_pga15_stage2_512_b54_event_aux/single_station_best.pth`.
+  If that checkpoint is not present on the server, copy it into the run
+  directory or update `training_params.station_pretrain_path` to the existing
+  equivalent checkpoint before launch.
 
 ## Layerwise PGA Refinement
 
