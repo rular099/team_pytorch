@@ -2332,7 +2332,10 @@ class FullModel(nn.Module):
                  station_context_encoder=None, pga_station_target_readout=None,
                  pga_layerwise_refinement=False, pga_delta_mlps=None,
                  pga_delta_output_models=None, pga_delta_gate_init=1e-3,
-                 use_target_temporal_pooling=False, pga_temporal_residual_head=None):
+                 use_target_temporal_pooling=False, pga_temporal_residual_head=None,
+                 pga_temporal_residual_query_source='readout',
+                 pga_temporal_residual_station_weighting='attention',
+                 pga_temporal_residual_use_event_context=True):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -2384,6 +2387,9 @@ class FullModel(nn.Module):
         ])
         self.use_target_temporal_pooling = bool(use_target_temporal_pooling)
         self.pga_temporal_residual_head = pga_temporal_residual_head
+        self.pga_temporal_residual_query_source = pga_temporal_residual_query_source
+        self.pga_temporal_residual_station_weighting = pga_temporal_residual_station_weighting
+        self.pga_temporal_residual_use_event_context = bool(pga_temporal_residual_use_event_context)
         self._last_pga_layer_outputs = []
         self._last_pga_temporal_base = None
         self._last_pga_temporal_delta = None
@@ -2453,6 +2459,16 @@ class FullModel(nn.Module):
             raise ValueError('pga_delta_mlps and pga_delta_output_models must have the same length.')
         if self.pga_temporal_residual_head is not None and self.output_distribution != 'point':
             raise ValueError('pga_temporal_residual_head is implemented for point output_distribution only.')
+        if self.pga_temporal_residual_query_source not in ('readout', 'target_query'):
+            raise ValueError(
+                "pga_temporal_residual_query_source must be 'readout' or 'target_query', "
+                f"got {self.pga_temporal_residual_query_source!r}."
+            )
+        if self.pga_temporal_residual_station_weighting not in ('attention', 'uniform'):
+            raise ValueError(
+                "pga_temporal_residual_station_weighting must be 'attention' or 'uniform', "
+                f"got {self.pga_temporal_residual_station_weighting!r}."
+            )
         if self.station_context_mode == 'gated_transformer_pre_readout':
             self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
         else:
@@ -3339,7 +3355,14 @@ class FullModel(nn.Module):
                     raise ValueError('pga_temporal_residual_head requires collected station temporal tokens.')
                 if pga_readout_emb is None:
                     raise ValueError('pga_temporal_residual_head requires a PGA readout embedding.')
-                if self.pga_readout_mode == 'target_cross_attention':
+                if self.pga_temporal_residual_query_source == 'readout':
+                    temporal_query = pga_readout_emb
+                else:
+                    temporal_query = pga_query_emb
+                if (
+                    self.pga_temporal_residual_station_weighting == 'attention'
+                    and self.pga_readout_mode == 'target_cross_attention'
+                ):
                     residual_readout = (
                         self.pga_station_target_readout
                         if self.station_context_mode in ('synchronous_station_target', 'layerwise_station_target')
@@ -3348,14 +3371,15 @@ class FullModel(nn.Module):
                     station_attn = getattr(residual_readout, '_last_attention', None)
                 else:
                     station_attn = None
+                temporal_event_emb = event_emb if self.pga_temporal_residual_use_event_context else None
                 temporal_delta = self.pga_temporal_residual_head(
-                    pga_readout_emb,
+                    temporal_query,
                     station_temporal_tokens,
                     station_feature_emb,
                     sv,
                     pga_targets_abs,
                     coords_abs,
-                    event_emb,
+                    temporal_event_emb,
                     station_attn=station_attn,
                 )
                 self._last_pga_temporal_base = output_pga
@@ -3368,6 +3392,15 @@ class FullModel(nn.Module):
                 self._last_diag['pga_temporal_delta_std'] = temporal_delta.std(unbiased=False).detach()
                 self._last_diag['pga_temporal_delta_base_abs_ratio'] = (
                     delta_abs / (base_abs + 1e-8)
+                ).detach()
+                self._last_diag['pga_temporal_query_source'] = output_pga.new_tensor(
+                    0.0 if self.pga_temporal_residual_query_source == 'readout' else 1.0
+                ).detach()
+                self._last_diag['pga_temporal_station_weighting'] = output_pga.new_tensor(
+                    0.0 if self.pga_temporal_residual_station_weighting == 'attention' else 1.0
+                ).detach()
+                self._last_diag['pga_temporal_event_context_enabled'] = output_pga.new_tensor(
+                    1.0 if self.pga_temporal_residual_use_event_context else 0.0
                 ).detach()
                 temporal_pool = self.pga_temporal_residual_head.temporal_pool
                 if temporal_pool._last_temporal_entropy is not None:
@@ -3602,6 +3635,9 @@ def build_transformer_model(max_stations,
                             use_target_temporal_pooling=False,
                             use_pga_temporal_residual=False,
                             pga_temporal_residual_zero_init=True,
+                            pga_temporal_residual_query_source='readout',
+                            pga_temporal_residual_station_weighting='attention',
+                            pga_temporal_residual_use_event_context=True,
                             temporal_token_dim=None,
                             temporal_pool_dim=256,
                             temporal_pool_geom_hidden_dim=128,
@@ -3904,6 +3940,9 @@ def build_transformer_model(max_stations,
                              pga_delta_gate_init=pga_delta_gate_init,
                              use_target_temporal_pooling=use_target_temporal_pooling,
                              pga_temporal_residual_head=pga_temporal_residual_head,
+                             pga_temporal_residual_query_source=pga_temporal_residual_query_source,
+                             pga_temporal_residual_station_weighting=pga_temporal_residual_station_weighting,
+                             pga_temporal_residual_use_event_context=pga_temporal_residual_use_event_context,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model

@@ -126,6 +126,9 @@ Important implementation details:
 - `b62` trains only on the final PGA output.
 - `b63` uses the same forward graph as `b62`, but adds an auxiliary residual
   loss: `loss(delta_pga, y - stopgrad(pga_base))`.
+- `b64` to `b67` are the parallel queue for the same memory scale: no smaller
+  batch, no smaller hidden dimension, and no reduced-token variant beyond the
+  fixed temporal projection needed by the residual branch.
 
 ## Layerwise PGA Refinement
 
@@ -181,6 +184,10 @@ bash train_light_slurm.sh pga_configs/<config>.json
 | b60_c256 | Superseded VS30 follow-up on the old b57 base | b60 + `temporal_token_dim=256` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b60_c256_event_aux_stationdelta_layerpga_temporal_rope_vs30_chaosuan.json` |
 | b62 | Test raw-`F` temporal residual beyond the b54 fixed-`S0` path | b54 + `use_pga_temporal_residual=true`, no residual aux loss | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b62_event_aux_temporal_residual_chaosuan.json` |
 | b63 | Test whether explicit residual supervision opens the `delta_pga` branch | b62 + `pga_temporal_residual_loss.enabled=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b63_event_aux_temporal_residual_aux_chaosuan.json` |
+| b64 | Test stronger residual supervision | b63 + residual aux weight `0.5` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b64_event_aux_temporal_residual_auxw05_chaosuan.json` |
+| b65 | Test whether residual branch should reuse base station attention | b63 + `pga_temporal_residual_station_weighting=uniform` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b65_event_aux_temporal_residual_aux_uniformsta_chaosuan.json` |
+| b66 | Test whether residual branch should use final target state or raw target query | b63 + `pga_temporal_residual_query_source=target_query` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b66_event_aux_temporal_residual_aux_targetq_chaosuan.json` |
+| b67 | Test most independent temporal residual branch | b63 + raw target query + uniform station pooling | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b67_event_aux_temporal_residual_aux_targetq_uniformsta_chaosuan.json` |
 
 ## How To Interpret Results
 
@@ -200,6 +207,14 @@ Use adjacent comparisons, not just absolute validation MAE:
   information beyond the adapter-compressed `S0`.
 - b63 vs b62: whether explicit residual supervision helps the zero-init
   `delta_pga` branch become active.
+- b64 vs b63: whether the residual branch only needs stronger residual-target
+  supervision to become useful.
+- b65 vs b63: whether reusing the base readout station attention constrains the
+  temporal branch too much.
+- b66 vs b63: whether the temporal branch should be conditioned on final target
+  state `T4` or the original target query `T0`.
+- b67 vs b63/b65/b66: whether a more independent temporal branch is better than
+  a branch tightly coupled to the base readout.
 
 Always report train MAE, validation MAE, slope, prediction standard deviation,
 strong-PGA bias for `label >= -1.0`, weak-bin bias, and gate diagnostics:
