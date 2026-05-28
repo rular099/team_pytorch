@@ -121,16 +121,28 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
     adapter_lr = training_params.get('lr_adapter', base_lr)
     team_lr = training_params.get('lr_team', base_lr)
     encoder_lr = training_params.get('lr_encoder', None)
+    temporal_residual_lr = training_params.get('lr_pga_temporal_residual', None)
 
     encoder_params = list(_iter_trainable_params(raw_model.waveform_model[0]))
     adapter_params = list(_iter_trainable_params(raw_model.waveform_model[1]))
+    temporal_residual_module = getattr(raw_model, 'pga_temporal_residual_head', None)
+    temporal_residual_params = (
+        list(_iter_trainable_params(temporal_residual_module))
+        if temporal_residual_module is not None and temporal_residual_lr is not None
+        else []
+    )
     adapter_param_ids = {id(p) for p in adapter_params}
     encoder_param_ids = {id(p) for p in encoder_params}
+    temporal_residual_param_ids = {id(p) for p in temporal_residual_params}
 
     team_params = []
     for param in _iter_trainable_params(raw_model):
         pid = id(param)
-        if pid in adapter_param_ids or pid in encoder_param_ids:
+        if (
+            pid in adapter_param_ids
+            or pid in encoder_param_ids
+            or pid in temporal_residual_param_ids
+        ):
             continue
         team_params.append(param)
 
@@ -146,6 +158,12 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
             'params': team_params,
             'lr': team_lr,
             'name': 'team',
+        })
+    if temporal_residual_params:
+        param_groups.append({
+            'params': temporal_residual_params,
+            'lr': temporal_residual_lr,
+            'name': 'pga_temporal_residual',
         })
     if encoder_params:
         if encoder_lr is None:
@@ -170,6 +188,41 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
         for group in param_groups
     }
     return optimizer, group_summary
+
+
+def apply_full_model_trainability(model, training_params, is_dist=False, rank=0):
+    raw_model = model.module if is_dist else model
+    mode = training_params.get('freeze_mode', None)
+    if mode in (None, '', 'none', 'default'):
+        return
+    if mode != 'temporal_residual_only':
+        raise ValueError(
+            "training_params.freeze_mode must be one of 'none' or "
+            f"'temporal_residual_only', got {mode!r}."
+        )
+    head = getattr(raw_model, 'pga_temporal_residual_head', None)
+    if head is None:
+        raise ValueError('freeze_mode=temporal_residual_only requires use_pga_temporal_residual=true.')
+    for param in raw_model.parameters():
+        param.requires_grad = False
+    for param in head.parameters():
+        param.requires_grad = True
+    if rank == 0:
+        trainable = sum(p.numel() for p in raw_model.parameters() if p.requires_grad)
+        total = sum(p.numel() for p in raw_model.parameters())
+        print(
+            f'[trainability] freeze_mode={mode}: '
+            f'trainable={trainable}/{total} parameters'
+        )
+
+
+def set_temporal_residual_only_train_mode(model):
+    raw_model = model.module if hasattr(model, 'module') else model
+    for name, child in raw_model.named_children():
+        if name == 'pga_temporal_residual_head':
+            child.train()
+        else:
+            child.eval()
 
 
 class SingleStationTaskDataset(torch.utils.data.Dataset):
@@ -1529,7 +1582,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None,
                 pga_target_normalization=None, station_decorrelation_weight=0.0,
                 pga_loss_weighting=None, layerwise_pga_loss=None,
-                pga_temporal_residual_loss=None):
+                pga_temporal_residual_loss=None, freeze_mode=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1554,6 +1607,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             if is_dist and train_sampler is not None:
                 train_sampler.set_epoch(epoch)
             model.train()
+            if freeze_mode == 'temporal_residual_only':
+                set_temporal_residual_only_train_mode(model)
             running_loss = 0.0
             num_train_batches = 0
             first_batch_logged = False
@@ -2575,6 +2630,8 @@ if __name__ == '__main__':
                 load_layernorm=training_params.get('station_pretrain_load_layernorm', True),
             )
 
+        apply_full_model_trainability(full_model, training_params, is_dist=is_dist, rank=rank)
+
         no_event_token = config['model_params'].get('no_event_token', False)
         optimizer, optimizer_group_summary = build_optimizer_with_groups(
             full_model, training_params, is_dist=is_dist
@@ -2797,6 +2854,7 @@ if __name__ == '__main__':
             pga_loss_weighting=pga_loss_weighting,
             layerwise_pga_loss=layerwise_pga_loss_cfg,
             pga_temporal_residual_loss=pga_temporal_residual_loss_cfg,
+            freeze_mode=training_params.get('freeze_mode', None),
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,

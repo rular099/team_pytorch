@@ -2335,7 +2335,9 @@ class FullModel(nn.Module):
                  use_target_temporal_pooling=False, pga_temporal_residual_head=None,
                  pga_temporal_residual_query_source='readout',
                  pga_temporal_residual_station_weighting='attention',
-                 pga_temporal_residual_use_event_context=True):
+                 pga_temporal_residual_use_event_context=True,
+                 pga_temporal_residual_mode='residual',
+                 pga_temporal_residual_token_control='none'):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -2390,9 +2392,12 @@ class FullModel(nn.Module):
         self.pga_temporal_residual_query_source = pga_temporal_residual_query_source
         self.pga_temporal_residual_station_weighting = pga_temporal_residual_station_weighting
         self.pga_temporal_residual_use_event_context = bool(pga_temporal_residual_use_event_context)
+        self.pga_temporal_residual_mode = pga_temporal_residual_mode
+        self.pga_temporal_residual_token_control = pga_temporal_residual_token_control
         self._last_pga_layer_outputs = []
         self._last_pga_temporal_base = None
         self._last_pga_temporal_delta = None
+        self._last_pga_temporal_pred = None
         self._last_pga_temporal_final = None
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
@@ -2468,6 +2473,16 @@ class FullModel(nn.Module):
             raise ValueError(
                 "pga_temporal_residual_station_weighting must be 'attention' or 'uniform', "
                 f"got {self.pga_temporal_residual_station_weighting!r}."
+            )
+        if self.pga_temporal_residual_mode not in ('residual', 'absolute'):
+            raise ValueError(
+                "pga_temporal_residual_mode must be 'residual' or 'absolute', "
+                f"got {self.pga_temporal_residual_mode!r}."
+            )
+        if self.pga_temporal_residual_token_control not in ('none', 'zero', 'batch_roll', 'station_roll', 'time_reverse'):
+            raise ValueError(
+                "pga_temporal_residual_token_control must be one of 'none', 'zero', "
+                f"'batch_roll', 'station_roll', 'time_reverse', got {self.pga_temporal_residual_token_control!r}."
             )
         if self.station_context_mode == 'gated_transformer_pre_readout':
             self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
@@ -2962,6 +2977,24 @@ class FullModel(nn.Module):
             return temporal_pool.compress_tokens(tokens, normalize=False)
         return tokens
 
+    def _control_pga_temporal_tokens(self, tokens):
+        mode = self.pga_temporal_residual_token_control
+        if mode == 'none':
+            return tokens
+        if mode == 'zero':
+            return torch.zeros_like(tokens)
+        if mode == 'batch_roll':
+            if tokens.shape[0] < 2:
+                return torch.zeros_like(tokens)
+            return torch.roll(tokens, shifts=1, dims=0)
+        if mode == 'station_roll':
+            if tokens.shape[1] < 2:
+                return torch.zeros_like(tokens)
+            return torch.roll(tokens, shifts=1, dims=1)
+        if mode == 'time_reverse':
+            return torch.flip(tokens, dims=[2])
+        raise ValueError(f'Unsupported pga temporal token control mode: {mode}')
+
     def _encode_station_waveform(self, waveform, collect_tokens=False):
         if collect_tokens:
             if not isinstance(self.waveform_model, nn.Sequential) or len(self.waveform_model) < 2:
@@ -3329,6 +3362,7 @@ class FullModel(nn.Module):
             self._last_pga_layer_outputs = []
             self._last_pga_temporal_base = None
             self._last_pga_temporal_delta = None
+            self._last_pga_temporal_pred = None
             self._last_pga_temporal_final = None
             layer_outputs = []
             if self.pga_readout_mode == 'target_cross_attention':
@@ -3372,9 +3406,10 @@ class FullModel(nn.Module):
                 else:
                     station_attn = None
                 temporal_event_emb = event_emb if self.pga_temporal_residual_use_event_context else None
-                temporal_delta = self.pga_temporal_residual_head(
+                controlled_station_tokens = self._control_pga_temporal_tokens(station_temporal_tokens)
+                temporal_pred = self.pga_temporal_residual_head(
                     temporal_query,
-                    station_temporal_tokens,
+                    controlled_station_tokens,
                     station_feature_emb,
                     sv,
                     pga_targets_abs,
@@ -3383,8 +3418,14 @@ class FullModel(nn.Module):
                     station_attn=station_attn,
                 )
                 self._last_pga_temporal_base = output_pga
+                self._last_pga_temporal_pred = temporal_pred
+                if self.pga_temporal_residual_mode == 'residual':
+                    temporal_delta = temporal_pred
+                    output_pga = output_pga + temporal_delta
+                else:
+                    temporal_delta = temporal_pred - output_pga.detach()
+                    output_pga = temporal_pred
                 self._last_pga_temporal_delta = temporal_delta
-                output_pga = output_pga + temporal_delta
                 self._last_pga_temporal_final = output_pga
                 delta_abs = temporal_delta.abs().mean()
                 base_abs = self._last_pga_temporal_base.abs().mean()
@@ -3401,6 +3442,19 @@ class FullModel(nn.Module):
                 ).detach()
                 self._last_diag['pga_temporal_event_context_enabled'] = output_pga.new_tensor(
                     1.0 if self.pga_temporal_residual_use_event_context else 0.0
+                ).detach()
+                self._last_diag['pga_temporal_mode'] = output_pga.new_tensor(
+                    0.0 if self.pga_temporal_residual_mode == 'residual' else 1.0
+                ).detach()
+                token_control_codes = {
+                    'none': 0.0,
+                    'zero': 1.0,
+                    'batch_roll': 2.0,
+                    'station_roll': 3.0,
+                    'time_reverse': 4.0,
+                }
+                self._last_diag['pga_temporal_token_control'] = output_pga.new_tensor(
+                    token_control_codes[self.pga_temporal_residual_token_control]
                 ).detach()
                 temporal_pool = self.pga_temporal_residual_head.temporal_pool
                 if temporal_pool._last_temporal_entropy is not None:
@@ -3638,6 +3692,8 @@ def build_transformer_model(max_stations,
                             pga_temporal_residual_query_source='readout',
                             pga_temporal_residual_station_weighting='attention',
                             pga_temporal_residual_use_event_context=True,
+                            pga_temporal_residual_mode='residual',
+                            pga_temporal_residual_token_control='none',
                             temporal_token_dim=None,
                             temporal_pool_dim=256,
                             temporal_pool_geom_hidden_dim=128,
@@ -3943,6 +3999,8 @@ def build_transformer_model(max_stations,
                              pga_temporal_residual_query_source=pga_temporal_residual_query_source,
                              pga_temporal_residual_station_weighting=pga_temporal_residual_station_weighting,
                              pga_temporal_residual_use_event_context=pga_temporal_residual_use_event_context,
+                             pga_temporal_residual_mode=pga_temporal_residual_mode,
+                             pga_temporal_residual_token_control=pga_temporal_residual_token_control,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model

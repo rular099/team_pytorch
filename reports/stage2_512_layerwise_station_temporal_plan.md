@@ -1,7 +1,7 @@
 # Stage2 512 Layerwise Station-Target Architecture Plan
 
 Date: 2026-05-26
-Updated: 2026-05-27
+Updated: 2026-05-28
 
 This report records the new branch architecture after the `pos-r1` to `pos-r8`
 results showed that replacing or heavily transforming the DiTing station memory
@@ -136,6 +136,56 @@ Important implementation details:
   directory or update `training_params.station_pretrain_path` to the existing
   equivalent checkpoint before launch.
 
+The completed `b62` to `b67` results did not prove that the raw-token temporal
+residual path is useful. The residual output stayed extremely small: the final
+`delta_abs_mean` was only about `0.0065` to `0.0109` in normalized PGA units,
+roughly `0.0038` to `0.0063` in unnormalized log-PGA units with the current
+training normalization. This is only about `0.7%` to `1.2%` of the base output
+scale. The observed metric differences are therefore more likely caused by
+training perturbations and auxiliary-loss regularization than by a meaningful
+correction learned from raw `F`.
+
+## Frozen-Base Temporal Diagnostic Experiments
+
+The next diagnostic step is to stop the b54 base path from absorbing the error.
+Configs `b68` to `b71` load:
+
+```text
+weights_japan_overfit_pga15_stage2_512_b54_event_aux/full_model_best.pth
+```
+
+through `training_params.transfer_model_path`, freeze every parameter except
+`pga_temporal_residual_head`, and train PGA only. They also use
+`training_params.lr_pga_temporal_residual=0.005`, so the residual head receives
+a dedicated learning-rate group.
+
+New code switches used by these configs:
+
+- `training_params.freeze_mode=temporal_residual_only` freezes the transferred
+  base path, keeps frozen submodules in eval mode during training, and leaves
+  only the raw-token residual branch trainable.
+- `model_params.pga_temporal_residual_mode=residual` keeps the original
+  `pga_final = pga_base + delta_pga` form.
+- `model_params.pga_temporal_residual_mode=absolute` makes the temporal branch
+  predict PGA directly; diagnostics still report
+  `delta_pga = pga_temporal_pred - stopgrad(pga_base)`.
+- `model_params.pga_temporal_residual_token_control=station_roll` rolls raw
+  temporal tokens across stations inside each event before the residual branch
+  and is used as the b71 negative control.
+- `eval_checkpoint.py` now writes `pga_temporal_base`,
+  `pga_temporal_delta`, `pga_temporal_pred`, and `pga_temporal_final` into the
+  result npz when the branch exists, and prints
+  `corr(delta, label-base)`.
+
+The first-pass success criteria are:
+
+- `delta_abs_mean` should rise well above the b62-b67 level, ideally above
+  `0.05` normalized PGA units.
+- Train-set `corr(delta, label-base)` should be clearly positive.
+- `pga_temporal_final` should improve train MAE over `pga_temporal_base`.
+- If b71 approaches b68, the apparent gain is not specific to correctly matched
+  raw temporal tokens `F`.
+
 ## Layerwise PGA Refinement
 
 When `pga_layerwise_refinement=true`, each target readout layer contributes a
@@ -194,6 +244,10 @@ bash train_light_slurm.sh pga_configs/<config>.json
 | b65 | Test whether residual branch should reuse base station attention | b63 + `pga_temporal_residual_station_weighting=uniform` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b65_event_aux_temporal_residual_aux_uniformsta_chaosuan.json` |
 | b66 | Test whether residual branch should use final target state or raw target query | b63 + `pga_temporal_residual_query_source=target_query` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b66_event_aux_temporal_residual_aux_targetq_chaosuan.json` |
 | b67 | Test most independent temporal residual branch | b63 + raw target query + uniform station pooling | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b67_event_aux_temporal_residual_aux_targetq_uniformsta_chaosuan.json` |
+| b68 | Force the residual branch to open against a fixed b54 base | load b54-best, `freeze_mode=temporal_residual_only`, residual aux weight `1.0` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b68_event_aux_temporal_residual_warmup_chaosuan.json` |
+| b69 | Check whether zero initialization is blocking the branch | b68 + `pga_temporal_residual_zero_init=false` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b69_event_aux_temporal_residual_warmup_nozeroinit_chaosuan.json` |
+| b70 | Check whether predicting absolute PGA is easier than predicting residual PGA | fixed b54 base, `pga_temporal_residual_mode=absolute`, no residual aux loss | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b70_event_aux_temporal_absolute_warmup_chaosuan.json` |
+| b71 | Negative control for correctly matched raw temporal tokens | b68 + `pga_temporal_residual_token_control=station_roll` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_b71_event_aux_temporal_residual_warmup_stationroll_chaosuan.json` |
 
 ## How To Interpret Results
 
@@ -221,8 +275,18 @@ Use adjacent comparisons, not just absolute validation MAE:
   state `T4` or the original target query `T0`.
 - b67 vs b63/b65/b66: whether a more independent temporal branch is better than
   a branch tightly coupled to the base readout.
+- b68: decisive check that the raw-token residual head can reduce fixed-base
+  PGA error at all.
+- b69 vs b68: whether the previous failure to open was caused by the zero-init
+  final residual projection.
+- b70 vs b68/b69: whether the branch learns better when asked to predict
+  absolute PGA first instead of a small residual.
+- b71 vs b68: negative control for whether gains require correctly matched
+  temporal tokens `F`.
 
 Always report train MAE, validation MAE, slope, prediction standard deviation,
 strong-PGA bias for `label >= -1.0`, weak-bin bias, and gate diagnostics:
 station delta gates, PGA delta gates, temporal residual `delta_abs_mean`,
-temporal entropy, VS30 gates, and readout gates.
+temporal entropy, VS30 gates, and readout gates. For `b68` to `b71`, also
+report `pga_temporal_base` MAE, `pga_temporal_final` MAE, `|delta|` mean, and
+`corr(delta, label-base)` from the eval npz.

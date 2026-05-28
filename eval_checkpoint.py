@@ -81,10 +81,42 @@ def _maybe_unnormalize_pga(name, arr, config):
     return arr * std + mean
 
 
+def _maybe_unnormalize_pga_delta(arr, config):
+    norm = _pga_norm_config(config)
+    if norm is None:
+        return arr
+    _mean, std = norm
+    return arr * std
+
+
 def _point_mu_from_output(name, out_np):
     if name == 'pga':
         return np.asarray(out_np)[..., 0]
     return np.asarray(out_np).reshape(-1)
+
+
+def append_pga_temporal_residual_outputs(results, raw_model, config):
+    tensors = {
+        'pga_temporal_base': getattr(raw_model, '_last_pga_temporal_base', None),
+        'pga_temporal_delta': getattr(raw_model, '_last_pga_temporal_delta', None),
+        'pga_temporal_pred': getattr(raw_model, '_last_pga_temporal_pred', None),
+        'pga_temporal_final': getattr(raw_model, '_last_pga_temporal_final', None),
+    }
+    for key, value in tensors.items():
+        if value is None:
+            continue
+        arr = value.detach().cpu().numpy().squeeze(0)
+        if key == 'pga_temporal_delta':
+            arr = _maybe_unnormalize_pga_delta(arr, config)
+        elif key == 'pga_temporal_pred':
+            mode = getattr(raw_model, 'pga_temporal_residual_mode', 'residual')
+            if mode == 'absolute':
+                arr = _maybe_unnormalize_pga('pga', arr, config)
+            else:
+                arr = _maybe_unnormalize_pga_delta(arr, config)
+        else:
+            arr = _maybe_unnormalize_pga('pga', arr, config)
+        results[key].append(arr)
 
 
 def build_model_and_load(config, diting_args, checkpoint_path, device):
@@ -580,6 +612,7 @@ def run_inference(model, dataset, device, config, indices=None):
         # Move to device
         inputs_dev = [x.unsqueeze(0).to(device) if isinstance(x, torch.Tensor) else x for x in inputs]
         outputs = model(*inputs_dev)
+        append_pga_temporal_residual_outputs(results, raw_model, config)
 
         # Save pga_target_valid if present
         if isinstance(inputs, list) and len(inputs) >= 5:
@@ -1114,6 +1147,21 @@ def print_summary(results, split_name):
                         print(f'  R^2: {r2:.4f}')
                     slope, intercept = np.polyfit(all_l, all_p, 1)
                     print(f'  Linear fit: pred = {slope:.4f} * label + {intercept:.4f}')
+
+                if 'pga_temporal_base' in results and 'pga_temporal_delta' in results:
+                    base = np.asarray(results['pga_temporal_base']).reshape(len(labels), -1)
+                    delta = np.asarray(results['pga_temporal_delta']).reshape(len(labels), -1)
+                    base_v = base.flatten()[valid]
+                    delta_v = delta.flatten()[valid]
+                    target_delta = all_l - base_v
+                    final_v = all_p
+                    print('  Temporal residual branch:')
+                    print(f'    base MAE={np.mean(np.abs(base_v - all_l)):.4f}')
+                    print(f'    final MAE={np.mean(np.abs(final_v - all_l)):.4f}')
+                    print(f'    final-base MAE gain={np.mean(np.abs(base_v - all_l)) - np.mean(np.abs(final_v - all_l)):.4f}')
+                    print(f'    |delta| mean={np.mean(np.abs(delta_v)):.4f}, target |label-base| mean={np.mean(np.abs(target_delta)):.4f}')
+                    if len(delta_v) > 1 and np.std(delta_v) > 0 and np.std(target_delta) > 0:
+                        print(f'    corr(delta, label-base)={np.corrcoef(delta_v, target_delta)[0, 1]:.4f}')
 
                 station_counts = results.get('station_valid_count')
                 if station_counts is not None:
