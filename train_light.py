@@ -2229,14 +2229,21 @@ if __name__ == '__main__':
                 selected_event_ids=fixed_overfit_ids,
             )
         generator_params = [copy.deepcopy(g) for g in generator_params]
+        realtime_overfit = False
         for generator_param in generator_params:
-            fixed_cutout = generator_param.get('cutout_end', generator_param.get('cutout_start', 0))
-            generator_param['trigger_based'] = False
-            generator_param['disable_station_foreshadowing'] = False
+            realtime_cfg = generator_param.get('realtime_training') or {}
+            if realtime_cfg.get('enabled', False):
+                realtime_overfit = True
+                generator_param['trigger_based'] = True
+                generator_param['disable_station_foreshadowing'] = True
+            else:
+                fixed_cutout = generator_param.get('cutout_end', generator_param.get('cutout_start', 0))
+                generator_param['trigger_based'] = False
+                generator_param['disable_station_foreshadowing'] = False
+                generator_param['cutout_start'] = fixed_cutout
+                generator_param['cutout_end'] = fixed_cutout
             generator_param['shuffle_train_dev'] = False
             generator_param['oversample'] = 1
-            generator_param['cutout_start'] = fixed_cutout
-            generator_param['cutout_end'] = fixed_cutout
         if (not is_dist) or (is_dist and (rank == 0)):
             split_counts = [
                 (
@@ -2248,7 +2255,10 @@ if __name__ == '__main__':
             ]
             print(f'Overfit mode enabled: selected {args.overfit_n} diverse events and re-split them for train/dev/test')
             print(f'Overfit split event counts (train/dev/test): {split_counts}')
-            print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, no train/dev split shuffling; input/target station selection follows config')
+            if realtime_overfit:
+                print('Overfit mode adjustments: realtime sampling preserved, trigger_based enabled, oversample=1, no train/dev split shuffling; input/target station selection follows config')
+            else:
+                print('Overfit mode adjustments: trigger_based disabled, station foreshadowing enabled, oversample=1, fixed cutout, no train/dev split shuffling; input/target station selection follows config')
             write_overfit_event_ids(
                 os.path.join(training_params['weight_path'], 'overfit_event_ids.txt'),
                 selected_event_ids[0],

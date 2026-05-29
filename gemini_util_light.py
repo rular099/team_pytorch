@@ -232,7 +232,7 @@ class PreloadedEventGenerator(Dataset):
                  use_coords_rel=False, use_coords_abs=True,
                  use_coords_rel_abs_fusion=False, station_experiment=None,
                  input_station_selection=None, deterministic_sampling_seed=None,
-                 use_vs30=False, **kwargs):
+                 use_vs30=False, realtime_training=None, realtime_target_sampling=None, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -343,7 +343,16 @@ class PreloadedEventGenerator(Dataset):
         # PGA mode is only for evaluation, as it adds zero padding to the input/pga target!
         self.pga_mode = pga_mode
         self.p_pick_limit = p_pick_limit
+        self.realtime_training = self._normalize_realtime_training(realtime_training, shuffle=shuffle)
+        self.realtime_enabled = bool(self.realtime_training.get('enabled', False))
+        self.realtime_target_sampling = self._normalize_realtime_target_sampling(
+            realtime_target_sampling,
+            realtime_enabled=self.realtime_enabled,
+        )
+        if self.realtime_enabled and self.pga_mode:
+            raise ValueError('realtime_training is not compatible with pga_mode evaluation.')
 
+        self._realtime_epoch = 0
         self.base_indexes = np.arange(len(self.event_metadata))
         self.event_keys = list(self.event_metadata.groups.keys())
         self.reverse_index = None
@@ -385,7 +394,142 @@ class PreloadedEventGenerator(Dataset):
 
     def __len__(self):
 #        return len(self.event_metadata)
-        return self.indexes.shape[0]
+        return len(self.indexes)
+
+    @staticmethod
+    def _normalize_time_bins(value):
+        if value is None:
+            value = [(0, 1), (1, 3), (3, 5), (5, 10), (10, 20), (20, 40), (40, 90)]
+        bins = []
+        for item in value:
+            if len(item) != 2:
+                raise ValueError(f'realtime time bin must contain [start, end], got {item!r}')
+            start, end = float(item[0]), float(item[1])
+            if not (np.isfinite(start) and np.isfinite(end)) or start < 0 or end < start:
+                raise ValueError(f'invalid realtime time bin: {item!r}')
+            bins.append((start, end))
+        if not bins:
+            raise ValueError('realtime_training.train_time_bins must not be empty.')
+        return bins
+
+    @staticmethod
+    def _normalize_realtime_training(value, shuffle=True):
+        if not value:
+            return {'enabled': False}
+        cfg = dict(value)
+        cfg['enabled'] = bool(cfg.get('enabled', False))
+        if not cfg['enabled']:
+            return cfg
+        mode = str(cfg.get('mode', 'train' if shuffle else 'val')).strip().lower()
+        if mode not in ('train', 'val'):
+            raise ValueError(f'realtime_training.mode must be train or val, got {mode!r}')
+        cfg['mode'] = mode
+        reference = str(cfg.get('reference', 'first_p_pick')).strip().lower()
+        if reference not in ('first_p_pick', 'first_valid_p_pick'):
+            raise ValueError(
+                'realtime_training.reference currently supports only first_p_pick / first_valid_p_pick.'
+            )
+        cfg['reference'] = 'first_p_pick'
+        cfg['train_time_bins'] = PreloadedEventGenerator._normalize_time_bins(cfg.get('train_time_bins'))
+        val_times = cfg.get('val_times', [1, 3, 5, 10, 20, 40, 90])
+        cfg['val_times'] = [float(x) for x in val_times]
+        if not cfg['val_times'] or any((not np.isfinite(x) or x < 0) for x in cfg['val_times']):
+            raise ValueError('realtime_training.val_times must contain non-negative finite values.')
+        cfg['bins_per_event_per_epoch'] = max(1, int(cfg.get('bins_per_event_per_epoch', 1)))
+        bin_sampling = str(cfg.get('bin_sampling', 'without_replacement')).strip().lower()
+        if bin_sampling not in ('without_replacement', 'with_replacement'):
+            raise ValueError(
+                'realtime_training.bin_sampling must be without_replacement or with_replacement.'
+            )
+        cfg['bin_sampling'] = bin_sampling
+        return cfg
+
+    @staticmethod
+    def _normalize_realtime_target_sampling(value, realtime_enabled=False):
+        if value is None:
+            cfg = {'enabled': bool(realtime_enabled)}
+        else:
+            cfg = dict(value)
+            cfg['enabled'] = bool(cfg.get('enabled', False))
+        if not cfg.get('enabled', False):
+            return {'enabled': False}
+        cfg['input_ratio'] = float(cfg.get('input_ratio', 0.3))
+        cfg['triggered_noninput_ratio'] = float(cfg.get('triggered_noninput_ratio', 0.2))
+        cfg['untriggered_ratio'] = float(cfg.get('untriggered_ratio', 0.5))
+        ratios = [cfg['input_ratio'], cfg['triggered_noninput_ratio'], cfg['untriggered_ratio']]
+        if any((not np.isfinite(x) or x < 0) for x in ratios) or sum(ratios) <= 0:
+            raise ValueError('realtime_target_sampling ratios must be non-negative and sum to > 0.')
+        cfg['fill_missing'] = bool(cfg.get('fill_missing', True))
+        return cfg
+
+    @staticmethod
+    def _ratio_quotas(ratios, total):
+        ratios = np.asarray(ratios, dtype=np.float64)
+        ratios = np.maximum(ratios, 0.0)
+        if total <= 0 or ratios.sum() <= 0:
+            return np.zeros_like(ratios, dtype=np.int64)
+        raw = ratios / ratios.sum() * int(total)
+        quotas = np.floor(raw).astype(np.int64)
+        remainder = int(total - quotas.sum())
+        if remainder > 0:
+            order = np.argsort(-(raw - quotas))
+            for pos in order[:remainder]:
+                quotas[pos] += 1
+        return quotas
+
+    def _realtime_index_context(self, index_entry):
+        if not isinstance(index_entry, tuple):
+            return int(index_entry), {'mode': self.realtime_training['mode'], 'slot': 0}
+        event_index = int(index_entry[0])
+        slot = int(index_entry[1])
+        mode = self.realtime_training['mode']
+        if mode == 'val':
+            time_index = -slot - 1 if slot < 0 else slot
+            return event_index, {'mode': mode, 'time_index': int(time_index), 'slot': slot}
+        return event_index, {'mode': mode, 'bin_index': int(slot), 'slot': slot}
+
+    def _realtime_pick_valid(self, picks):
+        picks = np.asarray(picks, dtype=float)
+        return np.isfinite(picks) & (picks > 0) & (picks < self.trace_length)
+
+    def _select_realtime_cutout(self, full_p_picks, station_valid_full, rng, context, waveform_length):
+        picks = np.asarray(full_p_picks[0], dtype=float)
+        valid = np.asarray(station_valid_full[0], dtype=bool)
+        valid &= self._realtime_pick_valid(picks)
+        if not valid.any():
+            raise _EmptySample()
+        first_pick = int(round(float(np.min(picks[valid]))))
+        if context['mode'] == 'val':
+            time_index = int(context.get('time_index', 0))
+            if time_index < 0 or time_index >= len(self.realtime_training['val_times']):
+                raise ValueError(f'invalid realtime validation time index: {time_index}')
+            elapsed_requested = float(self.realtime_training['val_times'][time_index])
+            time_bin = -1
+        else:
+            bins = self.realtime_training['train_time_bins']
+            bin_index = int(context.get('bin_index', 0))
+            if bin_index < 0 or bin_index >= len(bins):
+                raise ValueError(f'invalid realtime train bin index: {bin_index}')
+            start, end = bins[bin_index]
+            u = float(rng.random() if rng is not None else np.random.random())
+            elapsed_requested = start + (end - start) * u
+            time_bin = bin_index
+
+        current_sample = first_pick + int(round(elapsed_requested * self.sampling_rate))
+        # Existing cutout code treats cutout as an exclusive endpoint. Add one
+        # sample so a station whose P pick is exactly at current_sample remains
+        # a valid triggered input at t=0.
+        cutout = int(np.clip(current_sample + 1, 1, waveform_length))
+        current_sample = cutout - 1
+        elapsed_actual = max(0.0, (current_sample - first_pick) / float(self.sampling_rate))
+        return {
+            'cutout': cutout,
+            'current_sample': current_sample,
+            'first_p_pick_sample': first_pick,
+            'elapsed_time': elapsed_actual,
+            'requested_elapsed_time': elapsed_requested,
+            'time_bin': time_bin,
+        }
 
     def _normalize_station_experiment(self, station_experiment):
         if not station_experiment:
@@ -471,10 +615,13 @@ class PreloadedEventGenerator(Dataset):
         if self.deterministic_sampling_seed is None:
             return None
         if isinstance(index, tuple):
-            sample_id = int(index[0]) * 1009 + int(index[1])
+            sample_id = 0
+            for item in index:
+                sample_id = sample_id * 1009 + int(item)
         else:
             sample_id = int(index)
-        return np.random.default_rng(int(self.deterministic_sampling_seed) + sample_id)
+        seed = (int(self.deterministic_sampling_seed) + sample_id) % (2 ** 63 - 1)
+        return np.random.default_rng(seed)
 
     @staticmethod
     def _pick_random_subset(candidates, n, rng=None):
@@ -699,6 +846,81 @@ class PreloadedEventGenerator(Dataset):
         self._rng_shuffle(rng, selected)
         return selected[:n_targets]
 
+    def _classify_realtime_targets(self, samples, input_station_valid, full_p_picks, current_sample):
+        samples = np.asarray(samples, dtype=np.int64)
+        picks = np.asarray(full_p_picks, dtype=float)
+        input_mask = np.zeros_like(picks, dtype=bool)
+        n_input = min(input_station_valid.shape[0], input_mask.shape[0])
+        input_mask[:n_input] = input_station_valid[:n_input]
+        pick_valid = self._realtime_pick_valid(picks)
+        triggered = pick_valid & (picks <= current_sample)
+        target_type = np.full(samples.shape, 2, dtype=np.int64)
+        target_type[triggered[samples]] = 1
+        target_type[input_mask[samples]] = 0
+        return target_type
+
+    def _sample_realtime_pga_targets(self, active, input_station_valid, full_p_picks,
+                                     current_sample, n_targets, rng=None):
+        active = np.asarray(active, dtype=np.int64)
+        if active.size == 0:
+            return active, np.zeros((0,), dtype=np.int64)
+
+        picks = np.asarray(full_p_picks, dtype=float)
+        input_mask = np.zeros_like(picks, dtype=bool)
+        n_input = min(input_station_valid.shape[0], input_mask.shape[0])
+        input_mask[:n_input] = input_station_valid[:n_input]
+        pick_valid = self._realtime_pick_valid(picks)
+        triggered = pick_valid & (picks <= current_sample)
+
+        active_mask = np.zeros_like(picks, dtype=bool)
+        active_mask[active] = True
+        category_candidates = [
+            np.where(active_mask & input_mask)[0],
+            np.where(active_mask & triggered & ~input_mask)[0],
+            np.where(active_mask & ~triggered & ~input_mask)[0],
+        ]
+        ratios = [
+            self.realtime_target_sampling['input_ratio'],
+            self.realtime_target_sampling['triggered_noninput_ratio'],
+            self.realtime_target_sampling['untriggered_ratio'],
+        ]
+        quotas = self._ratio_quotas(ratios, n_targets)
+
+        selected = []
+        selected_types = []
+        used = set()
+        for target_type, candidates, quota in zip((0, 1, 2), category_candidates, quotas):
+            if quota <= 0:
+                continue
+            candidates = np.asarray([int(x) for x in candidates if int(x) not in used], dtype=np.int64)
+            picked = self._pick_random_subset(candidates, int(quota), rng=rng)
+            for station_idx in picked:
+                station_idx = int(station_idx)
+                selected.append(station_idx)
+                selected_types.append(target_type)
+                used.add(station_idx)
+
+        remaining_slots = min(n_targets, active.size) - len(selected)
+        if remaining_slots > 0 and self.realtime_target_sampling.get('fill_missing', True):
+            remaining = np.asarray([int(x) for x in active if int(x) not in used], dtype=np.int64)
+            picked = self._pick_random_subset(remaining, remaining_slots, rng=rng)
+            picked_types = self._classify_realtime_targets(
+                picked,
+                input_station_valid,
+                full_p_picks,
+                current_sample,
+            )
+            for station_idx, target_type in zip(picked, picked_types):
+                selected.append(int(station_idx))
+                selected_types.append(int(target_type))
+
+        samples = np.asarray(selected, dtype=np.int64)
+        target_types = np.asarray(selected_types, dtype=np.int64)
+        if samples.size > n_targets:
+            samples = samples[:n_targets]
+            target_types = target_types[:n_targets]
+        return samples, target_types
+
     def _apply_station_experiment_inputs(self, waveforms, p_picks, station_valid, pga_valid_input):
         cfg = self.station_experiment
         if not cfg.get('enabled', False):
@@ -806,9 +1028,16 @@ class PreloadedEventGenerator(Dataset):
 
     def _get_one(self, index):
         # Generate indexes of the batch
+        index_entry = self.indexes[index]
         indexes = self.indexes[index:(index + 1)]
-        index = self.indexes[index]
-        rng = self._sample_rng(index)
+        rng = self._sample_rng(index_entry)
+        realtime_context = None
+        if self.realtime_enabled:
+            event_index, realtime_context = self._realtime_index_context(index_entry)
+            index = event_index
+            indexes = [event_index]
+        else:
+            index = index_entry
         if self.pga_mode:
             pga_indexes = [x[1] for x in indexes]
             indexes = [x[0] for x in indexes]
@@ -1001,7 +1230,19 @@ class PreloadedEventGenerator(Dataset):
 
         org_waveform_length = waveforms.shape[2]
         raw_p_picks = p_picks.copy()
-        if self.cutout:
+        realtime_info = None
+        if self.realtime_enabled:
+            if self.sliding_window:
+                raise ValueError('realtime_training does not support sliding_window=True.')
+            realtime_info = self._select_realtime_cutout(
+                full_p_picks,
+                station_valid_full,
+                rng,
+                realtime_context,
+                org_waveform_length,
+            )
+
+        if self.cutout or realtime_info is not None:
             if self.sliding_window:
                 windowlen = self.windowlen
                 window_end = self._rng_int(rng, max(windowlen, self.cutout[0]),
@@ -1012,7 +1253,9 @@ class PreloadedEventGenerator(Dataset):
                 if self.adjust_mean:
                     waveforms -= np.mean(waveforms, axis=2, keepdims=True)
             else:
-                if self.cutout[0] == self.cutout[1]:
+                if realtime_info is not None:
+                    cutout = realtime_info['cutout']
+                elif self.cutout[0] == self.cutout[1]:
                     cutout = self.cutout[0]
                 else:
                     cutout = self._rng_int(rng, *self.cutout)
@@ -1034,10 +1277,10 @@ class PreloadedEventGenerator(Dataset):
             cutout = waveforms.shape[2]
             shift = 0
 
-        if self.trigger_based:
+        if self.trigger_based or self.realtime_enabled:
             # Remove waveforms for all stations that did not trigger yet to avoid knowledge leakage
             p_picks[p_picks <= 0] = org_waveform_length  # Ensure that stations without P picks do not show data
-            waveforms[cutout + shift < p_picks, :, :] = 0
+            waveforms[cutout + shift <= p_picks, :, :] = 0
 
         if self.integrate: # always False. acc to vel should be done on the data source.
             waveforms = np.cumsum(waveforms, axis=2) / self.sampling_rate
@@ -1088,6 +1331,9 @@ class PreloadedEventGenerator(Dataset):
                 (true_batch_size, self.pga_targets))
             pga_targets = np.zeros((true_batch_size, self.pga_targets, 3))
             pga_target_valid = np.zeros((true_batch_size, self.pga_targets), dtype=bool)
+            pga_target_indices = -np.ones((true_batch_size, self.pga_targets), dtype=np.int64)
+            realtime_target_type = -np.ones((true_batch_size, self.pga_targets), dtype=np.int64)
+            realtime_target_lead_time = np.full((true_batch_size, self.pga_targets), np.nan, dtype=np.float32)
             if self.use_vs30:
                 pga_target_vs30 = np.zeros((true_batch_size, self.pga_targets, 1), dtype=np.float32)
                 pga_target_vs30_valid = np.zeros((true_batch_size, self.pga_targets), dtype=bool)
@@ -1122,6 +1368,7 @@ class PreloadedEventGenerator(Dataset):
                     pga_values[i, :n] = np.where(pga_valid_pre, pga_values_pre, 0.0)
                     pga_targets[i, :n, :] = pga_targets_pre
                     pga_target_valid[i, :n] = pga_valid_pre
+                    pga_target_indices[i, :n] = np.arange(sl.start, sl.start + n, dtype=np.int64)
                     if self.use_vs30:
                         pga_target_vs30[i, :n, 0] = np.where(pga_vs30_valid_pre, pga_vs30_pre, 0.0)
                         pga_target_vs30_valid[i, :n] = pga_vs30_valid_pre
@@ -1134,6 +1381,7 @@ class PreloadedEventGenerator(Dataset):
                 for i in range(waveforms.shape[0]): # ith event ,zb
                     valid_pos = pga_valid_full[i] & sv_for_pga[i]
                     active = np.where(valid_pos)[0]
+                    active_target_types = None
                     if len(active) == 0:
                         raise ValueError(f'Found event without PGA idx={indexes[i]}')
                     if self.select_first_pga_targets:
@@ -1165,11 +1413,38 @@ class PreloadedEventGenerator(Dataset):
                             self.pga_targets,
                             rng=rng,
                         )
+                    elif self.realtime_enabled and self.realtime_target_sampling.get('enabled', False):
+                        active, active_target_types = self._sample_realtime_pga_targets(
+                            active,
+                            input_station_valid_for_model[i],
+                            full_p_picks[i],
+                            realtime_info['current_sample'],
+                            self.pga_targets,
+                            rng=rng,
+                        )
                     else:
                         self._rng_shuffle(rng, active)
 
                     samples = active[:self.pga_targets]
                     n = len(samples)
+                    if self.realtime_enabled:
+                        if active_target_types is None:
+                            target_types = self._classify_realtime_targets(
+                                samples,
+                                input_station_valid_for_model[i],
+                                full_p_picks[i],
+                                realtime_info['current_sample'],
+                            )
+                        else:
+                            target_types = active_target_types[:n]
+                        picked_picks = full_p_picks[i, samples]
+                        valid_picked_picks = self._realtime_pick_valid(picked_picks)
+                        lead_time = np.full((n,), np.nan, dtype=np.float32)
+                        lead_time[valid_picked_picks] = (
+                            picked_picks[valid_picked_picks] - realtime_info['current_sample']
+                        ) / float(self.sampling_rate)
+                        realtime_target_type[i, :n] = target_types
+                        realtime_target_lead_time[i, :n] = lead_time
                     if metadata.shape[-1] == 3:
                         pga_targets[i, :n, :] = metadata[i, samples, :]
                     else:
@@ -1177,6 +1452,7 @@ class PreloadedEventGenerator(Dataset):
                         pga_targets[i, :n, :] = full_targets[:, (0, 1, 3)]
                     pga_values[i, :n] = pga[i, samples]
                     pga_target_valid[i, :n] = True
+                    pga_target_indices[i, :n] = samples
                     if self.use_vs30:
                         pga_target_vs30[i, :n, 0] = np.where(vs30_valid[i, samples], vs30[i, samples], 0.0)
                         pga_target_vs30_valid[i, :n] = vs30_valid[i, samples]
@@ -1330,6 +1606,32 @@ class PreloadedEventGenerator(Dataset):
             'event_id': str(ith_event),
             'selected_input_indices': torch.from_numpy(selected_input_indices[0]).long(),
         }
+        if self.pga_targets:
+            p_pick_info['pga_target_indices'] = torch.from_numpy(pga_target_indices[0]).long()
+        if self.realtime_enabled:
+            p_pick_info['realtime_elapsed_time'] = torch.tensor(
+                float(realtime_info['elapsed_time']),
+                dtype=torch.float32,
+            )
+            p_pick_info['realtime_requested_elapsed_time'] = torch.tensor(
+                float(realtime_info['requested_elapsed_time']),
+                dtype=torch.float32,
+            )
+            p_pick_info['realtime_current_sample'] = torch.tensor(
+                int(realtime_info['current_sample']),
+                dtype=torch.long,
+            )
+            p_pick_info['realtime_first_p_pick_sample'] = torch.tensor(
+                int(realtime_info['first_p_pick_sample']),
+                dtype=torch.long,
+            )
+            p_pick_info['realtime_time_bin'] = torch.tensor(
+                int(realtime_info['time_bin']),
+                dtype=torch.long,
+            )
+            if self.pga_targets:
+                p_pick_info['realtime_target_type'] = torch.from_numpy(realtime_target_type[0]).long()
+                p_pick_info['realtime_target_lead_time'] = torch.from_numpy(realtime_target_lead_time[0]).float()
         if station_snr is not None:
             p_pick_info['station_snr'] = torch.from_numpy(station_snr[0]).float()
         if input_pga_values is not None:
@@ -1369,6 +1671,35 @@ class PreloadedEventGenerator(Dataset):
         return target_abs - center[:, 0, :]
 
     def on_epoch_end(self):
+        if self.realtime_enabled:
+            repeated_indexes = np.repeat(self.base_indexes.copy(), self.oversample, axis=0)
+            realtime_indexes = []
+            if self.realtime_training['mode'] == 'val':
+                for idx in repeated_indexes:
+                    for time_index in range(len(self.realtime_training['val_times'])):
+                        realtime_indexes.append((int(idx), -int(time_index) - 1))
+            else:
+                n_bins = len(self.realtime_training['train_time_bins'])
+                n_draw = int(self.realtime_training['bins_per_event_per_epoch'])
+                replace = (
+                    self.realtime_training['bin_sampling'] == 'with_replacement'
+                    or n_draw > n_bins
+                )
+                for idx in repeated_indexes:
+                    chosen_bins = np.random.choice(n_bins, size=n_draw, replace=replace)
+                    for draw_id, bin_index in enumerate(chosen_bins):
+                        realtime_indexes.append((
+                            int(idx),
+                            int(bin_index),
+                            int(self._realtime_epoch),
+                            int(draw_id),
+                        ))
+            if self.shuffle:
+                np.random.shuffle(realtime_indexes)
+            self.indexes = realtime_indexes
+            if self.realtime_training['mode'] == 'train':
+                self._realtime_epoch += 1
+            return
         self.indexes = np.repeat(self.base_indexes.copy(), self.oversample, axis=0)
         if self.shuffle:
             np.random.shuffle(self.indexes)

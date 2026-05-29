@@ -36,6 +36,7 @@ from train_light import (
     build_diting_args as load_diting_args,
     build_overfit_event_metadata_splits,
     clean_state_dict_keys,
+    indexed_config_override,
     load_config_file,
     load_model_state_dict_compatible,
     read_overfit_event_ids,
@@ -244,21 +245,28 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
         )
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for gp in generator_params:
-            fixed_cutout = gp.get('cutout_end', gp.get('cutout_start', 0))
-            gp['trigger_based'] = False
-            gp['disable_station_foreshadowing'] = False
+            realtime_cfg = gp.get('realtime_training') or {}
+            if realtime_cfg.get('enabled', False):
+                gp['trigger_based'] = True
+                gp['disable_station_foreshadowing'] = True
+            else:
+                fixed_cutout = gp.get('cutout_end', gp.get('cutout_start', 0))
+                gp['trigger_based'] = False
+                gp['disable_station_foreshadowing'] = False
+                gp['cutout_start'] = fixed_cutout
+                gp['cutout_end'] = fixed_cutout
             gp['shuffle_train_dev'] = False
             gp['selection_skew'] = None
             gp['oversample'] = 1
             gp['magnitude_resampling'] = 1.0
-            gp['cutout_start'] = fixed_cutout
-            gp['cutout_end'] = fixed_cutout
 
     sampling_rate = metadata_train[0]['sampling_rate']
     max_stations = config['model_params']['max_stations']
     n_pga_targets = config['model_params'].get('n_pga_targets', 0)
     no_event_token = config['model_params'].get('no_event_token', False)
     station_experiment_cfg = training_params.get('station_experiment', None)
+    train_generator_overrides = training_params.get('train_generator_overrides', None)
+    validation_generator_overrides = training_params.get('validation_generator_overrides', None)
 
     datasets = {}
     for split_name, em_list, meta_list in [('train', event_metadata_train, metadata_train),
@@ -285,7 +293,9 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
             )
             if training_params.get('deterministic_sampling', False):
                 defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
-            merged = {**defaults, **gp_copy}
+            split_overrides = train_generator_overrides if split_name == 'train' else validation_generator_overrides
+            split_override = indexed_config_override(split_overrides, i)
+            merged = {**defaults, **gp_copy, **split_override}
             if input_station_selection and input_station_selection not in ('config', 'default'):
                 merged['input_station_selection'] = input_station_selection
                 if input_station_selection == 'random':
@@ -636,6 +646,18 @@ def run_inference(model, dataset, device, config, indices=None):
                 results['loc_label_abs'].append(_to_numpy(p_picks['loc_target_abs']))
             if 'loc_center' in p_picks:
                 results['loc_center'].append(_to_numpy(p_picks['loc_center']))
+            for info_key in (
+                'pga_target_indices',
+                'realtime_elapsed_time',
+                'realtime_requested_elapsed_time',
+                'realtime_current_sample',
+                'realtime_first_p_pick_sample',
+                'realtime_time_bin',
+                'realtime_target_type',
+                'realtime_target_lead_time',
+            ):
+                if info_key in p_picks:
+                    results[info_key].append(_to_numpy(p_picks[info_key]))
 
         # Parse outputs using model.output_layout
         for i, name in enumerate(head_names):
@@ -1062,7 +1084,117 @@ def resolve_single_station_checkpoint(config, explicit_path=None):
     return None
 
 
-def print_summary(results, split_name):
+def _stack_result_array(results, key, dtype=None):
+    values = results.get(key)
+    if not values:
+        return None
+    arrs = [np.asarray(v) for v in values]
+    try:
+        stacked = np.stack(arrs)
+    except ValueError:
+        stacked = np.asarray(arrs, dtype=object)
+    if dtype is not None and getattr(stacked, 'dtype', None) != object:
+        stacked = stacked.astype(dtype)
+    return stacked
+
+
+def _print_pga_metric_line(prefix, label_values, pred_values):
+    if label_values.size == 0:
+        return
+    residuals = pred_values - label_values
+    msg = (
+        f'{prefix}: targets={label_values.size}, '
+        f'MAE={np.mean(np.abs(residuals)):.4f}, '
+        f'RMSE={np.sqrt(np.mean(residuals**2)):.4f}, '
+        f'bias={np.mean(residuals):.4f}'
+    )
+    if label_values.size > 1:
+        msg += f', corr={np.corrcoef(label_values, pred_values)[0, 1]:.4f}'
+    print(msg)
+
+
+def print_realtime_pga_summary(results, labels_flat, preds_flat, valid_mask, config=None):
+    elapsed = _stack_result_array(results, 'realtime_elapsed_time', dtype=float)
+    if elapsed is None:
+        return
+    n_samples = labels_flat.shape[0]
+    elapsed = np.asarray(elapsed, dtype=float).reshape(n_samples, -1)[:, 0]
+
+    print('  Realtime PGA breakdown:')
+    rounded_times = np.round(elapsed[np.isfinite(elapsed)], 3)
+    unique_times = np.unique(rounded_times)
+    if unique_times.size <= 12:
+        print('    By current time:')
+        for time_value in sorted(unique_times.tolist()):
+            row_mask = np.isclose(np.round(elapsed, 3), time_value)
+            mask = valid_mask & row_mask[:, None]
+            _print_pga_metric_line(
+                f'      t={time_value:g}s',
+                labels_flat[mask],
+                preds_flat[mask],
+            )
+    else:
+        time_bins = _stack_result_array(results, 'realtime_time_bin', dtype=int)
+        if time_bins is not None:
+            time_bins = np.asarray(time_bins, dtype=int).reshape(n_samples, -1)[:, 0]
+            print('    By train time bin:')
+            for bin_id in sorted(x for x in np.unique(time_bins) if x >= 0):
+                row_mask = time_bins == bin_id
+                mask = valid_mask & row_mask[:, None]
+                _print_pga_metric_line(
+                    f'      bin={int(bin_id)}',
+                    labels_flat[mask],
+                    preds_flat[mask],
+                )
+
+    target_type = _stack_result_array(results, 'realtime_target_type', dtype=int)
+    if target_type is not None:
+        target_type = np.asarray(target_type, dtype=int).reshape(n_samples, -1)
+        print('    By target type:')
+        type_names = {
+            0: 'input',
+            1: 'triggered_noninput',
+            2: 'untriggered',
+        }
+        for type_id, type_name in type_names.items():
+            mask = valid_mask & (target_type == type_id)
+            _print_pga_metric_line(
+                f'      {type_name}',
+                labels_flat[mask],
+                preds_flat[mask],
+            )
+
+    lead_time = _stack_result_array(results, 'realtime_target_lead_time', dtype=float)
+    if lead_time is not None:
+        lead_time = np.asarray(lead_time, dtype=float).reshape(n_samples, -1)
+        print('    By target lead time:')
+        lead_bins = [
+            ('<=0s', lead_time <= 0),
+            ('0-5s', (lead_time > 0) & (lead_time <= 5)),
+            ('5-20s', (lead_time > 5) & (lead_time <= 20)),
+            ('20s+', lead_time > 20),
+            ('unknown', ~np.isfinite(lead_time)),
+        ]
+        for name, lead_mask in lead_bins:
+            mask = valid_mask & lead_mask
+            _print_pga_metric_line(
+                f'      lead={name}',
+                labels_flat[mask],
+                preds_flat[mask],
+            )
+
+    cfg = (config or {}).get('training_params', {}).get('pga_loss_weighting') or {}
+    threshold = cfg.get('threshold')
+    if threshold is not None:
+        threshold = float(threshold)
+        print(f'    By PGA label threshold {threshold:g}:')
+        weak_mask = valid_mask & (labels_flat < threshold)
+        strong_mask = valid_mask & (labels_flat >= threshold)
+        _print_pga_metric_line('      weak', labels_flat[weak_mask], preds_flat[weak_mask])
+        _print_pga_metric_line('      strong', labels_flat[strong_mask], preds_flat[strong_mask])
+
+
+def print_summary(results, split_name, config=None):
     """Print summary statistics of predictions vs labels."""
     # Detect which heads are present from result keys
     head_names = []
@@ -1193,6 +1325,8 @@ def print_summary(results, split_name):
                         if len(bucket_l) > 1:
                             msg += f', corr={np.corrcoef(bucket_l, bucket_p)[0, 1]:.4f}'
                         print(msg)
+
+                print_realtime_pga_summary(results, labels_flat, mu_best, mask, config=config)
             else:
                 print(f'  No valid PGA targets found')
 
@@ -1296,7 +1430,7 @@ def main():
             shard_text = f' shard {args.shard_id}/{args.num_shards} ({len(eval_indices)} samples)'
         print(f'\nRunning inference on {split_name} set ({len(dataset)} samples){shard_text}...')
         results = run_inference(model, dataset, device, config, indices=eval_indices)
-        print_summary(results, split_name)
+        print_summary(results, split_name, config=config)
         # Prefix keys with split name for saving
         for k, v in results.items():
             all_results[f'{split_name}_{k}'] = np.array(v, dtype=object)
