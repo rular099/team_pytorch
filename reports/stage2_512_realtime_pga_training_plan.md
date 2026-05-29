@@ -22,10 +22,15 @@ commit: 8d0131db09f9d89e215b27dda77399b481b3a92a
 title: Add frozen-base temporal residual diagnostics
 ```
 
-Historical layerwise/temporal-residual configs up to `b71` should be reproduced
-from that commit or the `zhangb/layerwise-station-temporal` branch. Realtime
-configs generated after this point should be reproduced from the exact commit
-listed in the table below.
+Historical configs have the following code provenance:
+
+| Experiment family | Configs | Code commit | Branch | Notes |
+|---|---|---|---|---|
+| Position / VS30 / RoPE baseline | `pos-a` to `pos-f`, `pos-r1` to `pos-r8` | `f86f4a58b14780b66a91507bb1c3e94973140c45` | `zhangb/diting-backbone-attnpool-team` | Last compatible commit before the layerwise station-target branch. |
+| Layerwise station / temporal residual diagnostics | `b53` to `b71` | `8d0131db09f9d89e215b27dda77399b481b3a92a` | `zhangb/layerwise-station-temporal` | Contains the b54 baseline, b62-b67 residual diagnostics, and b68-b71 frozen-base checks. |
+
+Realtime configs generated after this point should be reproduced from the exact
+commit listed in the registry below.
 
 ## Reproduction Registry
 
@@ -33,7 +38,7 @@ Every runnable realtime config must be registered here when it is created.
 
 | Config | Git commit | Branch | Purpose | Notes |
 |---|---|---|---|---|
-| pending | pending | `zhangb/realtime-pga-training` | First realtime PGA training config | Fill in when the config is generated and committed. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt1_b54_realtime_bins3_chaosuan.json` | `5609fa245cf6a36809b18454b8ba2f8c3dc299c9` | `zhangb/realtime-pga-training` | First realtime PGA training config | b54 architecture, full-model warm start from `weights_japan_overfit_pga15_stage2_512_b54_event_aux/full_model_best.pth`; train samples 3 random bins per event per epoch; validation sweeps fixed realtime points. |
 
 ## Task Definition
 
@@ -123,6 +128,27 @@ data generator, then add configs using the unchanged launch command:
 ```bash
 bash train_light_slurm.sh pga_configs/<config>.json
 ```
+
+Implemented behavior in `rt1`:
+
+- `PreloadedEventGenerator` expands training samples to
+  `bins_per_event_per_epoch=3` realtime samples per event per epoch;
+- validation samples are expanded across fixed `1/3/5/10/20/40/90s` current
+  times;
+- waveform cutout is defined relative to the first valid P pick of the event;
+- `trigger_based` is forced on for realtime samples so stations whose P wave
+  has not arrived cannot contribute waveform features;
+- input station count is determined by current time instead of
+  `random_input_station_count`;
+- PGA targets are sampled from a controlled input / triggered non-input /
+  untriggered mixture, initially `0.3 / 0.2 / 0.5`;
+- `p_pick_info` now carries realtime diagnostics:
+  `realtime_elapsed_time`, `realtime_time_bin`, `realtime_current_sample`,
+  `realtime_target_type`, `realtime_target_lead_time`, and
+  `pga_target_indices`;
+- `eval_checkpoint.py` saves those fields and prints realtime PGA breakdowns
+  by current time, target type, target lead time, input station count, and the
+  strong-PGA threshold.
 
 ## Required Metrics
 
