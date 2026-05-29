@@ -34,6 +34,7 @@ OUTPUT_DIR=${OUTPUT_DIR:-$CONVERTED_ROOT/$OUTPUT_VARIANT/$YEAR}
 REFERENCE_HDF5=${REFERENCE_HDF5:-$CONVERTED_ROOT/reference/$YEAR/japan_${YEAR}.hdf5}
 
 ORIGIN_CORRECTIONS_CSV=${ORIGIN_CORRECTIONS_CSV:-$SCRIPT_DIR/jma_origin_corrections/japan_${YEAR}_origin_corrections.csv}
+EVENTS_FOR_ORIGIN_CSV=${EVENTS_FOR_ORIGIN_CSV:-$SCRIPT_DIR/jma_origin_corrections/japan_${YEAR}_events_for_origin_match.csv}
 JMA_CATALOG_CSV=${JMA_CATALOG_CSV:-$SCRIPT_DIR/jma_origin_corrections/jma_${YEAR}_daily_catalog.csv}
 JMA_SUMMARY_JSON=${JMA_SUMMARY_JSON:-$SCRIPT_DIR/jma_origin_corrections/japan_${YEAR}_origin_corrections_summary.json}
 JMA_CACHE_DIR=${JMA_CACHE_DIR:-$SCRIPT_DIR/jma_origin_corrections/cache}
@@ -102,20 +103,35 @@ fi
 
 if [[ ! -f "$ORIGIN_CORRECTIONS_CSV" ]]; then
   if [[ "$FETCH_ORIGIN_CORRECTIONS" == "1" ]]; then
-    if [[ ! -f "$REFERENCE_HDF5" ]]; then
-      echo "[ERROR] origin correction CSV is missing and reference HDF5 is unavailable:" >&2
-      echo "        $ORIGIN_CORRECTIONS_CSV" >&2
-      echo "        $REFERENCE_HDF5" >&2
-      echo "        Copy the correction CSV to the server or set REFERENCE_HDF5." >&2
-      exit 1
+    if [[ -f "$REFERENCE_HDF5" ]]; then
+      echo "[INFO] origin correction CSV not found; fetching JMA daily hypocenters from reference HDF5"
+      python tools/fetch_jma_hypocenters.py \
+        --hdf5 "$REFERENCE_HDF5" \
+        --output-csv "$ORIGIN_CORRECTIONS_CSV" \
+        --catalog-csv "$JMA_CATALOG_CSV" \
+        --summary-json "$JMA_SUMMARY_JSON" \
+        --cache-dir "$JMA_CACHE_DIR"
+    else
+      echo "[INFO] origin correction CSV not found and reference HDF5 unavailable; pre-scanning tar headers"
+      SCAN_CMD=(
+        python tools/extract_japan_event_metadata_from_tar.py
+        --waveform-root "$WAVEFORM_ROOT"
+        --year "$YEAR"
+        --output-csv "$EVENTS_FOR_ORIGIN_CSV"
+        --min-stations "$MIN_STATIONS"
+      )
+      if [[ -n "$LIMIT_EVENTS" ]]; then
+        SCAN_CMD+=(--limit-events "$LIMIT_EVENTS")
+      fi
+      "${SCAN_CMD[@]}"
+      echo "[INFO] fetching JMA daily hypocenters from tar-derived event CSV"
+      python tools/fetch_jma_hypocenters.py \
+        --events-csv "$EVENTS_FOR_ORIGIN_CSV" \
+        --output-csv "$ORIGIN_CORRECTIONS_CSV" \
+        --catalog-csv "$JMA_CATALOG_CSV" \
+        --summary-json "$JMA_SUMMARY_JSON" \
+        --cache-dir "$JMA_CACHE_DIR"
     fi
-    echo "[INFO] origin correction CSV not found; fetching JMA daily hypocenters"
-    python tools/fetch_jma_hypocenters.py \
-      --hdf5 "$REFERENCE_HDF5" \
-      --output-csv "$ORIGIN_CORRECTIONS_CSV" \
-      --catalog-csv "$JMA_CATALOG_CSV" \
-      --summary-json "$JMA_SUMMARY_JSON" \
-      --cache-dir "$JMA_CACHE_DIR"
   else
     echo "[ERROR] origin correction CSV not found: $ORIGIN_CORRECTIONS_CSV" >&2
     exit 1
