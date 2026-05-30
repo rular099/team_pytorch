@@ -1067,12 +1067,8 @@ def collect_event_output_stats(outputs, labels, output_layout):
         else:
             alpha_logits = pred[..., 0]
             mu_all = pred[..., 1:1 + d]
-            best_idx = alpha_logits.argmax(dim=-1)
-            if mu_all.ndim == 3:
-                batch_idx = torch.arange(mu_all.shape[0], device=mu_all.device)
-                mu = mu_all[batch_idx, best_idx]
-            else:
-                mu = mu_all
+            alpha_probs = torch.softmax(alpha_logits, dim=-1)
+            mu = (alpha_probs.unsqueeze(-1) * mu_all).sum(dim=-2)
         target = target.reshape(target.shape[0], -1, d)[:, 0, :]
         stats.update({
             f'diag/{name}_mu_best_mean': mu.mean().detach(),
@@ -1130,8 +1126,15 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid, p
     sigma = pga_pred[..., 2]
     alpha_probs = torch.softmax(alpha_logits, dim=-1)
     best_idx = alpha_logits.argmax(dim=-1, keepdim=True)
-    mu_best = _maybe_unnormalize_pga(mu.gather(-1, best_idx).squeeze(-1), pga_target_normalization)
+    mu_mean_norm = (alpha_probs * mu).sum(dim=-1)
+    second = (alpha_probs * (sigma ** 2 + mu ** 2)).sum(dim=-1)
+    sigma_mix = torch.sqrt(torch.clamp(second - mu_mean_norm ** 2, min=0.0))
+    mu_best = _maybe_unnormalize_pga(mu_mean_norm, pga_target_normalization)
     sigma_best = sigma.gather(-1, best_idx).squeeze(-1)
+    if _pga_norm_enabled(pga_target_normalization):
+        _mean, std = _pga_norm_values(pga_target_normalization)
+        sigma_mix = sigma_mix * std
+        sigma_best = sigma_best * std
 
     stats = {
         'diag/pga_alpha_logits_mean': alpha_logits.mean().detach(),
@@ -1145,6 +1148,8 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid, p
         'diag/pga_sigma_std': sigma.std(unbiased=False).detach(),
         'diag/pga_mu_best_mean': mu_best.mean().detach(),
         'diag/pga_mu_best_std': mu_best.std(unbiased=False).detach(),
+        'diag/pga_sigma_mix_mean': sigma_mix.mean().detach(),
+        'diag/pga_sigma_mix_std': sigma_mix.std(unbiased=False).detach(),
         'diag/pga_sigma_best_mean': sigma_best.mean().detach(),
         'diag/pga_sigma_best_std': sigma_best.std(unbiased=False).detach(),
     }
@@ -1167,7 +1172,7 @@ def collect_pga_output_stats(outputs, labels, output_layout, pga_target_valid, p
         mask = pga_target_valid.bool()
         if mask.any():
             valid_pred = mu_best[mask]
-            valid_true = pga_true[mask]
+            valid_true = pga_true[..., 0][mask]
             stats.update({
                 'diag/pga_target_mean': valid_true.mean().detach(),
                 'diag/pga_target_std': valid_true.std(unbiased=False).detach(),
@@ -1271,6 +1276,38 @@ def pga_temporal_residual_aux_loss(model, labels, output_layout, pga_target_vali
     else:
         loss = per_elem.mean()
     return float(cfg.get('weight', 0.2)) * loss
+
+
+def distribution_mean_aux_loss(outputs, labels, output_layout, res_comps, res_weight,
+                               pga_target_valid, cfg, loss_type='huber',
+                               huber_delta=1.0, pga_target_normalization=None,
+                               pga_loss_weighting=None):
+    """Optional point loss on the predictive mean of Gaussian/MDN heads."""
+    if not cfg or not cfg.get('enabled', False):
+        return None
+    weight = float(cfg.get('weight', 0.0))
+    if weight == 0.0:
+        return None
+    sel_pred, sel_true = models.select_loss_components(
+        outputs,
+        labels,
+        output_layout,
+        res_comps,
+    )
+    mean_pred = models.mixture_mean_outputs(sel_pred, res_comps=res_comps)
+    aux_loss_type = cfg.get('loss_type', loss_type)
+    aux_huber_delta = float(cfg.get('huber_delta', huber_delta))
+    return weight * models.point_regression_loss_full(
+        mean_pred,
+        sel_true,
+        res_comps=res_comps,
+        res_weight=res_weight,
+        pga_target_valid=pga_target_valid,
+        loss_type=aux_loss_type,
+        huber_delta=aux_huber_delta,
+        pga_target_normalization=pga_target_normalization,
+        pga_loss_weighting=pga_loss_weighting,
+    )
 
 
 def resolve_pga_target_normalization(training_params, train_dataset, batch_size, is_dist=False, rank=0, device='cpu'):
@@ -1582,7 +1619,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None,
                 pga_target_normalization=None, station_decorrelation_weight=0.0,
                 pga_loss_weighting=None, layerwise_pga_loss=None,
-                pga_temporal_residual_loss=None, freeze_mode=None):
+                pga_temporal_residual_loss=None, distribution_mean_loss=None,
+                freeze_mode=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1631,9 +1669,26 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
                 sel_pred, sel_true = models.select_loss_components(
                     outputs, labels, eval_model.output_layout, res_comps)
-                if loss_type in ('mdn', 'gaussian', 'gaussian_nll'):
+                if loss_type in ('mdn', 'nll', 'gaussian', 'gaussian_nll'):
                     loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
-                                                            pga_target_valid=pga_target_valid)
+                                                            pga_target_valid=pga_target_valid,
+                                                            pga_target_normalization=pga_target_normalization,
+                                                            pga_loss_weighting=pga_loss_weighting)
+                    aux_loss = distribution_mean_aux_loss(
+                        outputs,
+                        labels,
+                        eval_model.output_layout,
+                        res_comps,
+                        res_weight,
+                        pga_target_valid,
+                        distribution_mean_loss,
+                        loss_type='huber',
+                        huber_delta=huber_delta,
+                        pga_target_normalization=pga_target_normalization,
+                        pga_loss_weighting=pga_loss_weighting,
+                    )
+                    if aux_loss is not None:
+                        loss = loss + aux_loss
                 else:
                     loss = models.point_regression_loss_full(
                         sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
@@ -1785,9 +1840,26 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     pga_target_valid = inputs[4] if (isinstance(inputs, list) and len(inputs) >= 5) else None
                     sel_pred, sel_true = models.select_loss_components(
                         outputs, labels, eval_model.output_layout, res_comps)
-                    if loss_type in ('mdn', 'gaussian', 'gaussian_nll'):
+                    if loss_type in ('mdn', 'nll', 'gaussian', 'gaussian_nll'):
                         loss = models.mixture_density_loss_full(sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
-                                                                pga_target_valid=pga_target_valid)
+                                                                pga_target_valid=pga_target_valid,
+                                                                pga_target_normalization=pga_target_normalization,
+                                                                pga_loss_weighting=pga_loss_weighting)
+                        aux_loss = distribution_mean_aux_loss(
+                            outputs,
+                            labels,
+                            eval_model.output_layout,
+                            res_comps,
+                            res_weight,
+                            pga_target_valid,
+                            distribution_mean_loss,
+                            loss_type='huber',
+                            huber_delta=huber_delta,
+                            pga_target_normalization=pga_target_normalization,
+                            pga_loss_weighting=pga_loss_weighting,
+                        )
+                        if aux_loss is not None:
+                            loss = loss + aux_loss
                     else:
                         loss = models.point_regression_loss_full(
                             sel_pred, sel_true, res_comps=res_comps, res_weight=res_weight,
@@ -1968,6 +2040,19 @@ def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=Fal
     for key in list(state_dict.keys()):
         if key.startswith("embedding"):
             del state_dict[key]
+
+    target_state = raw_model.state_dict()
+    skipped_shape = []
+    for key in list(state_dict.keys()):
+        if key in target_state and tuple(state_dict[key].shape) != tuple(target_state[key].shape):
+            skipped_shape.append((key, tuple(state_dict[key].shape), tuple(target_state[key].shape)))
+            del state_dict[key]
+    if skipped_shape:
+        preview = ', '.join(
+            f'{key}: {src}->{dst}' for key, src, dst in skipped_shape[:12]
+        )
+        extra = '' if len(skipped_shape) <= 12 else f', ... +{len(skipped_shape) - 12} more'
+        print(f'Skipped {len(skipped_shape)} shape-mismatched transfer tensors ({preview}{extra})')
 
     # 加载参数
     missing, unexpected = raw_model.load_state_dict(state_dict, strict=False)
@@ -2815,6 +2900,7 @@ if __name__ == '__main__':
         pga_loss_weighting = training_params.get('pga_loss_weighting', None)
         layerwise_pga_loss_cfg = training_params.get('layerwise_pga_loss', None)
         pga_temporal_residual_loss_cfg = training_params.get('pga_temporal_residual_loss', None)
+        distribution_mean_loss_cfg = training_params.get('distribution_mean_loss', None)
         if (not is_dist) or rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
             station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
@@ -2834,6 +2920,8 @@ if __name__ == '__main__':
                 print(f'[loss] layerwise_pga_loss={layerwise_pga_loss_cfg}')
             if pga_temporal_residual_loss_cfg and pga_temporal_residual_loss_cfg.get('enabled', False):
                 print(f'[loss] pga_temporal_residual_loss={pga_temporal_residual_loss_cfg}')
+            if distribution_mean_loss_cfg and distribution_mean_loss_cfg.get('enabled', False):
+                print(f'[loss] distribution_mean_loss={distribution_mean_loss_cfg}')
             print(
                 f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss '
                 f'(patience={patience}, factor={lr_decay_factor:g}, min_lr={min_lr:g})'
@@ -2864,6 +2952,7 @@ if __name__ == '__main__':
             pga_loss_weighting=pga_loss_weighting,
             layerwise_pga_loss=layerwise_pga_loss_cfg,
             pga_temporal_residual_loss=pga_temporal_residual_loss_cfg,
+            distribution_mean_loss=distribution_mean_loss_cfg,
             freeze_mode=training_params.get('freeze_mode', None),
         )
 

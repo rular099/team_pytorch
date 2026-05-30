@@ -2132,7 +2132,25 @@ def select_loss_components(outputs, labels, output_layout, res_comps):
     return sel_pred, sel_true
 
 
-def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=False, res_comps=None, res_weight=None, pga_target_valid=None):
+def mixture_mean_outputs(y_pred, res_comps=None):
+    """Return mixture means with point-output shapes for auxiliary metrics/losses."""
+    if res_comps is None:
+        res_comps = ['mag', 'loc', 'pga']
+    outputs = []
+    for pred, res_comp in zip(y_pred, res_comps):
+        if pred.shape[-1] == 1:
+            outputs.append(pred)
+            continue
+        d = 3 if res_comp == 'loc' else 1
+        alpha = torch.softmax(pred[..., 0], dim=-1)
+        mu = pred[..., 1:1 + d]
+        outputs.append((alpha.unsqueeze(-1) * mu).sum(dim=-2))
+    return outputs
+
+
+def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_shapes=False,
+                              res_comps=None, res_weight=None, pga_target_valid=None,
+                              pga_target_normalization=None, pga_loss_weighting=None):
     if res_comps is None:
         res_comps = ['mag', 'loc', 'pga']
         res_weight = np.array([1.,1.,1.])
@@ -2147,11 +2165,18 @@ def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_sh
         else:
             d = 1
 
+        target = y_true[i].to(y_pred[i].device, dtype=y_pred[i].dtype)
+        target_raw = target
+        if res_comp == 'pga' and pga_target_normalization is not None:
+            mean_val = float(pga_target_normalization.get('mean', 0.0))
+            std_val = max(float(pga_target_normalization.get('std', 1.0)), 1e-8)
+            target = (target - mean_val) / std_val
+
         for j in range(d):
             mu = y_pred[i][..., j + 1]
-            sigma = y_pred[i][..., j + 1 + d]
+            sigma = y_pred[i][..., j + 1 + d].clamp_min(eps)
 
-            y_true_tmp = y_true[i][..., j].clone()
+            y_true_tmp = target[..., j].clone()
             while y_true_tmp.dim() < sigma.dim():
                 y_true_tmp = y_true_tmp.unsqueeze(-1)
             log_density = log_density - torch.log(np.sqrt(2 * np.pi) * sigma) - (y_true_tmp - mu) ** 2 / (2 * sigma ** 2)
@@ -2160,8 +2185,18 @@ def mixture_density_loss_full(y_pred, y_true, eps=1e-6, d=1, mean=True, print_sh
         log_density = torch.logsumexp(log_density, dim=-1)  # shape (B, n_pga) for pga, (B,) for mag/loc
         if res_comp == 'pga' and pga_target_valid is not None:
             mask = pga_target_valid.to(log_density.dtype)
-            denom = mask.sum().clamp_min(1.0)
-            comp_loss = -(log_density * mask).sum() / denom
+            nll = -log_density
+            pga_weights, weighted_denom = _pga_loss_weight_tensor(
+                target_raw,
+                pga_target_valid,
+                nll.unsqueeze(-1),
+                pga_loss_weighting,
+            )
+            if pga_weights is not None:
+                comp_loss = (nll.unsqueeze(-1) * mask.unsqueeze(-1) * pga_weights).sum() / weighted_denom
+            else:
+                denom = mask.sum().clamp_min(1.0)
+                comp_loss = (nll * mask).sum() / denom
         else:
             comp_loss = -torch.mean(log_density)
         loss = loss + res_weight[i] * comp_loss
@@ -2406,9 +2441,9 @@ class FullModel(nn.Module):
             pga_readout_layers = readout_layers
         if event_readout_layers is None:
             event_readout_layers = readout_layers
-        if self.output_distribution not in ('mdn', 'point'):
+        if self.output_distribution not in ('mdn', 'gaussian', 'point'):
             raise ValueError(
-                f"output_distribution must be 'mdn' or 'point', got {self.output_distribution!r}."
+                f"output_distribution must be 'mdn', 'gaussian', or 'point', got {self.output_distribution!r}."
             )
         if self.pga_readout_mode not in (
             'query_transformer',
@@ -2421,8 +2456,6 @@ class FullModel(nn.Module):
                 "'query_no_transformer', 'direct_station', 'target_cross_attention', "
                 f"got {self.pga_readout_mode!r}."
             )
-        if self.pga_readout_mode != 'query_transformer' and self.output_distribution != 'point':
-            raise ValueError('pga_readout_mode ablations are implemented for point output_distribution.')
         if self.event_readout_mode not in (
             'event_transformer',
             'event_cross_attention',
@@ -3775,28 +3808,32 @@ def build_transformer_model(max_stations,
     else:
         transformer = None
 
-    if output_distribution not in ('mdn', 'point'):
-        raise ValueError(f"output_distribution must be 'mdn' or 'point', got {output_distribution!r}.")
+    if output_distribution not in ('mdn', 'gaussian', 'point'):
+        raise ValueError(f"output_distribution must be 'mdn', 'gaussian', or 'point', got {output_distribution!r}.")
+
+    mag_components = 1 if output_distribution == 'gaussian' else magnitude_mixture
+    loc_components = 1 if output_distribution == 'gaussian' else location_mixture
+    pga_components = 1 if output_distribution == 'gaussian' else pga_mixture
 
     mlp_mag = MLP((emb_dim,), output_mlp_dims, activation=activation)
     if output_distribution == 'point':
         output_model_mag = PointOutput((output_mlp_dims[-1],), d=1, bias_mu=bias_mag_mu, activation=None)
     else:
-        output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=magnitude_mixture, bias_mu=bias_mag_mu, activation='relu',
+        output_model_mag = MixtureOutput((output_mlp_dims[-1],), n=mag_components, bias_mu=bias_mag_mu, activation='relu',
                                      bias_sigma=bias_mag_sigma)
 
     mlp_loc = MLP((emb_dim,), output_location_dims, activation=activation)
     if output_distribution == 'point':
         output_model_loc = PointOutput((output_location_dims[-1],), d=3, bias_mu=bias_loc_mu, activation=None)
     else:
-        output_model_loc = MixtureOutput((output_location_dims[-1],), n=location_mixture, d=3, bias_mu=bias_loc_mu,activation=None,
+        output_model_loc = MixtureOutput((output_location_dims[-1],), n=loc_components, d=3, bias_mu=bias_loc_mu,activation=None,
                                          bias_sigma=bias_loc_sigma)
 
     mlp_pga = MLP((emb_dim,), output_mlp_dims, activation=activation)
     if output_distribution == 'point':
         output_model_pga = PointOutput((output_mlp_dims[-1],), d=1, bias_mu=0, activation=None)
     else:
-        output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_mixture, bias_mu=0, bias_sigma=1, activation=None)
+        output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_components, bias_mu=0, bias_sigma=1, activation=None)
 
     # Module instantiation
     position_embedding = PositionEmbedding(wavelengths=wavelength, emb_dim=emb_dim, borehole=borehole, rotation=rotation, rotation_anchor=rotation_anchor)

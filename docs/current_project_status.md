@@ -76,8 +76,10 @@
 
 当前约束和实验原则：
 
-- 不使用显式振幅信息：`use_amplitude_info=false`。
-- PGA 输出使用 point regression，不使用 MDN。
+- 早期基线曾不使用显式振幅信息；当前 b43/b54/rt1 系列已启用振幅注入。
+- rt1 baseline 使用 point regression；新分支
+  `zhangb/realtime-probabilistic-output` 正在测试 Gaussian/MDN 概率输出和
+  NLL 优化。
 - PGA readout 使用 target cross-attention。
 - single-station pretrain 继续作为 station encoder/adaptor 的预训练阶段。
 - 重点解决 PGA 动态范围压缩和泛化回缩问题。

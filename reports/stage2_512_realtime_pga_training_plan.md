@@ -14,6 +14,12 @@ Realtime training work is isolated on:
 zhangb/realtime-pga-training
 ```
 
+Probabilistic realtime-output experiments are isolated on:
+
+```text
+zhangb/realtime-probabilistic-output
+```
+
 The branch was created from the completed temporal-residual diagnostic branch:
 
 ```text
@@ -39,6 +45,10 @@ Every runnable realtime config must be registered here when it is created.
 | Config | Git commit | Branch | Purpose | Notes |
 |---|---|---|---|---|
 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt1_b54_realtime_bins3_chaosuan.json` | `5609fa245cf6a36809b18454b8ba2f8c3dc299c9` | `zhangb/realtime-pga-training` | First realtime PGA training config | b54 architecture, full-model warm start from `weights_japan_overfit_pga15_stage2_512_b54_event_aux/full_model_best.pth`; train samples 3 random bins per event per epoch; validation sweeps fixed realtime points. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt2_b54_realtime_gaussian_nll_chaosuan.json` | pending implementation commit | `zhangb/realtime-probabilistic-output` | Single-Gaussian probabilistic baseline | Same realtime sampling and b54 warm start as rt1; mag/loc/PGA are Gaussian heads optimized by weighted NLL. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt3_b54_realtime_gaussian_nll_meanaux02_chaosuan.json` | pending implementation commit | `zhangb/realtime-probabilistic-output` | Gaussian NLL plus mean regularization | rt2 plus `distribution_mean_loss` with 0.2-weight Huber loss on predictive means. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt4_b54_realtime_pga_mdn3_magloc_gaussian_nll_chaosuan.json` | pending implementation commit | `zhangb/realtime-probabilistic-output` | PGA-only mixture test | mag/loc use single-Gaussian heads; PGA uses a 3-component MDN. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt5_b54_realtime_all_mdn3_nll_chaosuan.json` | pending implementation commit | `zhangb/realtime-probabilistic-output` | Full mixture test | mag/loc/PGA all use 3-component MDN heads. |
 
 ## Task Definition
 
@@ -163,3 +173,65 @@ Realtime evaluation must report PGA metrics by:
 The aggregate validation MAE is secondary. The important question is how the
 error and strong-PGA bias evolve as more stations and longer waveforms become
 available.
+
+## rt1 Result Summary
+
+Completed result directory:
+
+```text
+weights_japan_overfit_pga15_stage2_512_rt1_b54_realtime_bins3
+```
+
+Main observations:
+
+- The realtime task definition is working: validation PGA error generally
+  improves as current time advances. With the last checkpoint, MAE moves from
+  `0.3897` at `t=1s` to `0.2197` at `t=90s`.
+- Aggregate validation favors the last checkpoint slightly over the best-loss
+  checkpoint: `MAE 0.2694` vs `0.2744`.
+- Strong-PGA behavior tells a different story. The last checkpoint has stronger
+  high-PGA underprediction: strong-bin `MAE 0.3348`, bias `-0.2666`, compared
+  with best checkpoint strong-bin `MAE 0.2872`, bias `-0.2140`.
+- Target type remains important: last-checkpoint MAE is `0.2314` for input
+  targets, `0.2918` for triggered non-input targets, and `0.3558` for
+  untriggered targets.
+- Lead time is the hardest operational axis: last-checkpoint MAE is `0.2414`
+  for already-arrived targets, `0.3202` for `0-5s` lead, `0.4261` for `5-20s`
+  lead, and `0.7454` for `20s+` lead, though the last bucket has only 29
+  targets.
+
+Conclusion: rt1 is a usable realtime baseline, but checkpoint/model selection
+must include strong-PGA, untriggered-target, and positive-lead metrics. Overall
+MAE alone can prefer a checkpoint that is worse for warning-relevant strong
+motions.
+
+## Probabilistic Output Experiments
+
+Motivation: realtime PGA prediction should eventually produce warning
+probabilities such as `P(PGA >= threshold)`, not only a point estimate.
+Therefore rt2-rt5 replace deterministic heads with Gaussian or mixture-density
+heads and optimize negative log likelihood.
+
+Implementation rules:
+
+- `output_distribution="gaussian"` uses one Gaussian component per output.
+- `output_distribution="mdn"` uses the configured mixture counts.
+- PGA NLL is computed in the same normalized space as point-regression training;
+  evaluation converts both predictive mean and sigma back to raw PGA units.
+- For Gaussian/MDN evaluation, the default point estimate is the predictive
+  mixture mean, not the argmax component mean.
+- `eval_checkpoint.py` reports predictive sigma coverage and, when a
+  `pga_loss_weighting.threshold` is present, Brier-style diagnostics for
+  `P(PGA >= threshold)`.
+- Transfer from the deterministic b54 checkpoint intentionally skips
+  shape-mismatched output-head tensors while reusing compatible backbone,
+  adapter, readout, and MLP weights.
+
+Planned interpretation:
+
+- rt2 checks whether pure single-Gaussian NLL is stable and calibrated.
+- rt3 checks whether a small Huber loss on the predictive mean prevents NLL from
+  improving calibration while degrading MAE or strong-PGA bias.
+- rt4 checks whether PGA needs multimodality while mag/loc can remain Gaussian.
+- rt5 checks whether making all heads mixtures improves NLL/calibration enough
+  to justify the extra flexibility.

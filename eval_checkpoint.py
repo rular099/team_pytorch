@@ -15,6 +15,7 @@ Usage:
 import argparse
 import copy
 import json
+import math
 import os
 import sys
 import numpy as np
@@ -88,6 +89,50 @@ def _maybe_unnormalize_pga_delta(arr, config):
         return arr
     _mean, std = norm
     return arr * std
+
+
+def _pga_model_space_threshold(threshold, config):
+    norm = _pga_norm_config(config)
+    if norm is None:
+        return float(threshold)
+    mean, std = norm
+    return (float(threshold) - mean) / std
+
+
+def _maybe_unnormalize_pga_sigma(name, arr, config):
+    if name != 'pga':
+        return arr
+    norm = _pga_norm_config(config)
+    if norm is None:
+        return arr
+    _mean, std = norm
+    return arr * std
+
+
+def _softmax_np(logits, axis=-1):
+    logits = np.asarray(logits)
+    shifted = logits - np.max(logits, axis=axis, keepdims=True)
+    exp = np.exp(shifted)
+    return exp / np.sum(exp, axis=axis, keepdims=True)
+
+
+def _mixture_stats_from_output(out_np):
+    out_np = np.asarray(out_np)
+    d = (out_np.shape[-1] - 1) // 2
+    weights = _softmax_np(out_np[..., 0], axis=-1)
+    mu = out_np[..., 1:1 + d]
+    sigma = np.maximum(out_np[..., 1 + d:1 + 2 * d], 1e-8)
+    mean = np.sum(weights[..., None] * mu, axis=-2)
+    second = np.sum(weights[..., None] * (sigma ** 2 + mu ** 2), axis=-2)
+    var = np.maximum(second - mean ** 2, 0.0)
+    return weights, mu, sigma, mean, np.sqrt(var)
+
+
+def _mixture_tail_prob_1d(weights, mu, sigma, threshold):
+    z = (float(threshold) - mu[..., 0]) / np.maximum(sigma[..., 0], 1e-8)
+    erfc = np.vectorize(math.erfc)
+    tail = 0.5 * erfc(z / math.sqrt(2.0))
+    return np.sum(weights * tail, axis=-1)
 
 
 def _point_mu_from_output(name, out_np):
@@ -516,10 +561,9 @@ def diagnose_amplitude_sensitivity(model, dataset, device, config, scales=(0.5, 
             if _is_point_output(pga_out):
                 mu_best = pga_out[:, 0]
             else:
-                alpha = pga_out[:, :, 0]
-                mu = pga_out[:, :, 1]
-                best = np.argmax(alpha, axis=1)
-                mu_best = mu[np.arange(len(best)), best]
+                _weights, _mu, _sigma, mu_best, _sigma_mix = _mixture_stats_from_output(pga_out)
+                if np.asarray(mu_best).shape[-1:] == (1,):
+                    mu_best = np.asarray(mu_best)[..., 0]
             mu_best = _maybe_unnormalize_pga('pga', mu_best, config)
             if pga_target_valid is not None:
                 valid_pga = pga_target_valid[0].bool().cpu().numpy()
@@ -669,7 +713,8 @@ def run_inference(model, dataset, device, config, indices=None):
             lab_np = labels[i].numpy() if isinstance(labels[i], torch.Tensor) else np.array(labels[i])
             results[f'{name}_label'].append(lab_np)
 
-        # Extract mu from MDN (best mixture component by alpha)
+        # Extract point prediction. For Gaussian/MDN heads, use the predictive
+        # mixture mean as the default point estimate.
         for name in head_names:
             out_np = results[f'{name}_pred'][-1]
             if _is_point_output(out_np):
@@ -682,28 +727,33 @@ def run_inference(model, dataset, device, config, indices=None):
                         results['loc_mu_best_abs'].append(mu_best + center)
                     else:
                         results['loc_mu_best_abs'].append(mu_best)
-            elif name == 'pga':
-                # shape: (n_pga_targets, n_mixtures, 3)
-                alpha = out_np[:, :, 0]
-                mu = out_np[:, :, 1]
-                best = np.argmax(alpha, axis=1)
-                mu_best = mu[np.arange(len(best)), best]
-                mu_best = _maybe_unnormalize_pga(name, mu_best, config)
-                results[f'{name}_mu_best'].append(mu_best)
             else:
-                # shape: (n_mixtures, D) where D=3 for [alpha, mu, sigma] or D=7 for loc
-                if out_np.ndim == 2:
-                    d = (out_np.shape[1] - 1) // 2
-                    alpha = out_np[:, 0]
-                    mu = out_np[:, 1:1+d]
-                    best = np.argmax(alpha)
-                    mu_best = mu[best]
-                    results[f'{name}_mu_best'].append(mu_best)
-                    if name == 'loc' and raw_model.loc_target_mode == 'rel' and 'loc_center' in results:
+                weights, mu, sigma, mu_mean, sigma_mix = _mixture_stats_from_output(out_np)
+                mu_mean = _maybe_unnormalize_pga(name, mu_mean, config)
+                sigma_mix = _maybe_unnormalize_pga_sigma(name, sigma_mix, config)
+                if name in ('mag', 'pga') and np.asarray(mu_mean).shape[-1:] == (1,):
+                    mu_mean = np.asarray(mu_mean)[..., 0]
+                    sigma_mix = np.asarray(sigma_mix)[..., 0]
+                results[f'{name}_mu_best'].append(mu_mean)
+                results[f'{name}_sigma'].append(sigma_mix)
+                if name == 'pga':
+                    threshold = (
+                        (config or {})
+                        .get('training_params', {})
+                        .get('pga_loss_weighting', {})
+                        .get('threshold')
+                    )
+                    if threshold is not None:
+                        threshold_model = _pga_model_space_threshold(threshold, config)
+                        results['pga_prob_ge_threshold'].append(
+                            _mixture_tail_prob_1d(weights, mu, sigma, threshold_model)
+                        )
+                if name == 'loc':
+                    if raw_model.loc_target_mode == 'rel' and 'loc_center' in results:
                         center = results['loc_center'][-1]
-                        results['loc_mu_best_abs'].append(mu_best + center)
-                    elif name == 'loc':
-                        results['loc_mu_best_abs'].append(mu_best)
+                        results['loc_mu_best_abs'].append(mu_mean + center)
+                    else:
+                        results['loc_mu_best_abs'].append(mu_mean)
 
         results['p_picks'].append(shifted_p_picks_array(p_picks))
 
@@ -848,10 +898,9 @@ def run_station_count_sweep(model, dataset, device, config, event_indices, stati
                 if _is_point_output(out_np):
                     mu_best = _point_mu_from_output('pga', out_np)
                 else:
-                    alpha = out_np[:, :, 0]
-                    mu = out_np[:, :, 1]
-                    best = np.argmax(alpha, axis=1)
-                    mu_best = mu[np.arange(len(best)), best]
+                    _weights, _mu, _sigma, mu_best, _sigma_mix = _mixture_stats_from_output(out_np)
+                    if np.asarray(mu_best).shape[-1:] == (1,):
+                        mu_best = np.asarray(mu_best)[..., 0]
                 mu_best = _maybe_unnormalize_pga('pga', mu_best, config)
 
                 label_np = labels[pga_head_idx].numpy() if isinstance(labels[pga_head_idx], torch.Tensor) else np.array(labels[pga_head_idx])
@@ -1279,6 +1328,37 @@ def print_summary(results, split_name, config=None):
                         print(f'  R^2: {r2:.4f}')
                     slope, intercept = np.polyfit(all_l, all_p, 1)
                     print(f'  Linear fit: pred = {slope:.4f} * label + {intercept:.4f}')
+
+                pga_sigma = results.get('pga_sigma')
+                if pga_sigma is not None:
+                    sigma_flat = np.asarray(pga_sigma).reshape(len(labels), -1)
+                    sigma_v = sigma_flat.flatten()[valid]
+                    if len(sigma_v) == len(all_l):
+                        abs_res = np.abs(all_p - all_l)
+                        print(
+                            f'  Predictive sigma: mean={np.mean(sigma_v):.4f}, '
+                            f'median={np.median(sigma_v):.4f}, '
+                            f'coverage(|err|<=1sigma)={np.mean(abs_res <= sigma_v):.4f}, '
+                            f'coverage(|err|<=2sigma)={np.mean(abs_res <= 2 * sigma_v):.4f}'
+                        )
+
+                pga_prob = results.get('pga_prob_ge_threshold')
+                cfg = (config or {}).get('training_params', {}).get('pga_loss_weighting') or {}
+                threshold = cfg.get('threshold')
+                if pga_prob is not None and threshold is not None:
+                    prob_flat = np.asarray(pga_prob).reshape(len(labels), -1)
+                    prob_v = np.clip(prob_flat.flatten()[valid], 0.0, 1.0)
+                    event_v = (all_l >= float(threshold)).astype(np.float64)
+                    if len(prob_v) == len(event_v):
+                        brier = np.mean((prob_v - event_v) ** 2)
+                        strong_prob = np.mean(prob_v[event_v == 1]) if np.any(event_v == 1) else float('nan')
+                        weak_prob = np.mean(prob_v[event_v == 0]) if np.any(event_v == 0) else float('nan')
+                        print(
+                            f'  P(PGA>={float(threshold):g}) calibration: '
+                            f'Brier={brier:.4f}, prob_mean={np.mean(prob_v):.4f}, '
+                            f'prob_strong_mean={strong_prob:.4f}, '
+                            f'prob_weak_mean={weak_prob:.4f}'
+                        )
 
                 if 'pga_temporal_base' in results and 'pga_temporal_delta' in results:
                     base = np.asarray(results['pga_temporal_base']).reshape(len(labels), -1)
