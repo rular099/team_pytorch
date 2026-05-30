@@ -38,6 +38,9 @@ EVENTS_FOR_ORIGIN_CSV=${EVENTS_FOR_ORIGIN_CSV:-$SCRIPT_DIR/jma_origin_correction
 JMA_CATALOG_CSV=${JMA_CATALOG_CSV:-$SCRIPT_DIR/jma_origin_corrections/jma_${YEAR}_daily_catalog.csv}
 JMA_SUMMARY_JSON=${JMA_SUMMARY_JSON:-$SCRIPT_DIR/jma_origin_corrections/japan_${YEAR}_origin_corrections_summary.json}
 JMA_CACHE_DIR=${JMA_CACHE_DIR:-$SCRIPT_DIR/jma_origin_corrections/cache}
+JMA_CATALOG_SOURCE=${JMA_CATALOG_SOURCE:-auto}
+JMA_BULLETIN_MAX_YEAR=${JMA_BULLETIN_MAX_YEAR:-2023}
+JMA_ALLOW_MISSING_DAYS=${JMA_ALLOW_MISSING_DAYS:-1}
 JMA_TRAVEL_TIME_ZIP=${JMA_TRAVEL_TIME_ZIP:-$SCRIPT_DIR/resources/jma_travel_times/tjma2001h.zip}
 VS30_CSV=${VS30_CSV:-}
 VS30_MAX_DISTANCE_KM=${VS30_MAX_DISTANCE_KM:-1.0}
@@ -103,14 +106,22 @@ fi
 
 if [[ ! -f "$ORIGIN_CORRECTIONS_CSV" ]]; then
   if [[ "$FETCH_ORIGIN_CORRECTIONS" == "1" ]]; then
+    FETCH_JMA_ARGS=(
+      --catalog-source "$JMA_CATALOG_SOURCE"
+      --bulletin-max-year "$JMA_BULLETIN_MAX_YEAR"
+      --cache-dir "$JMA_CACHE_DIR"
+    )
+    if [[ "$JMA_ALLOW_MISSING_DAYS" == "1" ]]; then
+      FETCH_JMA_ARGS+=(--allow-missing-days)
+    fi
     if [[ -f "$REFERENCE_HDF5" ]]; then
-      echo "[INFO] origin correction CSV not found; fetching JMA daily hypocenters from reference HDF5"
+      echo "[INFO] origin correction CSV not found; fetching JMA hypocenters from reference HDF5"
       python tools/fetch_jma_hypocenters.py \
         --hdf5 "$REFERENCE_HDF5" \
         --output-csv "$ORIGIN_CORRECTIONS_CSV" \
         --catalog-csv "$JMA_CATALOG_CSV" \
         --summary-json "$JMA_SUMMARY_JSON" \
-        --cache-dir "$JMA_CACHE_DIR"
+        "${FETCH_JMA_ARGS[@]}"
     else
       echo "[INFO] origin correction CSV not found and reference HDF5 unavailable; pre-scanning tar headers"
       SCAN_CMD=(
@@ -124,13 +135,13 @@ if [[ ! -f "$ORIGIN_CORRECTIONS_CSV" ]]; then
         SCAN_CMD+=(--limit-events "$LIMIT_EVENTS")
       fi
       "${SCAN_CMD[@]}"
-      echo "[INFO] fetching JMA daily hypocenters from tar-derived event CSV"
+      echo "[INFO] fetching JMA hypocenters from tar-derived event CSV"
       python tools/fetch_jma_hypocenters.py \
         --events-csv "$EVENTS_FOR_ORIGIN_CSV" \
         --output-csv "$ORIGIN_CORRECTIONS_CSV" \
         --catalog-csv "$JMA_CATALOG_CSV" \
         --summary-json "$JMA_SUMMARY_JSON" \
-        --cache-dir "$JMA_CACHE_DIR"
+        "${FETCH_JMA_ARGS[@]}"
     fi
   else
     echo "[ERROR] origin correction CSV not found: $ORIGIN_CORRECTIONS_CSV" >&2
@@ -228,6 +239,9 @@ echo "[INFO] year: $YEAR"
 echo "[INFO] waveform_root: $WAVEFORM_ROOT"
 echo "[INFO] output_dir: $OUTPUT_DIR"
 echo "[INFO] origin_corrections: $ORIGIN_CORRECTIONS_CSV"
+echo "[INFO] jma_catalog_source: $JMA_CATALOG_SOURCE"
+echo "[INFO] jma_bulletin_max_year: $JMA_BULLETIN_MAX_YEAR"
+echo "[INFO] jma_allow_missing_days: $JMA_ALLOW_MISSING_DAYS"
 echo "[INFO] vs30_csv: ${VS30_CSV:-<disabled>}"
 if [[ -n "$VS30_CSV" ]]; then
   echo "[INFO] vs30_max_distance_km: $VS30_MAX_DISTANCE_KM"

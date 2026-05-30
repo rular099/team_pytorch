@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Fetch JMA daily hypocenter lists and match precise origin times to events.
+"""Fetch JMA hypocenter catalogs and match precise origin times to events.
 
 The K-NET/KiK-net waveform headers used by japan_dataset_builder.py often carry
-minute-level origin times.  JMA daily hypocenter lists provide origin seconds
-with one decimal place, which is enough to repair the travel-time based P picks.
+minute-level origin times.  JMA daily hypocenter lists and Seismological
+Bulletin files provide origin seconds, which is enough to repair the
+travel-time based P picks.
 """
 
 from __future__ import annotations
 
 import argparse
 import html
+import io
 import json
 import math
 import re
@@ -17,6 +19,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import zipfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -29,6 +32,7 @@ import pandas as pd
 
 JST = timezone(timedelta(hours=9))
 JMA_DAILY_URL_TEMPLATE = "https://www.data.jma.go.jp/eqev/data/daily_map/{date}.html"
+JMA_BULLETIN_URL_TEMPLATE = "https://www.data.jma.go.jp/eqev/data/bulletin/data/hypo/h{year}.zip"
 
 JMA_LINE_RE = re.compile(
     r"^\s*"
@@ -242,6 +246,110 @@ def parse_jma_daily_text(text: str, source_url: str, source_date: str) -> list[J
     return out
 
 
+def parse_compact_decimal(text: str, scale: float) -> float | None:
+    text = text.strip()
+    if not text:
+        return None
+    if "." in text:
+        return float(text)
+    return float(int(text)) / scale
+
+
+def parse_bulletin_depth(text: str) -> float | None:
+    if not text.strip():
+        return None
+    if "." in text:
+        return float(text)
+    # The bulletin format stores either F5.2 depth without a decimal point or
+    # depth-slice I3 followed by two blanks.
+    if len(text) >= 5 and not text[-2:].strip():
+        return float(int(text[:3]))
+    return float(int(text.strip())) / 100.0
+
+
+def parse_bulletin_magnitude(text: str) -> float | None:
+    text = text.strip()
+    if not text:
+        return None
+    if "." in text:
+        return float(text)
+    if text.startswith("-") and len(text) == 2 and text[1].isdigit():
+        return -float(text[1]) / 10.0
+    if len(text) == 2 and text[0].isalpha() and text[1].isdigit():
+        return -(ord(text[0].upper()) - ord("A") + 1) - float(text[1]) / 10.0
+    return float(int(text)) / 10.0
+
+
+def decode_bulletin_member(payload: bytes) -> str:
+    for encoding in ("utf-8", "cp932", "shift_jis", "latin-1"):
+        try:
+            return payload.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return payload.decode("utf-8", errors="replace")
+
+
+def parse_jma_bulletin_text(text: str, source_url: str, source_year: str) -> list[JMAHypocenter]:
+    out: list[JMAHypocenter] = []
+    seen_ids: dict[str, int] = {}
+    for line_number, raw_line in enumerate(text.splitlines(), start=1):
+        line = raw_line.rstrip("\r\n")
+        if len(line) < 92 or not line.startswith("J"):
+            continue
+        try:
+            year = int(line[1:5])
+            month = int(line[5:7])
+            day = int(line[7:9])
+            hour = int(line[9:11])
+            minute = int(line[11:13])
+            second = parse_compact_decimal(line[13:17], 100.0)
+            lat_min = parse_compact_decimal(line[24:28], 100.0)
+            lon_min = parse_compact_decimal(line[36:40], 100.0)
+            if second is None or lat_min is None or lon_min is None:
+                continue
+            base = datetime(year, month, day, hour, minute, tzinfo=JST)
+            origin_dt = base + timedelta(seconds=second)
+            lat = float(int(line[21:24])) + lat_min / 60.0
+            lon = float(int(line[32:36])) + lon_min / 60.0
+            depth = parse_bulletin_depth(line[44:49])
+            mag = parse_bulletin_magnitude(line[52:54])
+            if mag is None:
+                mag = parse_bulletin_magnitude(line[55:57])
+        except (ValueError, OverflowError):
+            continue
+
+        base_id = origin_dt.strftime("%Y%m%d%H%M%S") + f"{int(round(origin_dt.microsecond / 1000.0)):03d}"
+        duplicate_index = seen_ids.get(base_id, 0)
+        seen_ids[base_id] = duplicate_index + 1
+        event_id = base_id if duplicate_index == 0 else f"{base_id}_{duplicate_index:03d}"
+        out.append(
+            JMAHypocenter(
+                jma_event_id=event_id,
+                origin_time_jst=origin_dt.isoformat(timespec="milliseconds"),
+                origin_timestamp=origin_dt.timestamp(),
+                latitude=lat,
+                longitude=lon,
+                depth_km=depth,
+                magnitude=mag,
+                region=line[68:92].strip(),
+                source_url=source_url,
+                source_date=source_year,
+                source_line=line,
+            )
+        )
+    return out
+
+
+def parse_jma_bulletin_zip(payload: bytes, source_url: str, source_year: str) -> list[JMAHypocenter]:
+    rows: list[JMAHypocenter] = []
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        for name in archive.namelist():
+            if name.endswith("/"):
+                continue
+            rows.extend(parse_jma_bulletin_text(decode_bulletin_member(archive.read(name)), source_url, source_year))
+    return rows
+
+
 def fetch_jma_daily_page(date_text: str, cache_dir: Path, args: argparse.Namespace) -> str | None:
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path = cache_dir / f"{date_text}.html"
@@ -259,9 +367,36 @@ def fetch_jma_daily_page(date_text: str, cache_dir: Path, args: argparse.Namespa
             payload = response.read().decode(charset, errors="replace")
     except urllib.error.HTTPError as exc:
         if args.allow_missing_days and exc.code == 404:
+            print(f"[WARN] missing JMA daily page for {date_text}: {url}", file=sys.stderr)
             return None
-        raise
+        raise RuntimeError(f"Failed to fetch JMA daily page for {date_text}: {url}") from exc
     cache_path.write_text(payload, encoding="utf-8")
+    if args.request_sleep_seconds > 0:
+        time.sleep(args.request_sleep_seconds)
+    return payload
+
+
+def fetch_jma_bulletin_zip(year: int, cache_dir: Path, args: argparse.Namespace) -> bytes | None:
+    bulletin_cache_dir = cache_dir / "bulletin"
+    bulletin_cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_path = bulletin_cache_dir / f"h{year}.zip"
+    if cache_path.exists() and not args.refresh:
+        return cache_path.read_bytes()
+    if args.cache_only:
+        if args.allow_missing_days:
+            return None
+        raise FileNotFoundError(f"Missing cached JMA bulletin zip: {cache_path}")
+    url = JMA_BULLETIN_URL_TEMPLATE.format(year=year)
+    request = urllib.request.Request(url, headers={"User-Agent": args.user_agent})
+    try:
+        with urllib.request.urlopen(request, timeout=args.timeout_seconds) as response:
+            payload = response.read()
+    except urllib.error.HTTPError as exc:
+        if args.allow_missing_days and exc.code == 404:
+            print(f"[WARN] missing JMA bulletin zip for {year}: {url}", file=sys.stderr)
+            return None
+        raise RuntimeError(f"Failed to fetch JMA bulletin zip for {year}: {url}") from exc
+    cache_path.write_bytes(payload)
     if args.request_sleep_seconds > 0:
         time.sleep(args.request_sleep_seconds)
     return payload
@@ -278,7 +413,24 @@ def dates_for_events(events: pd.DataFrame, padding_days: int) -> list[str]:
 
 def load_jma_catalog(events: pd.DataFrame, args: argparse.Namespace) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
-    for date_text in dates_for_events(events, args.date_padding_days):
+    date_texts = dates_for_events(events, args.date_padding_days)
+    if args.catalog_source == "daily":
+        daily_dates = date_texts
+        bulletin_years: list[int] = []
+    elif args.catalog_source == "bulletin":
+        daily_dates = []
+        bulletin_years = sorted({int(date_text[:4]) for date_text in date_texts})
+    else:
+        daily_dates = [date_text for date_text in date_texts if int(date_text[:4]) > args.bulletin_max_year]
+        bulletin_years = sorted({int(date_text[:4]) for date_text in date_texts if int(date_text[:4]) <= args.bulletin_max_year})
+
+    for year in bulletin_years:
+        payload = fetch_jma_bulletin_zip(year, args.cache_dir, args)
+        if payload is None:
+            continue
+        source_url = JMA_BULLETIN_URL_TEMPLATE.format(year=year)
+        rows.extend(asdict(item) for item in parse_jma_bulletin_zip(payload, source_url, str(year)))
+    for date_text in daily_dates:
         page = fetch_jma_daily_page(date_text, args.cache_dir, args)
         if page is None:
             continue
@@ -287,6 +439,15 @@ def load_jma_catalog(events: pd.DataFrame, args: argparse.Namespace) -> pd.DataF
     if not rows:
         raise SystemExit("No JMA hypocenters were parsed. Check network/cache and JMA page format.")
     catalog = pd.DataFrame(rows).drop_duplicates("jma_event_id").reset_index(drop=True)
+    needed_dates = set(date_texts)
+    catalog = catalog[
+        [
+            datetime.fromtimestamp(float(ts), tz=JST).strftime("%Y%m%d") in needed_dates
+            for ts in catalog["origin_timestamp"].astype(float)
+        ]
+    ].reset_index(drop=True)
+    if catalog.empty:
+        raise SystemExit("No JMA hypocenters remain after filtering to training-event dates.")
     return catalog.sort_values("origin_timestamp").reset_index(drop=True)
 
 
@@ -482,6 +643,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
     fetch.add_argument("--refresh", action="store_true", help="Re-download cached JMA daily pages.")
     fetch.add_argument("--cache-only", action="store_true", help="Use existing cached pages only.")
     fetch.add_argument("--allow-missing-days", action="store_true", help="Skip missing/404 daily pages.")
+    fetch.add_argument(
+        "--catalog-source",
+        choices=["auto", "daily", "bulletin"],
+        default="auto",
+        help=(
+            "JMA source for hypocenters. auto uses annual bulletin zips through "
+            "--bulletin-max-year and daily_map pages for newer years."
+        ),
+    )
+    fetch.add_argument(
+        "--bulletin-max-year",
+        type=int,
+        default=2023,
+        help="Latest year to read from annual Seismological Bulletin zips when --catalog-source=auto.",
+    )
     fetch.add_argument("--date-padding-days", type=int, default=0, help="Also fetch neighboring days around each raw origin date.")
     fetch.add_argument("--timeout-seconds", type=float, default=30.0)
     fetch.add_argument("--request-sleep-seconds", type=float, default=0.2)
@@ -509,6 +685,8 @@ def main() -> None:
             setattr(args, attr, Path(value).expanduser().resolve())
     if args.date_padding_days < 0:
         raise SystemExit("--date-padding-days must be non-negative")
+    if args.bulletin_max_year < 0:
+        raise SystemExit("--bulletin-max-year must be non-negative")
     for name in (
         "max_time_diff_seconds",
         "max_distance_km",
