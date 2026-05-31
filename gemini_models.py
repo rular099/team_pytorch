@@ -2362,6 +2362,8 @@ class FullModel(nn.Module):
                  station_context_gate_init=0.0,
                  pga_use_event_context=False, pga_event_context_init_gate=0.0,
                  use_vs30=False, vs30_reference_mps=760.0, vs30_init_gate=0.0,
+                 vs30_injection_mode='additive', vs30_site_affine_hidden_dim=64,
+                 vs30_site_affine_scale=0.1, vs30_site_affine_sigma_shift=False,
                  use_rope=False, rope_coord_mode='relative_xy_km', rope_coord_scale=100.0,
                  rope_base=10000.0, rope_lat_origin=37.0,
                  station_context_encoder=None, pga_station_target_readout=None,
@@ -2412,6 +2414,9 @@ class FullModel(nn.Module):
         self.station_context_mode = station_context_mode or 'off'
         self.use_vs30 = bool(use_vs30)
         self.vs30_reference_mps = float(vs30_reference_mps)
+        self.vs30_injection_mode = vs30_injection_mode or 'additive'
+        self.vs30_site_affine_scale = float(vs30_site_affine_scale)
+        self.vs30_site_affine_sigma_shift = bool(vs30_site_affine_sigma_shift)
         self.use_rope = bool(use_rope)
         self.station_context_encoder = station_context_encoder
         self.pga_station_target_readout = pga_station_target_readout
@@ -2444,6 +2449,11 @@ class FullModel(nn.Module):
         if self.output_distribution not in ('mdn', 'gaussian', 'point'):
             raise ValueError(
                 f"output_distribution must be 'mdn', 'gaussian', or 'point', got {self.output_distribution!r}."
+            )
+        if self.vs30_injection_mode not in ('additive', 'pga_site_affine', 'both'):
+            raise ValueError(
+                "vs30_injection_mode must be one of 'additive', 'pga_site_affine', or 'both', "
+                f"got {self.vs30_injection_mode!r}."
             )
         if self.pga_readout_mode not in (
             'query_transformer',
@@ -2593,7 +2603,9 @@ class FullModel(nn.Module):
         else:
             self.pga_event_context_proj = None
             self.pga_event_context_gate = None
-        if self.use_vs30:
+        self.vs30_additive_enabled = self.use_vs30 and self.vs30_injection_mode in ('additive', 'both')
+        self.vs30_site_affine_enabled = self.use_vs30 and self.vs30_injection_mode in ('pga_site_affine', 'both')
+        if self.vs30_additive_enabled:
             self.station_vs30_proj = nn.Linear(2, emb_dim)
             self.target_vs30_proj = nn.Linear(2, emb_dim)
             self.station_vs30_gate = nn.Parameter(torch.tensor(float(vs30_init_gate)))
@@ -2603,6 +2615,20 @@ class FullModel(nn.Module):
             self.target_vs30_proj = None
             self.station_vs30_gate = None
             self.target_vs30_gate = None
+        if self.vs30_site_affine_enabled:
+            site_hidden = int(vs30_site_affine_hidden_dim)
+            if site_hidden <= 0:
+                raise ValueError('vs30_site_affine_hidden_dim must be positive.')
+            site_out_dim = 3 if self.vs30_site_affine_sigma_shift else 2
+            self.pga_vs30_site_affine = nn.Sequential(
+                nn.Linear(emb_dim + 3, site_hidden),
+                nn.ReLU(),
+                nn.Linear(site_hidden, site_out_dim),
+            )
+            nn.init.zeros_(self.pga_vs30_site_affine[-1].weight)
+            nn.init.zeros_(self.pga_vs30_site_affine[-1].bias)
+        else:
+            self.pga_vs30_site_affine = None
 
         if self.n_pga_targets > 0:
             self.att_masking = True
@@ -2781,7 +2807,7 @@ class FullModel(nn.Module):
         return torch.stack([log_vs30, valid_mask.to(ref_tensor.dtype)], dim=-1), valid_mask
 
     def _add_station_vs30_embedding(self, station_emb, station_vs30, station_vs30_valid, station_mask):
-        if not self.use_vs30:
+        if not self.vs30_additive_enabled:
             return station_emb, station_mask.new_zeros(station_mask.shape, dtype=torch.bool)
         features, valid = self._vs30_feature_tensor(station_vs30, station_vs30_valid, station_mask, station_emb)
         site_emb = self.station_vs30_proj(features)
@@ -2789,12 +2815,60 @@ class FullModel(nn.Module):
         return station_emb, valid
 
     def _add_target_vs30_embedding(self, query_emb, target_vs30, target_vs30_valid, target_mask):
-        if not self.use_vs30:
+        if not self.vs30_additive_enabled:
             return query_emb, target_mask.new_zeros(target_mask.shape, dtype=torch.bool)
         features, valid = self._vs30_feature_tensor(target_vs30, target_vs30_valid, target_mask, query_emb)
         site_emb = self.target_vs30_proj(features)
         query_emb = query_emb + self.target_vs30_gate * site_emb * valid.unsqueeze(-1).to(query_emb.dtype)
         return query_emb, valid
+
+    def _apply_pga_vs30_site_affine(self, output_pga, pga_readout_emb, target_vs30, target_vs30_valid, target_mask):
+        if not self.vs30_site_affine_enabled:
+            return output_pga
+        if pga_readout_emb is None:
+            raise ValueError('vs30_injection_mode=pga_site_affine requires a PGA readout embedding.')
+
+        features, valid = self._vs30_feature_tensor(target_vs30, target_vs30_valid, target_mask, pga_readout_emb)
+        valid_float = valid.unsqueeze(-1).to(pga_readout_emb.dtype)
+        target_count = target_mask.float().sum().clamp_min(1.0)
+        self._last_diag['vs30_site_valid_ratio'] = (valid.float().sum() / target_count).detach()
+
+        if self.output_distribution == 'point':
+            base_mean = output_pga[..., 0]
+        else:
+            alpha_logits = output_pga[..., 0]
+            weights = torch.softmax(alpha_logits, dim=-1)
+            component_mu = output_pga[..., 1]
+            base_mean = torch.sum(weights * component_mu, dim=-1)
+
+        site_context = torch.cat([pga_readout_emb, features, base_mean.unsqueeze(-1)], dim=-1)
+        affine_params = self.pga_vs30_site_affine(site_context) * valid_float
+        scale_delta = self.vs30_site_affine_scale * torch.tanh(affine_params[..., 0])
+        scale = 1.0 + scale_delta
+        bias = affine_params[..., 1]
+
+        output_pga = output_pga.clone()
+        if self.output_distribution == 'point':
+            output_pga[..., 0] = scale * output_pga[..., 0] + bias
+        else:
+            output_pga[..., 1] = scale.unsqueeze(-1) * output_pga[..., 1] + bias.unsqueeze(-1)
+            if self.vs30_site_affine_sigma_shift:
+                sigma_scale = torch.exp(torch.clamp(affine_params[..., 2], min=-3.0, max=3.0))
+                output_pga[..., 2] = output_pga[..., 2] * sigma_scale.unsqueeze(-1)
+                sigma_shift = affine_params[..., 2][valid]
+                if sigma_shift.numel():
+                    self._last_diag['vs30_site_sigma_shift_mean'] = sigma_shift.mean().detach()
+                    self._last_diag['vs30_site_sigma_shift_std'] = sigma_shift.std(unbiased=False).detach()
+
+        valid_scale_delta = scale_delta[valid]
+        valid_bias = bias[valid]
+        if valid_scale_delta.numel():
+            self._last_diag['vs30_site_scale_delta_mean'] = valid_scale_delta.mean().detach()
+            self._last_diag['vs30_site_scale_delta_std'] = valid_scale_delta.std(unbiased=False).detach()
+            self._last_diag['vs30_site_bias_mean'] = valid_bias.mean().detach()
+            self._last_diag['vs30_site_bias_abs_mean'] = valid_bias.abs().mean().detach()
+        self._last_diag['vs30_site_mode'] = output_pga.new_tensor(1.0).detach()
+        return output_pga
 
     def _record_station_context_diag(self, station_context_emb, station_feature_emb, station_mask,
                                      mode_code=1.0, raw_context_emb=None):
@@ -3133,7 +3207,7 @@ class FullModel(nn.Module):
         else:
             emb = torch.cat([waveforms_emb, coords_feat], dim=-1)
         station_vs30_valid_mask = None
-        if self.use_vs30:
+        if self.vs30_additive_enabled:
             emb, station_vs30_valid_mask = self._add_station_vs30_embedding(
                 emb,
                 station_vs30,
@@ -3157,7 +3231,7 @@ class FullModel(nn.Module):
             'coord_fusion_mode': 0.0 if self.coord_fusion_mode == 'add' else 1.0,
             'station_context_mode': emb.new_tensor(0.0).detach(),
         }
-        if self.use_vs30:
+        if self.vs30_additive_enabled:
             station_valid_count = sv.float().sum().clamp_min(1.0)
             self._last_diag['vs30_station_valid_ratio'] = (
                 station_vs30_valid_mask.float().sum() / station_valid_count
@@ -3208,7 +3282,7 @@ class FullModel(nn.Module):
             pga_targets_rel = (pga_targets_abs - coords_center) * ptv[:, :, None].float()
             pga_emb = self._pga_coord_embedding(pga_targets_abs, pga_targets_rel, ptv)
             pga_query_emb = pga_emb + self.pga_query_token
-            if self.use_vs30:
+            if self.vs30_additive_enabled:
                 pga_query_emb, pga_vs30_valid_mask = self._add_target_vs30_embedding(
                     pga_query_emb,
                     pga_target_vs30,
@@ -3496,6 +3570,13 @@ class FullModel(nn.Module):
                     self._last_diag['pga_temporal_station_weight_entropy'] = (
                         temporal_pool._last_station_weight_entropy
                     )
+            output_pga = self._apply_pga_vs30_site_affine(
+                output_pga,
+                pga_readout_emb,
+                pga_target_vs30,
+                pga_target_vs30_valid,
+                ptv,
+            )
             outputs.append(output_pga)
 
         if self.dataset_bias:
@@ -3715,6 +3796,10 @@ def build_transformer_model(max_stations,
                             use_vs30=False,
                             vs30_reference_mps=760.0,
                             vs30_init_gate=0.0,
+                            vs30_injection_mode='additive',
+                            vs30_site_affine_hidden_dim=64,
+                            vs30_site_affine_scale=0.1,
+                            vs30_site_affine_sigma_shift=False,
                             station_delta_gate_init=1e-3,
                             station_delta_ffn_gate_init=None,
                             pga_layerwise_refinement=False,
@@ -4020,6 +4105,10 @@ def build_transformer_model(max_stations,
                              use_vs30=use_vs30,
                              vs30_reference_mps=vs30_reference_mps,
                              vs30_init_gate=vs30_init_gate,
+                             vs30_injection_mode=vs30_injection_mode,
+                             vs30_site_affine_hidden_dim=vs30_site_affine_hidden_dim,
+                             vs30_site_affine_scale=vs30_site_affine_scale,
+                             vs30_site_affine_sigma_shift=vs30_site_affine_sigma_shift,
                              use_rope=pga_readout_rope,
                              rope_coord_mode=rope_coord_mode,
                              rope_coord_scale=rope_coord_scale,

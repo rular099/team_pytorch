@@ -349,6 +349,20 @@ target projection is added to the PGA target query before target-to-station
 cross-attention. Both paths have separate scalar gates initialized at
 `vs30_init_gate=0.0`.
 
+Realtime probabilistic follow-up configs add a second path,
+`vs30_injection_mode="pga_site_affine"`, because the gated additive path did not
+open reliably in the position experiments. The site-affine path leaves station
+and target tokens unchanged, then applies target VS30 directly to PGA output
+means:
+
+```text
+mu_final = (1 + 0.1 * tanh(scale_raw)) * mu_base + bias
+```
+
+This keeps the base prediction unchanged at initialization but gives VS30 a
+direct PGA-loss gradient. It is used by rt12, rt14, and rt15 in
+`reports/stage2_512_realtime_pga_training_plan.md`.
+
 ### RoPE Injection
 
 For new configs, `use_rope=true` enables RoPE in both places:

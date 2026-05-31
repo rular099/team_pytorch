@@ -49,6 +49,16 @@ Every runnable realtime config must be registered here when it is created.
 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt3_b54_realtime_gaussian_nll_meanaux02_chaosuan.json` | `9cb57b61d489d44888932a0691bd209589d5f68a` | `zhangb/realtime-probabilistic-output` | Gaussian NLL plus mean regularization | rt2 plus `distribution_mean_loss` with 0.2-weight Huber loss on predictive means. |
 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt4_b54_realtime_pga_mdn3_magloc_gaussian_nll_chaosuan.json` | `9cb57b61d489d44888932a0691bd209589d5f68a` | `zhangb/realtime-probabilistic-output` | PGA-only mixture test | mag/loc use single-Gaussian heads; PGA uses a 3-component MDN. |
 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt5_b54_realtime_all_mdn3_nll_chaosuan.json` | `9cb57b61d489d44888932a0691bd209589d5f68a` | `zhangb/realtime-probabilistic-output` | Full mixture test | mag/loc/PGA all use 3-component MDN heads. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt6_b54_realtime_pga_mdn3_meanaux005_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Mean-aux sweep low weight | rt4-style PGA MDN, mag/loc single-Gaussian, `distribution_mean_loss.weight=0.05`. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt7_b54_realtime_pga_mdn3_meanaux010_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Mean-aux anchor | rt4-style PGA MDN, mag/loc single-Gaussian, `distribution_mean_loss.weight=0.10`. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt8_b54_realtime_pga_mdn3_meanaux020_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Mean-aux high weight | rt4-style PGA MDN, mag/loc single-Gaussian, `distribution_mean_loss.weight=0.20`. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt9_b54_realtime_pga_mdn3_mag_mdn3_loc_gaussian_meanaux010_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Magnitude MDN test | PGA and mag use 3-component MDN; loc stays single-Gaussian; mean aux weight 0.10. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt10_b54_realtime_pga_mdn3_mag_gaussian_loc_mdn3_meanaux010_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Location MDN test | PGA and loc use 3-component MDN; mag stays single-Gaussian; mean aux weight 0.10. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt11_b54_realtime_all_mdn3_meanaux010_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Full MDN plus mean aux | mag/loc/PGA all use 3-component MDN; mean aux weight 0.10. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt12_b54_realtime_pga_mdn3_meanaux010_vs30_siteaffine_abs_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | VS30 site-affine under absolute coords | rt7 plus target VS30 output modulation; uses the VS30 HDF5 path. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt13_b54_realtime_pga_mdn3_meanaux010_relcoords_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Relative-coordinate control | rt7 with relative-only coordinate embedding and VS30 off. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt14_b54_realtime_pga_mdn3_meanaux010_vs30_siteaffine_relcoords_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Relative coords plus VS30 | Relative-only coordinate embedding plus target VS30 output modulation. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt15_b54_realtime_pga_mdn3_meanaux010_vs30_siteaffine_relabs001_chaosuan.json` | this commit | `zhangb/realtime-probabilistic-output` | Weak absolute coordinate hybrid plus VS30 | Relative/absolute fusion with `coords_abs_weight=0.01` plus target VS30 output modulation. |
 
 ## Task Definition
 
@@ -170,9 +180,21 @@ Realtime evaluation must report PGA metrics by:
 - input station count;
 - strong-PGA bins.
 
-The aggregate validation MAE is secondary. The important question is how the
-error and strong-PGA bias evolve as more stations and longer waveforms become
-available.
+For probabilistic and multi-head experiments, evaluation must also report
+train and validation metrics for magnitude and location, not only PGA:
+
+- magnitude: MAE, RMSE, bias, correlation, R2, slope/intercept, and predictive
+  sigma coverage when the head is Gaussian/MDN;
+- location: per-dimension MAE/RMSE/bias/correlation/R2/slope plus vector-error
+  norm, in both the training target coordinate view and the absolute-coordinate
+  view when available;
+- PGA: the realtime breakdown above plus aggregate calibration and strong-bin
+  probability diagnostics.
+
+The aggregate validation PGA MAE is secondary. For this overfit phase, model
+selection must consider train fit, validation behavior, strong-PGA bias,
+untriggered-target behavior, and whether mag/loc degrade when their heads are
+changed.
 
 ## rt1 Result Summary
 
@@ -235,3 +257,65 @@ Planned interpretation:
 - rt4 checks whether PGA needs multimodality while mag/loc can remain Gaussian.
 - rt5 checks whether making all heads mixtures improves NLL/calibration enough
   to justify the extra flexibility.
+
+Completed rt2-rt5 overfit interpretation:
+
+- rt4 had the best last-checkpoint train PGA fit among rt2-rt5, while rt2 had
+  the best aggregate validation PGA MAE. Because this is an overfit-capacity
+  phase, rt4 is the better structural anchor than rt2.
+- rt3's mean auxiliary loss improved strong-PGA train bias but hurt validation
+  MAE at weight 0.20, so the next sweep should test smaller mean-aux weights.
+- rt5 did not clearly justify making all heads MDN at once. Mag and loc MDN
+  should be tested separately and evaluated directly on mag/loc metrics.
+
+## rt6-rt15 Combination Search
+
+The next round is intentionally not a full factorial matrix. It uses the rt4
+PGA-MDN anchor, then tests only factors that can plausibly improve the overfit
+capacity or generalization story.
+
+| Config | mean aux | mag head | loc head | coords | VS30 path | Purpose |
+|---|---:|---|---|---|---|---|
+| rt6 | 0.05 | Gaussian | Gaussian | absolute | off | Low mean-aux weight. |
+| rt7 | 0.10 | Gaussian | Gaussian | absolute | off | Main mean-aux anchor. |
+| rt8 | 0.20 | Gaussian | Gaussian | absolute | off | High mean-aux stress test. |
+| rt9 | 0.10 | MDN3 | Gaussian | absolute | off | Is mag multimodality useful by itself? |
+| rt10 | 0.10 | Gaussian | MDN3 | absolute | off | Is loc multimodality useful by itself? |
+| rt11 | 0.10 | MDN3 | MDN3 | absolute | off | Combined mag/loc MDN after single-factor checks. |
+| rt12 | 0.10 | Gaussian | Gaussian | absolute | site-affine | Tests whether the new VS30 structure helps even with absolute coordinates. |
+| rt13 | 0.10 | Gaussian | Gaussian | relative only | off | Coordinate-generalization control without VS30. |
+| rt14 | 0.10 | Gaussian | Gaussian | relative only | site-affine | Tests the intended transferable setting: relative coords plus VS30. |
+| rt15 | 0.10 | Gaussian | Gaussian | relative + 0.01 absolute | site-affine | Hybrid setting that keeps weak regional/path cues while forcing VS30 usage. |
+
+The VS30 configs use:
+
+```text
+/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted/origin_corrected_diting_vel_acc_vs30/2024/japan_2024.hdf5
+```
+
+If the cluster uses a mirrored 2024 HDF5 with the same `vs30` and `vs30_valid`
+datasets, only `training_params.data_path` should be changed.
+
+### VS30 Site-Affine Head
+
+The previous VS30 design injected station/target VS30 as additive embeddings
+behind scalar gates initialized at zero. Those gates stayed near zero in the
+position experiments, so the branch did not prove useful.
+
+New configs set `vs30_injection_mode="pga_site_affine"`. This mode leaves the
+station/query token path unchanged and applies target-site modulation directly
+to the PGA output:
+
+```text
+mu_final = (1 + 0.1 * tanh(scale_raw)) * mu_base + bias
+```
+
+The affine parameters are predicted from `[pga_readout_embedding,
+log(vs30/760), valid, base_mean]`. The final affine layer is zero-initialized,
+so the starting model is exactly the base model, but VS30 receives a direct
+gradient from the PGA loss. This can represent additive residuals, multiplicative
+site amplification, or a learned combination of both.
+
+For MDN PGA heads, the same affine transform is applied to every component mean.
+Sigma modulation is implemented behind `vs30_site_affine_sigma_shift` but kept
+off in rt12/rt14/rt15 to isolate mean effects first.

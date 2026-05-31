@@ -1162,6 +1162,80 @@ def _print_pga_metric_line(prefix, label_values, pred_values):
     print(msg)
 
 
+def _finite_regression_mask(labels, preds, sigma=None):
+    labels = np.asarray(labels, dtype=float).reshape(-1)
+    preds = np.asarray(preds, dtype=float).reshape(-1)
+    mask = np.isfinite(labels) & np.isfinite(preds)
+    if sigma is not None:
+        sigma = np.asarray(sigma, dtype=float).reshape(-1)
+        if sigma.shape != labels.shape:
+            sigma = np.broadcast_to(sigma, labels.shape).reshape(-1)
+        mask = mask & np.isfinite(sigma) & (sigma >= 0)
+    return labels, preds, mask
+
+
+def _print_regression_metric_line(prefix, labels, preds, sigma=None):
+    labels, preds, mask = _finite_regression_mask(labels, preds, sigma=sigma)
+    if not np.any(mask):
+        print(f'{prefix}: no finite prediction/label pairs')
+        return
+    label_values = labels[mask]
+    pred_values = preds[mask]
+    residuals = pred_values - label_values
+    msg = (
+        f'{prefix}: N={label_values.size}, '
+        f'MAE={np.mean(np.abs(residuals)):.4f}, '
+        f'RMSE={np.sqrt(np.mean(residuals**2)):.4f}, '
+        f'bias={np.mean(residuals):.4f}'
+    )
+    if label_values.size > 1 and np.std(label_values) > 0 and np.std(pred_values) > 0:
+        msg += f', corr={np.corrcoef(label_values, pred_values)[0, 1]:.4f}'
+    ss_tot = np.sum((label_values - np.mean(label_values)) ** 2)
+    if ss_tot > 0:
+        ss_res = np.sum(residuals ** 2)
+        msg += f', R^2={1.0 - ss_res / ss_tot:.4f}'
+    if label_values.size > 1 and np.std(label_values) > 0:
+        slope, intercept = np.polyfit(label_values, pred_values, 1)
+        msg += f', slope={slope:.4f}, intercept={intercept:.4f}'
+    print(msg)
+    if sigma is not None:
+        sigma_values = np.asarray(sigma, dtype=float).reshape(-1)
+        if sigma_values.shape != labels.shape:
+            sigma_values = np.broadcast_to(sigma_values, labels.shape).reshape(-1)
+        sigma_values = sigma_values[mask]
+        abs_res = np.abs(residuals)
+        print(
+            f'{prefix} sigma: mean={np.mean(sigma_values):.4f}, '
+            f'median={np.median(sigma_values):.4f}, '
+            f'coverage(|err|<=1sigma)={np.mean(abs_res <= sigma_values):.4f}, '
+            f'coverage(|err|<=2sigma)={np.mean(abs_res <= 2 * sigma_values):.4f}'
+        )
+
+
+def _print_loc_regression_metrics(prefix, labels, preds, sigma=None):
+    labels = np.asarray(labels, dtype=float).reshape(-1, 3)
+    preds = np.asarray(preds, dtype=float).reshape(-1, 3)
+    sigma_arr = None
+    if sigma is not None:
+        sigma_arr = np.asarray(sigma, dtype=float).reshape(-1, 3)
+    dim_names = ['x/lat', 'y/lon', 'z/depth']
+    for dim, dim_name in enumerate(dim_names):
+        dim_sigma = sigma_arr[:, dim] if sigma_arr is not None else None
+        _print_regression_metric_line(
+            f'  {prefix} {dim_name}',
+            labels[:, dim],
+            preds[:, dim],
+            sigma=dim_sigma,
+        )
+    finite = np.all(np.isfinite(labels), axis=1) & np.all(np.isfinite(preds), axis=1)
+    if np.any(finite):
+        err_norm = np.linalg.norm(preds[finite] - labels[finite], axis=1)
+        print(
+            f'  {prefix} vector-error norm: mean={np.mean(err_norm):.4f}, '
+            f'median={np.median(err_norm):.4f}, p90={np.percentile(err_norm, 90):.4f}'
+        )
+
+
 def print_realtime_pga_summary(results, labels_flat, preds_flat, valid_mask, config=None):
     elapsed = _stack_result_array(results, 'realtime_elapsed_time', dtype=float)
     if elapsed is None:
@@ -1268,8 +1342,14 @@ def print_summary(results, split_name, config=None):
             for i in range(min(len(labels), 16)):
                 pred_val = float(mu_best[i][0]) if mu_best[i].ndim > 0 else float(mu_best[i])
                 print(f'  [{i:2d}] label={float(labels[i]):.3f}, pred={pred_val:.3f}')
-            residuals = mu_best.flatten() - labels.flatten()
-            print(f'  MAE={np.mean(np.abs(residuals)):.4f}, RMSE={np.sqrt(np.mean(residuals**2)):.4f}')
+            mag_sigma = results.get('mag_sigma')
+            mag_sigma = np.asarray(mag_sigma).reshape(-1) if mag_sigma is not None else None
+            _print_regression_metric_line(
+                '  mag aggregate',
+                labels.flatten(),
+                mu_best.flatten(),
+                sigma=mag_sigma,
+            )
 
         elif name == 'loc':
             abs_labels = np.array(results.get('loc_label_abs', labels))
@@ -1281,6 +1361,10 @@ def print_summary(results, split_name, config=None):
                       f'pred=[{p[0]:.2f}, {p[1]:.2f}, {p[2]:.2f}]')
             residuals = mu_best - labels
             print(f'  MAE per dim: {np.mean(np.abs(residuals), axis=0)}')
+            loc_sigma = results.get('loc_sigma')
+            loc_sigma = np.asarray(loc_sigma) if loc_sigma is not None else None
+            print('  relative/target-coordinate metrics:')
+            _print_loc_regression_metrics('loc', labels, mu_best, sigma=loc_sigma)
             if 'loc_label_abs' in results:
                 print('  absolute-coordinate view:')
                 for i in range(min(len(abs_labels), 16)):
@@ -1290,6 +1374,7 @@ def print_summary(results, split_name, config=None):
                           f'pred_abs=[{p[0]:.2f}, {p[1]:.2f}, {p[2]:.2f}]')
                 abs_residuals = abs_preds - abs_labels
                 print(f'  ABS MAE per dim: {np.mean(np.abs(abs_residuals), axis=0)}')
+                _print_loc_regression_metrics('loc_abs', abs_labels, abs_preds, sigma=loc_sigma)
 
         elif name == 'pga':
             # Mask invalid targets using pga_target_valid
