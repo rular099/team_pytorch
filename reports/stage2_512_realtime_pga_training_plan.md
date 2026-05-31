@@ -319,3 +319,93 @@ site amplification, or a learned combination of both.
 For MDN PGA heads, the same affine transform is applied to every component mean.
 Sigma modulation is implemented behind `vs30_site_affine_sigma_shift` but kept
 off in rt12/rt14/rt15 to isolate mean effects first.
+
+### How To Read rt6-rt15
+
+This round is a decision tree, not a leaderboard. The purpose is to decide
+which factors deserve to be combined in the next compact round.
+
+First, choose the mean-auxiliary weight from rt6/rt7/rt8:
+
+- compare train and validation PGA mean metrics, strong-PGA bias, untriggered
+  target metrics, and probability calibration;
+- prefer the smallest mean-aux weight that improves train strong-PGA bias or
+  mean prediction without increasing validation error too much;
+- if rt8 repeats rt3's pattern of better strong-bin train bias but worse
+  validation, keep rt7 or rt6 as the combination anchor.
+
+Second, evaluate mag/loc MDN from rt9/rt10/rt11:
+
+- rt9 is accepted only if magnitude metrics improve directly versus rt7
+  without causing a meaningful PGA regression;
+- rt10 is accepted only if location metrics improve directly versus rt7,
+  especially absolute-coordinate vector error, without causing a meaningful PGA
+  regression;
+- rt11 is useful only if both single-factor tests help or if the combined model
+  shows a clear interaction that is visible in mag/loc metrics, not just PGA;
+- if MDN improves only sigma/NLL-style calibration while worsening predictive
+  mean MAE/bias, do not adopt it for the current overfit-capacity objective.
+
+Third, interpret VS30 and coordinate experiments:
+
+- rt12 versus rt7 tests the new VS30 site-affine architecture under absolute
+  coordinates. A small effect is expected because absolute coordinates can
+  already encode site and path information.
+- rt13 versus rt7 measures the cost of removing absolute coordinates. If rt13
+  collapses on train fit, relative-only geometry is not enough for the current
+  overfit target.
+- rt14 versus rt13 tests the intended transferable setting: relative coordinates
+  plus VS30. This is the key comparison for whether VS30 adds recoverable site
+  information when absolute coordinates are removed.
+- rt15 versus rt14 tests whether a weak absolute-coordinate channel
+  (`coords_abs_weight=0.01`) recovers regional/path information without letting
+  absolute coordinates dominate the VS30 branch.
+
+For VS30 configs, also inspect training diagnostics:
+
+- `data/vs30_target_valid_ratio` and `data/vs30_station_valid_ratio` must be
+  high enough that a negative result is meaningful;
+- `vs30_site_scale_delta_mean`, `vs30_site_scale_delta_std`, and
+  `vs30_site_bias_abs_mean` indicate whether the site-affine branch is being
+  used;
+- if rt14/rt15 do not improve over their non-VS30 coordinate controls and the
+  site-affine diagnostics stay near zero, stop VS30 experiments for this Japan
+  overfit round.
+
+### Second-Round Branching Rules
+
+After rt6-rt15 complete, run at most four to six follow-up configs. Do not make
+a full matrix.
+
+Use these rules:
+
+- Mean aux: take the best of rt6/rt7/rt8 as the default weight. If none improves
+  rt4 on train fit and strong-PGA bias, disable mean aux in the second round.
+- Mag head: include mag MDN only if rt9 improves magnitude metrics versus rt7
+  and does not hurt PGA. Otherwise keep magnitude single-Gaussian.
+- Loc head: include loc MDN only if rt10 improves location metrics versus rt7
+  and does not hurt PGA. Otherwise keep location single-Gaussian.
+- Coord/VS30: for best Japan-only overfit performance, absolute coordinates may
+  remain the best choice. For transfer-oriented performance, prefer rt14 or rt15
+  only if they recover a substantial fraction of rt7/rt12 performance while
+  improving the relative-coordinate control.
+- VS30 sigma shift: test `vs30_site_affine_sigma_shift=true` only if rt12,
+  rt14, or rt15 shows a mean-prediction benefit and the remaining weakness is
+  calibration/coverage.
+
+Recommended second-round templates:
+
+| Template | Purpose |
+|---|---|
+| `best_abs` | Best mean-aux + accepted mag/loc heads + absolute coordinates + VS30 off. This is the Japan-overfit anchor. |
+| `best_abs_vs30` | Same heads/mean-aux as `best_abs`, but absolute coordinates plus VS30 site-affine, only if rt12 helps. |
+| `best_rel_vs30` | Same heads/mean-aux, relative coordinates plus VS30 site-affine, only if rt14 beats rt13. |
+| `best_relabs001_vs30` | Same heads/mean-aux, relative + weak absolute coordinates plus VS30, only if rt15 beats rt14 or is close to absolute-coordinate performance. |
+| `best_vs30_sigma` | Add `vs30_site_affine_sigma_shift=true`, only after a VS30 mean benefit is established. |
+| `best_no_meanaux` | Optional sanity check if the selected MDN/VS30 combination already fixes mean bias and mean aux becomes unnecessary. |
+
+The next handoff should summarize each completed config with both train and
+validation rows. A config is not considered better unless the conclusion is
+consistent across the relevant task head: PGA conclusions require PGA metrics,
+mag-head conclusions require magnitude metrics, and loc-head conclusions require
+location metrics.
