@@ -115,7 +115,7 @@
         "epoch_sanity": true,
         "epochs_full_model": 150,
         "data_path": [
-            "/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted/origin_corrected_diting_vel_acc_vs30/2024/japan_2024.hdf5"
+            "/public/home/test_bigmodel/seismogram/zb/team_pytorch/japan_data/japan_2024.hdf5"
         ],
         "workers": 0,
         "weight_path": "weights_japan_overfit_pga15_stage2_512_rt15_b54_realtime_pga_mdn3_meanaux010_vs30_siteaffine_relabs001",

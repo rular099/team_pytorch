@@ -287,14 +287,17 @@ capacity or generalization story.
 | rt14 | 0.10 | Gaussian | Gaussian | relative only | site-affine | Tests the intended transferable setting: relative coords plus VS30. |
 | rt15 | 0.10 | Gaussian | Gaussian | relative + 0.01 absolute | site-affine | Hybrid setting that keeps weak regional/path cues while forcing VS30 usage. |
 
-The VS30 configs use:
+The VS30 configs use the same mirrored HDF5 path as the earlier VS30
+position experiments:
 
 ```text
-/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted/origin_corrected_diting_vel_acc_vs30/2024/japan_2024.hdf5
+/public/home/test_bigmodel/seismogram/zb/team_pytorch/japan_data/japan_2024.hdf5
 ```
 
-If the cluster uses a mirrored 2024 HDF5 with the same `vs30` and `vs30_valid`
-datasets, only `training_params.data_path` should be changed.
+The initial rt12/rt14/rt15 configs pointed to the strict rebuild path
+`/public/home/zhangbei/work_dir/zhangbei/japan_knet_converted/origin_corrected_diting_vel_acc_vs30/2024/japan_2024.hdf5`;
+that path was not present on the cluster run and caused `FileNotFoundError`
+before training started. The configs were corrected after that failed attempt.
 
 ### VS30 Site-Affine Head
 
