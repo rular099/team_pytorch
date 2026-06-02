@@ -2847,18 +2847,21 @@ class FullModel(nn.Module):
         scale = 1.0 + scale_delta
         bias = affine_params[..., 1]
 
-        output_pga = output_pga.clone()
         if self.output_distribution == 'point':
-            output_pga[..., 0] = scale * output_pga[..., 0] + bias
+            output_pga = scale.unsqueeze(-1) * output_pga + bias.unsqueeze(-1)
         else:
-            output_pga[..., 1] = scale.unsqueeze(-1) * output_pga[..., 1] + bias.unsqueeze(-1)
+            alpha_logits = output_pga[..., 0]
+            component_mu = output_pga[..., 1]
+            component_sigma = output_pga[..., 2]
+            component_mu = scale.unsqueeze(-1) * component_mu + bias.unsqueeze(-1)
             if self.vs30_site_affine_sigma_shift:
                 sigma_scale = torch.exp(torch.clamp(affine_params[..., 2], min=-3.0, max=3.0))
-                output_pga[..., 2] = output_pga[..., 2] * sigma_scale.unsqueeze(-1)
+                component_sigma = component_sigma * sigma_scale.unsqueeze(-1)
                 sigma_shift = affine_params[..., 2][valid]
                 if sigma_shift.numel():
                     self._last_diag['vs30_site_sigma_shift_mean'] = sigma_shift.mean().detach()
                     self._last_diag['vs30_site_sigma_shift_std'] = sigma_shift.std(unbiased=False).detach()
+            output_pga = torch.stack([alpha_logits, component_mu, component_sigma], dim=-1)
 
         valid_scale_delta = scale_delta[valid]
         valid_bias = bias[valid]

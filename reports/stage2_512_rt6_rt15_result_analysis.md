@@ -25,6 +25,22 @@ Failed before training:
   used by previous VS30 runs:
   `/public/home/test_bigmodel/seismogram/zb/team_pytorch/japan_data/japan_2024.hdf5`.
 
+Second failure after the data-path fix:
+
+- One of rt12/rt14/rt15 started running, while two jobs failed at the first
+  backward pass.
+- Root cause: the original VS30 site-affine implementation modified
+  `output_pga[..., 1]` and optionally `output_pga[..., 2]` in-place after
+  cloning. For MDN PGA this slice has shape `[batch, target, component]`, which
+  matches the error tensor `[32, 15, 3]`.
+- The fix is to reconstruct the output without in-place slice assignment:
+  `torch.stack([alpha_logits, component_mu_final, component_sigma_final],
+  dim=-1)`.
+- Re-run the failed VS30 jobs after the non-inplace site-affine fix. If the
+  still-running job was launched before this fix, treat it cautiously; if it
+  finishes, keep the result, but if it fails with the same autograd message it
+  should be restarted from the fixed commit.
+
 ## Main Last-Checkpoint Metrics
 
 Because this is still an overfit-capacity phase, the last checkpoint is more
