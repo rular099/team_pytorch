@@ -59,6 +59,10 @@ Every runnable realtime config must be registered here when it is created.
 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt13_b54_realtime_pga_mdn3_meanaux010_relcoords_chaosuan.json` | `43eaa1058f532fb2742b1b6b826da8cc54dc9356` | `zhangb/realtime-probabilistic-output` | Relative-coordinate control | rt7 with relative-only coordinate embedding and VS30 off. |
 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt14_b54_realtime_pga_mdn3_meanaux010_vs30_siteaffine_relcoords_chaosuan.json` | `43eaa1058f532fb2742b1b6b826da8cc54dc9356` | `zhangb/realtime-probabilistic-output` | Relative coords plus VS30 | Relative-only coordinate embedding plus target VS30 output modulation. |
 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt15_b54_realtime_pga_mdn3_meanaux010_vs30_siteaffine_relabs001_chaosuan.json` | `43eaa1058f532fb2742b1b6b826da8cc54dc9356` | `zhangb/realtime-probabilistic-output` | Weak absolute coordinate hybrid plus VS30 | Relative/absolute fusion with `coords_abs_weight=0.01` plus target VS30 output modulation. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt16_rt10anchor_ditingmae_no_full_transfer_chaosuan.json` | `pending` | `zhangb/realtime-probabilistic-output` | No full-model transfer | rt10 heads/loss/absolute coordinates, but no b54 transfer; frozen DiTing MAE encoder and train TEAM-side adapter/readouts from scratch. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt17_rt10anchor_transfer_except_station_adapter_chaosuan.json` | `pending` | `zhangb/realtime-probabilistic-output` | Transfer except station adapter | rt10 heads/loss/absolute coordinates, transfer b54 except `waveform_model.1.*`, and reinitialize the station adapter. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt18_rt10anchor_adapter_poolquery_coords_chaosuan.json` | `pending` | `zhangb/realtime-probabilistic-output` | Metadata-aware adapter pooling | rt17 plus station coordinate embedding injected into adapter pooling queries before station embedding pooling. |
+| `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt19_rt10anchor_adapter_featurefilm_coords_chaosuan.json` | `pending` | `zhangb/realtime-probabilistic-output` | Metadata-aware adapter FiLM | rt17 plus station coordinate embedding used as FiLM modulation on DiTing encoder features before station embedding pooling. |
 
 ## Task Definition
 
@@ -374,6 +378,67 @@ For VS30 configs, also inspect training diagnostics:
 - if rt14/rt15 do not improve over their non-VS30 coordinate controls and the
   site-affine diagnostics stay near zero, stop VS30 experiments for this Japan
   overfit round.
+
+### rt16-rt19 Station-Adapter Transfer and Metadata-Injection Ablation
+
+The single-station pretrain concern is different from the old temporal-token
+memory experiments. The question is whether a station adapter trained through
+single-station/event-level targets compresses every station toward the same
+event representation and therefore limits multi-station PGA use.
+
+Use rt10 as the anchor here only in the sense of heads, loss, realtime sampling,
+and absolute-coordinate setup. Do not interpret `rt10anchor` as loading an rt10
+checkpoint. The direct comparison is:
+
+| Config | What Changes From rt10 | What It Tests |
+|---|---|---|
+| rt16 | Removes `transfer_model_path`; TEAM-side adapter/readouts start from scratch. | Whether DiTing MAE features are sufficient without inheriting b54 single-station/full-model training. |
+| rt17 | Keeps b54 transfer but excludes `waveform_model.1.*` and reinitializes the adapter. | Whether the station adapter specifically is the limiting inherited component, while preserving other b54 initialization. |
+| rt18 | Same as rt17, but station coordinate embedding biases the adapter attention-pooling queries. | Whether location should guide how DiTing tokens are pooled into station embeddings. |
+| rt19 | Same as rt17, but station coordinate embedding applies FiLM modulation to DiTing encoder features before pooling. | Whether location should modulate the encoder feature channels before the adapter pools them. |
+
+These configs should have much lower memory risk than the old b58-b60
+temporal-token path because they keep the same pooled station-embedding path as
+rt10. If either improves train PGA fit or station-count/target-type breakdowns,
+then revisit a compressed temporal-token branch later; do not jump directly to
+the full raw-token scheme.
+
+How to analyze rt16-rt19:
+
+1. First compare rt16 and rt17 against rt10. If both are clearly worse on train
+   PGA fit, validation PGA MAE, and location metrics, then the old b54 transfer
+   is probably still useful and the single-station compression concern is not
+   the dominant bottleneck.
+2. Compare rt17 against rt10 specifically to isolate the station adapter. rt17
+   keeps the non-adapter b54 initialization but removes `waveform_model.1.*`.
+   If rt17 improves train fit, station-count breakdowns, or input/triggered
+   target PGA without hurting validation, the inherited adapter is suspect.
+3. Compare rt18 and rt19 against rt17, not directly against rt10. This isolates
+   the value of early coordinate injection after the inherited adapter has
+   already been removed.
+4. For rt18/rt19, require evidence on both PGA and event heads. PGA conclusions
+   need train/val PGA MAE, strong-PGA bias, untriggered MAE, Brier, and
+   current-time breakdowns. Location conclusions need loc vector error and loc
+   NLL/MDN behavior. A lower PGA MAE with much worse loc is not a clean win.
+5. Inspect station diagnostics when available: `station_adapter_raw_norm`,
+   `wave_emb_norm`, `station_emb_norm`, and `station_emb_cosine_mean`. A useful
+   adapter change should not simply collapse station embeddings to a narrower
+   representation.
+
+Follow-up design after rt16-rt19:
+
+- If rt17 beats rt10, keep transfer-except-adapter as the default warm start for
+  future rt configs.
+- If rt18 beats rt17, prefer metadata-aware pooling query as the low-risk early
+  coordinate-injection design.
+- If rt19 beats rt17 and rt18, prefer feature-FiLM, but rerun once with a lower
+  `diting_station_metadata_scale` such as `0.03` to confirm the gain is not from
+  an overly strong coordinate shortcut.
+- If rt18/rt19 both lose to rt17, keep position injection after the station
+  adapter and do not add more adapter metadata variants in this round.
+- Only if rt17/rt18/rt19 show a clear benefit should the next round revisit
+  compressed temporal-token branches. Keep that branch memory-bounded by
+  projecting tokens early and avoiding target-by-time expansion.
 
 ### Second-Round Branching Rules
 

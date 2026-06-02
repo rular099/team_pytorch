@@ -1675,11 +1675,15 @@ class AttentionPool1d(nn.Module):
         nn.init.ones_(self.out_norm.weight)
         nn.init.zeros_(self.out_norm.bias)
 
-    def forward(self, x):
+    def forward(self, x, query_bias=None):
         # x: (B, C, T). Return Q pooled vectors flattened to (B, Q*C).
         tokens = x.transpose(1, 2).contiguous().float()  # (B, T, C)
         keys = self.key_norm(tokens)
-        scores = torch.einsum('btc,qc->btq', keys, self.query)
+        if query_bias is None:
+            scores = torch.einsum('btc,qc->btq', keys, self.query)
+        else:
+            query = self.query.unsqueeze(0) + query_bias.to(device=self.query.device, dtype=self.query.dtype)
+            scores = torch.einsum('btc,bqc->btq', keys, query)
         scores = scores / max(self.temperature, 1e-6)
         weights = torch.softmax(scores, dim=1)
         if self.dropout > 0:
@@ -1891,12 +1895,23 @@ class SingleStationMultiTaskModel(nn.Module):
 class DitingStationAdapter(nn.Module):
     """Light multi-scale adapter from ViTAdapter features to station embeddings."""
     def __init__(self, encoder_dim, hidden_channels, output_dim,
-                 pool_queries=4, pool_temperature=1.0, pool_dropout=0.0):
+                 pool_queries=4, pool_temperature=1.0, pool_dropout=0.0,
+                 metadata_mode='none', metadata_dim=None, metadata_hidden_dim=128,
+                 metadata_scale=0.1):
         super().__init__()
         self.encoder_dim = encoder_dim
         self.hidden_channels = hidden_channels
         self.output_dim = output_dim
         self.pool_queries = pool_queries
+        self.metadata_mode = metadata_mode or 'none'
+        self.metadata_dim = metadata_dim
+        self.metadata_hidden_dim = metadata_hidden_dim
+        self.metadata_scale = float(metadata_scale)
+        if self.metadata_mode not in ('none', 'pool_query', 'feature_film', 'both'):
+            raise ValueError(
+                "metadata_mode must be one of 'none', 'pool_query', 'feature_film', or 'both', "
+                f"got {self.metadata_mode!r}."
+            )
         self.base_pool = AttentionPool1d(
             encoder_dim,
             num_queries=pool_queries,
@@ -1931,7 +1946,34 @@ class DitingStationAdapter(nn.Module):
         self.proj_out = nn.Linear(hidden_channels * pool_queries * 4, output_dim)
         self.delta_scale = nn.Parameter(torch.tensor(0.1, dtype=torch.float32))
         self.norm = nn.LayerNorm(output_dim)
+        self.metadata_query_base = None
+        self.metadata_query_branch = None
+        self.metadata_film = None
+        if self.metadata_mode != 'none':
+            if metadata_dim is None:
+                raise ValueError('metadata_dim is required when metadata_mode is enabled.')
+            if self.metadata_mode in ('pool_query', 'both'):
+                self.metadata_query_base = nn.Sequential(
+                    nn.Linear(metadata_dim, metadata_hidden_dim),
+                    nn.GELU(),
+                    nn.Linear(metadata_hidden_dim, pool_queries * encoder_dim),
+                )
+                self.metadata_query_branch = nn.Sequential(
+                    nn.Linear(metadata_dim, metadata_hidden_dim),
+                    nn.GELU(),
+                    nn.Linear(metadata_hidden_dim, pool_queries * hidden_channels),
+                )
+            if self.metadata_mode in ('feature_film', 'both'):
+                self.metadata_film = nn.Sequential(
+                    nn.Linear(metadata_dim, metadata_hidden_dim),
+                    nn.GELU(),
+                    nn.Linear(metadata_hidden_dim, 2 * encoder_dim),
+                )
         self._init_preserving_path()
+
+    @property
+    def uses_station_metadata(self):
+        return self.metadata_mode != 'none'
 
     def _init_preserving_path(self):
         nn.init.zeros_(self.base_proj.weight)
@@ -1940,6 +1982,11 @@ class DitingStationAdapter(nn.Module):
             self.base_proj.weight[:diag, :diag] = torch.eye(diag)
         nn.init.normal_(self.proj_out.weight, mean=0.0, std=1e-3)
         nn.init.zeros_(self.proj_out.bias)
+        for module in (self.metadata_query_base, self.metadata_query_branch, self.metadata_film):
+            if module is not None:
+                last = module[-1]
+                nn.init.zeros_(last.weight)
+                nn.init.zeros_(last.bias)
 
     def reset_parameters(self):
         self._init_preserving_path()
@@ -1957,16 +2004,62 @@ class DitingStationAdapter(nn.Module):
             pool.reset_parameters()
         nn.init.ones_(self.norm.weight)
         nn.init.zeros_(self.norm.bias)
+        for module in (self.metadata_query_base, self.metadata_query_branch, self.metadata_film):
+            if module is not None:
+                for layer in module:
+                    if isinstance(layer, nn.Linear):
+                        nn.init.kaiming_normal_(layer.weight, nonlinearity='linear')
+                        nn.init.zeros_(layer.bias)
+                last = module[-1]
+                nn.init.zeros_(last.weight)
+                nn.init.zeros_(last.bias)
 
-    def forward(self, inputs):
+    def _metadata_outputs(self, station_context):
+        if self.metadata_mode == 'none' or station_context is None:
+            return None, None, None
+        if station_context.shape[-1] != self.metadata_dim:
+            raise ValueError(
+                f"Expected station metadata dim {self.metadata_dim}, got {station_context.shape[-1]}."
+            )
+        base_query_bias = None
+        branch_query_bias = None
+        film = None
+        if self.metadata_query_base is not None:
+            base_query_bias = self.metadata_scale * self.metadata_query_base(station_context)
+            base_query_bias = base_query_bias.view(-1, self.pool_queries, self.encoder_dim)
+            branch_query_bias = self.metadata_scale * self.metadata_query_branch(station_context)
+            branch_query_bias = branch_query_bias.view(-1, self.pool_queries, self.hidden_channels)
+        if self.metadata_film is not None:
+            gamma_beta = self.metadata_scale * self.metadata_film(station_context)
+            gamma, beta = gamma_beta.chunk(2, dim=-1)
+            gamma = torch.tanh(gamma)
+            film = (gamma, beta)
+        return base_query_bias, branch_query_bias, film
+
+    @staticmethod
+    def _apply_film_channel_first(x, gamma, beta):
+        return x * (1.0 + gamma[:, :, None]) + beta[:, :, None]
+
+    @staticmethod
+    def _apply_film_token_last(x, gamma, beta):
+        return x * (1.0 + gamma[:, None, :]) + beta[:, None, :]
+
+    def forward(self, inputs, station_context=None):
         f2, f3, f4, x = inputs
+        base_query_bias, branch_query_bias, film = self._metadata_outputs(station_context)
+        if film is not None:
+            gamma, beta = film
+            f2 = self._apply_film_channel_first(f2, gamma, beta)
+            f3 = self._apply_film_channel_first(f3, gamma, beta)
+            f4 = self._apply_film_channel_first(f4, gamma, beta)
+            x = self._apply_film_token_last(x, gamma, beta)
         x = x.transpose(1, 2).contiguous()
-        base = self.base_proj(self.base_pool(x))
+        base = self.base_proj(self.base_pool(x, query_bias=base_query_bias))
 
-        branch_f2 = self.pool_f2(self.refine_f2(self.proj_f2(f2)))
-        branch_f3 = self.pool_f3(self.refine_f3(self.proj_f3(f3)))
-        branch_f4 = self.pool_f4(self.refine_f4(self.proj_f4(f4)))
-        branch_x = self.pool_x(self.refine_x(self.proj_x(x)))
+        branch_f2 = self.pool_f2(self.refine_f2(self.proj_f2(f2)), query_bias=branch_query_bias)
+        branch_f3 = self.pool_f3(self.refine_f3(self.proj_f3(f3)), query_bias=branch_query_bias)
+        branch_f4 = self.pool_f4(self.refine_f4(self.proj_f4(f4)), query_bias=branch_query_bias)
+        branch_x = self.pool_x(self.refine_x(self.proj_x(x)), query_bias=branch_query_bias)
 
         pooled = torch.cat([branch_f2, branch_f3, branch_f4, branch_x], dim=-1)
         delta = self.proj_out(pooled.float())
@@ -3105,12 +3198,20 @@ class FullModel(nn.Module):
             return torch.flip(tokens, dims=[2])
         raise ValueError(f'Unsupported pga temporal token control mode: {mode}')
 
-    def _encode_station_waveform(self, waveform, collect_tokens=False):
-        if collect_tokens:
+    def _encode_station_waveform(self, waveform, collect_tokens=False, station_context=None):
+        uses_metadata = False
+        if isinstance(self.waveform_model, nn.Sequential) and len(self.waveform_model) >= 2:
+            uses_metadata = getattr(self.waveform_model[1], 'uses_station_metadata', False)
+        if collect_tokens or uses_metadata:
             if not isinstance(self.waveform_model, nn.Sequential) or len(self.waveform_model) < 2:
                 raise ValueError('target temporal pooling requires waveform_model = encoder + adapter.')
             features = self.waveform_model[0](waveform)
-            station_emb = self.waveform_model[1](features)
+            if uses_metadata:
+                station_emb = self.waveform_model[1](features, station_context=station_context)
+            else:
+                station_emb = self.waveform_model[1](features)
+            if not collect_tokens:
+                return station_emb, None
             token_getter = getattr(self.waveform_model[1], 'temporal_tokens', None)
             if token_getter is None:
                 raise ValueError('station adapter does not expose temporal_tokens().')
@@ -3167,6 +3268,7 @@ class FullModel(nn.Module):
         waveforms_masked = waveform_inp * sv[:, :, None, None].float()
         coords_abs = metadata_inp * sv[:, :, None].float()
         coords_rel, coords_center = self._make_relative_coords(coords_abs, sv)
+        coords_feat, coords_emb = self._station_coord_features(coords_abs, coords_rel, sv)
 
         station_token_list = []
         raw_station_emb_list = []
@@ -3175,6 +3277,7 @@ class FullModel(nn.Module):
             station_emb_i, station_tokens_i = self._encode_station_waveform(
                 waveforms_masked[:, i, :, :],
                 collect_tokens=collect_temporal_tokens,
+                station_context=coords_feat[:, i, :] if coords_feat is not None else None,
             )
             raw_station_emb_list.append(station_emb_i)
             if station_tokens_i is not None:
@@ -3199,7 +3302,6 @@ class FullModel(nn.Module):
             scale_features = None
             gain_scale_emb = None
 
-        coords_feat, coords_emb = self._station_coord_features(coords_abs, coords_rel, sv)
         if not self.alternative_coords_embedding:
             if self.coord_fusion_mode == 'add':
                 emb = waveforms_emb + coords_feat
@@ -3622,6 +3724,10 @@ def get_diting_model(args, station_emb_dim):
                 pool_queries=getattr(args, 'diting_station_pool_queries', 4),
                 pool_temperature=getattr(args, 'diting_station_pool_temperature', 1.0),
                 pool_dropout=getattr(args, 'diting_station_pool_dropout', 0.0),
+                metadata_mode=getattr(args, 'diting_station_metadata_mode', 'none'),
+                metadata_dim=getattr(args, 'diting_station_metadata_dim', None),
+                metadata_hidden_dim=getattr(args, 'diting_station_metadata_hidden_dim', 128),
+                metadata_scale=getattr(args, 'diting_station_metadata_scale', 0.1),
             )
             backbone_module = encoder.backbone
         elif frontend == 'backbone_attn_pool':
@@ -3758,6 +3864,9 @@ def build_transformer_model(max_stations,
                             diting_station_pool_queries=4,
                             diting_station_pool_temperature=1.0,
                             diting_station_pool_dropout=0.0,
+                            diting_station_metadata_mode='none',
+                            diting_station_metadata_hidden_dim=128,
+                            diting_station_metadata_scale=0.1,
                             waveform_scale_gain=1.0,
                             waveform_scale_hidden_dim=None,
                             waveform_scale_log_divisor=10.0,
@@ -3875,6 +3984,10 @@ def build_transformer_model(max_stations,
         diting_args.diting_station_pool_queries = diting_station_pool_queries
         diting_args.diting_station_pool_temperature = diting_station_pool_temperature
         diting_args.diting_station_pool_dropout = diting_station_pool_dropout
+        diting_args.diting_station_metadata_mode = diting_station_metadata_mode
+        diting_args.diting_station_metadata_dim = emb_dim if diting_station_metadata_mode != 'none' else None
+        diting_args.diting_station_metadata_hidden_dim = diting_station_metadata_hidden_dim
+        diting_args.diting_station_metadata_scale = diting_station_metadata_scale
     waveform_model = get_diting_model(diting_args, station_emb_dim=waveform_model_dims[-1])
 
     #   Event model

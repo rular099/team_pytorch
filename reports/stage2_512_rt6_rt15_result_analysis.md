@@ -121,6 +121,32 @@ Coordinate control:
      recover transferable site information;
    - compare rt15 against rt14 to decide whether a weak absolute-coordinate
      channel is useful.
+6. Run rt16-rt19 as a separate station-adapter transfer/metadata-injection
+   ablation if resources are available. These configs keep the rt10
+   heads/loss/absolute-coordinate setup but remove or isolate the b54
+   station-adapter transfer; rt18/rt19 additionally inject station coordinate
+   embeddings inside the adapter before station embedding pooling.
+
+## How To Read rt16-rt19 When Results Arrive
+
+- rt10 remains the external anchor: same heads, mean-aux weight, realtime
+  sampling, and absolute coordinates.
+- rt16 tests the strongest version of "skip inherited single-station/full-model
+  station representation": no b54 transfer at all.
+- rt17 is the cleaner adapter-only test: transfer b54 except
+  `waveform_model.1.*`, then reinitialize the station adapter.
+- rt18 and rt19 should be compared primarily against rt17. rt18 injects station
+  coordinate embedding into adapter pooling queries; rt19 uses the same
+  coordinate embedding as feature-level FiLM before pooling.
+- Judge the result with both train and validation metrics. A useful change
+  should improve or preserve validation PGA MAE while also helping train PGA
+  fit, strong-PGA bias, current-time breakdowns, and target-type breakdowns.
+  Because rt10 uses loc MDN, also record magnitude MAE, loc vector error, and
+  loc NLL/MDN metrics; do not record only PGA.
+- If rt17 beats rt10, use transfer-except-adapter as the future warm-start
+  default. If rt18 or rt19 beats rt17, keep the better early coordinate-injection
+  adapter. If both lose to rt17, keep coordinate injection after the station
+  adapter and stop adding adapter metadata variants in this round.
 
 Tentative second-round candidates after VS30 reruns:
 

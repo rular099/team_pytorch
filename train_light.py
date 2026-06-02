@@ -1983,7 +1983,8 @@ def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dis
     return model, optimizer, scheduler, start_epoch, val_loss
 
 def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=False,
-                     ens_id=None, sleeptime=600, device="cpu"):
+                     ens_id=None, sleeptime=600, device="cpu",
+                     exclude_prefixes=None):
     """
     PyTorch 版本的权重迁移函数
     """
@@ -2007,6 +2008,18 @@ def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=Fal
     ckpt = torch.load(weights_path, map_location=device)
     state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
     state_dict = clean_state_dict_keys(state_dict)
+
+    if exclude_prefixes:
+        if isinstance(exclude_prefixes, str):
+            exclude_prefixes = (exclude_prefixes,)
+        else:
+            exclude_prefixes = tuple(exclude_prefixes)
+        excluded_keys = [key for key in state_dict if key.startswith(exclude_prefixes)]
+        for key in excluded_keys:
+            del state_dict[key]
+        preview = ', '.join(excluded_keys[:12])
+        extra = '' if len(excluded_keys) <= 12 else f', ... +{len(excluded_keys) - 12} more'
+        print(f'Excluded {len(excluded_keys)} transfer tensors by prefix ({preview}{extra})')
 
     # Unwrap DDP if needed
     raw_model = model.module if hasattr(model, 'module') else model
@@ -2673,8 +2686,10 @@ if __name__ == '__main__':
             print('Transfering model weights')
             ensemble_load = training_params.get('ensemble_load', False)
             wait_for_load = training_params.get('wait_for_load', False)
+            transfer_exclude_prefixes = training_params.get('transfer_exclude_prefixes', None)
             transfer_weights(full_model, training_params['transfer_model_path'],
-                             ensemble_load=ensemble_load, wait_for_load=wait_for_load, ens_id=ens_id)
+                             ensemble_load=ensemble_load, wait_for_load=wait_for_load, ens_id=ens_id,
+                             exclude_prefixes=transfer_exclude_prefixes)
 
         # Freeze the DiTing encoder; keep the TEAM-side station adapter trainable.
         raw_full = full_model.module if is_dist else full_model
