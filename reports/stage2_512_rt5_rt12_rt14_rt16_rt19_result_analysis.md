@@ -183,4 +183,8 @@ This likely happened because non-zero ranks exited while rank 0 was still doing
 post-training sanity/export work, exceeding torch elastic's 300-second exit
 barrier. The code has been updated to run a final distributed barrier after
 rank 0 cleanup so all workers exit together. The Slurm launcher has also been
-updated to default to static rendezvous for fixed-node jobs.
+updated to default to `DISTRIBUTED_LAUNCHER=slurm_direct`, which starts one
+Python process per GPU through Slurm and sets `RANK/WORLD_SIZE/LOCAL_RANK`
+directly. This avoids torch elastic rendezvous during startup. If torchrun must
+be used for a diagnostic run, set `DISTRIBUTED_LAUNCHER=torchrun`; that path now
+uses `SLURM_PROCID` for `--node_rank` instead of relying on `SLURM_NODEID`.

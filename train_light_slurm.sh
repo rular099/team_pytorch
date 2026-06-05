@@ -27,6 +27,7 @@
 #   EVAL_DEVICE        Optional eval device, e.g. cuda:0
 #   EVAL_OUTPUT_TXT    Optional eval stdout/stderr path; only valid with EVAL_CHECKPOINT
 #   EVAL_OUTPUT_NPZ    Optional eval npz path; only valid with EVAL_CHECKPOINT
+#   DISTRIBUTED_LAUNCHER slurm_direct or torchrun; slurm_direct avoids torch elastic rendezvous
 #   TORCHRUN_RDZV_MODE static or c10d; static avoids dynamic rendezvous teardown issues on fixed Slurm allocations
 
 set -euo pipefail
@@ -54,6 +55,7 @@ MODULE_UNLOAD=${MODULE_UNLOAD:-compiler/rocm/2.9}
 MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04 apps/miniconda/3"}
 RESET_WEIGHT_PATH=${RESET_WEIGHT_PATH:-1}
 RUN_EVAL=${RUN_EVAL:-1}
+DISTRIBUTED_LAUNCHER=${DISTRIBUTED_LAUNCHER:-slurm_direct}
 TORCHRUN_RDZV_MODE=${TORCHRUN_RDZV_MODE:-static}
 
 resolve_path() {
@@ -100,13 +102,19 @@ fi
 if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
     mkdir -p "$SLURM_LOG_DIR"
     echo "[INFO] submitting to Slurm"
-    echo "[INFO] job_name=$JOB_NAME partition=$SLURM_PARTITION nodes=$SLURM_NODES gpus_per_node=$SLURM_GPUS_PER_NODE"
+    echo "[INFO] job_name=$JOB_NAME partition=$SLURM_PARTITION nodes=$SLURM_NODES gpus_per_node=$SLURM_GPUS_PER_NODE launcher=$DISTRIBUTED_LAUNCHER"
+    SBATCH_NTASKS_PER_NODE=1
+    if [[ "$DISTRIBUTED_LAUNCHER" == "slurm_direct" ]]; then
+        SBATCH_NTASKS_PER_NODE="$SLURM_GPUS_PER_NODE"
+    fi
     EXPORT_VARS=(
         "WORKDIR=$WORKDIR"
         "REPO_ROOT=$REPO_ROOT"
         "SLURM_LOG_DIR=$SLURM_LOG_DIR"
         "DITING_CONFIG=$DITING_CONFIG"
         "CONFIG_INPUT=$CONFIG"
+        "DISTRIBUTED_LAUNCHER=$DISTRIBUTED_LAUNCHER"
+        "TORCHRUN_RDZV_MODE=$TORCHRUN_RDZV_MODE"
     )
     if [[ -n "${DITING_PRETRAINED:-}" ]]; then
         EXPORT_VARS+=("DITING_PRETRAINED=$DITING_PRETRAINED")
@@ -116,7 +124,7 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
         --job-name="$JOB_NAME" \
         --partition="$SLURM_PARTITION" \
         --nodes="$SLURM_NODES" \
-        --ntasks-per-node=1 \
+        --ntasks-per-node="$SBATCH_NTASKS_PER_NODE" \
         --cpus-per-task="$SLURM_CPUS_PER_TASK" \
         --gres="dcu:${SLURM_GPUS_PER_NODE}" \
     )
@@ -247,54 +255,83 @@ else
     MASTER_ADDR=${MASTER_ADDR:-127.0.0.1}
     MASTER_PORT=${MASTER_PORT:-29500}
 fi
-
-case "$TORCHRUN_RDZV_MODE" in
-    static)
-        TRAIN_CMD=(
-            "${TORCHRUN_BIN[@]}"
-            --nnodes="$TORCHRUN_NNODES"
-            --nproc_per_node="$SLURM_GPUS_PER_NODE"
-            --node_rank="${SLURM_NODEID:-0}"
-            --master_addr="$MASTER_ADDR"
-            --master_port="$MASTER_PORT"
-            train_light.py
-            --config "$CONFIG"
-            --diting_config "$DITING_CONFIG"
-        )
-        ;;
-    c10d)
-        TRAIN_CMD=(
-            "${TORCHRUN_BIN[@]}"
-            --nnodes="$TORCHRUN_NNODES"
-            --nproc_per_node="$SLURM_GPUS_PER_NODE"
-            --rdzv_backend=c10d
-            --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}"
-            --rdzv_id="${SLURM_JOBID:-local}"
-            --node_rank="${SLURM_NODEID:-0}"
-            train_light.py
-            --config "$CONFIG"
-            --diting_config "$DITING_CONFIG"
-        )
-        ;;
-    *)
-        echo "Unsupported TORCHRUN_RDZV_MODE=$TORCHRUN_RDZV_MODE; expected static or c10d" >&2
-        exit 1
-        ;;
-esac
-
-if [[ -n "${DITING_PRETRAINED:-}" ]]; then
-    TRAIN_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
-fi
-if ((EXTRA_ARG_COUNT > 0)); then
-    TRAIN_CMD+=("${EXTRA_ARGS[@]}")
-fi
-
-echo "[INFO] MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT rdzv_mode=$TORCHRUN_RDZV_MODE"
-echo "[INFO] launching: ${TRAIN_CMD[*]}"
+export MASTER_ADDR MASTER_PORT
 
 if [[ -n "${SLURM_JOB_ID:-}" ]]; then
-    srun --ntasks-per-node=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
-        "${TRAIN_CMD[@]}"
+    case "$DISTRIBUTED_LAUNCHER" in
+        slurm_direct)
+            DIRECT_WORLD_SIZE=$((TORCHRUN_NNODES * SLURM_GPUS_PER_NODE))
+            export DIRECT_WORLD_SIZE
+            TRAIN_CMD=(
+                python
+                train_light.py
+                --config "$CONFIG"
+                --diting_config "$DITING_CONFIG"
+            )
+            if [[ -n "${DITING_PRETRAINED:-}" ]]; then
+                TRAIN_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
+            fi
+            if ((EXTRA_ARG_COUNT > 0)); then
+                TRAIN_CMD+=("${EXTRA_ARGS[@]}")
+            fi
+            echo "[INFO] MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT launcher=slurm_direct world_size=$DIRECT_WORLD_SIZE"
+            echo "[INFO] launching: srun --ntasks=$DIRECT_WORLD_SIZE --ntasks-per-node=$SLURM_GPUS_PER_NODE ${TRAIN_CMD[*]}"
+            srun --ntasks="$DIRECT_WORLD_SIZE" --ntasks-per-node="$SLURM_GPUS_PER_NODE" \
+                --cpus-per-task="$SLURM_CPUS_PER_TASK" \
+                bash -c 'export RANK="${SLURM_PROCID:?}"; export WORLD_SIZE="${DIRECT_WORLD_SIZE:?}"; export LOCAL_RANK="${SLURM_LOCALID:-0}"; echo "[INFO] slurm_direct rank=${RANK}/${WORLD_SIZE} local_rank=${LOCAL_RANK} host=$(hostname)"; exec "$@"' \
+                bash "${TRAIN_CMD[@]}"
+            ;;
+        torchrun)
+            TORCHRUN_NODE_RANK=${SLURM_PROCID:-${SLURM_NODEID:-0}}
+            case "$TORCHRUN_RDZV_MODE" in
+                static)
+                    TRAIN_CMD=(
+                        "${TORCHRUN_BIN[@]}"
+                        --nnodes="$TORCHRUN_NNODES"
+                        --nproc_per_node="$SLURM_GPUS_PER_NODE"
+                        --node_rank="$TORCHRUN_NODE_RANK"
+                        --master_addr="$MASTER_ADDR"
+                        --master_port="$MASTER_PORT"
+                        train_light.py
+                        --config "$CONFIG"
+                        --diting_config "$DITING_CONFIG"
+                    )
+                    ;;
+                c10d)
+                    TRAIN_CMD=(
+                        "${TORCHRUN_BIN[@]}"
+                        --nnodes="$TORCHRUN_NNODES"
+                        --nproc_per_node="$SLURM_GPUS_PER_NODE"
+                        --rdzv_backend=c10d
+                        --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}"
+                        --rdzv_id="${SLURM_JOBID:-local}"
+                        --node_rank="$TORCHRUN_NODE_RANK"
+                        train_light.py
+                        --config "$CONFIG"
+                        --diting_config "$DITING_CONFIG"
+                    )
+                    ;;
+                *)
+                    echo "Unsupported TORCHRUN_RDZV_MODE=$TORCHRUN_RDZV_MODE; expected static or c10d" >&2
+                    exit 1
+                    ;;
+            esac
+            if [[ -n "${DITING_PRETRAINED:-}" ]]; then
+                TRAIN_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
+            fi
+            if ((EXTRA_ARG_COUNT > 0)); then
+                TRAIN_CMD+=("${EXTRA_ARGS[@]}")
+            fi
+            echo "[INFO] MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT launcher=torchrun rdzv_mode=$TORCHRUN_RDZV_MODE node_rank=$TORCHRUN_NODE_RANK"
+            echo "[INFO] launching: ${TRAIN_CMD[*]}"
+            srun --ntasks-per-node=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
+                "${TRAIN_CMD[@]}"
+            ;;
+        *)
+            echo "Unsupported DISTRIBUTED_LAUNCHER=$DISTRIBUTED_LAUNCHER; expected slurm_direct or torchrun" >&2
+            exit 1
+            ;;
+    esac
 else
     # Direct fallback for local smoke tests.
     DIRECT_CMD=(
