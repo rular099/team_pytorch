@@ -477,3 +477,57 @@ validation rows. A config is not considered better unless the conclusion is
 consistent across the relevant task head: PGA conclusions require PGA metrics,
 mag-head conclusions require magnitude metrics, and loc-head conclusions require
 location metrics.
+
+## rt20-rt25: Station-Feature Collapse Follow-Up
+
+rt16-rt19 showed that removing full-model transfer or injecting coordinates
+earlier does not solve the raw station-feature collapse. The next round should
+therefore keep rt10 as the anchor and test mechanisms that explicitly preserve
+station-specific residual information.
+
+These configs have been generated:
+
+| run | config | purpose |
+|---|---|---|
+| rt20 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt20_rt10anchor_raw_resid_decor_chaosuan.json` | Centered decorrelation on raw station adapter embeddings. Tests whether a small direct anti-collapse regularizer helps without changing architecture. |
+| rt21 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt21_rt10anchor_station_residual_add_chaosuan.json` | Adds event-centered station residual branch before coordinate fusion. Tests whether an explicit station-specific path improves PGA. |
+| rt22 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt22_rt10anchor_station_local_pga_aux_chaosuan.json` | Adds station-local PGA residual auxiliary loss on input stations. Tests whether station-level supervision alone reduces collapse. |
+| rt23 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt23_rt10anchor_residual_add_local_pga_aux_chaosuan.json` | Combines rt21 and rt22. This is the main candidate if collapse is caused by weak station-specific gradients. |
+| rt24 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt24_rt10anchor_poolq8_chaosuan.json` | Increases DiTing station adapter pooling queries from 4 to 8. Tests whether the adapter pooling bottleneck contributes to collapse. |
+| rt25 | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt25_rt10anchor_poolq8_residual_add_local_pga_aux_chaosuan.json` | Combines poolq8 with residual branch and local PGA aux. Compare mainly against rt23 to decide whether poolq8 is worth the extra adapter mismatch. |
+
+Implementation notes:
+
+- `station_residual_mode=add` computes an event-centered residual from
+  station waveform embeddings and adds it back to station tokens with an
+  identity-initialized projection and non-zero gate.
+- `station_local_pga_aux_loss` uses `p_pick_info['input_pga_values']` and
+  `input_pga_valid`, so the auxiliary target is aligned to input station slots.
+  The target defaults to event-centered PGA residual and is divided by the
+  automatically estimated PGA target std.
+- `station_residual_decorrelation_loss` is a training-only regularizer; it is
+  not included in validation loss. Station-local PGA aux is a supervised loss
+  and is included in validation loss when enabled.
+- Poolq8 may skip shape-mismatched adapter-pooling tensors during transfer from
+  rt10/b54 checkpoints. This is expected; `transfer_weights` already reports
+  skipped tensors.
+
+How to analyze rt20-rt25:
+
+1. Keep rt10 as the primary anchor. Do not compare only against rt16-rt19,
+   because those runs already lost the balanced PGA objective.
+2. For collapse, inspect `raw_station_emb_cosine_mean`,
+   `wave_station_emb_cosine_mean`, `station_residual_emb_cosine_mean`,
+   `station_residual_norm_ratio`, and eval raw-feature cosine if exported.
+   A useful run should reduce cosine or increase residual norm without simply
+   worsening train loss.
+3. For PGA, require both train and validation metrics: overall PGA MAE,
+   untriggered MAE, strong-PGA MAE/bias, Brier, and station-count buckets.
+   A lower raw-feature cosine is not enough if strong-PGA bias worsens.
+4. For event heads, still record mag MAE/NLL and loc vector/NLL. These configs
+   keep mag/loc MDN choices from rt10, so large event-head regressions indicate
+   the station residual branch is disturbing the shared representation.
+5. Decision rule: accept rt23 over rt10 only if it improves either overall val
+   PGA or a clearly targeted subset such as untriggered/low-count PGA while not
+   worsening strong-PGA bias, Brier, mag, and loc. Accept rt25 over rt23 only if
+   poolq8 adds a clear gain; otherwise keep the smaller rt23 structure.

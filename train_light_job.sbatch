@@ -32,6 +32,7 @@ export PYTHONPATH="$DITINGBENCH_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
 export MASTER_PORT=$(expr 10000 + $(echo -n "${SLURM_JOBID}" | tail -c 4))
 export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+TORCHRUN_RDZV_MODE=${TORCHRUN_RDZV_MODE:-static}
 
 cd "$WORKDIR"
 echo "[INFO] cd to: $(pwd)"
@@ -39,18 +40,39 @@ echo "[INFO] python: $(command -v python)"
 echo "[INFO] DITINGBENCH_ROOT=$DITINGBENCH_ROOT"
 echo "[INFO] MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT"
 
-TRAIN_CMD=(
-    python -m torch.distributed.run
-    --nnodes="${SLURM_JOB_NUM_NODES:-1}"
-    --nproc_per_node="$NPROC_PER_NODE"
-    --rdzv_backend=c10d
-    --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}"
-    --rdzv_id="${SLURM_JOBID}"
-    --node_rank="${SLURM_NODEID:-0}"
-    train_light.py
-    --config "$CONFIG"
-    --diting_config "$DITING_CONFIG"
-)
+case "$TORCHRUN_RDZV_MODE" in
+    static)
+        TRAIN_CMD=(
+            python -m torch.distributed.run
+            --nnodes="${SLURM_JOB_NUM_NODES:-1}"
+            --nproc_per_node="$NPROC_PER_NODE"
+            --node_rank="${SLURM_NODEID:-0}"
+            --master_addr="$MASTER_ADDR"
+            --master_port="$MASTER_PORT"
+            train_light.py
+            --config "$CONFIG"
+            --diting_config "$DITING_CONFIG"
+        )
+        ;;
+    c10d)
+        TRAIN_CMD=(
+            python -m torch.distributed.run
+            --nnodes="${SLURM_JOB_NUM_NODES:-1}"
+            --nproc_per_node="$NPROC_PER_NODE"
+            --rdzv_backend=c10d
+            --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}"
+            --rdzv_id="${SLURM_JOBID}"
+            --node_rank="${SLURM_NODEID:-0}"
+            train_light.py
+            --config "$CONFIG"
+            --diting_config "$DITING_CONFIG"
+        )
+        ;;
+    *)
+        echo "Unsupported TORCHRUN_RDZV_MODE=$TORCHRUN_RDZV_MODE; expected static or c10d" >&2
+        exit 1
+        ;;
+esac
 
 if [[ "$DITING_PRETRAINED" != "__EMPTY__" ]]; then
     TRAIN_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
@@ -58,5 +80,6 @@ fi
 TRAIN_CMD+=("${EXTRA_ARGS[@]}")
 
 echo "[INFO] launching: ${TRAIN_CMD[*]}"
+echo "[INFO] rdzv_mode=$TORCHRUN_RDZV_MODE"
 
 srun "${TRAIN_CMD[@]}"

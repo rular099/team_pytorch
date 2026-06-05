@@ -2391,14 +2391,21 @@ def point_regression_loss_full(y_pred, y_true, res_comps=None, res_weight=None,
 
 def station_embedding_decorrelation_loss(station_emb, station_valid, eps=1e-8):
     """Penalize same-event station tokens becoming nearly identical directions."""
+    return station_feature_decorrelation_loss(station_emb, station_valid, eps=eps, center=False)
+
+
+def station_feature_decorrelation_loss(station_emb, station_valid, eps=1e-8, center=False):
+    """Penalize same-event station tokens becoming nearly identical directions."""
     if station_emb is None or station_valid is None:
         return None
     losses = []
-    normed = F.normalize(station_emb, p=2, dim=-1, eps=eps)
-    for sample_emb, valid in zip(normed, station_valid.bool()):
+    for sample_emb, valid in zip(station_emb, station_valid.bool()):
         x = sample_emb[valid]
         if x.shape[0] < 2:
             continue
+        if center:
+            x = x - x.mean(dim=0, keepdim=True)
+        x = F.normalize(x, p=2, dim=-1, eps=eps)
         sim = torch.matmul(x, x.transpose(0, 1))
         off_diag = sim[~torch.eye(x.shape[0], device=x.device, dtype=torch.bool)]
         losses.append((off_diag ** 2).mean())
@@ -2467,7 +2474,13 @@ class FullModel(nn.Module):
                  pga_temporal_residual_station_weighting='attention',
                  pga_temporal_residual_use_event_context=True,
                  pga_temporal_residual_mode='residual',
-                 pga_temporal_residual_token_control='none'):
+                 pga_temporal_residual_token_control='none',
+                 station_residual_mode='off',
+                 station_residual_source='wave',
+                 station_residual_init_gate=0.1,
+                 station_residual_zero_init=False,
+                 station_local_pga_aux=False,
+                 station_local_pga_aux_hidden_dim=128):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -2527,11 +2540,18 @@ class FullModel(nn.Module):
         self.pga_temporal_residual_use_event_context = bool(pga_temporal_residual_use_event_context)
         self.pga_temporal_residual_mode = pga_temporal_residual_mode
         self.pga_temporal_residual_token_control = pga_temporal_residual_token_control
+        self.station_residual_mode = station_residual_mode or 'off'
+        self.station_residual_source = station_residual_source or 'wave'
+        self.station_local_pga_aux_enabled = bool(station_local_pga_aux)
         self._last_pga_layer_outputs = []
         self._last_pga_temporal_base = None
         self._last_pga_temporal_delta = None
         self._last_pga_temporal_pred = None
         self._last_pga_temporal_final = None
+        self._last_raw_station_emb = None
+        self._last_wave_station_emb = None
+        self._last_station_residual_emb = None
+        self._last_station_local_pga_pred = None
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
@@ -2619,6 +2639,16 @@ class FullModel(nn.Module):
             raise ValueError(
                 "pga_temporal_residual_token_control must be one of 'none', 'zero', "
                 f"'batch_roll', 'station_roll', 'time_reverse', got {self.pga_temporal_residual_token_control!r}."
+            )
+        if self.station_residual_mode not in ('off', 'add'):
+            raise ValueError(
+                "station_residual_mode must be one of 'off' or 'add', "
+                f"got {self.station_residual_mode!r}."
+            )
+        if self.station_residual_source not in ('raw', 'wave'):
+            raise ValueError(
+                "station_residual_source must be 'raw' or 'wave', "
+                f"got {self.station_residual_source!r}."
             )
         if self.station_context_mode == 'gated_transformer_pre_readout':
             self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
@@ -2746,6 +2776,31 @@ class FullModel(nn.Module):
         self.Masking_nd_0_2 = Masking_nd(0, axis=2, nodim=True)
 #        self.layernorm = LayerNormalization()
         self.layernorm = nn.LayerNorm(emb_dim)
+        if self.station_residual_mode == 'add':
+            self.station_residual_norm = nn.LayerNorm(emb_dim)
+            self.station_residual_proj = nn.Linear(emb_dim, emb_dim)
+            if station_residual_zero_init:
+                nn.init.zeros_(self.station_residual_proj.weight)
+            else:
+                nn.init.eye_(self.station_residual_proj.weight)
+            nn.init.zeros_(self.station_residual_proj.bias)
+            self.station_residual_gate = nn.Parameter(torch.tensor(float(station_residual_init_gate)))
+        else:
+            self.station_residual_norm = None
+            self.station_residual_proj = None
+            self.station_residual_gate = None
+        if self.station_local_pga_aux_enabled:
+            hidden_dim = int(station_local_pga_aux_hidden_dim or emb_dim)
+            self.station_local_pga_aux_head = nn.Sequential(
+                nn.LayerNorm(emb_dim),
+                nn.Linear(emb_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, 1),
+            )
+            nn.init.zeros_(self.station_local_pga_aux_head[-1].weight)
+            nn.init.zeros_(self.station_local_pga_aux_head[-1].bias)
+        else:
+            self.station_local_pga_aux_head = None
         if not self.alternative_coords_embedding and self.coord_fusion_mode == 'concat':
             self.coord_fusion_proj = nn.Linear(2 * emb_dim, emb_dim)
             self.coord_fusion_norm = nn.LayerNorm(emb_dim)
@@ -2793,6 +2848,13 @@ class FullModel(nn.Module):
         if not vals:
             return x.new_tensor(float('nan'))
         return torch.stack(vals).mean()
+
+    @staticmethod
+    def _masked_event_residual(x, mask):
+        mask_f = mask.to(x.device).to(x.dtype).unsqueeze(-1)
+        denom = mask_f.sum(dim=1, keepdim=True).clamp_min(1.0)
+        center = (x * mask_f).sum(dim=1, keepdim=True) / denom
+        return (x - center) * mask_f
 
     def _normalize(self, data, mode, axis=1):
         """
@@ -3302,6 +3364,19 @@ class FullModel(nn.Module):
             scale_features = None
             gain_scale_emb = None
 
+        residual_source_emb = raw_station_emb if self.station_residual_source == 'raw' else waveforms_emb
+        station_residual_emb = self._masked_event_residual(residual_source_emb, sv)
+        self._last_raw_station_emb = raw_station_emb
+        self._last_wave_station_emb = waveforms_emb
+        self._last_station_residual_emb = station_residual_emb
+        if self.station_local_pga_aux_head is not None:
+            self._last_station_local_pga_pred = self.station_local_pga_aux_head(station_residual_emb).squeeze(-1)
+        else:
+            self._last_station_local_pga_pred = None
+        if self.station_residual_mode == 'add':
+            residual_delta = self.station_residual_proj(self.station_residual_norm(station_residual_emb))
+            waveforms_emb = waveforms_emb + self.station_residual_gate * residual_delta * sv[:, :, None].float()
+
         if not self.alternative_coords_embedding:
             if self.coord_fusion_mode == 'add':
                 emb = waveforms_emb + coords_feat
@@ -3329,6 +3404,13 @@ class FullModel(nn.Module):
             'preln_wave_emb_norm': self._mean_token_norm(preln_wave_emb).detach(),
             'wave_emb_norm': self._mean_token_norm(waveforms_emb).detach(),
             'station_emb_norm': self._mean_token_norm(emb).detach(),
+            'raw_station_emb_cosine_mean': self._masked_pairwise_cosine_mean(raw_station_emb, sv).detach(),
+            'wave_station_emb_cosine_mean': self._masked_pairwise_cosine_mean(self._last_wave_station_emb, sv).detach(),
+            'station_residual_emb_cosine_mean': self._masked_pairwise_cosine_mean(station_residual_emb, sv).detach(),
+            'station_residual_emb_norm': self._mean_token_norm(station_residual_emb).detach(),
+            'station_residual_norm_ratio': (
+                self._mean_token_norm(station_residual_emb) / (self._mean_token_norm(self._last_wave_station_emb) + 1e-8)
+            ).detach(),
             'station_emb_cosine_mean': self._masked_pairwise_cosine_mean(emb, sv).detach(),
             'coords_center_abs_mean': coords_center.abs().mean().detach(),
             'coords_abs_mean': coords_abs.abs().mean().detach(),
@@ -3336,6 +3418,13 @@ class FullModel(nn.Module):
             'coord_fusion_mode': 0.0 if self.coord_fusion_mode == 'add' else 1.0,
             'station_context_mode': emb.new_tensor(0.0).detach(),
         }
+        if self.station_residual_mode == 'add':
+            self._last_diag['station_residual_gate'] = self.station_residual_gate.detach()
+        if self._last_station_local_pga_pred is not None:
+            valid_local = self._last_station_local_pga_pred[sv]
+            if valid_local.numel():
+                self._last_diag['station_local_pga_aux_mean'] = valid_local.mean().detach()
+                self._last_diag['station_local_pga_aux_std'] = valid_local.std(unbiased=False).detach()
         if self.vs30_additive_enabled:
             station_valid_count = sv.float().sum().clamp_min(1.0)
             self._last_diag['vs30_station_valid_ratio'] = (
@@ -3924,6 +4013,12 @@ def build_transformer_model(max_stations,
                             pga_temporal_residual_use_event_context=True,
                             pga_temporal_residual_mode='residual',
                             pga_temporal_residual_token_control='none',
+                            station_residual_mode='off',
+                            station_residual_source='wave',
+                            station_residual_init_gate=0.1,
+                            station_residual_zero_init=False,
+                            station_local_pga_aux=False,
+                            station_local_pga_aux_hidden_dim=128,
                             temporal_token_dim=None,
                             temporal_pool_dim=256,
                             temporal_pool_geom_hidden_dim=128,
@@ -4243,6 +4338,12 @@ def build_transformer_model(max_stations,
                              pga_temporal_residual_use_event_context=pga_temporal_residual_use_event_context,
                              pga_temporal_residual_mode=pga_temporal_residual_mode,
                              pga_temporal_residual_token_control=pga_temporal_residual_token_control,
+                             station_residual_mode=station_residual_mode,
+                             station_residual_source=station_residual_source,
+                             station_residual_init_gate=station_residual_init_gate,
+                             station_residual_zero_init=station_residual_zero_init,
+                             station_local_pga_aux=station_local_pga_aux,
+                             station_local_pga_aux_hidden_dim=station_local_pga_aux_hidden_dim,
                              pga_attention_diagnostics=pga_attention_diagnostics,
                              pga_mask_sanity_check=pga_mask_sanity_check)
     return full_model

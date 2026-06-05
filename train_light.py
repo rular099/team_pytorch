@@ -1310,6 +1310,102 @@ def distribution_mean_aux_loss(outputs, labels, output_layout, res_comps, res_we
     )
 
 
+def station_residual_decorrelation_aux_loss(model, cfg):
+    if not cfg or not cfg.get('enabled', False):
+        return None
+    weight = float(cfg.get('weight', 0.0))
+    if weight == 0.0:
+        return None
+    source = cfg.get('source', 'residual')
+    attr_by_source = {
+        'raw': '_last_raw_station_emb',
+        'wave': '_last_wave_station_emb',
+        'station': '_last_station_feature_emb',
+        'residual': '_last_station_residual_emb',
+    }
+    if source not in attr_by_source:
+        raise ValueError(
+            "station_residual_decorrelation_loss.source must be one of "
+            f"{sorted(attr_by_source)}, got {source!r}."
+        )
+    loss = models.station_feature_decorrelation_loss(
+        getattr(model, attr_by_source[source], None),
+        getattr(model, '_last_station_valid', None),
+        center=bool(cfg.get('center', source != 'residual')),
+    )
+    if loss is None:
+        return None
+    return weight * loss
+
+
+def station_local_pga_aux_loss(model, labels, output_layout, pga_target_valid, p_picks, cfg,
+                               loss_type='huber', huber_delta=1.0,
+                               pga_target_normalization=None):
+    if not cfg or not cfg.get('enabled', False):
+        return None
+    pred = getattr(model, '_last_station_local_pga_pred', None)
+    if pred is None:
+        return None
+    weight = float(cfg.get('weight', 0.0))
+    if weight == 0.0:
+        return None
+    device = pred.device
+    dtype = pred.dtype
+    target = None
+    mask = None
+
+    if isinstance(p_picks, dict) and 'input_pga_values' in p_picks and 'input_pga_valid' in p_picks:
+        target = p_picks['input_pga_values'].to(device=device, dtype=dtype)
+        mask = p_picks['input_pga_valid'].to(device=device).bool()
+        station_valid = getattr(model, '_last_station_valid', None)
+        if station_valid is not None:
+            mask = mask & station_valid.to(device).bool()
+    elif isinstance(p_picks, dict) and 'pga_target_indices' in p_picks:
+        label_layout = [n for n in output_layout if n in ('mag', 'loc', 'pga')]
+        if 'pga' not in label_layout:
+            return None
+        pga_label = labels[label_layout.index('pga')].to(device=device, dtype=dtype).squeeze(-1)
+        target_idx = p_picks['pga_target_indices'].to(device=device).long()
+        mask = target_idx >= 0
+        if pga_target_valid is not None:
+            mask = mask & pga_target_valid.to(device).bool()
+        if 'realtime_target_type' in p_picks:
+            mask = mask & (p_picks['realtime_target_type'].to(device=device).long() == 0)
+        clamped_idx = target_idx.clamp(min=0, max=max(pred.shape[1] - 1, 0))
+        pred = pred.gather(1, clamped_idx)
+        target = pga_label
+    else:
+        return None
+
+    if target is None or mask is None or not mask.any():
+        return None
+    target_mode = cfg.get('target', 'event_residual')
+    if target_mode == 'event_residual':
+        mask_f = mask.to(dtype)
+        event_mean = (target * mask_f).sum(dim=1, keepdim=True) / mask_f.sum(dim=1, keepdim=True).clamp_min(1.0)
+        target = target - event_mean
+    elif target_mode != 'absolute':
+        raise ValueError(
+            "station_local_pga_aux_loss.target must be 'event_residual' or 'absolute', "
+            f"got {target_mode!r}."
+        )
+    if bool(cfg.get('normalize_by_pga_std', True)) and _pga_norm_enabled(pga_target_normalization):
+        _, std = _pga_norm_values(pga_target_normalization)
+        target = target / std
+
+    if loss_type == 'huber':
+        per_elem = F.smooth_l1_loss(pred, target, beta=huber_delta, reduction='none')
+    elif loss_type == 'l1':
+        per_elem = torch.abs(pred - target)
+    elif loss_type == 'mse':
+        per_elem = (pred - target) ** 2
+    else:
+        raise ValueError(f"Unsupported station local PGA aux loss {loss_type!r}")
+    mask_f = mask.to(per_elem.dtype)
+    loss = (per_elem * mask_f).sum() / mask_f.sum().clamp_min(1.0)
+    return weight * loss
+
+
 def resolve_pga_target_normalization(training_params, train_dataset, batch_size, is_dist=False, rank=0, device='cpu'):
     norm_cfg = training_params.get('pga_target_normalization') or {}
     if not norm_cfg.get('enabled', False):
@@ -1620,6 +1716,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 pga_target_normalization=None, station_decorrelation_weight=0.0,
                 pga_loss_weighting=None, layerwise_pga_loss=None,
                 pga_temporal_residual_loss=None, distribution_mean_loss=None,
+                station_residual_decorrelation_loss=None,
+                station_local_pga_loss=None,
                 freeze_mode=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
@@ -1723,6 +1821,19 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     )
                     if temporal_residual_loss is not None:
                         loss = loss + temporal_residual_loss
+                station_local_aux = station_local_pga_aux_loss(
+                    eval_model,
+                    labels,
+                    eval_model.output_layout,
+                    pga_target_valid,
+                    p_picks,
+                    station_local_pga_loss,
+                    loss_type='huber',
+                    huber_delta=huber_delta,
+                    pga_target_normalization=pga_target_normalization,
+                )
+                if station_local_aux is not None:
+                    loss = loss + station_local_aux
                 if station_decorrelation_weight:
                     decor_loss = models.station_embedding_decorrelation_loss(
                         getattr(eval_model, '_last_station_feature_emb', None),
@@ -1730,6 +1841,12 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     )
                     if decor_loss is not None:
                         loss = loss + float(station_decorrelation_weight) * decor_loss
+                residual_decor_loss = station_residual_decorrelation_aux_loss(
+                    eval_model,
+                    station_residual_decorrelation_loss,
+                )
+                if residual_decor_loss is not None:
+                    loss = loss + residual_decor_loss
                 loss.backward()
                 pre_clip_global_grad = global_grad_norm(model.parameters())
                 if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
@@ -1756,6 +1873,10 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         )
                         if decor_loss is not None and not torch.isnan(decor_loss).any():
                             diag_scalars['diag/station_decorrelation_loss'] = decor_loss.detach()
+                    if residual_decor_loss is not None and not torch.isnan(residual_decor_loss).any():
+                        diag_scalars['diag/station_residual_decorrelation_loss'] = residual_decor_loss.detach()
+                    if station_local_aux is not None and not torch.isnan(station_local_aux).any():
+                        diag_scalars['diag/station_local_pga_aux_loss'] = station_local_aux.detach()
 
                     grad_targets = {
                         'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
@@ -1778,6 +1899,12 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     if getattr(eval_model, 'pga_temporal_residual_head', None) is not None:
                         grad_targets['grad/pga_temporal_residual_head'] = module_grad_norm(eval_model.pga_temporal_residual_head)
                         grad_targets['grad_rms/pga_temporal_residual_head'] = module_grad_rms(eval_model.pga_temporal_residual_head)
+                    if getattr(eval_model, 'station_residual_proj', None) is not None:
+                        grad_targets['grad/station_residual_proj'] = module_grad_norm(eval_model.station_residual_proj)
+                        grad_targets['grad_rms/station_residual_proj'] = module_grad_rms(eval_model.station_residual_proj)
+                    if getattr(eval_model, 'station_local_pga_aux_head', None) is not None:
+                        grad_targets['grad/station_local_pga_aux_head'] = module_grad_norm(eval_model.station_local_pga_aux_head)
+                        grad_targets['grad_rms/station_local_pga_aux_head'] = module_grad_rms(eval_model.station_local_pga_aux_head)
                     if pre_clip_global_grad is not None and not torch.isnan(pre_clip_global_grad).any():
                         diag_scalars['grad/global_pre_clip_norm'] = pre_clip_global_grad.detach()
                     for key, value in grad_targets.items():
@@ -1894,6 +2021,19 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         )
                         if temporal_residual_loss is not None:
                             loss = loss + temporal_residual_loss
+                    station_local_aux = station_local_pga_aux_loss(
+                        eval_model,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        p_picks,
+                        station_local_pga_loss,
+                        loss_type='huber',
+                        huber_delta=huber_delta,
+                        pga_target_normalization=pga_target_normalization,
+                    )
+                    if station_local_aux is not None:
+                        loss = loss + station_local_aux
                     val_running_loss += loss.item()
                     num_val_batches += 1
 
@@ -1947,6 +2087,15 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             print(f'Exported scalar history to {export_path} (manifest: {manifest_path})')
             if writer is not None:
                 writer.close()
+        if is_dist and dist.is_available() and dist.is_initialized():
+            # Rank 0 may spend several minutes on post-train sanity/export. Keep
+            # other ranks alive so torchrun agents do not hit the exit barrier
+            # timeout while rank 0 is still finishing.
+            try:
+                dist.barrier()
+            except Exception as exc:
+                if rank == 0:
+                    print(f'[WARN] final distributed barrier failed during cleanup: {exc}')
 
 def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dist=False, rank=0):
     checkpoint = None
@@ -2916,6 +3065,8 @@ if __name__ == '__main__':
         layerwise_pga_loss_cfg = training_params.get('layerwise_pga_loss', None)
         pga_temporal_residual_loss_cfg = training_params.get('pga_temporal_residual_loss', None)
         distribution_mean_loss_cfg = training_params.get('distribution_mean_loss', None)
+        station_residual_decorrelation_loss_cfg = training_params.get('station_residual_decorrelation_loss', None)
+        station_local_pga_loss_cfg = training_params.get('station_local_pga_aux_loss', None)
         if (not is_dist) or rank == 0:
             print(f'[tasks] training on {res_comps_cfg} with weights {res_weight_cfg.tolist()}')
             station_experiment_active = bool((training_params.get('station_experiment') or {}).get('enabled', False))
@@ -2937,6 +3088,10 @@ if __name__ == '__main__':
                 print(f'[loss] pga_temporal_residual_loss={pga_temporal_residual_loss_cfg}')
             if distribution_mean_loss_cfg and distribution_mean_loss_cfg.get('enabled', False):
                 print(f'[loss] distribution_mean_loss={distribution_mean_loss_cfg}')
+            if station_residual_decorrelation_loss_cfg and station_residual_decorrelation_loss_cfg.get('enabled', False):
+                print(f'[loss] station_residual_decorrelation_loss={station_residual_decorrelation_loss_cfg}')
+            if station_local_pga_loss_cfg and station_local_pga_loss_cfg.get('enabled', False):
+                print(f'[loss] station_local_pga_aux_loss={station_local_pga_loss_cfg}')
             print(
                 f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss '
                 f'(patience={patience}, factor={lr_decay_factor:g}, min_lr={min_lr:g})'
@@ -2968,6 +3123,8 @@ if __name__ == '__main__':
             layerwise_pga_loss=layerwise_pga_loss_cfg,
             pga_temporal_residual_loss=pga_temporal_residual_loss_cfg,
             distribution_mean_loss=distribution_mean_loss_cfg,
+            station_residual_decorrelation_loss=station_residual_decorrelation_loss_cfg,
+            station_local_pga_loss=station_local_pga_loss_cfg,
             freeze_mode=training_params.get('freeze_mode', None),
         )
 

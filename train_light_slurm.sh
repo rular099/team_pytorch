@@ -27,6 +27,7 @@
 #   EVAL_DEVICE        Optional eval device, e.g. cuda:0
 #   EVAL_OUTPUT_TXT    Optional eval stdout/stderr path; only valid with EVAL_CHECKPOINT
 #   EVAL_OUTPUT_NPZ    Optional eval npz path; only valid with EVAL_CHECKPOINT
+#   TORCHRUN_RDZV_MODE static or c10d; static avoids dynamic rendezvous teardown issues on fixed Slurm allocations
 
 set -euo pipefail
 
@@ -53,6 +54,7 @@ MODULE_UNLOAD=${MODULE_UNLOAD:-compiler/rocm/2.9}
 MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04 apps/miniconda/3"}
 RESET_WEIGHT_PATH=${RESET_WEIGHT_PATH:-1}
 RUN_EVAL=${RUN_EVAL:-1}
+TORCHRUN_RDZV_MODE=${TORCHRUN_RDZV_MODE:-static}
 
 resolve_path() {
     local p=$1
@@ -246,18 +248,39 @@ else
     MASTER_PORT=${MASTER_PORT:-29500}
 fi
 
-TRAIN_CMD=(
-    "${TORCHRUN_BIN[@]}"
-    --nnodes="$TORCHRUN_NNODES"
-    --nproc_per_node="$SLURM_GPUS_PER_NODE"
-    --rdzv_backend=c10d
-    --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}"
-    --rdzv_id="${SLURM_JOBID:-local}"
-    --node_rank="${SLURM_NODEID:-0}"
-    train_light.py
-    --config "$CONFIG"
-    --diting_config "$DITING_CONFIG"
-)
+case "$TORCHRUN_RDZV_MODE" in
+    static)
+        TRAIN_CMD=(
+            "${TORCHRUN_BIN[@]}"
+            --nnodes="$TORCHRUN_NNODES"
+            --nproc_per_node="$SLURM_GPUS_PER_NODE"
+            --node_rank="${SLURM_NODEID:-0}"
+            --master_addr="$MASTER_ADDR"
+            --master_port="$MASTER_PORT"
+            train_light.py
+            --config "$CONFIG"
+            --diting_config "$DITING_CONFIG"
+        )
+        ;;
+    c10d)
+        TRAIN_CMD=(
+            "${TORCHRUN_BIN[@]}"
+            --nnodes="$TORCHRUN_NNODES"
+            --nproc_per_node="$SLURM_GPUS_PER_NODE"
+            --rdzv_backend=c10d
+            --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}"
+            --rdzv_id="${SLURM_JOBID:-local}"
+            --node_rank="${SLURM_NODEID:-0}"
+            train_light.py
+            --config "$CONFIG"
+            --diting_config "$DITING_CONFIG"
+        )
+        ;;
+    *)
+        echo "Unsupported TORCHRUN_RDZV_MODE=$TORCHRUN_RDZV_MODE; expected static or c10d" >&2
+        exit 1
+        ;;
+esac
 
 if [[ -n "${DITING_PRETRAINED:-}" ]]; then
     TRAIN_CMD+=(--diting_pretrained "$DITING_PRETRAINED")
@@ -266,7 +289,7 @@ if ((EXTRA_ARG_COUNT > 0)); then
     TRAIN_CMD+=("${EXTRA_ARGS[@]}")
 fi
 
-echo "[INFO] MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT"
+echo "[INFO] MASTER_ADDR=$MASTER_ADDR MASTER_PORT=$MASTER_PORT rdzv_mode=$TORCHRUN_RDZV_MODE"
 echo "[INFO] launching: ${TRAIN_CMD[*]}"
 
 if [[ -n "${SLURM_JOB_ID:-}" ]]; then
