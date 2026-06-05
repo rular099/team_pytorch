@@ -505,6 +505,10 @@ Implementation notes:
   `input_pga_valid`, so the auxiliary target is aligned to input station slots.
   The target defaults to event-centered PGA residual and is divided by the
   automatically estimated PGA target std.
+- The station-local PGA aux tensor is appended to the model's forward return so
+  DDP can track its parameter graph under `find_unused_parameters=True`; it is
+  intentionally not added to `output_layout`, so eval still parses only
+  mag/loc/PGA heads.
 - `station_residual_decorrelation_loss` is a training-only regularizer; it is
   not included in validation loss. Station-local PGA aux is a supervised loss
   and is included in validation loss when enabled.

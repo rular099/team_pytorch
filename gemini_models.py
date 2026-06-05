@@ -3780,6 +3780,12 @@ class FullModel(nn.Module):
             dataset_bias_term = self.dataset_embedding(dataset).squeeze(-1)
             outputs[0] = self.add_constant_to_mixture(outputs[0], dataset_bias_term)
 
+        # Keep auxiliary tensors in the DDP forward return so
+        # find_unused_parameters can see their parameter graph. They are not
+        # added to output_layout, so normal mag/loc/PGA parsing is unchanged.
+        if self._last_station_local_pga_pred is not None:
+            outputs.append(self._last_station_local_pga_pred)
+
         return outputs
 
 def get_diting_model(args, station_emb_dim):
