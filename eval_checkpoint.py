@@ -557,7 +557,7 @@ def diagnose_amplitude_sensitivity(model, dataset, device, config, scales=(0.5, 
             *extra_inputs,
         )
         if raw_model.n_pga_targets > 0:
-            pga_out = outputs[-1][0].detach().cpu().numpy()
+            pga_out = outputs[raw_model.output_layout.index('pga')][0].detach().cpu().numpy()
             if _is_point_output(pga_out):
                 mu_best = pga_out[:, 0]
             else:
