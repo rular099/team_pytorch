@@ -386,6 +386,26 @@ DPK loading policy:
   `diag/dpk_encoder_common_tensors`, `diag/dpk_encoder_equal_tensors`,
   `diag/dpk_encoder_max_abs_diff`, plus load missing/unexpected counts.
 
+OOM follow-up on 2026-06-08:
+
+- The first rt31-rt39 submission showed that rt30 could run, but DPK training
+  runs with a second full DPK encoder hit HIP OOM on 16GB GPUs. The traceback
+  failed inside the standalone DPK `ViTAdapter` during `_dpk_outputs()`.
+- The code now has `dpk_encoder_policy`:
+  - `auto`: original behavior, share if exactly identical, otherwise keep the
+    separate frozen DPK model.
+  - `separate`: force the separate frozen DPK encoder.
+  - `current`: load the standalone DPK checkpoint, compare the encoder weights,
+    but keep only the DPK task head and feed it detached current-encoder
+    features. This is the memory-safe training policy.
+- rt30 remains the full diagnostic run. rt34/rt35/rt37/rt38/rt39 now use
+  `dpk_encoder_policy=current`, so their DPK priors should be interpreted as
+  "DPK head on current MAE/TEAM encoder features", not as priors from the full
+  fine-tuned DPK encoder. Always report `diag/dpk_encoder_all_equal`,
+  `diag/dpk_head_on_current_encoder`, and `diag/dpk_encoder_runtime_policy`.
+- rt31-rt39 full-model batch size is set to 8 because rt30 demonstrated that
+  this frontend is viable at that batch size on the current 16GB nodes.
+
 DPK eventness policy:
 
 - Default DPK prior uses `det` / event only.

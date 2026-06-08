@@ -213,7 +213,7 @@
         "generator_params": [
             {
                 "key": "Magnitude",
-                "batch_size": 32,
+                "batch_size": 8,
                 "min_upsample_magnitude": 8,
                 "magnitude_resampling": 1.0,
                 "translate": false,

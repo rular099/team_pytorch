@@ -2842,6 +2842,7 @@ class FullModel(nn.Module):
                  dpk_checkpoint_path=None,
                  dpk_share_encoder_if_identical=True,
                  dpk_compare_encoder=True,
+                 dpk_encoder_policy='auto',
                  dpk_weight_temperature=1.0,
                  dpk_weight_resample='max'):
         super().__init__()
@@ -2913,11 +2914,14 @@ class FullModel(nn.Module):
         self.dpk_checkpoint_path = dpk_checkpoint_path
         self.dpk_share_encoder_if_identical = bool(dpk_share_encoder_if_identical)
         self.dpk_compare_encoder = bool(dpk_compare_encoder)
+        self.dpk_encoder_policy = normalize(dpk_encoder_policy or 'auto')
         self.dpk_weight_temperature = max(float(dpk_weight_temperature), 1e-6)
         self.dpk_weight_resample = normalize(dpk_weight_resample or 'max')
         self.dpk_encoder_consistency = None
         self.dpk_checkpoint_load_info = {}
         self.dpk_encoder_shared = False
+        self.dpk_head_on_current_encoder = False
+        self.dpk_encoder_runtime_policy = 'none'
         object.__setattr__(self, '_dpk_model_ref', None)
         object.__setattr__(self, '_dpk_head_ref', None)
         self._last_pga_layer_outputs = []
@@ -3049,6 +3053,11 @@ class FullModel(nn.Module):
             _token_weight_uses_dpk(self.station_token_weight_mode)
             or _token_weight_uses_dpk(self.temporal_token_weight_mode)
         ):
+            if self.dpk_encoder_policy not in ('auto', 'separate', 'current'):
+                raise ValueError(
+                    "dpk_encoder_policy must be one of 'auto', 'separate', or 'current', "
+                    f"got {self.dpk_encoder_policy!r}."
+                )
             self._init_dpk_weight_model()
         if self.station_context_mode == 'gated_transformer_pre_readout':
             self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
@@ -3278,14 +3287,29 @@ class FullModel(nn.Module):
                 'max_abs_diff': float('nan'),
                 'first_mismatch': 'comparison_disabled_or_unavailable',
             }
-        if self.dpk_share_encoder_if_identical and self.dpk_encoder_consistency.get('all_equal', False):
+        encoder_equal = bool(self.dpk_encoder_consistency.get('all_equal', False))
+        if self.dpk_share_encoder_if_identical and encoder_equal:
             object.__setattr__(self, '_dpk_head_ref', dpk_model[1])
             object.__setattr__(self, '_dpk_model_ref', None)
             self.dpk_encoder_shared = True
+            self.dpk_head_on_current_encoder = False
+            self.dpk_encoder_runtime_policy = 'shared'
+        elif self.dpk_encoder_policy == 'current':
+            # Keep only the DPK task head and feed it the current encoder's
+            # detached features. This is an explicit memory-saving fallback for
+            # 16GB GPUs; diagnostics still record that the encoder weights did
+            # not match if the DPK fine-tuned encoder differs from MAE.
+            object.__setattr__(self, '_dpk_head_ref', dpk_model[1])
+            object.__setattr__(self, '_dpk_model_ref', None)
+            self.dpk_encoder_shared = False
+            self.dpk_head_on_current_encoder = True
+            self.dpk_encoder_runtime_policy = 'current'
         else:
             object.__setattr__(self, '_dpk_model_ref', dpk_model)
             object.__setattr__(self, '_dpk_head_ref', None)
             self.dpk_encoder_shared = False
+            self.dpk_head_on_current_encoder = False
+            self.dpk_encoder_runtime_policy = 'separate'
 
     @staticmethod
     def _module_device(module, fallback):
@@ -3412,6 +3436,11 @@ class FullModel(nn.Module):
                 self._last_diag[name] = ref_tensor.new_tensor(float(value)).detach()
         scalar('dpk_encoder_all_equal', info.get('all_equal', False))
         scalar('dpk_encoder_shared', self.dpk_encoder_shared)
+        scalar('dpk_head_on_current_encoder', self.dpk_head_on_current_encoder)
+        policy_codes = {'auto': 0.0, 'separate': 1.0, 'current': 2.0}
+        runtime_policy_codes = {'none': 0.0, 'shared': 1.0, 'separate': 2.0, 'current': 3.0}
+        scalar('dpk_encoder_policy', policy_codes.get(self.dpk_encoder_policy, -1.0))
+        scalar('dpk_encoder_runtime_policy', runtime_policy_codes.get(self.dpk_encoder_runtime_policy, -1.0))
         scalar('dpk_encoder_common_tensors', info.get('common_tensors', 0))
         scalar('dpk_encoder_equal_tensors', info.get('equal_tensors', 0))
         scalar('dpk_encoder_missing_in_current', info.get('missing_in_current', 0))
@@ -3835,12 +3864,20 @@ class FullModel(nn.Module):
         if needs_explicit_adapter:
             if not isinstance(self.waveform_model, nn.Sequential) or len(self.waveform_model) < 2:
                 raise ValueError('target temporal pooling requires waveform_model = encoder + adapter.')
-            features = self.waveform_model[0](waveform)
-            dpk_outputs = None
-            if (
+            needs_dpk = (
                 _token_weight_uses_dpk(self.station_token_weight_mode)
                 or _token_weight_uses_dpk(self.temporal_token_weight_mode)
-            ):
+            )
+            dpk_outputs = None
+            separate_dpk_model = (
+                needs_dpk
+                and getattr(self, '_dpk_model_ref', None) is not None
+                and getattr(self, '_dpk_head_ref', None) is None
+            )
+            if separate_dpk_model:
+                dpk_outputs = self._dpk_outputs(waveform, None)
+            features = self.waveform_model[0](waveform)
+            if needs_dpk and not separate_dpk_model:
                 dpk_outputs = self._dpk_outputs(waveform, features)
             feature_lengths = self._feature_token_lengths(features)
             station_token_weights = self._token_weights_for_lengths(
@@ -4700,6 +4737,7 @@ def build_transformer_model(max_stations,
                             dpk_checkpoint_path=None,
                             dpk_share_encoder_if_identical=True,
                             dpk_compare_encoder=True,
+                            dpk_encoder_policy='auto',
                             dpk_weight_temperature=1.0,
                             dpk_weight_resample='max',
                             station_residual_mode='off',
@@ -5039,6 +5077,7 @@ def build_transformer_model(max_stations,
                              dpk_checkpoint_path=dpk_checkpoint_path,
                              dpk_share_encoder_if_identical=dpk_share_encoder_if_identical,
                              dpk_compare_encoder=dpk_compare_encoder,
+                             dpk_encoder_policy=dpk_encoder_policy,
                              dpk_weight_temperature=dpk_weight_temperature,
                              dpk_weight_resample=dpk_weight_resample,
                              station_residual_mode=station_residual_mode,

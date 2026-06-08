@@ -114,6 +114,7 @@
         "dpk_checkpoint_path": "/public/home/test_bigmodel/seismogram/mx/ckpt/1200m_dpk/mae_init/720w_sft/model-4-latest.pth",
         "dpk_share_encoder_if_identical": true,
         "dpk_compare_encoder": true,
+        "dpk_encoder_policy": "current",
         "dpk_weight_temperature": 1.0,
         "dpk_weight_resample": "max",
         "use_pga_temporal_residual": false,
@@ -213,7 +214,7 @@
         "generator_params": [
             {
                 "key": "Magnitude",
-                "batch_size": 16,
+                "batch_size": 8,
                 "min_upsample_magnitude": 8,
                 "magnitude_resampling": 1.0,
                 "translate": false,

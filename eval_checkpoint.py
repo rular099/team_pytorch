@@ -550,6 +550,8 @@ def _print_dpk_event_partition_diagnostics(raw_model, inputs_dev, valid_idx):
             '  DPK encoder equal/shared: '
             f'all_equal={consistency.get("all_equal")}, '
             f'shared={getattr(raw_model, "dpk_encoder_shared", False)}, '
+            f'head_on_current={getattr(raw_model, "dpk_head_on_current_encoder", False)}, '
+            f'runtime_policy={getattr(raw_model, "dpk_encoder_runtime_policy", "none")}, '
             f'max_abs_diff={consistency.get("max_abs_diff")}, '
             f'first_mismatch={consistency.get("first_mismatch")}'
         )
