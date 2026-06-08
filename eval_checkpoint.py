@@ -20,6 +20,7 @@ import os
 import sys
 import numpy as np
 import torch
+import torch.nn.functional as F
 from collections import defaultdict
 
 _dir = os.path.dirname(os.path.abspath(__file__))
@@ -372,6 +373,206 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
     return datasets
 
 
+def _pairwise_cosine_summary(vectors):
+    if vectors.ndim != 2 or vectors.shape[0] <= 1:
+        return None
+    vectors = vectors.float()
+    normed = vectors / (vectors.norm(dim=-1, keepdim=True) + 1e-8)
+    cos_sim = normed @ normed.T
+    mask = ~torch.eye(cos_sim.shape[0], dtype=bool, device=cos_sim.device)
+    off_diag = cos_sim[mask]
+    if off_diag.numel() == 0:
+        return None
+    return off_diag.min().item(), off_diag.max().item(), off_diag.mean().item()
+
+
+def _print_pairwise_cosine(label, vectors, indent='  '):
+    summary = _pairwise_cosine_summary(vectors)
+    if summary is None:
+        return
+    mn, mx, mean = summary
+    print(f'{indent}{label}: min={mn:.4f}, max={mx:.4f}, mean={mean:.4f}')
+
+
+def _print_tensor_station_similarity(stacked):
+    """Print inter-station similarity for tensor features of shape S x ... ."""
+    n_station = stacked.shape[0]
+    if n_station <= 1:
+        return
+    flat = stacked.reshape(n_station, -1)
+    flat_norm = flat.norm(dim=-1)
+    print(
+        f'  flat L2 norm: min={flat_norm.min():.4f}, '
+        f'max={flat_norm.max():.4f}, mean={flat_norm.mean():.4f}'
+    )
+    _print_pairwise_cosine('Cosine similarity flat (off-diag)', flat)
+
+    flat_var = flat.var(dim=0)
+    print(
+        f'  Flat per-element variance: min={flat_var.min():.6f}, '
+        f'max={flat_var.max():.6f}, mean={flat_var.mean():.6f}'
+    )
+
+    if stacked.ndim == 2:
+        return
+
+    # For DiTing encoder output this is usually S x C x T. Report several
+    # projections so a high flat cosine is not mistaken for a complete diagnosis.
+    gap_last = stacked.mean(dim=-1).reshape(n_station, -1)
+    _print_pairwise_cosine('Cosine similarity GAP-last (off-diag)', gap_last)
+    if stacked.ndim >= 3:
+        gap_penultimate = stacked.mean(dim=-2).reshape(n_station, -1)
+        _print_pairwise_cosine('Cosine similarity GAP-penultimate (off-diag)', gap_penultimate)
+
+    token_view = stacked.flatten(start_dim=1, end_dim=-2).transpose(1, 2)
+    token_means = []
+    token_mins = []
+    token_maxs = []
+    for token_idx in range(token_view.shape[1]):
+        summary = _pairwise_cosine_summary(token_view[:, token_idx, :])
+        if summary is None:
+            continue
+        token_mins.append(summary[0])
+        token_maxs.append(summary[1])
+        token_means.append(summary[2])
+    if token_means:
+        token_means_t = torch.tensor(token_means)
+        token_mins_t = torch.tensor(token_mins)
+        token_maxs_t = torch.tensor(token_maxs)
+        print(
+            '  Token-wise cosine mean over last axis: '
+            f'min_token_mean={token_means_t.min():.4f}, '
+            f'max_token_mean={token_means_t.max():.4f}, '
+            f'mean_token_mean={token_means_t.mean():.4f}, '
+            f'global_min={token_mins_t.min():.4f}, '
+            f'global_max={token_maxs_t.max():.4f}'
+        )
+
+
+def _feature_to_token_view(feature, encoder_dim=None):
+    """Return a feature as (T,C) for per-token station diagnostics."""
+    feat = feature.squeeze(0).detach().float().cpu()
+    if feat.dim() != 2:
+        return None
+    if encoder_dim is not None:
+        if feat.shape[-1] == encoder_dim:
+            return feat
+        if feat.shape[0] == encoder_dim:
+            return feat.transpose(0, 1).contiguous()
+    # DiTing f2/f3/f4 are usually C x T and x is usually T x C.
+    if feat.shape[0] > feat.shape[1]:
+        return feat.transpose(0, 1).contiguous()
+    return feat
+
+
+def _resample_eventness(eventness, length):
+    eventness = eventness.detach().float().cpu().reshape(1, 1, -1)
+    if eventness.shape[-1] == length:
+        return eventness.reshape(-1)
+    return F.adaptive_max_pool1d(eventness, int(length)).reshape(-1)
+
+
+def _weighted_token_summary(tokens, weights):
+    weights = weights.to(tokens.dtype).clamp_min(1e-8)
+    return (tokens * weights[:, None]).sum(dim=0) / weights.sum().clamp_min(1e-8)
+
+
+def _effective_count_from_weights(weights):
+    probs = weights.float().clamp_min(1e-8)
+    probs = probs / probs.sum().clamp_min(1e-8)
+    entropy = -(probs * probs.log()).sum()
+    return torch.exp(entropy)
+
+
+@torch.no_grad()
+def _print_dpk_event_partition_diagnostics(raw_model, inputs_dev, valid_idx):
+    has_dpk = (
+        getattr(raw_model, '_dpk_head_ref', None) is not None
+        or getattr(raw_model, '_dpk_model_ref', None) is not None
+    )
+    if not has_dpk:
+        return
+    if not isinstance(raw_model.waveform_model, torch.nn.Sequential) or len(raw_model.waveform_model) < 2:
+        return
+
+    waveform_inp = inputs_dev[0]
+    station_valid = inputs_dev[2].bool()
+    waveform_norm = raw_model._normalize(waveform_inp.clone(), mode='std', axis=3)
+    waveforms_masked = waveform_norm * station_valid[:, :, None, None].float()
+    adapter = raw_model.waveform_model[1]
+    encoder_dim = getattr(adapter, 'encoder_dim', None)
+
+    names = ['f2', 'f3', 'f4', 'x']
+    event_summaries = {}
+    non_event_summaries = {}
+    residual_summaries = {}
+    same_station_cos = {}
+    effective_counts = {}
+    shapes = {}
+
+    for station_idx in valid_idx:
+        features = raw_model.waveform_model[0](waveforms_masked[:, station_idx, :, :])
+        dpk_outputs = raw_model._dpk_outputs(waveforms_masked[:, station_idx, :, :], features)
+        if not isinstance(dpk_outputs, dict) or 'det' not in dpk_outputs:
+            continue
+        det = dpk_outputs['det'].detach().float().cpu()
+        if det.dim() == 3 and det.shape[1] == 1:
+            det = det.squeeze(1)
+        det = det.squeeze(0)
+        feature_list = list(features) if isinstance(features, (list, tuple)) else [features]
+        for idx, feature in enumerate(feature_list):
+            name = names[idx] if idx < len(names) else f'feature{idx}'
+            tokens = _feature_to_token_view(feature, encoder_dim=encoder_dim)
+            if tokens is None:
+                continue
+            event_w = _resample_eventness(det, tokens.shape[0]).clamp(0.0, 1.0)
+            non_event_w = (1.0 - event_w).clamp_min(1e-8)
+            event_vec = _weighted_token_summary(tokens, event_w)
+            non_event_vec = _weighted_token_summary(tokens, non_event_w)
+            event_summaries.setdefault(name, []).append(event_vec)
+            non_event_summaries.setdefault(name, []).append(non_event_vec)
+            residual_summaries.setdefault(name, []).append(event_vec - non_event_vec)
+            same_station_cos.setdefault(name, []).append(
+                torch.nn.functional.cosine_similarity(event_vec, non_event_vec, dim=0)
+            )
+            effective_counts.setdefault(name, []).append(_effective_count_from_weights(event_w))
+            shapes[name] = tuple(tokens.shape)
+
+    if not event_summaries:
+        return
+
+    print(f'\n{"="*60}')
+    print('  DPK eventness partition diagnostics (1 sample)')
+    print(f'{"="*60}')
+    consistency = getattr(raw_model, 'dpk_encoder_consistency', None)
+    if isinstance(consistency, dict):
+        print(
+            '  DPK encoder equal/shared: '
+            f'all_equal={consistency.get("all_equal")}, '
+            f'shared={getattr(raw_model, "dpk_encoder_shared", False)}, '
+            f'max_abs_diff={consistency.get("max_abs_diff")}, '
+            f'first_mismatch={consistency.get("first_mismatch")}'
+        )
+    for name in sorted(event_summaries.keys()):
+        event_stack = torch.stack(event_summaries[name])
+        non_event_stack = torch.stack(non_event_summaries[name])
+        residual_stack = torch.stack(residual_summaries[name])
+        eff = torch.stack(effective_counts[name])
+        same_cos = torch.stack(same_station_cos[name])
+        print(f'\n--- {name} eventness partitions, token_view_shape={shapes.get(name)} ---')
+        print(
+            f'  event prior effective tokens: min={eff.min():.2f}, '
+            f'max={eff.max():.2f}, mean={eff.mean():.2f}'
+        )
+        _print_pairwise_cosine('event-weighted station cosine', event_stack, indent='  ')
+        _print_pairwise_cosine('non-event-weighted station cosine', non_event_stack, indent='  ')
+        _print_pairwise_cosine('event-minus-non-event residual station cosine', residual_stack, indent='  ')
+        print(
+            '  same-station event vs non-event cosine: '
+            f'min={same_cos.min():.4f}, max={same_cos.max():.4f}, mean={same_cos.mean():.4f}'
+        )
+
+
 def diagnose_diting_features(model, dataset, device):
     """Check whether diting produces distinct features per station."""
     raw_model = model.module if hasattr(model, 'module') else model
@@ -438,23 +639,7 @@ def diagnose_diting_features(model, dataset, device):
             print(f'  output shape per station: {feats[0].shape}')
             print(f'  stacked shape: {stacked.shape}')
 
-            # L2 norms
-            norms = stacked.norm(dim=-1)
-            print(f'  L2 norm: min={norms.min():.4f}, max={norms.max():.4f}, mean={norms.mean():.4f}')
-
-            # Pairwise cosine similarity
-            if stacked.ndim == 2 and stacked.shape[0] > 1:
-                normed = stacked / (stacked.norm(dim=-1, keepdim=True) + 1e-8)
-                cos_sim = normed @ normed.T
-                # Exclude diagonal
-                n = cos_sim.shape[0]
-                mask = ~torch.eye(n, dtype=bool)
-                off_diag = cos_sim[mask]
-                print(f'  Cosine similarity (off-diag): min={off_diag.min():.4f}, max={off_diag.max():.4f}, mean={off_diag.mean():.4f}')
-
-                # Per-dim variance across stations
-                var_per_dim = stacked.var(dim=0)
-                print(f'  Per-dim variance: min={var_per_dim.min():.6f}, max={var_per_dim.max():.6f}, mean={var_per_dim.mean():.6f}')
+            _print_tensor_station_similarity(stacked)
         elif isinstance(feats[0], (list, tuple)):
             print(f'  output is list of {len(feats[0])} elements')
             for j in range(len(feats[0])):
@@ -467,19 +652,12 @@ def diagnose_diting_features(model, dataset, device):
                     elems = [feats[s][j] for s in range(len(feats))]
                     # Flatten each to 1D: (C, T) -> (C*T)
                     flat = torch.stack([e.squeeze(0).flatten() for e in elems])  # (n_stations, C*T)
-                    normed = flat / (flat.norm(dim=-1, keepdim=True) + 1e-8)
-                    cos_sim = normed @ normed.T
-                    n = cos_sim.shape[0]
-                    mask = ~torch.eye(n, dtype=bool)
-                    off_diag = cos_sim[mask]
+                    _print_pairwise_cosine('cosine sim (flat)', flat, indent='        ')
                     # Also try GAP: average over temporal dim, then cosine sim
                     gap = torch.stack([e.squeeze(0).mean(dim=-1) for e in elems])  # (n_stations, C)
-                    gap_normed = gap / (gap.norm(dim=-1, keepdim=True) + 1e-8)
-                    gap_cos = gap_normed @ gap_normed.T
-                    gap_off = gap_cos[mask]
-                    print(f'        cosine sim (flat): min={off_diag.min():.4f}, max={off_diag.max():.4f}, mean={off_diag.mean():.4f}')
-                    print(f'        cosine sim (GAP):  min={gap_off.min():.4f}, max={gap_off.max():.4f}, mean={gap_off.mean():.4f}')
+                    _print_pairwise_cosine('cosine sim (GAP)', gap, indent='        ')
 
+    _print_dpk_event_partition_diagnostics(raw_model, inputs_dev, valid_idx)
     print()
 
 

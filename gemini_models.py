@@ -4,10 +4,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+from argparse import Namespace
 
 from mup import MuReadout, set_base_shapes
 
 from dtbench.models.diting.models.vit_adapter import ViTAdapter
+from dtbench.models.diting.models.head import MuHead_TaskSeparatedUPerHead_new
 from dtbench.models.diting.models.backbone_ablation import (
     Encoder_baseline_llama,
     get_encoder_size_dict,
@@ -24,6 +26,33 @@ def gelu(x):
 
 def normalize(s):
     return s.strip().lower().replace("-", "_")
+
+
+def _canonical_token_weight_mode(mode):
+    mode = normalize(str(mode or "none"))
+    aliases = {
+        "off": "none",
+        "no": "none",
+        "false": "none",
+        "oracle": "oracle_nonzero",
+        "oracle_mask": "oracle_nonzero",
+        "nonzero": "oracle_nonzero",
+        "rms": "energy",
+        "dpk_det": "dpk_event",
+        "dpk_eventness": "dpk_event",
+        "dpk_det_ppk_spk": "dpk_all",
+        "dpk_event_bias": "dpk_event",
+        "dpk_all_bias": "dpk_all",
+    }
+    return aliases.get(mode, mode)
+
+
+def _token_weight_uses_dpk(mode):
+    return _canonical_token_weight_mode(mode).startswith("dpk_")
+
+
+def _token_weight_is_active(mode):
+    return _canonical_token_weight_mode(mode) not in ("none", "learned")
 
 def get_activation(activation: str):
     act = normalize(activation)
@@ -846,13 +875,16 @@ class TargetConditionedTemporalPool(nn.Module):
     """Target/event-conditioned pooling over per-station DiTing time tokens."""
 
     def __init__(self, token_dim, emb_dim, hidden_dim=256, geom_hidden_dim=128,
-                 time_basis=32, temporal_token_dim=None):
+                 time_basis=32, temporal_token_dim=None, token_weight_floor=1e-6,
+                 token_weight_scale=1.0):
         super().__init__()
         self.input_token_dim = int(token_dim)
         self.token_dim = self.input_token_dim if temporal_token_dim is None else int(temporal_token_dim)
         self.emb_dim = int(emb_dim)
         self.hidden_dim = int(hidden_dim)
         self.time_basis = int(time_basis)
+        self.token_weight_floor = float(token_weight_floor)
+        self.token_weight_scale = float(token_weight_scale)
         if self.input_token_dim < 1:
             raise ValueError(f'token_dim must be positive, got {token_dim}')
         if self.token_dim < 1:
@@ -883,6 +915,10 @@ class TargetConditionedTemporalPool(nn.Module):
         nn.init.zeros_(self.out_proj.bias)
         self._last_temporal_entropy = None
         self._last_station_weight_entropy = None
+        self._last_temporal_effective_token_count = None
+        self._last_temporal_prior_effective_token_count = None
+        self._last_temporal_prior_mean = None
+        self._last_temporal_prior_std = None
 
     def compress_tokens(self, station_tokens, normalize=True):
         """Project raw DiTing tokens before station stacking to control memory."""
@@ -913,8 +949,24 @@ class TargetConditionedTemporalPool(nn.Module):
         station = station_coords[:, None, :, :].expand(-1, query_coords.shape[1], -1, -1)
         return torch.cat([query, station, rel, dist], dim=-1)
 
+    @staticmethod
+    def _coerce_station_token_weight(token_weight, token_len, device, dtype):
+        if token_weight is None:
+            return None
+        weight = token_weight.to(device=device, dtype=dtype)
+        if weight.dim() == 4 and weight.shape[-1] == 1:
+            weight = weight.squeeze(-1)
+        if weight.dim() != 3:
+            raise ValueError(f"station_token_weights must have shape (B,S,T), got {tuple(weight.shape)}")
+        if weight.shape[-1] != token_len:
+            flat = weight.reshape(-1, 1, weight.shape[-1])
+            flat = F.interpolate(flat, size=token_len, mode="linear", align_corners=False)
+            weight = flat.reshape(weight.shape[0], weight.shape[1], token_len)
+        return weight
+
     def forward(self, query, station_tokens, station_emb, station_valid,
-                query_coords, station_coords, event_emb, station_attn=None):
+                query_coords, station_coords, event_emb, station_attn=None,
+                station_token_weights=None):
         if station_tokens is None:
             raise ValueError('station temporal tokens are required for target-conditioned temporal pooling.')
         if event_emb is None:
@@ -937,6 +989,24 @@ class TargetConditionedTemporalPool(nn.Module):
         time_features = self._time_features(token_len, scores.device, scores.dtype)
         time_query = self.time_query_proj(pair).to(scores.dtype)
         scores = scores + torch.einsum('bnsr,lr->bnsl', time_query, time_features)
+        token_prior = self._coerce_station_token_weight(
+            station_token_weights,
+            token_len,
+            scores.device,
+            scores.dtype,
+        )
+        if token_prior is not None:
+            token_prior = token_prior.clamp_min(self.token_weight_floor)
+            scores = scores + self.token_weight_scale * torch.log(token_prior)[:, None, :, :]
+            prior_prob = token_prior / token_prior.sum(dim=-1, keepdim=True).clamp_min(self.token_weight_floor)
+            prior_entropy = -(prior_prob * prior_prob.clamp_min(1e-8).log()).sum(dim=-1)
+            self._last_temporal_prior_effective_token_count = torch.exp(prior_entropy).mean().detach()
+            self._last_temporal_prior_mean = token_prior.mean().detach()
+            self._last_temporal_prior_std = token_prior.std(unbiased=False).detach()
+        else:
+            self._last_temporal_prior_effective_token_count = None
+            self._last_temporal_prior_mean = None
+            self._last_temporal_prior_std = None
 
         station_mask = station_valid.bool()[:, None, :, None]
         scores = scores.masked_fill(~station_mask, -1e6)
@@ -955,6 +1025,9 @@ class TargetConditionedTemporalPool(nn.Module):
         self._last_temporal_entropy = (
             -(temporal_weights.clamp_min(1e-8) * temporal_weights.clamp_min(1e-8).log()).sum(dim=-1).mean().detach()
         )
+        self._last_temporal_effective_token_count = torch.exp(
+            -(temporal_weights.clamp_min(1e-8) * temporal_weights.clamp_min(1e-8).log()).sum(dim=-1)
+        ).mean().detach()
         self._last_station_weight_entropy = (
             -(station_weights.clamp_min(1e-8) * station_weights.clamp_min(1e-8).log()).sum(dim=-1).mean().detach()
         )
@@ -966,7 +1039,8 @@ class PGATemporalResidualHead(nn.Module):
 
     def __init__(self, token_dim, emb_dim, output_mlp_dims, activation='relu',
                  hidden_dim=256, geom_hidden_dim=128, time_basis=32,
-                 temporal_token_dim=None, zero_init=True):
+                 temporal_token_dim=None, zero_init=True, token_weight_floor=1e-6,
+                 token_weight_scale=1.0):
         super().__init__()
         self.temporal_pool = TargetConditionedTemporalPool(
             token_dim=token_dim,
@@ -975,6 +1049,8 @@ class PGATemporalResidualHead(nn.Module):
             geom_hidden_dim=geom_hidden_dim,
             time_basis=time_basis,
             temporal_token_dim=temporal_token_dim,
+            token_weight_floor=token_weight_floor,
+            token_weight_scale=token_weight_scale,
         )
         self.mlp = MLP((emb_dim,), output_mlp_dims, activation=activation)
         self.output_model = PointOutput((output_mlp_dims[-1],), d=1, bias_mu=0, activation=None)
@@ -987,7 +1063,8 @@ class PGATemporalResidualHead(nn.Module):
         return self.temporal_pool.compress_tokens(station_tokens, normalize=False)
 
     def forward(self, query, station_tokens, station_emb, station_valid,
-                query_coords, station_coords, event_emb=None, station_attn=None):
+                query_coords, station_coords, event_emb=None, station_attn=None,
+                station_token_weights=None):
         context = self.temporal_pool(
             query,
             station_tokens,
@@ -997,6 +1074,7 @@ class PGATemporalResidualHead(nn.Module):
             station_coords,
             event_emb,
             station_attn=station_attn,
+            station_token_weights=station_token_weights,
         )
         delta = self.output_model(self.mlp(context))
         self._last_delta = delta
@@ -1090,7 +1168,7 @@ class LayerwiseStationTargetReadout(nn.Module):
         self._last_station_attentions = []
 
     def forward(self, query, station_emb, station_valid, query_coords=None, station_coords=None,
-                station_tokens=None, event_emb=None):
+                station_tokens=None, event_emb=None, station_token_weights=None):
         station_state = station_emb
         base_query = query
         target_attentions = []
@@ -1135,6 +1213,7 @@ class LayerwiseStationTargetReadout(nn.Module):
                     station_coords,
                     event_emb,
                     station_attn=attn,
+                    station_token_weights=station_token_weights,
                 )
                 query = query + self.temporal_gates[idx] * temporal_delta
             layer_outputs.append(query)
@@ -1666,6 +1745,10 @@ class AttentionPool1d(nn.Module):
         self.key_norm = nn.LayerNorm(channels)
         self.out_norm = nn.LayerNorm(channels)
         self._last_attention = None
+        self._last_effective_token_count = None
+        self._last_prior_effective_token_count = None
+        self._last_prior_mean = None
+        self._last_prior_std = None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -1675,7 +1758,28 @@ class AttentionPool1d(nn.Module):
         nn.init.ones_(self.out_norm.weight)
         nn.init.zeros_(self.out_norm.bias)
 
-    def forward(self, x, query_bias=None):
+    @staticmethod
+    def _coerce_token_weight(token_weight, token_len, device, dtype):
+        if token_weight is None:
+            return None
+        weight = token_weight.to(device=device, dtype=dtype)
+        if weight.dim() == 3 and weight.shape[-1] == 1:
+            weight = weight.squeeze(-1)
+        if weight.dim() == 3 and weight.shape[1] == 1:
+            weight = weight.squeeze(1)
+        if weight.dim() != 2:
+            raise ValueError(f"token_weight must have shape (B,T), got {tuple(weight.shape)}")
+        if weight.shape[1] != token_len:
+            weight = F.interpolate(
+                weight.unsqueeze(1),
+                size=token_len,
+                mode="linear",
+                align_corners=False,
+            ).squeeze(1)
+        return weight
+
+    def forward(self, x, query_bias=None, token_weight=None, token_weight_floor=1e-6,
+                token_weight_scale=1.0):
         # x: (B, C, T). Return Q pooled vectors flattened to (B, Q*C).
         tokens = x.transpose(1, 2).contiguous().float()  # (B, T, C)
         keys = self.key_norm(tokens)
@@ -1685,12 +1789,27 @@ class AttentionPool1d(nn.Module):
             query = self.query.unsqueeze(0) + query_bias.to(device=self.query.device, dtype=self.query.dtype)
             scores = torch.einsum('btc,bqc->btq', keys, query)
         scores = scores / max(self.temperature, 1e-6)
+        prior = self._coerce_token_weight(token_weight, scores.shape[1], scores.device, scores.dtype)
+        if prior is not None:
+            prior = prior.clamp_min(float(token_weight_floor))
+            scores = scores + float(token_weight_scale) * torch.log(prior).unsqueeze(-1)
+            prior_prob = prior / prior.sum(dim=1, keepdim=True).clamp_min(float(token_weight_floor))
+            prior_entropy = -(prior_prob * prior_prob.clamp_min(1e-8).log()).sum(dim=1)
+            self._last_prior_effective_token_count = torch.exp(prior_entropy).mean().detach()
+            self._last_prior_mean = prior.mean().detach()
+            self._last_prior_std = prior.std(unbiased=False).detach()
+        else:
+            self._last_prior_effective_token_count = None
+            self._last_prior_mean = None
+            self._last_prior_std = None
         weights = torch.softmax(scores, dim=1)
         if self.dropout > 0:
             weights = F.dropout(weights, p=self.dropout, training=self.training)
         context = torch.einsum('btq,btc->bqc', weights, tokens)
         context = self.out_norm(context)
         self._last_attention = weights.detach()
+        entropy = -(weights.clamp_min(1e-8) * weights.clamp_min(1e-8).log()).sum(dim=1)
+        self._last_effective_token_count = torch.exp(entropy).mean().detach()
         return context.reshape(context.shape[0], self.num_queries * self.channels)
 
 
@@ -2044,7 +2163,39 @@ class DitingStationAdapter(nn.Module):
     def _apply_film_token_last(x, gamma, beta):
         return x * (1.0 + gamma[:, None, :]) + beta[:, None, :]
 
-    def forward(self, inputs, station_context=None):
+    @staticmethod
+    def _token_weight(token_weights, index, name):
+        if token_weights is None:
+            return None
+        if isinstance(token_weights, dict):
+            return token_weights.get(name, token_weights.get(str(index), None))
+        if isinstance(token_weights, (list, tuple)):
+            if index < len(token_weights):
+                return token_weights[index]
+            return None
+        if index == 3:
+            return token_weights
+        return None
+
+    @staticmethod
+    def _pool_diag(prefix, pool, out):
+        diag = {}
+        eff = getattr(pool, '_last_effective_token_count', None)
+        prior_eff = getattr(pool, '_last_prior_effective_token_count', None)
+        prior_mean = getattr(pool, '_last_prior_mean', None)
+        prior_std = getattr(pool, '_last_prior_std', None)
+        if eff is not None:
+            diag[f'{prefix}_effective_token_count'] = eff
+        if prior_eff is not None:
+            diag[f'{prefix}_prior_effective_token_count'] = prior_eff
+        if prior_mean is not None:
+            diag[f'{prefix}_prior_mean'] = prior_mean
+        if prior_std is not None:
+            diag[f'{prefix}_prior_std'] = prior_std
+        return diag
+
+    def forward(self, inputs, station_context=None, token_weights=None,
+                token_weight_floor=1e-6, token_weight_scale=1.0):
         f2, f3, f4, x = inputs
         base_query_bias, branch_query_bias, film = self._metadata_outputs(station_context)
         if film is not None:
@@ -2054,15 +2205,58 @@ class DitingStationAdapter(nn.Module):
             f4 = self._apply_film_channel_first(f4, gamma, beta)
             x = self._apply_film_token_last(x, gamma, beta)
         x = x.transpose(1, 2).contiguous()
-        base = self.base_proj(self.base_pool(x, query_bias=base_query_bias))
+        w_f2 = self._token_weight(token_weights, 0, 'f2')
+        w_f3 = self._token_weight(token_weights, 1, 'f3')
+        w_f4 = self._token_weight(token_weights, 2, 'f4')
+        w_x = self._token_weight(token_weights, 3, 'x')
+        base = self.base_proj(self.base_pool(
+            x,
+            query_bias=base_query_bias,
+            token_weight=w_x,
+            token_weight_floor=token_weight_floor,
+            token_weight_scale=token_weight_scale,
+        ))
 
-        branch_f2 = self.pool_f2(self.refine_f2(self.proj_f2(f2)), query_bias=branch_query_bias)
-        branch_f3 = self.pool_f3(self.refine_f3(self.proj_f3(f3)), query_bias=branch_query_bias)
-        branch_f4 = self.pool_f4(self.refine_f4(self.proj_f4(f4)), query_bias=branch_query_bias)
-        branch_x = self.pool_x(self.refine_x(self.proj_x(x)), query_bias=branch_query_bias)
+        branch_f2 = self.pool_f2(
+            self.refine_f2(self.proj_f2(f2)),
+            query_bias=branch_query_bias,
+            token_weight=w_f2,
+            token_weight_floor=token_weight_floor,
+            token_weight_scale=token_weight_scale,
+        )
+        branch_f3 = self.pool_f3(
+            self.refine_f3(self.proj_f3(f3)),
+            query_bias=branch_query_bias,
+            token_weight=w_f3,
+            token_weight_floor=token_weight_floor,
+            token_weight_scale=token_weight_scale,
+        )
+        branch_f4 = self.pool_f4(
+            self.refine_f4(self.proj_f4(f4)),
+            query_bias=branch_query_bias,
+            token_weight=w_f4,
+            token_weight_floor=token_weight_floor,
+            token_weight_scale=token_weight_scale,
+        )
+        branch_x = self.pool_x(
+            self.refine_x(self.proj_x(x)),
+            query_bias=branch_query_bias,
+            token_weight=w_x,
+            token_weight_floor=token_weight_floor,
+            token_weight_scale=token_weight_scale,
+        )
 
         pooled = torch.cat([branch_f2, branch_f3, branch_f4, branch_x], dim=-1)
         delta = self.proj_out(pooled.float())
+        self._last_token_pool_diag = {}
+        for prefix, pool in (
+            ('base_x', self.base_pool),
+            ('f2', self.pool_f2),
+            ('f3', self.pool_f3),
+            ('f4', self.pool_f4),
+            ('x', self.pool_x),
+        ):
+            self._last_token_pool_diag.update(self._pool_diag(prefix, pool, delta))
         return self.norm(base + self.delta_scale * delta)
 
     def temporal_tokens(self, inputs):
@@ -2093,6 +2287,10 @@ class BackboneAttentionPoolAdapter(nn.Module):
         self.delta_scale = nn.Parameter(torch.tensor(0.1, dtype=torch.float32))
         self.norm = nn.LayerNorm(output_dim)
         self._last_attention = None
+        self._last_effective_token_count = None
+        self._last_prior_effective_token_count = None
+        self._last_prior_mean = None
+        self._last_prior_std = None
         self.reset_parameters()
 
     def _init_preserving_path(self):
@@ -2119,7 +2317,7 @@ class BackboneAttentionPoolAdapter(nn.Module):
         temperature = max(float(self.attn_temperature), 1e-4)
         return torch.softmax(scores / temperature, dim=1)
 
-    def forward(self, x):
+    def forward(self, x, token_weight=None, token_weight_floor=1e-6, token_weight_scale=1.0, **kwargs):
         if x.dim() != 3:
             raise ValueError(f"Expected backbone features with 3 dims, got shape {tuple(x.shape)}")
         if x.shape[1] == self.encoder_dim:
@@ -2133,8 +2331,28 @@ class BackboneAttentionPoolAdapter(nn.Module):
 
         base = self.base_proj(tokens.mean(dim=1).float())
         scores = torch.matmul(self.attn_norm(tokens).float(), self.attn_query.float())
+        prior = AttentionPool1d._coerce_token_weight(
+            token_weight,
+            scores.shape[1],
+            scores.device,
+            scores.dtype,
+        )
+        if prior is not None:
+            prior = prior.clamp_min(float(token_weight_floor))
+            scores = scores + float(token_weight_scale) * torch.log(prior)
+            prior_prob = prior / prior.sum(dim=1, keepdim=True).clamp_min(float(token_weight_floor))
+            prior_entropy = -(prior_prob * prior_prob.clamp_min(1e-8).log()).sum(dim=1)
+            self._last_prior_effective_token_count = torch.exp(prior_entropy).mean().detach()
+            self._last_prior_mean = prior.mean().detach()
+            self._last_prior_std = prior.std(unbiased=False).detach()
+        else:
+            self._last_prior_effective_token_count = None
+            self._last_prior_mean = None
+            self._last_prior_std = None
         weights = self._masked_attention_weights(scores)
         self._last_attention = weights.detach()
+        entropy = -(weights.clamp_min(1e-8) * weights.clamp_min(1e-8).log()).sum(dim=1)
+        self._last_effective_token_count = torch.exp(entropy).mean().detach()
         focus = torch.sum(tokens * weights.unsqueeze(-1).type_as(tokens), dim=1)
         delta = self.focus_proj(focus.float())
         return self.norm(base + self.delta_scale * delta)
@@ -2423,6 +2641,142 @@ def clip_magnitude_mixture(mixture_output, mag_min=-2.0, mag_max=10.0):
     clipped[..., 1] = np.clip(clipped[..., 1], mag_min, mag_max)
     return clipped
 
+
+def _make_dpk_args(checkpoint_path):
+    args = Namespace()
+    args.pretrained = os.path.abspath(os.path.expanduser(os.path.expandvars(checkpoint_path)))
+    args.seed = 0
+    args.norm_layer = 'rmsnorm'
+    args.xattn = False
+    args.patch_size = 50
+    args.head_drop_rate = 0
+    args.drop_path = 0
+    args.in_samples = 10000
+    args.base_width = 256
+    args.target_width = 1792
+    args.init_std = 0.16
+    args.input_mult = 10.0
+    args.attn_mult = 32.0
+    args.output_mult = 16.0
+    args.num_interactions = 4
+    args.out_channels = 256
+    args.pale_size = 5
+    args.stem_convKs = 3
+    args.ffn_convKS = 3
+    args.head_convKS = 3
+    args.cpe_kernel_size = 3
+    args.fpn_convKS = 3
+    args.aggregate_convKS = 3
+    args.loss_type = 'bce'
+    args.reuse_ppm = True
+    args.add_vit_feature = True
+    args.use_extra_extractor = False
+    args.no_event_label = 'ignore'
+    args.default_label_dis = 500
+    args.downstream_task = 'det_ppk_spk'
+    args.dpk_head = 'vit_adapter_decoder_new'
+    args.num_aug = 4
+    args.random_crop_p = 0.15
+    args.use_deterministic = False
+    args.dropout = 0
+    args.augmentation = True
+    args.inter_mode = 'fpn_deep_5'
+    args.interaction_indexes = [[0, 6], [6, 12], [12, 18], [18, 24]]
+    return args
+
+
+def _create_dpk_model(args, encoder_size):
+    encoder = ViTAdapter(
+        encoder_size,
+        input_length=args.in_samples,
+        args=args,
+        add_vit_feature=args.add_vit_feature,
+        use_extra_extractor=args.use_extra_extractor,
+        out_x=True,
+    )
+    if hasattr(encoder.backbone, 'set_mask'):
+        encoder.backbone.set_mask(mask_ratio=0, mask_way=None)
+    head = MuHead_TaskSeparatedUPerHead_new(
+        encoder_dim=encoder.backbone.d_model,
+        args=args,
+    )
+    return nn.Sequential(encoder, head)
+
+
+def _load_dpk_model_from_checkpoint(checkpoint_path):
+    args = _make_dpk_args(checkpoint_path)
+    if not os.path.isfile(args.pretrained):
+        raise FileNotFoundError(f"DPK checkpoint not found: {args.pretrained}")
+    base_model = _create_dpk_model(
+        args,
+        get_encoder_size_dict(width=args.base_width, depth=24),
+    )
+    model = _create_dpk_model(
+        args,
+        get_encoder_size_dict(width=args.target_width, depth=24),
+    )
+    set_base_shapes(model, base_model)
+    checkpoint = torch.load(args.pretrained, map_location="cpu", weights_only=False)
+    if isinstance(checkpoint, dict):
+        if args.pretrained.endswith('.pt') and 'module' in checkpoint:
+            state_dict = checkpoint['module']
+        elif 'model_dict' in checkpoint:
+            state_dict = checkpoint['model_dict']
+        elif 'model_state_dict' in checkpoint:
+            state_dict = checkpoint['model_state_dict']
+        else:
+            state_dict = checkpoint
+    else:
+        state_dict = checkpoint
+    msg = model.load_state_dict(state_dict, strict=False)
+    for param in model.parameters():
+        param.requires_grad = False
+    model.eval()
+    return model, msg
+
+
+def _compare_state_dicts_exact(a, b):
+    a_sd = a.state_dict()
+    b_sd = b.state_dict()
+    a_keys = set(a_sd.keys())
+    b_keys = set(b_sd.keys())
+    common = sorted(a_keys & b_keys)
+    equal_count = 0
+    max_abs_diff = 0.0
+    first_mismatch = ''
+    shape_mismatch = 0
+    for key in common:
+        av = a_sd[key].detach().cpu()
+        bv = b_sd[key].detach().cpu()
+        if av.shape != bv.shape:
+            shape_mismatch += 1
+            if not first_mismatch:
+                first_mismatch = key
+            continue
+        if torch.equal(av, bv):
+            equal_count += 1
+        else:
+            diff = torch.max(torch.abs(av.float() - bv.float())).item()
+            max_abs_diff = max(max_abs_diff, diff)
+            if not first_mismatch:
+                first_mismatch = key
+    all_equal = (
+        len(a_keys - b_keys) == 0
+        and len(b_keys - a_keys) == 0
+        and shape_mismatch == 0
+        and equal_count == len(common)
+    )
+    return {
+        'all_equal': bool(all_equal),
+        'common_tensors': int(len(common)),
+        'equal_tensors': int(equal_count),
+        'missing_in_current': int(len(b_keys - a_keys)),
+        'missing_in_dpk': int(len(a_keys - b_keys)),
+        'shape_mismatch': int(shape_mismatch),
+        'max_abs_diff': float(max_abs_diff),
+        'first_mismatch': first_mismatch,
+    }
+
 def time_distributed_loss(y_true, y_pred, loss_func, norm=1, mean=True, summation=True, kwloss={}):
     seq_length = y_pred.shape[1]
     y_true = y_true.reshape(-1, (y_pred.shape[-1] - 1) // 2, 1)
@@ -2480,7 +2834,16 @@ class FullModel(nn.Module):
                  station_residual_init_gate=0.1,
                  station_residual_zero_init=False,
                  station_local_pga_aux=False,
-                 station_local_pga_aux_hidden_dim=128):
+                 station_local_pga_aux_hidden_dim=128,
+                 station_token_weight_mode='none',
+                 temporal_token_weight_mode='none',
+                 token_weight_floor=1e-6,
+                 token_weight_scale=1.0,
+                 dpk_checkpoint_path=None,
+                 dpk_share_encoder_if_identical=True,
+                 dpk_compare_encoder=True,
+                 dpk_weight_temperature=1.0,
+                 dpk_weight_resample='max'):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -2543,6 +2906,20 @@ class FullModel(nn.Module):
         self.station_residual_mode = station_residual_mode or 'off'
         self.station_residual_source = station_residual_source or 'wave'
         self.station_local_pga_aux_enabled = bool(station_local_pga_aux)
+        self.station_token_weight_mode = _canonical_token_weight_mode(station_token_weight_mode)
+        self.temporal_token_weight_mode = _canonical_token_weight_mode(temporal_token_weight_mode)
+        self.token_weight_floor = float(token_weight_floor)
+        self.token_weight_scale = float(token_weight_scale)
+        self.dpk_checkpoint_path = dpk_checkpoint_path
+        self.dpk_share_encoder_if_identical = bool(dpk_share_encoder_if_identical)
+        self.dpk_compare_encoder = bool(dpk_compare_encoder)
+        self.dpk_weight_temperature = max(float(dpk_weight_temperature), 1e-6)
+        self.dpk_weight_resample = normalize(dpk_weight_resample or 'max')
+        self.dpk_encoder_consistency = None
+        self.dpk_checkpoint_load_info = {}
+        self.dpk_encoder_shared = False
+        object.__setattr__(self, '_dpk_model_ref', None)
+        object.__setattr__(self, '_dpk_head_ref', None)
         self._last_pga_layer_outputs = []
         self._last_pga_temporal_base = None
         self._last_pga_temporal_delta = None
@@ -2618,8 +2995,6 @@ class FullModel(nn.Module):
             raise ValueError('pga_layerwise_refinement is implemented for point output_distribution only.')
         if self.pga_layerwise_refinement and len(self.pga_delta_mlps) != len(self.pga_delta_output_models):
             raise ValueError('pga_delta_mlps and pga_delta_output_models must have the same length.')
-        if self.pga_temporal_residual_head is not None and self.output_distribution != 'point':
-            raise ValueError('pga_temporal_residual_head is implemented for point output_distribution only.')
         if self.pga_temporal_residual_query_source not in ('readout', 'target_query'):
             raise ValueError(
                 "pga_temporal_residual_query_source must be 'readout' or 'target_query', "
@@ -2650,6 +3025,31 @@ class FullModel(nn.Module):
                 "station_residual_source must be 'raw' or 'wave', "
                 f"got {self.station_residual_source!r}."
             )
+        valid_token_weight_modes = (
+            'none',
+            'learned',
+            'oracle_nonzero',
+            'energy',
+            'dpk_event',
+            'dpk_all',
+            'dpk_event_learned',
+            'dpk_all_learned',
+        )
+        if self.station_token_weight_mode not in valid_token_weight_modes:
+            raise ValueError(
+                f"station_token_weight_mode must be one of {valid_token_weight_modes}, "
+                f"got {self.station_token_weight_mode!r}."
+            )
+        if self.temporal_token_weight_mode not in valid_token_weight_modes:
+            raise ValueError(
+                f"temporal_token_weight_mode must be one of {valid_token_weight_modes}, "
+                f"got {self.temporal_token_weight_mode!r}."
+            )
+        if (
+            _token_weight_uses_dpk(self.station_token_weight_mode)
+            or _token_weight_uses_dpk(self.temporal_token_weight_mode)
+        ):
+            self._init_dpk_weight_model()
         if self.station_context_mode == 'gated_transformer_pre_readout':
             self.station_context_gate = nn.Parameter(torch.tensor(float(station_context_gate_init)))
         else:
@@ -2855,6 +3255,171 @@ class FullModel(nn.Module):
         denom = mask_f.sum(dim=1, keepdim=True).clamp_min(1.0)
         center = (x * mask_f).sum(dim=1, keepdim=True) / denom
         return (x - center) * mask_f
+
+    def _init_dpk_weight_model(self):
+        if not self.dpk_checkpoint_path:
+            raise ValueError('DPK token weighting requires dpk_checkpoint_path.')
+        dpk_model, load_msg = _load_dpk_model_from_checkpoint(self.dpk_checkpoint_path)
+        self.dpk_checkpoint_load_info = {
+            'missing_keys': len(getattr(load_msg, 'missing_keys', []) or []),
+            'unexpected_keys': len(getattr(load_msg, 'unexpected_keys', []) or []),
+        }
+        current_encoder = self.waveform_model[0] if isinstance(self.waveform_model, nn.Sequential) else None
+        if current_encoder is not None and self.dpk_compare_encoder:
+            self.dpk_encoder_consistency = _compare_state_dicts_exact(current_encoder, dpk_model[0])
+        else:
+            self.dpk_encoder_consistency = {
+                'all_equal': False,
+                'common_tensors': 0,
+                'equal_tensors': 0,
+                'missing_in_current': 0,
+                'missing_in_dpk': 0,
+                'shape_mismatch': 0,
+                'max_abs_diff': float('nan'),
+                'first_mismatch': 'comparison_disabled_or_unavailable',
+            }
+        if self.dpk_share_encoder_if_identical and self.dpk_encoder_consistency.get('all_equal', False):
+            object.__setattr__(self, '_dpk_head_ref', dpk_model[1])
+            object.__setattr__(self, '_dpk_model_ref', None)
+            self.dpk_encoder_shared = True
+        else:
+            object.__setattr__(self, '_dpk_model_ref', dpk_model)
+            object.__setattr__(self, '_dpk_head_ref', None)
+            self.dpk_encoder_shared = False
+
+    @staticmethod
+    def _module_device(module, fallback):
+        if module is None:
+            return fallback
+        try:
+            return next(module.parameters()).device
+        except StopIteration:
+            return fallback
+
+    def _ensure_unregistered_module_device(self, module, device):
+        if module is None:
+            return None
+        if self._module_device(module, device) != device:
+            module.to(device)
+        module.eval()
+        return module
+
+    @staticmethod
+    def _feature_token_length(feature, encoder_dim=None):
+        if feature.dim() != 3:
+            raise ValueError(f"Expected 3D feature tensor, got {tuple(feature.shape)}")
+        if encoder_dim is not None and feature.shape[-1] == encoder_dim:
+            return feature.shape[1]
+        return feature.shape[-1]
+
+    def _feature_token_lengths(self, features):
+        adapter = self.waveform_model[1] if isinstance(self.waveform_model, nn.Sequential) and len(self.waveform_model) > 1 else None
+        encoder_dim = getattr(adapter, 'encoder_dim', None)
+        if isinstance(features, (list, tuple)):
+            return [self._feature_token_length(feat, encoder_dim=encoder_dim) for feat in features]
+        return [self._feature_token_length(features, encoder_dim=encoder_dim)]
+
+    def _resample_token_signal(self, signal, token_len, mode=None):
+        if signal.shape[-1] == token_len:
+            return signal
+        mode = self.dpk_weight_resample if mode is None else normalize(mode)
+        x = signal.unsqueeze(1).float()
+        if mode == 'avg':
+            out = F.adaptive_avg_pool1d(x, token_len)
+        elif mode == 'max':
+            out = F.adaptive_max_pool1d(x, token_len)
+        else:
+            raise ValueError(f"Unsupported token weight resample mode: {mode!r}")
+        return out.squeeze(1)
+
+    def _normalize_token_signal(self, signal):
+        signal = signal.float().clamp_min(self.token_weight_floor)
+        signal = signal / signal.mean(dim=-1, keepdim=True).clamp_min(self.token_weight_floor)
+        return signal.clamp_min(self.token_weight_floor)
+
+    def _dpk_outputs(self, waveform, features):
+        head = self._ensure_unregistered_module_device(getattr(self, '_dpk_head_ref', None), waveform.device)
+        model = self._ensure_unregistered_module_device(getattr(self, '_dpk_model_ref', None), waveform.device)
+        with torch.no_grad():
+            if head is not None:
+                if not isinstance(features, (list, tuple)):
+                    raise ValueError('Shared DPK head requires ViTAdapter feature list.')
+                return head([feat.detach() for feat in features])
+            if model is not None:
+                return model(waveform.detach())
+        return None
+
+    def _dpk_signal(self, dpk_outputs, mode):
+        if dpk_outputs is None:
+            raise ValueError('DPK outputs are required for DPK token weighting.')
+        mode = _canonical_token_weight_mode(mode)
+        det = dpk_outputs.get('det')
+        if det is None:
+            raise ValueError('DPK checkpoint output does not contain det/event channel.')
+        if mode in ('dpk_event', 'dpk_event_learned'):
+            signal = det
+        elif mode in ('dpk_all', 'dpk_all_learned'):
+            parts = [det]
+            for key in ('ppk', 'spk'):
+                if key in dpk_outputs:
+                    parts.append(dpk_outputs[key])
+            signal = torch.stack(parts, dim=0).amax(dim=0)
+        else:
+            raise ValueError(f'Unsupported DPK token weighting mode: {mode}')
+        if signal.dim() == 3 and signal.shape[1] == 1:
+            signal = signal.squeeze(1)
+        if signal.dim() != 2:
+            raise ValueError(f"Expected DPK signal shape (B,T), got {tuple(signal.shape)}")
+        if self.dpk_weight_temperature != 1.0:
+            signal = signal.clamp_min(self.token_weight_floor).pow(1.0 / self.dpk_weight_temperature)
+        return signal
+
+    def _base_token_signal(self, mode, waveform, raw_waveform, dpk_outputs):
+        mode = _canonical_token_weight_mode(mode)
+        source_waveform = raw_waveform if raw_waveform is not None else waveform
+        if mode in ('none', 'learned'):
+            return None
+        if mode == 'oracle_nonzero':
+            return (source_waveform.abs().amax(dim=1) > 1e-8).float()
+        if mode == 'energy':
+            return torch.sqrt((source_waveform.float() ** 2).mean(dim=1).clamp_min(1e-12))
+        if mode.startswith('dpk_'):
+            return self._dpk_signal(dpk_outputs, mode)
+        raise ValueError(f'Unsupported token weighting mode: {mode}')
+
+    def _token_weights_for_lengths(self, mode, lengths, waveform, raw_waveform, dpk_outputs=None):
+        signal = self._base_token_signal(mode, waveform, raw_waveform, dpk_outputs)
+        if signal is None:
+            return None
+        weights = [
+            self._normalize_token_signal(self._resample_token_signal(signal, int(length)))
+            for length in lengths
+        ]
+        if len(weights) == 1:
+            return weights[0]
+        return weights
+
+    def _record_dpk_diag(self, ref_tensor):
+        if self.dpk_encoder_consistency is None:
+            return
+        info = self.dpk_encoder_consistency
+        def scalar(name, value):
+            if isinstance(value, bool):
+                value = 1.0 if value else 0.0
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                if math.isnan(float(value)):
+                    return
+                self._last_diag[name] = ref_tensor.new_tensor(float(value)).detach()
+        scalar('dpk_encoder_all_equal', info.get('all_equal', False))
+        scalar('dpk_encoder_shared', self.dpk_encoder_shared)
+        scalar('dpk_encoder_common_tensors', info.get('common_tensors', 0))
+        scalar('dpk_encoder_equal_tensors', info.get('equal_tensors', 0))
+        scalar('dpk_encoder_missing_in_current', info.get('missing_in_current', 0))
+        scalar('dpk_encoder_missing_in_dpk', info.get('missing_in_dpk', 0))
+        scalar('dpk_encoder_shape_mismatch', info.get('shape_mismatch', 0))
+        scalar('dpk_encoder_max_abs_diff', info.get('max_abs_diff', 0.0))
+        scalar('dpk_load_missing_keys', self.dpk_checkpoint_load_info.get('missing_keys', 0))
+        scalar('dpk_load_unexpected_keys', self.dpk_checkpoint_load_info.get('unexpected_keys', 0))
 
     def _normalize(self, data, mode, axis=1):
         """
@@ -3260,30 +3825,77 @@ class FullModel(nn.Module):
             return torch.flip(tokens, dims=[2])
         raise ValueError(f'Unsupported pga temporal token control mode: {mode}')
 
-    def _encode_station_waveform(self, waveform, collect_tokens=False, station_context=None):
+    def _encode_station_waveform(self, waveform, raw_waveform=None, collect_tokens=False, station_context=None):
         uses_metadata = False
         if isinstance(self.waveform_model, nn.Sequential) and len(self.waveform_model) >= 2:
             uses_metadata = getattr(self.waveform_model[1], 'uses_station_metadata', False)
-        if collect_tokens or uses_metadata:
+        uses_station_weights = _token_weight_is_active(self.station_token_weight_mode)
+        uses_temporal_weights = _token_weight_is_active(self.temporal_token_weight_mode)
+        needs_explicit_adapter = collect_tokens or uses_metadata or uses_station_weights or uses_temporal_weights
+        if needs_explicit_adapter:
             if not isinstance(self.waveform_model, nn.Sequential) or len(self.waveform_model) < 2:
                 raise ValueError('target temporal pooling requires waveform_model = encoder + adapter.')
             features = self.waveform_model[0](waveform)
-            if uses_metadata:
-                station_emb = self.waveform_model[1](features, station_context=station_context)
+            dpk_outputs = None
+            if (
+                _token_weight_uses_dpk(self.station_token_weight_mode)
+                or _token_weight_uses_dpk(self.temporal_token_weight_mode)
+            ):
+                dpk_outputs = self._dpk_outputs(waveform, features)
+            feature_lengths = self._feature_token_lengths(features)
+            station_token_weights = self._token_weights_for_lengths(
+                self.station_token_weight_mode,
+                feature_lengths,
+                waveform,
+                raw_waveform,
+                dpk_outputs=dpk_outputs,
+            )
+            if uses_metadata or uses_station_weights:
+                station_emb = self.waveform_model[1](
+                    features,
+                    station_context=station_context if uses_metadata else None,
+                    token_weights=station_token_weights,
+                    token_weight_floor=self.token_weight_floor,
+                    token_weight_scale=self.token_weight_scale,
+                )
             else:
                 station_emb = self.waveform_model[1](features)
             if not collect_tokens:
-                return station_emb, None
+                return station_emb, None, None
             token_getter = getattr(self.waveform_model[1], 'temporal_tokens', None)
             if token_getter is None:
                 raise ValueError('station adapter does not expose temporal_tokens().')
-            return station_emb, self._compress_station_temporal_tokens(token_getter(features))
-        return self.waveform_model(waveform), None
+            temporal_tokens = token_getter(features)
+            temporal_token_weights = self._token_weights_for_lengths(
+                self.temporal_token_weight_mode,
+                [temporal_tokens.shape[1]],
+                waveform,
+                raw_waveform,
+                dpk_outputs=dpk_outputs,
+            )
+            return station_emb, self._compress_station_temporal_tokens(temporal_tokens), temporal_token_weights
+        return self.waveform_model(waveform), None, None
 
     def _apply_point_pga_head(self, pga_readout_emb, mlp=None, output_model=None):
         mlp = self.mlp_pga if mlp is None else mlp
         output_model = self.output_model_pga if output_model is None else output_model
         return output_model(mlp(pga_readout_emb))
+
+    def _pga_point_mean_from_output(self, output_pga):
+        if self.output_distribution == 'point':
+            return output_pga
+        alpha_logits = output_pga[..., 0]
+        component_mu = output_pga[..., 1]
+        weights = torch.softmax(alpha_logits, dim=-1)
+        return torch.sum(weights * component_mu, dim=-1, keepdim=True)
+
+    def _shift_pga_output_by_delta(self, output_pga, delta):
+        if self.output_distribution == 'point':
+            return output_pga + delta
+        alpha_logits = output_pga[..., 0]
+        component_mu = output_pga[..., 1] + delta
+        component_sigma = output_pga[..., 2]
+        return torch.stack([alpha_logits, component_mu, component_sigma], dim=-1)
 
     def _apply_layerwise_pga_refinement(self, layer_outputs):
         if not layer_outputs:
@@ -3333,19 +3945,28 @@ class FullModel(nn.Module):
         coords_feat, coords_emb = self._station_coord_features(coords_abs, coords_rel, sv)
 
         station_token_list = []
+        station_token_weight_list = []
         raw_station_emb_list = []
         collect_temporal_tokens = self.use_target_temporal_pooling or self.pga_temporal_residual_head is not None
         for i in range(waveforms_masked.shape[1]):
-            station_emb_i, station_tokens_i = self._encode_station_waveform(
+            station_emb_i, station_tokens_i, station_token_weights_i = self._encode_station_waveform(
                 waveforms_masked[:, i, :, :],
+                raw_waveform=raw_waveform[:, i, :, :],
                 collect_tokens=collect_temporal_tokens,
                 station_context=coords_feat[:, i, :] if coords_feat is not None else None,
             )
             raw_station_emb_list.append(station_emb_i)
             if station_tokens_i is not None:
                 station_token_list.append(station_tokens_i)
+                if station_token_weights_i is not None:
+                    station_token_weight_list.append(station_token_weights_i)
         raw_station_emb = torch.stack(raw_station_emb_list, dim=1)
         station_temporal_tokens = torch.stack(station_token_list, dim=1) if station_token_list else None
+        station_temporal_token_weights = (
+            torch.stack(station_token_weight_list, dim=1)
+            if station_token_weight_list and len(station_token_weight_list) == len(station_token_list)
+            else None
+        )
         scale_emb = None
         preln_wave_emb = raw_station_emb
         waveforms_emb = self.layernorm(preln_wave_emb)
@@ -3418,6 +4039,30 @@ class FullModel(nn.Module):
             'coord_fusion_mode': 0.0 if self.coord_fusion_mode == 'add' else 1.0,
             'station_context_mode': emb.new_tensor(0.0).detach(),
         }
+        token_mode_codes = {
+            'none': 0.0,
+            'learned': 1.0,
+            'oracle_nonzero': 2.0,
+            'energy': 3.0,
+            'dpk_event': 4.0,
+            'dpk_all': 5.0,
+            'dpk_event_learned': 6.0,
+            'dpk_all_learned': 7.0,
+        }
+        self._last_diag['station_token_weight_mode'] = emb.new_tensor(
+            token_mode_codes[self.station_token_weight_mode]
+        ).detach()
+        self._last_diag['temporal_token_weight_mode'] = emb.new_tensor(
+            token_mode_codes[self.temporal_token_weight_mode]
+        ).detach()
+        self._last_diag['token_weight_scale'] = emb.new_tensor(self.token_weight_scale).detach()
+        self._record_dpk_diag(emb)
+        adapter = self.waveform_model[1] if isinstance(self.waveform_model, nn.Sequential) and len(self.waveform_model) > 1 else None
+        adapter_pool_diag = getattr(adapter, '_last_token_pool_diag', None)
+        if isinstance(adapter_pool_diag, dict):
+            for key, value in adapter_pool_diag.items():
+                if torch.is_tensor(value):
+                    self._last_diag[f'station_pool_{key}'] = value.detach()
         if self.station_residual_mode == 'add':
             self._last_diag['station_residual_gate'] = self.station_residual_gate.detach()
         if self._last_station_local_pga_pred is not None:
@@ -3500,6 +4145,7 @@ class FullModel(nn.Module):
                         readout_kwargs = {
                             'station_tokens': station_temporal_tokens,
                             'event_emb': event_emb,
+                            'station_token_weights': station_temporal_token_weights,
                         }
                     pga_readout_emb = self.pga_station_target_readout(
                         pga_query_emb,
@@ -3534,6 +4180,18 @@ class FullModel(nn.Module):
                         if temporal_pool is not None:
                             if temporal_pool._last_temporal_entropy is not None:
                                 self._last_diag['temporal_pool_entropy'] = temporal_pool._last_temporal_entropy
+                            if temporal_pool._last_temporal_effective_token_count is not None:
+                                self._last_diag['temporal_pool_effective_token_count'] = (
+                                    temporal_pool._last_temporal_effective_token_count
+                                )
+                            if temporal_pool._last_temporal_prior_effective_token_count is not None:
+                                self._last_diag['temporal_pool_prior_effective_token_count'] = (
+                                    temporal_pool._last_temporal_prior_effective_token_count
+                                )
+                            if temporal_pool._last_temporal_prior_mean is not None:
+                                self._last_diag['temporal_pool_prior_mean'] = temporal_pool._last_temporal_prior_mean
+                            if temporal_pool._last_temporal_prior_std is not None:
+                                self._last_diag['temporal_pool_prior_std'] = temporal_pool._last_temporal_prior_std
                             if temporal_pool._last_station_weight_entropy is not None:
                                 self._last_diag['temporal_pool_station_weight_entropy'] = temporal_pool._last_station_weight_entropy
                             temp_gates = torch.stack([
@@ -3717,17 +4375,21 @@ class FullModel(nn.Module):
                     coords_abs,
                     temporal_event_emb,
                     station_attn=station_attn,
+                    station_token_weights=station_temporal_token_weights,
                 )
-                self._last_pga_temporal_base = output_pga
+                base_point = self._pga_point_mean_from_output(output_pga)
+                self._last_pga_temporal_base = base_point
                 self._last_pga_temporal_pred = temporal_pred
                 if self.pga_temporal_residual_mode == 'residual':
                     temporal_delta = temporal_pred
-                    output_pga = output_pga + temporal_delta
+                    output_pga = self._shift_pga_output_by_delta(output_pga, temporal_delta)
+                    final_point = base_point + temporal_delta
                 else:
-                    temporal_delta = temporal_pred - output_pga.detach()
-                    output_pga = temporal_pred
+                    temporal_delta = temporal_pred - base_point.detach()
+                    output_pga = self._shift_pga_output_by_delta(output_pga, temporal_delta)
+                    final_point = temporal_pred
                 self._last_pga_temporal_delta = temporal_delta
-                self._last_pga_temporal_final = output_pga
+                self._last_pga_temporal_final = final_point
                 delta_abs = temporal_delta.abs().mean()
                 base_abs = self._last_pga_temporal_base.abs().mean()
                 self._last_diag['pga_temporal_delta_abs_mean'] = delta_abs.detach()
@@ -3760,6 +4422,18 @@ class FullModel(nn.Module):
                 temporal_pool = self.pga_temporal_residual_head.temporal_pool
                 if temporal_pool._last_temporal_entropy is not None:
                     self._last_diag['pga_temporal_entropy'] = temporal_pool._last_temporal_entropy
+                if temporal_pool._last_temporal_effective_token_count is not None:
+                    self._last_diag['pga_temporal_effective_token_count'] = (
+                        temporal_pool._last_temporal_effective_token_count
+                    )
+                if temporal_pool._last_temporal_prior_effective_token_count is not None:
+                    self._last_diag['pga_temporal_prior_effective_token_count'] = (
+                        temporal_pool._last_temporal_prior_effective_token_count
+                    )
+                if temporal_pool._last_temporal_prior_mean is not None:
+                    self._last_diag['pga_temporal_prior_mean'] = temporal_pool._last_temporal_prior_mean
+                if temporal_pool._last_temporal_prior_std is not None:
+                    self._last_diag['pga_temporal_prior_std'] = temporal_pool._last_temporal_prior_std
                 if temporal_pool._last_station_weight_entropy is not None:
                     self._last_diag['pga_temporal_station_weight_entropy'] = (
                         temporal_pool._last_station_weight_entropy
@@ -4019,6 +4693,15 @@ def build_transformer_model(max_stations,
                             pga_temporal_residual_use_event_context=True,
                             pga_temporal_residual_mode='residual',
                             pga_temporal_residual_token_control='none',
+                            station_token_weight_mode='none',
+                            temporal_token_weight_mode='none',
+                            token_weight_floor=1e-6,
+                            token_weight_scale=1.0,
+                            dpk_checkpoint_path=None,
+                            dpk_share_encoder_if_identical=True,
+                            dpk_compare_encoder=True,
+                            dpk_weight_temperature=1.0,
+                            dpk_weight_resample='max',
                             station_residual_mode='off',
                             station_residual_source='wave',
                             station_residual_init_gate=0.1,
@@ -4038,6 +4721,7 @@ def build_transformer_model(max_stations,
                             rope_lat_origin=37.0,
                             pga_attention_diagnostics=False,
                             pga_mask_sanity_check=False,
+                            diting_frontend=None,
                             diting_args=None,
                             **kwargs):
     if kwargs:
@@ -4082,6 +4766,8 @@ def build_transformer_model(max_stations,
 #                                              mlp_dims=waveform_model_dims)
 #    mlp_mag_single_station = MLP((waveform_model.mlp.mlp[-1].out_features,), output_mlp_dims, activation=activation) #Modified line
     if diting_args is not None:
+        if diting_frontend is not None:
+            diting_args.diting_frontend = diting_frontend
         diting_args.diting_station_pool_queries = diting_station_pool_queries
         diting_args.diting_station_pool_temperature = diting_station_pool_temperature
         diting_args.diting_station_pool_dropout = diting_station_pool_dropout
@@ -4189,12 +4875,12 @@ def build_transformer_model(max_stations,
             geom_hidden_dim=temporal_pool_geom_hidden_dim,
             time_basis=temporal_pool_time_basis,
             temporal_token_dim=temporal_token_dim,
+            token_weight_floor=token_weight_floor,
+            token_weight_scale=token_weight_scale,
         )
 
     pga_temporal_residual_head = None
     if use_pga_temporal_residual:
-        if output_distribution != 'point':
-            raise ValueError('use_pga_temporal_residual requires output_distribution=point.')
         if use_target_temporal_pooling:
             raise ValueError(
                 'use_pga_temporal_residual and use_target_temporal_pooling should be tested separately.'
@@ -4213,6 +4899,8 @@ def build_transformer_model(max_stations,
             time_basis=temporal_pool_time_basis,
             temporal_token_dim=temporal_token_dim,
             zero_init=pga_temporal_residual_zero_init,
+            token_weight_floor=token_weight_floor,
+            token_weight_scale=token_weight_scale,
         )
 
     pga_station_target_readout = None
@@ -4344,6 +5032,15 @@ def build_transformer_model(max_stations,
                              pga_temporal_residual_use_event_context=pga_temporal_residual_use_event_context,
                              pga_temporal_residual_mode=pga_temporal_residual_mode,
                              pga_temporal_residual_token_control=pga_temporal_residual_token_control,
+                             station_token_weight_mode=station_token_weight_mode,
+                             temporal_token_weight_mode=temporal_token_weight_mode,
+                             token_weight_floor=token_weight_floor,
+                             token_weight_scale=token_weight_scale,
+                             dpk_checkpoint_path=dpk_checkpoint_path,
+                             dpk_share_encoder_if_identical=dpk_share_encoder_if_identical,
+                             dpk_compare_encoder=dpk_compare_encoder,
+                             dpk_weight_temperature=dpk_weight_temperature,
+                             dpk_weight_resample=dpk_weight_resample,
                              station_residual_mode=station_residual_mode,
                              station_residual_source=station_residual_source,
                              station_residual_init_gate=station_residual_init_gate,
