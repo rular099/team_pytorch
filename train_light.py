@@ -1485,6 +1485,29 @@ def collect_input_stats(inputs, labels, p_picks):
             'data/station_valid_count_mean': station_valid.float().sum(dim=1).mean().detach(),
             'data/station_valid_ratio': station_valid.float().mean().detach(),
         })
+        waveform_padding_mask = next((
+            value
+            for value in inputs[5:]
+            if (
+                torch.is_tensor(value)
+                and value.dtype == torch.bool
+                and value.dim() == 3
+                and tuple(value.shape[:2]) == tuple(station_valid.shape)
+                and value.shape[-1] == waveforms.shape[-1]
+            )
+        ), None)
+        if waveform_padding_mask is not None:
+            valid_mask = waveform_padding_mask & station_valid[:, :, None]
+            valid_station_count = station_valid.float().sum().clamp_min(1.0)
+            stats.update({
+                'data/waveform_valid_sample_count_mean': (
+                    valid_mask.float().sum() / valid_station_count
+                ).detach(),
+                'data/waveform_valid_sample_fraction': (
+                    valid_mask.float().sum()
+                    / (valid_station_count * valid_mask.shape[-1])
+                ).detach(),
+            })
 
     if metadata is not None:
         stats.update({
@@ -1588,6 +1611,18 @@ def collect_input_stats(inputs, labels, p_picks):
                     'data/station_snr_min': valid_snr.min().detach(),
                     'data/station_snr_max': valid_snr.max().detach(),
                 })
+        if isinstance(p_picks, dict) and station_valid is not None:
+            for key in ('waveform_valid_seconds', 'waveform_post_p_valid_seconds'):
+                if key not in p_picks:
+                    continue
+                seconds = p_picks[key].to(waveforms.device).float()
+                valid_seconds = seconds[station_valid]
+                if valid_seconds.numel():
+                    stats.update({
+                        f'data/{key}_mean': valid_seconds.mean().detach(),
+                        f'data/{key}_min': valid_seconds.min().detach(),
+                        f'data/{key}_max': valid_seconds.max().detach(),
+                    })
 
     return stats
 

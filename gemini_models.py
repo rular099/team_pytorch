@@ -1762,6 +1762,8 @@ class AttentionPool1d(nn.Module):
         self._last_prior_effective_token_count = None
         self._last_prior_mean = None
         self._last_prior_std = None
+        self._last_valid_token_count = None
+        self._last_valid_token_fraction = None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -1791,10 +1793,44 @@ class AttentionPool1d(nn.Module):
             ).squeeze(1)
         return weight
 
+    @staticmethod
+    def _coerce_token_mask(token_mask, token_len, device):
+        if token_mask is None:
+            return None
+        mask = token_mask.to(device=device)
+        if mask.dim() == 3 and mask.shape[-1] == 1:
+            mask = mask.squeeze(-1)
+        if mask.dim() == 3 and mask.shape[1] == 1:
+            mask = mask.squeeze(1)
+        if mask.dim() != 2:
+            raise ValueError(f"token_mask must have shape (B,T), got {tuple(mask.shape)}")
+        mask = mask.bool()
+        if mask.shape[1] != token_len:
+            mask_f = mask.unsqueeze(1).float()
+            if mask.shape[1] >= token_len:
+                mask_f = F.adaptive_max_pool1d(mask_f, token_len)
+            else:
+                mask_f = F.interpolate(mask_f, size=token_len, mode="nearest")
+            mask = mask_f.squeeze(1) > 0.5
+        return mask
+
     def forward(self, x, query_bias=None, token_weight=None, token_weight_floor=1e-6,
-                token_weight_scale=1.0):
+                token_weight_scale=1.0, token_mask=None):
         # x: (B, C, T). Return Q pooled vectors flattened to (B, Q*C).
         tokens = x.transpose(1, 2).contiguous().float()  # (B, T, C)
+        valid_mask = self._coerce_token_mask(token_mask, tokens.shape[1], tokens.device)
+        safe_mask = None
+        if valid_mask is not None:
+            safe_mask = valid_mask.clone()
+            empty_rows = ~safe_mask.any(dim=1)
+            if empty_rows.any():
+                safe_mask[empty_rows, 0] = True
+            tokens = tokens * valid_mask.unsqueeze(-1).to(tokens.dtype)
+            self._last_valid_token_count = valid_mask.float().sum(dim=1).mean().detach()
+            self._last_valid_token_fraction = valid_mask.float().mean().detach()
+        else:
+            self._last_valid_token_count = None
+            self._last_valid_token_fraction = None
         keys = self.key_norm(tokens)
         if query_bias is None:
             scores = torch.einsum('btc,qc->btq', keys, self.query)
@@ -1805,7 +1841,10 @@ class AttentionPool1d(nn.Module):
         prior = self._coerce_token_weight(token_weight, scores.shape[1], scores.device, scores.dtype)
         if prior is not None:
             prior = prior.clamp_min(float(token_weight_floor))
-            scores = scores + float(token_weight_scale) * torch.log(prior).unsqueeze(-1)
+            if valid_mask is not None:
+                prior = prior * valid_mask.to(prior.dtype)
+            score_prior = prior.clamp_min(float(token_weight_floor))
+            scores = scores + float(token_weight_scale) * torch.log(score_prior).unsqueeze(-1)
             prior_prob = prior / prior.sum(dim=1, keepdim=True).clamp_min(float(token_weight_floor))
             prior_entropy = -(prior_prob * prior_prob.clamp_min(1e-8).log()).sum(dim=1)
             self._last_prior_effective_token_count = torch.exp(prior_entropy).mean().detach()
@@ -1815,6 +1854,11 @@ class AttentionPool1d(nn.Module):
             self._last_prior_effective_token_count = None
             self._last_prior_mean = None
             self._last_prior_std = None
+        if safe_mask is not None:
+            scores = scores.masked_fill(
+                ~safe_mask.unsqueeze(-1),
+                torch.finfo(scores.dtype).min,
+            )
         weights = torch.softmax(scores, dim=1)
         if self.dropout > 0:
             weights = F.dropout(weights, p=self.dropout, training=self.training)
@@ -1824,6 +1868,172 @@ class AttentionPool1d(nn.Module):
         entropy = -(weights.clamp_min(1e-8) * weights.clamp_min(1e-8).log()).sum(dim=1)
         self._last_effective_token_count = torch.exp(entropy).mean().detach()
         return context.reshape(context.shape[0], self.num_queries * self.channels)
+
+
+def _masked_temporal_mean_std(x, token_mask):
+    """Mask-aware channel summaries for channel-first temporal features."""
+    mask = AttentionPool1d._coerce_token_mask(token_mask, x.shape[-1], x.device)
+    if mask is None:
+        return x.mean(dim=-1), x.std(dim=-1, unbiased=False)
+    weight = mask.unsqueeze(1).to(x.dtype)
+    count = weight.sum(dim=-1).clamp_min(1.0)
+    mean = (x * weight).sum(dim=-1) / count
+    centered = (x - mean.unsqueeze(-1)) * weight
+    var = centered.square().sum(dim=-1) / count
+    std = torch.sqrt(var.clamp_min(0.0) + 1e-6)
+    empty = ~mask.any(dim=-1)
+    if empty.any():
+        mean = mean.masked_fill(empty.unsqueeze(-1), 0.0)
+        std = std.masked_fill(empty.unsqueeze(-1), 0.0)
+    return mean, std
+
+
+class MaskedDepthwiseSeparableBlock1d(nn.Module):
+    """Local residual block that cannot revive invalid temporal positions."""
+
+    def __init__(self, channels, kernel_size=3, dilation=1, dropout=0.0, causal=False):
+        super().__init__()
+        if kernel_size < 1 or kernel_size % 2 == 0:
+            raise ValueError(f"kernel_size must be a positive odd integer, got {kernel_size}")
+        self.channels = int(channels)
+        self.kernel_size = int(kernel_size)
+        self.dilation = int(dilation)
+        self.dropout = float(dropout)
+        self.causal = bool(causal)
+        self.norm = nn.LayerNorm(channels)
+        padding = 0 if self.causal else self.dilation * (self.kernel_size - 1) // 2
+        self.depthwise = nn.Conv1d(
+            channels,
+            channels,
+            kernel_size=self.kernel_size,
+            dilation=self.dilation,
+            padding=padding,
+            groups=channels,
+        )
+        self.pointwise = nn.Conv1d(channels, channels, kernel_size=1)
+        self.activation = nn.GELU()
+
+    def reset_parameters(self):
+        nn.init.ones_(self.norm.weight)
+        nn.init.zeros_(self.norm.bias)
+        nn.init.kaiming_normal_(self.depthwise.weight, nonlinearity='linear')
+        nn.init.zeros_(self.depthwise.bias)
+        nn.init.kaiming_normal_(self.pointwise.weight, nonlinearity='linear')
+        nn.init.zeros_(self.pointwise.bias)
+
+    def forward(self, x, token_mask=None):
+        mask = AttentionPool1d._coerce_token_mask(token_mask, x.shape[-1], x.device)
+        mask_f = None if mask is None else mask.unsqueeze(1).to(x.dtype)
+        residual = x if mask_f is None else x * mask_f
+        y = self.norm(residual.transpose(1, 2)).transpose(1, 2)
+        if mask_f is not None:
+            y = y * mask_f
+        if self.causal:
+            left_pad = self.dilation * (self.kernel_size - 1)
+            y = F.pad(y, (left_pad, 0))
+        y = self.depthwise(y)
+        y = self.activation(self.pointwise(y))
+        if self.dropout > 0:
+            y = F.dropout(y, p=self.dropout, training=self.training)
+        out = residual + y
+        return out if mask_f is None else out * mask_f
+
+
+class LatentCrossAttentionPool1d(nn.Module):
+    """Small learned latent set attending to a long temporal sequence."""
+
+    def __init__(self, channels, num_queries=4, num_heads=4, ffn_multiplier=2.0, dropout=0.0):
+        super().__init__()
+        if channels % num_heads != 0:
+            raise ValueError(
+                f"channels ({channels}) must be divisible by num_heads ({num_heads})"
+            )
+        if num_queries < 1:
+            raise ValueError(f"num_queries must be >= 1, got {num_queries}")
+        self.channels = int(channels)
+        self.num_queries = int(num_queries)
+        self.num_heads = int(num_heads)
+        self.dropout = float(dropout)
+        hidden_dim = max(channels, int(round(channels * float(ffn_multiplier))))
+        self.query = nn.Parameter(torch.empty(num_queries, channels))
+        self.query_norm = nn.LayerNorm(channels)
+        self.key_value_norm = nn.LayerNorm(channels)
+        self.attention = nn.MultiheadAttention(
+            channels,
+            num_heads,
+            dropout=dropout,
+            batch_first=True,
+        )
+        self.attention_out_norm = nn.LayerNorm(channels)
+        self.ffn_norm = nn.LayerNorm(channels)
+        self.ffn = nn.Sequential(
+            nn.Linear(channels, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, channels),
+        )
+        self.out_norm = nn.LayerNorm(channels)
+        self._last_attention = None
+        self._last_effective_token_count = None
+        self._last_valid_token_count = None
+        self._last_valid_token_fraction = None
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.normal_(self.query, mean=0.0, std=0.02)
+        for norm in (
+            self.query_norm,
+            self.key_value_norm,
+            self.attention_out_norm,
+            self.ffn_norm,
+            self.out_norm,
+        ):
+            nn.init.ones_(norm.weight)
+            nn.init.zeros_(norm.bias)
+        self.attention._reset_parameters()
+        for layer in self.ffn:
+            if isinstance(layer, nn.Linear):
+                nn.init.xavier_uniform_(layer.weight)
+                nn.init.zeros_(layer.bias)
+
+    def forward(self, x, token_mask=None):
+        tokens = x.transpose(1, 2).contiguous().float()
+        valid_mask = AttentionPool1d._coerce_token_mask(
+            token_mask,
+            tokens.shape[1],
+            tokens.device,
+        )
+        safe_mask = None
+        if valid_mask is not None:
+            safe_mask = valid_mask.clone()
+            empty_rows = ~safe_mask.any(dim=1)
+            if empty_rows.any():
+                safe_mask[empty_rows, 0] = True
+            tokens = tokens * valid_mask.unsqueeze(-1).to(tokens.dtype)
+            self._last_valid_token_count = valid_mask.float().sum(dim=1).mean().detach()
+            self._last_valid_token_fraction = valid_mask.float().mean().detach()
+        else:
+            self._last_valid_token_count = None
+            self._last_valid_token_fraction = None
+
+        query = self.query.unsqueeze(0).expand(tokens.shape[0], -1, -1)
+        attn_out, attn_weights = self.attention(
+            self.query_norm(query),
+            self.key_value_norm(tokens),
+            self.key_value_norm(tokens),
+            key_padding_mask=None if safe_mask is None else ~safe_mask,
+            need_weights=True,
+            average_attn_weights=True,
+        )
+        latents = self.attention_out_norm(query + attn_out)
+        latents = self.out_norm(latents + self.ffn(self.ffn_norm(latents)))
+        self._last_attention = attn_weights.detach()
+        entropy = -(
+            attn_weights.clamp_min(1e-8)
+            * attn_weights.clamp_min(1e-8).log()
+        ).sum(dim=-1)
+        self._last_effective_token_count = torch.exp(entropy).mean().detach()
+        return latents.reshape(latents.shape[0], self.num_queries * self.channels)
 
 
 class WaveformScaleEmbedding(nn.Module):
@@ -2197,6 +2407,8 @@ class DitingStationAdapter(nn.Module):
         prior_eff = getattr(pool, '_last_prior_effective_token_count', None)
         prior_mean = getattr(pool, '_last_prior_mean', None)
         prior_std = getattr(pool, '_last_prior_std', None)
+        valid_count = getattr(pool, '_last_valid_token_count', None)
+        valid_fraction = getattr(pool, '_last_valid_token_fraction', None)
         if eff is not None:
             diag[f'{prefix}_effective_token_count'] = eff
         if prior_eff is not None:
@@ -2205,10 +2417,15 @@ class DitingStationAdapter(nn.Module):
             diag[f'{prefix}_prior_mean'] = prior_mean
         if prior_std is not None:
             diag[f'{prefix}_prior_std'] = prior_std
+        if valid_count is not None:
+            diag[f'{prefix}_valid_token_count'] = valid_count
+        if valid_fraction is not None:
+            diag[f'{prefix}_valid_token_fraction'] = valid_fraction
         return diag
 
     def forward(self, inputs, station_context=None, token_weights=None,
-                token_weight_floor=1e-6, token_weight_scale=1.0):
+                token_weight_floor=1e-6, token_weight_scale=1.0,
+                token_mask=None):
         f2, f3, f4, x = inputs
         base_query_bias, branch_query_bias, film = self._metadata_outputs(station_context)
         if film is not None:
@@ -2228,6 +2445,7 @@ class DitingStationAdapter(nn.Module):
             token_weight=w_x,
             token_weight_floor=token_weight_floor,
             token_weight_scale=token_weight_scale,
+            token_mask=token_mask,
         ))
 
         branch_f2 = self.pool_f2(
@@ -2236,6 +2454,7 @@ class DitingStationAdapter(nn.Module):
             token_weight=w_f2,
             token_weight_floor=token_weight_floor,
             token_weight_scale=token_weight_scale,
+            token_mask=token_mask,
         )
         branch_f3 = self.pool_f3(
             self.refine_f3(self.proj_f3(f3)),
@@ -2243,6 +2462,7 @@ class DitingStationAdapter(nn.Module):
             token_weight=w_f3,
             token_weight_floor=token_weight_floor,
             token_weight_scale=token_weight_scale,
+            token_mask=token_mask,
         )
         branch_f4 = self.pool_f4(
             self.refine_f4(self.proj_f4(f4)),
@@ -2250,6 +2470,7 @@ class DitingStationAdapter(nn.Module):
             token_weight=w_f4,
             token_weight_floor=token_weight_floor,
             token_weight_scale=token_weight_scale,
+            token_mask=token_mask,
         )
         branch_x = self.pool_x(
             self.refine_x(self.proj_x(x)),
@@ -2257,6 +2478,7 @@ class DitingStationAdapter(nn.Module):
             token_weight=w_x,
             token_weight_floor=token_weight_floor,
             token_weight_scale=token_weight_scale,
+            token_mask=token_mask,
         )
 
         pooled = torch.cat([branch_f2, branch_f3, branch_f4, branch_x], dim=-1)
@@ -2276,6 +2498,192 @@ class DitingStationAdapter(nn.Module):
         x = inputs[-1]
         if x.dim() != 3:
             raise ValueError(f"Expected final DiTing feature with 3 dims, got shape {tuple(x.shape)}")
+        if x.shape[-1] == self.encoder_dim:
+            return x.float()
+        if x.shape[1] == self.encoder_dim:
+            return x.transpose(1, 2).contiguous().float()
+        raise ValueError(f"Expected encoder dim {self.encoder_dim} in shape {tuple(x.shape)}")
+
+
+class NativeScaleLateFusionAdapter(nn.Module):
+    """Mask-aware native-scale TCN/latent-attention adapter without gates."""
+
+    def __init__(self, encoder_dim, output_dim, x_channels=384, side_channels=128,
+                 x_pool_queries=4, side_pool_queries=2, attention_heads=6,
+                 tcn_dilations=(1, 2, 4, 8, 16, 32, 64),
+                 ffn_multiplier=2.0, pool_temperature=1.0, dropout=0.0):
+        super().__init__()
+        self.encoder_dim = int(encoder_dim)
+        self.output_dim = int(output_dim)
+        self.x_channels = int(x_channels)
+        self.side_channels = int(side_channels)
+        self.x_pool_queries = int(x_pool_queries)
+        self.side_pool_queries = int(side_pool_queries)
+        self.attention_heads = int(attention_heads)
+        self.tcn_dilations = tuple(int(value) for value in tcn_dilations)
+        self.dropout = float(dropout)
+        if not self.tcn_dilations or any(value < 1 for value in self.tcn_dilations):
+            raise ValueError(
+                f"tcn_dilations must contain positive integers, got {self.tcn_dilations}"
+            )
+
+        self.proj_x = nn.Conv1d(self.encoder_dim, self.x_channels, kernel_size=1)
+        self.proj_f2 = nn.Conv1d(self.encoder_dim, self.side_channels, kernel_size=1)
+        self.proj_f3 = nn.Conv1d(self.encoder_dim, self.side_channels, kernel_size=1)
+        self.proj_f4 = nn.Conv1d(self.encoder_dim, self.side_channels, kernel_size=1)
+
+        self.tcn_x = nn.ModuleList([
+            MaskedDepthwiseSeparableBlock1d(
+                self.x_channels,
+                kernel_size=3,
+                dilation=dilation,
+                dropout=dropout,
+                causal=True,
+            )
+            for dilation in self.tcn_dilations
+        ])
+        self.refine_f2 = MaskedDepthwiseSeparableBlock1d(
+            self.side_channels,
+            kernel_size=3,
+            dropout=dropout,
+        )
+        self.refine_f3 = MaskedDepthwiseSeparableBlock1d(
+            self.side_channels,
+            kernel_size=3,
+            dropout=dropout,
+        )
+        self.refine_f4 = MaskedDepthwiseSeparableBlock1d(
+            self.side_channels,
+            kernel_size=3,
+            dropout=dropout,
+        )
+
+        self.pool_x = LatentCrossAttentionPool1d(
+            self.x_channels,
+            num_queries=self.x_pool_queries,
+            num_heads=self.attention_heads,
+            ffn_multiplier=ffn_multiplier,
+            dropout=dropout,
+        )
+        self.pool_f2 = AttentionPool1d(
+            self.side_channels,
+            num_queries=self.side_pool_queries,
+            temperature=pool_temperature,
+            dropout=dropout,
+        )
+        self.pool_f3 = AttentionPool1d(
+            self.side_channels,
+            num_queries=self.side_pool_queries,
+            temperature=pool_temperature,
+            dropout=dropout,
+        )
+        self.pool_f4 = AttentionPool1d(
+            self.side_channels,
+            num_queries=self.side_pool_queries,
+            temperature=pool_temperature,
+            dropout=dropout,
+        )
+
+        summary_dim = (
+            (self.x_pool_queries + 2) * self.x_channels
+            + 3 * (self.side_pool_queries + 2) * self.side_channels
+        )
+        self.summary_dim = int(summary_dim)
+        self.proj_out = nn.Linear(self.summary_dim, self.output_dim)
+        self.norm = nn.LayerNorm(self.output_dim)
+        self._last_token_pool_diag = {}
+        self.reset_parameters()
+
+    @property
+    def uses_station_metadata(self):
+        return False
+
+    def reset_parameters(self):
+        for projection in (self.proj_x, self.proj_f2, self.proj_f3, self.proj_f4):
+            nn.init.kaiming_normal_(projection.weight, nonlinearity='linear')
+            if projection.bias is not None:
+                nn.init.zeros_(projection.bias)
+        for block in (*self.tcn_x, self.refine_f2, self.refine_f3, self.refine_f4):
+            block.reset_parameters()
+        self.pool_x.reset_parameters()
+        self.pool_f2.reset_parameters()
+        self.pool_f3.reset_parameters()
+        self.pool_f4.reset_parameters()
+        nn.init.xavier_uniform_(self.proj_out.weight)
+        nn.init.zeros_(self.proj_out.bias)
+        nn.init.ones_(self.norm.weight)
+        nn.init.zeros_(self.norm.bias)
+
+    @staticmethod
+    def _mask_feature(x, token_mask):
+        mask = AttentionPool1d._coerce_token_mask(token_mask, x.shape[-1], x.device)
+        if mask is None:
+            return x, None
+        return x * mask.unsqueeze(1).to(x.dtype), mask
+
+    @staticmethod
+    def _summary_with_stats(x, pool, token_mask):
+        pooled = pool(x, token_mask=token_mask)
+        mean, std = _masked_temporal_mean_std(x, token_mask)
+        return torch.cat([pooled, mean, std], dim=-1)
+
+    def _side_summary(self, feature, projection, refine, pool, token_mask):
+        projected, level_mask = self._mask_feature(projection(feature), token_mask)
+        refined = refine(projected, token_mask=level_mask)
+        return self._summary_with_stats(refined, pool, level_mask)
+
+    def forward(self, inputs, station_context=None, token_weights=None,
+                token_weight_floor=1e-6, token_weight_scale=1.0,
+                token_mask=None):
+        del token_weight_floor, token_weight_scale
+        if station_context is not None:
+            raise ValueError(
+                "NativeScaleLateFusionAdapter does not inject station metadata; "
+                "keep diting_station_metadata_mode='none'."
+            )
+        if token_weights is not None:
+            raise ValueError(
+                "NativeScaleLateFusionAdapter does not accept DPK/manual pooling weights. "
+                "Use the explicit padding mask only."
+            )
+        f2, f3, f4, x = inputs
+        if x.dim() != 3:
+            raise ValueError(f"Expected x with shape (B,T,C), got {tuple(x.shape)}")
+        if x.shape[-1] != self.encoder_dim:
+            if x.shape[1] == self.encoder_dim:
+                x = x.transpose(1, 2).contiguous()
+            else:
+                raise ValueError(
+                    f"Expected encoder dim {self.encoder_dim} in x shape {tuple(x.shape)}"
+                )
+        x = x.transpose(1, 2).contiguous()
+        x, x_mask = self._mask_feature(self.proj_x(x), token_mask)
+        for block in self.tcn_x:
+            x = block(x, token_mask=x_mask)
+
+        summaries = [
+            self._summary_with_stats(x, self.pool_x, x_mask),
+            self._side_summary(f2, self.proj_f2, self.refine_f2, self.pool_f2, token_mask),
+            self._side_summary(f3, self.proj_f3, self.refine_f3, self.pool_f3, token_mask),
+            self._side_summary(f4, self.proj_f4, self.refine_f4, self.pool_f4, token_mask),
+        ]
+        fused = self.proj_out(torch.cat(summaries, dim=-1).float())
+        self._last_token_pool_diag = {}
+        for prefix, pool in (
+            ('x', self.pool_x),
+            ('f2', self.pool_f2),
+            ('f3', self.pool_f3),
+            ('f4', self.pool_f4),
+        ):
+            self._last_token_pool_diag.update(
+                DitingStationAdapter._pool_diag(prefix, pool, fused)
+            )
+        return self.norm(fused)
+
+    def temporal_tokens(self, inputs):
+        x = inputs[-1]
+        if x.dim() != 3:
+            raise ValueError(f"Expected final DiTing feature with 3 dims, got {tuple(x.shape)}")
         if x.shape[-1] == self.encoder_dim:
             return x.float()
         if x.shape[1] == self.encoder_dim:
@@ -3503,10 +3911,34 @@ class FullModel(nn.Module):
         scalar('dpk_load_missing_keys', self.dpk_checkpoint_load_info.get('missing_keys', 0))
         scalar('dpk_load_unexpected_keys', self.dpk_checkpoint_load_info.get('unexpected_keys', 0))
 
-    def _normalize(self, data, mode, axis=1):
+    def _normalize(self, data, mode, axis=1, sample_mask=None):
         """
-        Normalize waveform of each sample. (inplace)
+        Normalize waveform of each sample, optionally excluding padded samples.
         """
+        if sample_mask is not None:
+            if axis not in (-1, data.dim() - 1):
+                raise ValueError('sample_mask normalization currently requires the time axis to be last.')
+            mask = sample_mask.to(device=data.device).bool()
+            expected_shape = data.shape[:2] + data.shape[3:]
+            if tuple(mask.shape) != tuple(expected_shape):
+                raise ValueError(
+                    f"Expected sample_mask shape {tuple(expected_shape)}, got {tuple(mask.shape)}"
+                )
+            mask_f = mask.unsqueeze(2).to(data.dtype)
+            count = mask_f.sum(dim=axis, keepdim=True).clamp_min(1.0)
+            mean = (data * mask_f).sum(dim=axis, keepdim=True) / count
+            data = (data - mean) * mask_f
+            if mode == "max":
+                max_data = data.abs().amax(dim=axis, keepdim=True).clamp_min(1e-8)
+                return data / max_data
+            if mode == "std":
+                variance = data.square().sum(dim=axis, keepdim=True) / count
+                std_data = torch.sqrt(variance.clamp_min(0.0)).clamp_min(1e-8)
+                return data / std_data
+            if mode == "":
+                return data
+            raise ValueError(f"Supported mode: 'max','std', got '{mode}'")
+
         data = data - torch.mean(data, axis=axis, keepdims=True)
         if mode == "max":
             max_data = torch.max(data, axis=axis, keepdims=True)
@@ -3580,6 +4012,14 @@ class FullModel(nn.Module):
                 dataset = extras[-1]
             extras = extras[:-1]
         station_vs30 = station_vs30_valid = pga_target_vs30 = pga_target_vs30_valid = None
+        waveform_padding_mask = None
+        for idx, value in enumerate(extras):
+            if torch.is_tensor(value) and value.dtype == torch.bool and value.dim() == 3:
+                if waveform_padding_mask is not None:
+                    raise ValueError('Received more than one waveform padding mask.')
+                waveform_padding_mask = value
+                extras.pop(idx)
+                break
         cached_station_token_weights = None
         if extras:
             if len(extras) in (1, 5):
@@ -3589,7 +4029,7 @@ class FullModel(nn.Module):
                 raise ValueError(
                     'Expected four VS30 tensors after pga_target_valid '
                     '(station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid), '
-                    'optionally followed by cached station token weights; '
+                    'optionally followed by a waveform padding mask and/or cached station token weights; '
                     f'got {len(extras)} extra positional inputs.'
                 )
             if extras:
@@ -3599,6 +4039,7 @@ class FullModel(nn.Module):
             station_vs30_valid,
             pga_target_vs30,
             pga_target_vs30_valid,
+            waveform_padding_mask,
             cached_station_token_weights,
             dataset,
         )
@@ -3921,13 +4362,20 @@ class FullModel(nn.Module):
         raise ValueError(f'Unsupported pga temporal token control mode: {mode}')
 
     def _encode_station_waveform(self, waveform, raw_waveform=None, collect_tokens=False,
-                                 station_context=None, cached_token_weights=None):
+                                 station_context=None, cached_token_weights=None,
+                                 sample_valid_mask=None):
         uses_metadata = False
         if isinstance(self.waveform_model, nn.Sequential) and len(self.waveform_model) >= 2:
             uses_metadata = getattr(self.waveform_model[1], 'uses_station_metadata', False)
         uses_station_weights = _token_weight_is_active(self.station_token_weight_mode)
         uses_temporal_weights = _token_weight_is_active(self.temporal_token_weight_mode)
-        needs_explicit_adapter = collect_tokens or uses_metadata or uses_station_weights or uses_temporal_weights
+        needs_explicit_adapter = (
+            collect_tokens
+            or uses_metadata
+            or uses_station_weights
+            or uses_temporal_weights
+            or sample_valid_mask is not None
+        )
         if needs_explicit_adapter:
             if not isinstance(self.waveform_model, nn.Sequential) or len(self.waveform_model) < 2:
                 raise ValueError('target temporal pooling requires waveform_model = encoder + adapter.')
@@ -3969,9 +4417,13 @@ class FullModel(nn.Module):
                     token_weights=station_token_weights,
                     token_weight_floor=self.token_weight_floor,
                     token_weight_scale=self.token_weight_scale,
+                    token_mask=sample_valid_mask,
                 )
             else:
-                station_emb = self.waveform_model[1](features)
+                station_emb = self.waveform_model[1](
+                    features,
+                    token_mask=sample_valid_mask,
+                )
             if not collect_tokens:
                 return station_emb, None, None
             token_getter = getattr(self.waveform_model[1], 'temporal_tokens', None)
@@ -4055,18 +4507,47 @@ class FullModel(nn.Module):
             station_vs30_valid,
             pga_target_vs30,
             pga_target_vs30_valid,
+            waveform_padding_mask,
             cached_station_token_weights,
             dataset,
         ) = self._parse_extra_inputs(
             extra_inputs,
             dataset,
         )
-        raw_waveform = waveform_inp.clone()
-        waveform_inp = self._normalize(waveform_inp, mode='std', axis=3)
         # Apply explicit masks instead of inferring "validity == nonzero".
         # station_valid: (B, S) bool. pga_target_valid: (B, n_pga) bool.
         sv = station_valid.bool()
+        if waveform_padding_mask is not None:
+            waveform_padding_mask = waveform_padding_mask.to(waveform_inp.device).bool()
+            expected_mask_shape = (
+                waveform_inp.shape[0],
+                waveform_inp.shape[1],
+                waveform_inp.shape[3],
+            )
+            if tuple(waveform_padding_mask.shape) != tuple(expected_mask_shape):
+                raise ValueError(
+                    f"Expected waveform padding mask shape {expected_mask_shape}, "
+                    f"got {tuple(waveform_padding_mask.shape)}"
+                )
+            waveform_padding_mask = waveform_padding_mask & sv[:, :, None]
+            raw_waveform = (
+                waveform_inp.clone()
+                * waveform_padding_mask[:, :, None, :].to(waveform_inp.dtype)
+            )
+        else:
+            raw_waveform = waveform_inp.clone()
+        waveform_inp = self._normalize(
+            waveform_inp,
+            mode='std',
+            axis=3,
+            sample_mask=waveform_padding_mask,
+        )
         waveforms_masked = waveform_inp * sv[:, :, None, None].float()
+        if waveform_padding_mask is not None:
+            waveforms_masked = (
+                waveforms_masked
+                * waveform_padding_mask[:, :, None, :].to(waveforms_masked.dtype)
+            )
         coords_abs = metadata_inp * sv[:, :, None].float()
         coords_rel, coords_center = self._make_relative_coords(coords_abs, sv)
         coords_feat, coords_emb = self._station_coord_features(coords_abs, coords_rel, sv)
@@ -4087,6 +4568,11 @@ class FullModel(nn.Module):
                 collect_tokens=collect_temporal_tokens,
                 station_context=coords_feat[:, i, :] if coords_feat is not None else None,
                 cached_token_weights=station_cached_weights_i,
+                sample_valid_mask=(
+                    waveform_padding_mask[:, i, :]
+                    if waveform_padding_mask is not None
+                    else None
+                ),
             )
             raw_station_emb_list.append(station_emb_i)
             if station_tokens_i is not None:
@@ -4191,6 +4677,20 @@ class FullModel(nn.Module):
             token_mode_codes[self.temporal_token_weight_mode]
         ).detach()
         self._last_diag['token_weight_scale'] = emb.new_tensor(self.token_weight_scale).detach()
+        if waveform_padding_mask is not None:
+            valid_samples = waveform_padding_mask & sv[:, :, None]
+            valid_station_count = sv.float().sum().clamp_min(1.0)
+            self._last_diag['waveform_valid_sample_count_mean'] = (
+                valid_samples.float().sum()
+                / valid_station_count
+            ).detach()
+            self._last_diag['waveform_valid_sample_fraction'] = (
+                valid_samples.float().sum()
+                / (
+                    valid_station_count
+                    * waveform_padding_mask.shape[-1]
+                )
+            ).detach()
         self._record_dpk_diag(emb)
         adapter = self.waveform_model[1] if isinstance(self.waveform_model, nn.Sequential) and len(self.waveform_model) > 1 else None
         adapter_pool_diag = getattr(adapter, '_last_token_pool_diag', None)
@@ -4621,18 +5121,51 @@ def get_diting_model(args, station_emb_dim):
                 use_extra_extractor=use_extra_extractor,
                 out_x=True,
             )
-            head = DitingStationAdapter(
-                encoder_dim=encoder.backbone.d_model,
-                hidden_channels=args.out_channels,
-                output_dim=station_emb_dim,
-                pool_queries=getattr(args, 'diting_station_pool_queries', 4),
-                pool_temperature=getattr(args, 'diting_station_pool_temperature', 1.0),
-                pool_dropout=getattr(args, 'diting_station_pool_dropout', 0.0),
-                metadata_mode=getattr(args, 'diting_station_metadata_mode', 'none'),
-                metadata_dim=getattr(args, 'diting_station_metadata_dim', None),
-                metadata_hidden_dim=getattr(args, 'diting_station_metadata_hidden_dim', 128),
-                metadata_scale=getattr(args, 'diting_station_metadata_scale', 0.1),
+            adapter_mode = normalize(
+                str(getattr(args, 'diting_station_adapter', 'legacy') or 'legacy')
             )
+            if adapter_mode in ('legacy', 'current', 'multiscale_residual'):
+                head = DitingStationAdapter(
+                    encoder_dim=encoder.backbone.d_model,
+                    hidden_channels=args.out_channels,
+                    output_dim=station_emb_dim,
+                    pool_queries=getattr(args, 'diting_station_pool_queries', 4),
+                    pool_temperature=getattr(args, 'diting_station_pool_temperature', 1.0),
+                    pool_dropout=getattr(args, 'diting_station_pool_dropout', 0.0),
+                    metadata_mode=getattr(args, 'diting_station_metadata_mode', 'none'),
+                    metadata_dim=getattr(args, 'diting_station_metadata_dim', None),
+                    metadata_hidden_dim=getattr(args, 'diting_station_metadata_hidden_dim', 128),
+                    metadata_scale=getattr(args, 'diting_station_metadata_scale', 0.1),
+                )
+            elif adapter_mode in ('nlta', 'native_scale_late_fusion'):
+                metadata_mode = getattr(args, 'diting_station_metadata_mode', 'none')
+                if normalize(str(metadata_mode or 'none')) != 'none':
+                    raise ValueError(
+                        "diting_station_adapter='nlta' requires "
+                        "diting_station_metadata_mode='none'."
+                    )
+                head = NativeScaleLateFusionAdapter(
+                    encoder_dim=encoder.backbone.d_model,
+                    output_dim=station_emb_dim,
+                    x_channels=getattr(args, 'diting_nlta_x_channels', 384),
+                    side_channels=getattr(args, 'diting_nlta_side_channels', 128),
+                    x_pool_queries=getattr(args, 'diting_nlta_x_pool_queries', 4),
+                    side_pool_queries=getattr(args, 'diting_nlta_side_pool_queries', 2),
+                    attention_heads=getattr(args, 'diting_nlta_attention_heads', 6),
+                    tcn_dilations=getattr(
+                        args,
+                        'diting_nlta_tcn_dilations',
+                        (1, 2, 4, 8, 16, 32, 64),
+                    ),
+                    ffn_multiplier=getattr(args, 'diting_nlta_ffn_multiplier', 2.0),
+                    pool_temperature=getattr(args, 'diting_station_pool_temperature', 1.0),
+                    dropout=getattr(args, 'diting_nlta_dropout', 0.0),
+                )
+            else:
+                raise ValueError(
+                    "diting_station_adapter must be 'legacy' or 'nlta', "
+                    f"got {adapter_mode!r}."
+                )
             backbone_module = encoder.backbone
         elif frontend == 'backbone_attn_pool':
             encoder = Encoder_baseline_llama(
@@ -4688,9 +5221,18 @@ def get_diting_model(args, station_emb_dim):
 def build_single_station_model(waveform_model_dims=(500, 500, 500),
                                borehole=False,
                                trace_length=3000,
+                               diting_station_adapter='legacy',
                                diting_station_pool_queries=4,
                                diting_station_pool_temperature=1.0,
                                diting_station_pool_dropout=0.0,
+                               diting_nlta_x_channels=384,
+                               diting_nlta_side_channels=128,
+                               diting_nlta_x_pool_queries=4,
+                               diting_nlta_side_pool_queries=2,
+                               diting_nlta_attention_heads=6,
+                               diting_nlta_tcn_dilations=(1, 2, 4, 8, 16, 32, 64),
+                               diting_nlta_ffn_multiplier=2.0,
+                               diting_nlta_dropout=0.0,
                                waveform_scale_gain=1.0,
                                waveform_scale_hidden_dim=None,
                                waveform_scale_log_divisor=10.0,
@@ -4707,9 +5249,18 @@ def build_single_station_model(waveform_model_dims=(500, 500, 500),
     emb_dim = waveform_model_dims[-1]
     input_channels = 6 if borehole else 3
     if diting_args is not None:
+        diting_args.diting_station_adapter = diting_station_adapter
         diting_args.diting_station_pool_queries = diting_station_pool_queries
         diting_args.diting_station_pool_temperature = diting_station_pool_temperature
         diting_args.diting_station_pool_dropout = diting_station_pool_dropout
+        diting_args.diting_nlta_x_channels = diting_nlta_x_channels
+        diting_args.diting_nlta_side_channels = diting_nlta_side_channels
+        diting_args.diting_nlta_x_pool_queries = diting_nlta_x_pool_queries
+        diting_args.diting_nlta_side_pool_queries = diting_nlta_side_pool_queries
+        diting_args.diting_nlta_attention_heads = diting_nlta_attention_heads
+        diting_args.diting_nlta_tcn_dilations = tuple(diting_nlta_tcn_dilations)
+        diting_args.diting_nlta_ffn_multiplier = diting_nlta_ffn_multiplier
+        diting_args.diting_nlta_dropout = diting_nlta_dropout
     waveform_model = get_diting_model(diting_args, station_emb_dim=emb_dim)
     scale_feature_dim = 3 * input_channels + 2
     waveform_scale_proj = WaveformScaleEmbedding(
@@ -4765,9 +5316,18 @@ def build_transformer_model(max_stations,
                             rotation_anchor=None,
                             skip_transformer=False,
                             alternative_coords_embedding=False,
+                            diting_station_adapter='legacy',
                             diting_station_pool_queries=4,
                             diting_station_pool_temperature=1.0,
                             diting_station_pool_dropout=0.0,
+                            diting_nlta_x_channels=384,
+                            diting_nlta_side_channels=128,
+                            diting_nlta_x_pool_queries=4,
+                            diting_nlta_side_pool_queries=2,
+                            diting_nlta_attention_heads=6,
+                            diting_nlta_tcn_dilations=(1, 2, 4, 8, 16, 32, 64),
+                            diting_nlta_ffn_multiplier=2.0,
+                            diting_nlta_dropout=0.0,
                             diting_station_metadata_mode='none',
                             diting_station_metadata_hidden_dim=128,
                             diting_station_metadata_scale=0.1,
@@ -4904,9 +5464,18 @@ def build_transformer_model(max_stations,
     if diting_args is not None:
         if diting_frontend is not None:
             diting_args.diting_frontend = diting_frontend
+        diting_args.diting_station_adapter = diting_station_adapter
         diting_args.diting_station_pool_queries = diting_station_pool_queries
         diting_args.diting_station_pool_temperature = diting_station_pool_temperature
         diting_args.diting_station_pool_dropout = diting_station_pool_dropout
+        diting_args.diting_nlta_x_channels = diting_nlta_x_channels
+        diting_args.diting_nlta_side_channels = diting_nlta_side_channels
+        diting_args.diting_nlta_x_pool_queries = diting_nlta_x_pool_queries
+        diting_args.diting_nlta_side_pool_queries = diting_nlta_side_pool_queries
+        diting_args.diting_nlta_attention_heads = diting_nlta_attention_heads
+        diting_args.diting_nlta_tcn_dilations = tuple(diting_nlta_tcn_dilations)
+        diting_args.diting_nlta_ffn_multiplier = diting_nlta_ffn_multiplier
+        diting_args.diting_nlta_dropout = diting_nlta_dropout
         diting_args.diting_station_metadata_mode = diting_station_metadata_mode
         diting_args.diting_station_metadata_dim = emb_dim if diting_station_metadata_mode != 'none' else None
         diting_args.diting_station_metadata_hidden_dim = diting_station_metadata_hidden_dim

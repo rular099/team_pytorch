@@ -395,6 +395,46 @@ def _crop_aligned_event_window(waveforms, p_picks, target_length, sampling_rate,
     return waveforms[:, start:end, :], p_picks - start, start
 
 
+def _contiguous_waveform_support_mask(waveforms, eps=1e-8):
+    """Infer only leading/trailing storage padding; keep internal zeros valid."""
+    waveforms = np.asarray(waveforms)
+    finite_nonzero = np.isfinite(waveforms) & (np.abs(waveforms) > float(eps))
+    active = finite_nonzero.any(axis=-1)
+    support = np.zeros(active.shape, dtype=bool)
+    for station_idx, station_active in enumerate(active):
+        indices = np.flatnonzero(station_active)
+        if indices.size:
+            support[station_idx, indices[0]:indices[-1] + 1] = True
+    return support
+
+
+def _center_waveforms_with_sample_mask(waveforms, sample_mask):
+    """Mean-center valid storage samples while leaving padding exactly zero."""
+    mask = np.asarray(sample_mask, dtype=bool)
+    if mask.shape != waveforms.shape[:2]:
+        raise ValueError(
+            f"sample mask shape {mask.shape} does not match waveforms {waveforms.shape}"
+        )
+    weight = mask[..., None].astype(waveforms.dtype, copy=False)
+    count = weight.sum(axis=1, keepdims=True).clip(min=1)
+    safe_waveforms = np.where(mask[..., None], waveforms, 0)
+    mean = safe_waveforms.sum(axis=1, keepdims=True) / count
+    return np.where(mask[..., None], waveforms - mean, 0)
+
+
+def _crop_aligned_sample_mask(sample_mask, target_length, crop_start):
+    """Apply the waveform crop/pad geometry to a station-by-time mask."""
+    sample_mask = np.asarray(sample_mask, dtype=bool)
+    if sample_mask.shape[1] <= target_length:
+        if sample_mask.shape[1] == target_length:
+            return sample_mask
+        padded = np.zeros((sample_mask.shape[0], target_length), dtype=bool)
+        padded[:, :sample_mask.shape[1]] = sample_mask
+        return padded
+    start = int(crop_start)
+    return sample_mask[:, start:start + int(target_length)]
+
+
 class DataGenerator(Dataset):
     def __init__(self, event_metadata, metadata, data_path, generator_params, cutout=None, sliding_window=False, windowlen=10000, data_keys=None, overwrite_sampling_rate=None,
                  shuffle=True, label_smoothing=False, oversample=1):
@@ -510,7 +550,9 @@ class PreloadedEventGenerator(Dataset):
                  use_vs30=False, realtime_training=None, realtime_target_sampling=None,
                  dpk_prior_cache=None, dpk_prior_cache_split=None,
                  dpk_prior_cache_dataset_id=0, dpk_prior_cache_align_realtime=True,
-                 dpk_prior_cache_filter_missing_stations=True, **kwargs):
+                 dpk_prior_cache_filter_missing_stations=True,
+                 emit_waveform_padding_mask=False,
+                 waveform_padding_mask_eps=1e-8, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -567,6 +609,8 @@ class PreloadedEventGenerator(Dataset):
         self.dpk_prior_cache_dataset_id = int(dpk_prior_cache_dataset_id)
         self.dpk_prior_cache_align_realtime = bool(dpk_prior_cache_align_realtime)
         self.dpk_prior_cache_filter_missing_stations = bool(dpk_prior_cache_filter_missing_stations)
+        self.emit_waveform_padding_mask = bool(emit_waveform_padding_mask)
+        self.waveform_padding_mask_eps = float(waveform_padding_mask_eps)
         self.trigger_based = trigger_based
         self.disable_station_foreshadowing = disable_station_foreshadowing
         self.selection_skew = selection_skew
@@ -674,6 +718,75 @@ class PreloadedEventGenerator(Dataset):
             self.coord_keys = coord_keys
 
         self.on_epoch_end()
+
+    @staticmethod
+    def _select_station_aligned_values(dataset, row_selector, station_count):
+        values = dataset[()]
+        if np.ndim(values) > 0 and values.shape[0] == station_count:
+            values = values[row_selector]
+        return np.asarray(values)
+
+    def _waveform_storage_mask(self, g_event, row_selector, raw_waveforms):
+        """Prefer explicit HDF5 validity metadata, then infer edge padding."""
+        station_count = int(g_event['waveforms'].shape[0])
+        for key in ('waveform_valid_mask', 'valid_sample_mask'):
+            if key not in g_event:
+                continue
+            values = self._select_station_aligned_values(
+                g_event[key],
+                row_selector,
+                station_count,
+            )
+            if values.ndim == 3:
+                values = values.any(axis=-1)
+            if values.ndim != 2:
+                raise ValueError(
+                    f"{key} must be station-by-time, got shape {values.shape}"
+                )
+            values = values[:, ::self.decimate]
+            if values.shape[1] < raw_waveforms.shape[1]:
+                padded = np.zeros(raw_waveforms.shape[:2], dtype=bool)
+                padded[:, :values.shape[1]] = values.astype(bool)
+                return padded
+            return values[:, :raw_waveforms.shape[1]].astype(bool, copy=False)
+
+        if 'valid_n_samples' in g_event:
+            lengths = self._select_station_aligned_values(
+                g_event['valid_n_samples'],
+                row_selector,
+                station_count,
+            ).reshape(-1)
+            if 'valid_start_sample' in g_event:
+                starts = self._select_station_aligned_values(
+                    g_event['valid_start_sample'],
+                    row_selector,
+                    station_count,
+                ).reshape(-1)
+            else:
+                starts = np.zeros_like(lengths)
+            station_rows = raw_waveforms.shape[0]
+            if lengths.size == 1 and station_rows > 1:
+                lengths = np.repeat(lengths, station_rows)
+            if starts.size == 1 and station_rows > 1:
+                starts = np.repeat(starts, station_rows)
+            if lengths.size != station_rows or starts.size != station_rows:
+                raise ValueError(
+                    "valid_n_samples/valid_start_sample must have one value per loaded station; "
+                    f"got lengths={lengths.size}, starts={starts.size}, stations={station_rows}"
+                )
+            mask = np.zeros(raw_waveforms.shape[:2], dtype=bool)
+            for station_idx, (start, length) in enumerate(zip(starts, lengths)):
+                raw_start = float(start)
+                start_idx = max(0, int(np.floor(raw_start / self.decimate)))
+                end_idx = int(np.ceil((raw_start + float(length)) / self.decimate))
+                end_idx = min(raw_waveforms.shape[1], max(start_idx, end_idx))
+                mask[station_idx, start_idx:end_idx] = True
+            return mask
+
+        return _contiguous_waveform_support_mask(
+            raw_waveforms,
+            eps=self.waveform_padding_mask_eps,
+        )
 
     def __len__(self):
 #        return len(self.event_metadata)
@@ -1356,6 +1469,7 @@ class PreloadedEventGenerator(Dataset):
             else:
                 original_wave_idx_for_loaded = np.asarray(row_selector, dtype=np.int64)
             data = {}
+            waveform_padding_masks = []
             for key in g_event:
                 extra_vs30_key = self.use_vs30 and key in (
                     'vs30',
@@ -1369,7 +1483,19 @@ class PreloadedEventGenerator(Dataset):
                     data[key] = []
                 if key == 'waveforms':
                     cur_waveform = g_event[key][row_selector, ::self.decimate, :]
-                    cur_waveform -= np.mean(cur_waveform, axis=1, keepdims=True)
+                    if self.emit_waveform_padding_mask:
+                        cur_sample_mask = self._waveform_storage_mask(
+                            g_event,
+                            row_selector,
+                            cur_waveform,
+                        )
+                        cur_waveform = _center_waveforms_with_sample_mask(
+                            cur_waveform,
+                            cur_sample_mask,
+                        )
+                        waveform_padding_masks.append(cur_sample_mask)
+                    else:
+                        cur_waveform -= np.mean(cur_waveform, axis=1, keepdims=True)
                     data[key] += [cur_waveform]
                 else:
                     values = g_event[key][()]
@@ -1418,6 +1544,15 @@ class PreloadedEventGenerator(Dataset):
             self.noise_seconds,
             rng=rng,
         )
+        if self.emit_waveform_padding_mask:
+            storage_mask = np.concatenate(waveform_padding_masks, axis=0)
+            self.waveform_sample_valid = _crop_aligned_sample_mask(
+                storage_mask,
+                self.trace_length,
+                crop_start,
+            )
+        else:
+            self.waveform_sample_valid = None
         X = self.waveforms
         if self.pga_key in data:
             self.pga = np.asarray(self.pga)
@@ -1430,6 +1565,11 @@ class PreloadedEventGenerator(Dataset):
         true_batch_size = 1
 
         waveforms = np.zeros((true_batch_size, self.max_stations) + self.waveforms.shape[1:])  # shape (1, 25, 10000, 3)
+        waveform_sample_valid = (
+            np.zeros(waveforms.shape[:3], dtype=bool)
+            if self.emit_waveform_padding_mask
+            else None
+        )
         true_max_stations_in_batch = max(max([self.metadata.shape[0] for idx in indexes]), self.max_stations) # max(n_stations,25) = tms
         metadata = np.zeros((true_batch_size, true_max_stations_in_batch) + self.metadata.shape[1:]) # shape (1,tms, 3), coords
         # Use NaN for PGA so that "no measurement" is unambiguous and the legal
@@ -1455,6 +1595,8 @@ class PreloadedEventGenerator(Dataset):
         for i, idx in enumerate(indexes):
             if len(X) <= self.max_stations:
                 waveforms[i, :len(X)] = X
+                if waveform_sample_valid is not None:
+                    waveform_sample_valid[i, :len(X)] = self.waveform_sample_valid
                 metadata[i, :len(self.metadata)] = self.metadata
                 pga[i, :len(self.pga)] = self.pga
                 if self.use_vs30:
@@ -1511,6 +1653,8 @@ class PreloadedEventGenerator(Dataset):
                 selected_input_indices[i, :len(selection)] = selection
                 selected_original_input_indices[i, :len(selection)] = self.original_wave_idx[selection]
                 waveforms[i] = self.waveforms[selection]
+                if waveform_sample_valid is not None:
+                    waveform_sample_valid[i] = self.waveform_sample_valid[selection]
                 p_picks[i] = self.triggers[selection]
 
         if self.dump_debug_snapshot:
@@ -1585,10 +1729,23 @@ class PreloadedEventGenerator(Dataset):
                 window_end = self._rng_int(rng, max(windowlen, self.cutout[0]),
                                            min(waveforms.shape[2], self.cutout[1]) + 1)
                 waveforms = waveforms[:, :, window_end - windowlen: window_end]
+                if waveform_sample_valid is not None:
+                    waveform_sample_valid = waveform_sample_valid[
+                        :,
+                        :,
+                        window_end - windowlen:window_end,
+                    ]
 
                 cutout = window_end
+                shift = 0
                 if self.adjust_mean:
-                    waveforms -= np.mean(waveforms, axis=2, keepdims=True)
+                    if waveform_sample_valid is None:
+                        waveforms -= np.mean(waveforms, axis=2, keepdims=True)
+                    else:
+                        mask = waveform_sample_valid[..., None]
+                        count = mask.sum(axis=2, keepdims=True).clip(min=1)
+                        mean = np.where(mask, waveforms, 0).sum(axis=2, keepdims=True) / count
+                        waveforms = np.where(mask, waveforms - mean, 0)
             else:
                 if realtime_info is not None:
                     cutout = realtime_info['cutout']
@@ -1597,18 +1754,34 @@ class PreloadedEventGenerator(Dataset):
                 else:
                     cutout = self._rng_int(rng, *self.cutout)
                 if self.adjust_mean:
-                    # Mean only over non-zero samples so that leading zero-padding
-                    # is neither diluting the mean nor getting offset by it.
-                    region = waveforms[:, :, :cutout + 1]                    # (B, S, T, C)
-                    has_data = np.any(np.abs(region) > self.wave_eps, axis=-1)                  # (B, S, T)
-                    n = has_data.sum(axis=2, keepdims=True).clip(min=1)      # (B, S, 1)
-                    mu = (region * has_data[..., None]).sum(axis=2, keepdims=True) / n[..., None]
-                    waveforms[:, :, :cutout + 1] -= mu * has_data[..., None]
+                    region = waveforms[:, :, :cutout + 1]  # (B, S, T, C)
+                    if waveform_sample_valid is None:
+                        # Legacy path: infer nonzero samples after initial centering.
+                        has_data = np.any(np.abs(region) > self.wave_eps, axis=-1)
+                    else:
+                        has_data = waveform_sample_valid[:, :, :cutout + 1]
+                    n = has_data.sum(axis=2, keepdims=True).clip(min=1)
+                    mu = (
+                        np.where(has_data[..., None], region, 0).sum(axis=2, keepdims=True)
+                        / n[..., None]
+                    )
+                    waveforms[:, :, :cutout + 1] = np.where(
+                        has_data[..., None],
+                        region - mu,
+                        0,
+                    )
                 # Right-align: shift valid signal [0:cutout] to end of window,
                 # matching real-time EEW where signal arrives at the tail
                 shift = waveforms.shape[2] - cutout
                 waveforms = np.roll(waveforms, shift, axis=2)
                 waveforms[:, :, :shift] = 0
+                if waveform_sample_valid is not None:
+                    waveform_sample_valid = np.roll(
+                        waveform_sample_valid,
+                        shift,
+                        axis=2,
+                    )
+                    waveform_sample_valid[:, :, :shift] = False
                 p_picks = p_picks + shift
         else:
             cutout = waveforms.shape[2]
@@ -1617,7 +1790,10 @@ class PreloadedEventGenerator(Dataset):
         if self.trigger_based or self.realtime_enabled:
             # Remove waveforms for all stations that did not trigger yet to avoid knowledge leakage
             p_picks[p_picks <= 0] = org_waveform_length  # Ensure that stations without P picks do not show data
-            waveforms[cutout + shift <= p_picks, :, :] = 0
+            not_triggered = cutout + shift <= p_picks
+            waveforms[not_triggered, :, :] = 0
+            if waveform_sample_valid is not None:
+                waveform_sample_valid[not_triggered, :] = False
 
         if self.integrate: # always False. acc to vel should be done on the data source.
             waveforms = np.cumsum(waveforms, axis=2) / self.sampling_rate
@@ -1891,6 +2067,29 @@ class PreloadedEventGenerator(Dataset):
             input_pga_valid &= station_valid
             input_pga_values = np.where(input_pga_valid, input_pga, 0.0)
 
+        waveform_valid_sample_count = None
+        waveform_post_p_valid_sample_count = None
+        if waveform_sample_valid is not None:
+            waveform_sample_valid &= station_valid[:, :, None]
+            waveforms = np.where(
+                waveform_sample_valid[..., None],
+                waveforms,
+                0,
+            )
+            waveform_valid_sample_count = waveform_sample_valid.sum(axis=2).astype(np.int64)
+            sample_index = np.arange(waveform_sample_valid.shape[2])[None, None, :]
+            valid_pick = (
+                (p_picks > 0)
+                & (p_picks < waveform_sample_valid.shape[2])
+                & station_valid
+            )
+            post_p_mask = (
+                waveform_sample_valid
+                & valid_pick[:, :, None]
+                & (sample_index >= p_picks[:, :, None])
+            )
+            waveform_post_p_valid_sample_count = post_p_mask.sum(axis=2).astype(np.int64)
+
         # Sanity check: at least one station must have a real waveform to avoid
         # degenerate forward passes (all-zero input → NaN in energy loss).
         # If violated, skip to the next sample.
@@ -1931,6 +2130,11 @@ class PreloadedEventGenerator(Dataset):
         metadata = torch.from_numpy(metadata[0]).float()
         magnitude = torch.from_numpy(magnitude[0]).float()
         station_valid_t = torch.from_numpy(station_valid[0]).bool()
+        waveform_padding_mask_t = (
+            torch.from_numpy(waveform_sample_valid[0]).bool()
+            if waveform_sample_valid is not None
+            else None
+        )
 
         inputs = [waveforms, metadata, station_valid_t]
         outputs = []
@@ -1961,6 +2165,9 @@ class PreloadedEventGenerator(Dataset):
             pga_target_vs30_valid_t = torch.from_numpy(pga_target_vs30_valid[0]).bool()
             inputs += [station_vs30_t, station_vs30_valid_t, pga_target_vs30_t, pga_target_vs30_valid_t]
 
+        if waveform_padding_mask_t is not None:
+            inputs += [waveform_padding_mask_t]
+
         if self.dpk_prior_cache is not None:
             cache_split = cache_split_for_sample
             cached_weights = self.dpk_prior_cache.lookup_sample(
@@ -1985,6 +2192,21 @@ class PreloadedEventGenerator(Dataset):
             'selected_original_input_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
             'original_station_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
         }
+        if waveform_valid_sample_count is not None:
+            p_pick_info['waveform_valid_sample_count'] = torch.from_numpy(
+                waveform_valid_sample_count[0]
+            ).long()
+            p_pick_info['waveform_valid_seconds'] = torch.from_numpy(
+                waveform_valid_sample_count[0].astype(np.float32)
+                / float(self.sampling_rate)
+            ).float()
+            p_pick_info['waveform_post_p_valid_sample_count'] = torch.from_numpy(
+                waveform_post_p_valid_sample_count[0]
+            ).long()
+            p_pick_info['waveform_post_p_valid_seconds'] = torch.from_numpy(
+                waveform_post_p_valid_sample_count[0].astype(np.float32)
+                / float(self.sampling_rate)
+            ).float()
         if self.dpk_prior_cache is not None:
             p_pick_info['dpk_prior_cache_path'] = self.dpk_prior_cache.path
             p_pick_info['dpk_prior_cache_split'] = str(cache_split)

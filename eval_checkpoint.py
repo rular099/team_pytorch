@@ -435,6 +435,24 @@ def _print_tensor_station_similarity(stacked):
         f'  Flat per-element variance: min={flat_var.min():.6f}, '
         f'max={flat_var.max():.6f}, mean={flat_var.mean():.6f}'
     )
+    centered = flat - flat.mean(dim=0, keepdim=True)
+    singular_values = torch.linalg.svdvals(centered.float())
+    spectral_energy = singular_values.square()
+    if spectral_energy.sum() > 0:
+        spectrum = spectral_energy / spectral_energy.sum()
+        entropy_rank = torch.exp(
+            -(spectrum * spectrum.clamp_min(1e-12).log()).sum()
+        )
+        participation_rank = 1.0 / spectrum.square().sum().clamp_min(1e-12)
+        centered_ratio = (
+            centered.norm(dim=-1).mean()
+            / flat.norm(dim=-1).mean().clamp_min(1e-12)
+        )
+        print(
+            f'  Station effective rank: entropy={entropy_rank:.3f}, '
+            f'participation={participation_rank:.3f}, '
+            f'centered/raw norm={centered_ratio:.6f}'
+        )
 
     if stacked.ndim == 2:
         return
@@ -507,6 +525,24 @@ def _effective_count_from_weights(weights):
     return torch.exp(entropy)
 
 
+def _batched_waveform_padding_mask(inputs):
+    if not isinstance(inputs, list) or not inputs or not isinstance(inputs[0], torch.Tensor):
+        return None
+    waveform = inputs[0]
+    if waveform.dim() != 4:
+        return None
+    expected = (waveform.shape[0], waveform.shape[1], waveform.shape[-1])
+    for value in inputs[5:]:
+        if (
+            isinstance(value, torch.Tensor)
+            and value.dtype == torch.bool
+            and value.dim() == 3
+            and tuple(value.shape) == expected
+        ):
+            return value
+    return None
+
+
 @torch.no_grad()
 def _print_dpk_event_partition_diagnostics(raw_model, inputs_dev, valid_idx):
     has_dpk = (
@@ -520,8 +556,16 @@ def _print_dpk_event_partition_diagnostics(raw_model, inputs_dev, valid_idx):
 
     waveform_inp = inputs_dev[0]
     station_valid = inputs_dev[2].bool()
-    waveform_norm = raw_model._normalize(waveform_inp.clone(), mode='std', axis=3)
+    waveform_padding_mask = _batched_waveform_padding_mask(inputs_dev)
+    waveform_norm = raw_model._normalize(
+        waveform_inp.clone(),
+        mode='std',
+        axis=3,
+        sample_mask=waveform_padding_mask,
+    )
     waveforms_masked = waveform_norm * station_valid[:, :, None, None].float()
+    if waveform_padding_mask is not None:
+        waveforms_masked *= waveform_padding_mask[:, :, None, :].to(waveforms_masked.dtype)
     adapter = raw_model.waveform_model[1]
     encoder_dim = getattr(adapter, 'encoder_dim', None)
 
@@ -708,6 +752,15 @@ def diagnose_amplitude_sensitivity(model, dataset, device, config, scales=(0.5, 
         item.unsqueeze(0).to(device) if torch.is_tensor(item) else item
         for item in inputs[5:]
     ]
+    inputs_dev = [
+        waveform_inp,
+        metadata_inp,
+        station_valid,
+        pga_targets_inp,
+        pga_target_valid,
+        *extra_inputs,
+    ]
+    waveform_padding_mask = _batched_waveform_padding_mask(inputs_dev)
 
     print(f'{"="*60}')
     print('  Amplitude sensitivity diagnostics (1 sample)')
@@ -716,10 +769,28 @@ def diagnose_amplitude_sensitivity(model, dataset, device, config, scales=(0.5, 
     base_emb = None
     for scale in scales:
         scaled_waveform = waveform_inp * scale
-        waveform_norm = raw_model._normalize(scaled_waveform, mode='std', axis=3)
+        waveform_norm = raw_model._normalize(
+            scaled_waveform,
+            mode='std',
+            axis=3,
+            sample_mask=waveform_padding_mask,
+        )
         waveforms_masked = waveform_norm * station_valid[:, :, None, None].float()
+        if waveform_padding_mask is not None:
+            waveforms_masked *= waveform_padding_mask[:, :, None, :].to(waveforms_masked.dtype)
         waveforms_emb = torch.stack(
-            [raw_model.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])],
+            [
+                raw_model._encode_station_waveform(
+                    waveforms_masked[:, i, :, :],
+                    raw_waveform=scaled_waveform[:, i, :, :],
+                    sample_valid_mask=(
+                        waveform_padding_mask[:, i, :]
+                        if waveform_padding_mask is not None
+                        else None
+                    ),
+                )[0]
+                for i in range(waveforms_masked.shape[1])
+            ],
             dim=1
         )
 
@@ -786,14 +857,37 @@ def diagnose_embedding_scales(model, dataset, device):
     metadata_inp = inputs[1].unsqueeze(0).to(device)
     station_valid = inputs[2].unsqueeze(0).to(device)
     valid_idx = inputs[2].bool().nonzero(as_tuple=False).flatten()
+    inputs_dev = [
+        item.unsqueeze(0).to(device) if torch.is_tensor(item) else item
+        for item in inputs
+    ]
+    waveform_padding_mask = _batched_waveform_padding_mask(inputs_dev)
 
-    waveform_norm = raw_model._normalize(waveform_inp, mode='std', axis=3)
+    waveform_norm = raw_model._normalize(
+        waveform_inp,
+        mode='std',
+        axis=3,
+        sample_mask=waveform_padding_mask,
+    )
     waveforms_masked = waveform_norm * station_valid[:, :, None, None].float()
+    if waveform_padding_mask is not None:
+        waveforms_masked *= waveform_padding_mask[:, :, None, :].to(waveforms_masked.dtype)
     coords_abs = metadata_inp * station_valid[:, :, None].float()
     coords_rel, _ = raw_model._make_relative_coords(coords_abs, station_valid.bool())
 
     waveforms_emb = torch.stack(
-        [raw_model.waveform_model(waveforms_masked[:, i, :, :]) for i in range(waveforms_masked.shape[1])],
+        [
+            raw_model._encode_station_waveform(
+                waveforms_masked[:, i, :, :],
+                raw_waveform=waveform_inp[:, i, :, :],
+                sample_valid_mask=(
+                    waveform_padding_mask[:, i, :]
+                    if waveform_padding_mask is not None
+                    else None
+                ),
+            )[0]
+            for i in range(waveforms_masked.shape[1])
+        ],
         dim=1
     )
     waveforms_emb_valid = waveforms_emb[0, valid_idx]
@@ -891,18 +985,41 @@ def _permute_first_dim_if_station_aligned(value, source_slots):
 
 def _cached_token_weights_input_index(inputs):
     """Infer cached DPK token-weight input appended by GeminiDataset when present."""
-    if not isinstance(inputs, list) or len(inputs) not in (6, 10):
+    if not isinstance(inputs, list) or len(inputs) < 6:
         return None
     if len(inputs) < 3 or not isinstance(inputs[0], torch.Tensor):
         return None
-    candidate = inputs[-1]
-    if not isinstance(candidate, torch.Tensor):
+    station_count = int(inputs[0].shape[0])
+    for idx in range(len(inputs) - 1, 4, -1):
+        candidate = inputs[idx]
+        if not isinstance(candidate, torch.Tensor):
+            continue
+        if (
+            torch.is_floating_point(candidate)
+            and candidate.dim() >= 3
+            and int(candidate.shape[0]) == station_count
+        ):
+            return idx
+    return None
+
+
+def _waveform_padding_mask_input_index(inputs):
+    """Find a per-station, per-sample boolean mask among optional inputs."""
+    if not isinstance(inputs, list) or len(inputs) < 6:
         return None
-    if not torch.is_floating_point(candidate) or candidate.dim() < 2:
+    waveform = inputs[0]
+    if not isinstance(waveform, torch.Tensor) or waveform.dim() != 3:
         return None
-    if int(candidate.shape[0]) != int(inputs[0].shape[0]):
-        return None
-    return len(inputs) - 1
+    for idx in range(5, len(inputs)):
+        candidate = inputs[idx]
+        if (
+            isinstance(candidate, torch.Tensor)
+            and candidate.dtype == torch.bool
+            and candidate.dim() == 2
+            and tuple(candidate.shape) == (waveform.shape[0], waveform.shape[-1])
+        ):
+            return idx
+    return None
 
 
 def apply_waveform_station_permutation(
@@ -932,6 +1049,12 @@ def apply_waveform_station_permutation(
 
     permuted = list(inputs)
     permuted[0] = _permute_first_dim_if_station_aligned(permuted[0], source_slots)
+    padding_mask_idx = _waveform_padding_mask_input_index(permuted)
+    if padding_mask_idx is not None:
+        permuted[padding_mask_idx] = _permute_first_dim_if_station_aligned(
+            permuted[padding_mask_idx],
+            source_slots,
+        )
     if permute_cached_token_weights:
         cached_idx = _cached_token_weights_input_index(permuted)
         if cached_idx is not None:
@@ -1015,6 +1138,10 @@ def run_inference(
                 'realtime_time_bin',
                 'realtime_target_type',
                 'realtime_target_lead_time',
+                'waveform_valid_sample_count',
+                'waveform_valid_seconds',
+                'waveform_post_p_valid_sample_count',
+                'waveform_post_p_valid_seconds',
             ):
                 if info_key in p_picks:
                     results[info_key].append(_to_numpy(p_picks[info_key]))
@@ -1621,6 +1748,45 @@ def print_realtime_pga_summary(results, labels_flat, preds_flat, valid_mask, con
                 labels_flat[mask],
                 preds_flat[mask],
             )
+
+    station_valid = _stack_result_array(results, 'station_valid', dtype=bool)
+    if station_valid is not None:
+        station_valid = np.asarray(station_valid, dtype=bool).reshape(n_samples, -1)
+        second_bins = [
+            ('0-1s', 0.0, 1.0),
+            ('1-3s', 1.0, 3.0),
+            ('3-10s', 3.0, 10.0),
+            ('10-20s', 10.0, 20.0),
+            ('20-40s', 20.0, 40.0),
+            ('40s+', 40.0, np.inf),
+        ]
+        for key, label in (
+            ('waveform_valid_seconds', 'valid waveform seconds'),
+            ('waveform_post_p_valid_seconds', 'post-P valid seconds'),
+        ):
+            seconds = _stack_result_array(results, key, dtype=float)
+            if seconds is None:
+                continue
+            seconds = np.asarray(seconds, dtype=float).reshape(n_samples, -1)
+            seconds_valid = station_valid & np.isfinite(seconds)
+            count = seconds_valid.sum(axis=1)
+            event_mean = np.divide(
+                np.where(seconds_valid, seconds, 0.0).sum(axis=1),
+                np.maximum(count, 1),
+            )
+            event_mean[count == 0] = np.nan
+            print(f'    By event-mean {label}:')
+            for bin_name, lower, upper in second_bins:
+                if np.isinf(upper):
+                    row_mask = event_mean >= lower
+                else:
+                    row_mask = (event_mean >= lower) & (event_mean < upper)
+                mask = valid_mask & row_mask[:, None]
+                _print_pga_metric_line(
+                    f'      {bin_name}',
+                    labels_flat[mask],
+                    preds_flat[mask],
+                )
 
     cfg = (config or {}).get('training_params', {}).get('pga_loss_weighting') or {}
     threshold = cfg.get('threshold')
