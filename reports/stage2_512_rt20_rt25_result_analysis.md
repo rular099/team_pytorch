@@ -108,8 +108,14 @@ for rt22/rt23/rt25 are missing until eval is rerun.
    avoiding the residual-add branch that the model appears to suppress.
 
 3. If rt22/rt23/rt25 still fail to beat rt10 on balanced PGA, stop this family
-   as the default path. The next design should make the station residual path
-   more structurally visible to PGA readout, for example by giving the target
-   cross-attention an explicit residual key/value stream or by adding a PGA
-   residual head over station residuals, rather than adding a weak gated vector
-   into the shared station token.
+   as the default path. The next diagnostic should first determine whether
+   pre-adapter DiTing tokens `F` contain usable station-specific PGA residual
+   information, rather than adding another weak gated vector into the shared
+   station token.
+
+4. That frozen-base realtime diagnostic is encoded as rt26-rt29 in
+   `reports/stage2_512_layerwise_station_temporal_plan.md`. Analyze those runs
+   around `pga_temporal_base`, `pga_temporal_final`, `|delta|`,
+   `corr(delta, label-base)`, and the station-roll/zero-token controls. Ordinary
+   final PGA MAE alone is not enough evidence that raw station waveform features
+   are being used.

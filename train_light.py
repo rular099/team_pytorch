@@ -1682,6 +1682,39 @@ def initialize_input_dump(input_dump_config):
         }, f, indent=2)
 
 
+def dpk_prior_cache_for_split(training_params, split_name, dataset_id=0):
+    cfg = training_params.get('dpk_prior_cache', None)
+    if not cfg or not cfg.get('enabled', False):
+        return None
+
+    paths = cfg.get('paths', {})
+    aliases = {'val': 'dev', 'validation': 'dev'}
+    split_key = aliases.get(split_name, split_name)
+    path = None
+    if isinstance(paths, dict):
+        path = paths.get(split_key) or paths.get(split_name)
+    elif isinstance(paths, str):
+        path = paths
+    path = path or cfg.get(f'{split_key}_path') or cfg.get(f'{split_name}_path')
+    if path is None and split_key == 'train':
+        path = cfg.get('path')
+    if not path:
+        raise ValueError(
+            f'dpk_prior_cache is enabled but no cache path is configured for split={split_name!r}. '
+            'Set training_params.dpk_prior_cache.paths.train/dev.'
+        )
+    return util.DPKPriorCache(
+        path,
+        source=cfg.get('source', 'dpk_finetuned'),
+        mode=cfg.get('mode', 'event'),
+        token_floor=cfg.get(
+            'token_floor',
+            cfg.get('floor', training_params.get('token_weight_floor', 1e-4)),
+        ),
+        missing_policy=cfg.get('missing_policy', 'error'),
+    )
+
+
 def maybe_dump_model_batch(input_dump_config, split_name, epoch_idx, batch_idx, global_step, inputs, labels, p_picks):
     if not input_dump_config['enabled']:
         return
@@ -1718,7 +1751,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 pga_temporal_residual_loss=None, distribution_mean_loss=None,
                 station_residual_decorrelation_loss=None,
                 station_local_pga_loss=None,
-                freeze_mode=None):
+                freeze_mode=None, start_epoch=0, best_val_init=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
     scalar_history = defaultdict(list)
@@ -1732,14 +1765,18 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
         device = next(model.parameters()).device
     except:
         device = 'cpu'
-    global_step = 0
-    steps_per_epoch = 0
+    start_epoch = int(start_epoch or 0)
+    try:
+        steps_per_epoch = len(train_loader)
+    except TypeError:
+        steps_per_epoch = 0
+    global_step = start_epoch * steps_per_epoch if steps_per_epoch else 0
     export_dir = os.path.join('logs', training_params['weight_path'])
-    best_val = float('inf')
+    best_val = float(best_val_init) if best_val_init is not None else float('inf')
     best_path = os.path.join(training_params['weight_path'], f'{save_name}_best.pth')
     last_path = os.path.join(training_params['weight_path'], f'{save_name}_last.pth')
     try:
-        for epoch in range(num_epochs):
+        for epoch in range(start_epoch, num_epochs):
             if is_dist and train_sampler is not None:
                 train_sampler.set_epoch(epoch)
             model.train()
@@ -2101,7 +2138,7 @@ def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dis
     checkpoint = None
 
     if rank == 0:
-        checkpoint = torch.load(checkpoint_path, map_location=device)
+        checkpoint = torch.load(checkpoint_path, map_location='cpu')
 
     if is_dist:
         # 让 rank 0 把 state_dict 广播给所有进程
@@ -2130,6 +2167,57 @@ def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dis
     val_loss = checkpoint.get('val_loss', checkpoint.get('loss', None))
 
     return model, optimizer, scheduler, start_epoch, val_loss
+
+
+def resolve_full_model_resume_path(training_params, resume_arg=None):
+    spec = resume_arg
+    if spec is None:
+        spec = training_params.get('resume_full_model_path', None)
+    if spec is None:
+        spec = training_params.get('resume_full_model', None)
+    if isinstance(spec, bool):
+        spec = 'auto' if spec else None
+    if spec is None or spec == '':
+        return None
+
+    spec = str(spec)
+    weight_path = training_params['weight_path']
+    if spec in ('auto', 'true', '1'):
+        candidates = [
+            os.path.join(weight_path, 'full_model_last.pth'),
+            os.path.join(weight_path, 'full_model_best.pth'),
+        ]
+        for candidate in candidates:
+            if os.path.isfile(candidate):
+                return candidate
+        return candidates[0]
+    if spec == 'last':
+        return os.path.join(weight_path, 'full_model_last.pth')
+    if spec == 'best':
+        return os.path.join(weight_path, 'full_model_best.pth')
+    if spec == 'init':
+        return os.path.join(weight_path, 'full_model_init.pth')
+    return spec
+
+
+def available_full_model_checkpoints(training_params):
+    weight_path = training_params['weight_path']
+    names = ('full_model_last.pth', 'full_model_best.pth', 'full_model_init.pth')
+    return [os.path.join(weight_path, name) for name in names if os.path.isfile(os.path.join(weight_path, name))]
+
+
+def checkpoint_loss_value(checkpoint_path, is_dist=False, rank=0):
+    value = None
+    if rank == 0 and checkpoint_path and os.path.isfile(checkpoint_path):
+        checkpoint = torch.load(checkpoint_path, map_location='cpu')
+        value = checkpoint.get('val_loss', checkpoint.get('loss', None))
+        if value is not None:
+            value = float(value)
+    if is_dist:
+        buf = [value]
+        dist.broadcast_object_list(buf, src=0)
+        value = buf[0]
+    return value
 
 def transfer_weights(model, weights_path, ensemble_load=False, wait_for_load=False,
                      ens_id=None, sleeptime=600, device="cpu",
@@ -2352,6 +2440,18 @@ if __name__ == '__main__':
     parser.add_argument('--continue_ensemble', action='store_true')  # Continues a stopped ensemble training
     parser.add_argument('--skip_single_station_pretrain', action='store_true')
     parser.add_argument('--single_station_only', action='store_true')
+    parser.add_argument(
+        '--resume_full_model',
+        nargs='?',
+        const='auto',
+        default=None,
+        help=(
+            'Resume full-model training from a checkpoint. Use without a value '
+            'to auto-load full_model_last.pth, falling back to full_model_best.pth '
+            'if last is absent. You can also pass last, best, init, or an explicit '
+            'checkpoint path.'
+        ),
+    )
     args = parser.parse_args()
     config = load_config_file(args.config)
     set_seed(config.get('seed', 42))
@@ -2380,8 +2480,9 @@ if __name__ == '__main__':
         os.makedirs(training_params['weight_path'], exist_ok=True)
     if is_dist:
         dist.barrier()
+    resume_full_model_path = resolve_full_model_resume_path(training_params, args.resume_full_model)
     listdir = os.listdir(training_params['weight_path'])
-    if not args.continue_ensemble and listdir:
+    if not args.continue_ensemble and not resume_full_model_path and listdir:
         if len(listdir) != 1 or listdir[0] != 'config.json':
             raise ValueError(f'Weight path needs to be empty. ({training_params["weight_path"]})')
 
@@ -2421,7 +2522,8 @@ if __name__ == '__main__':
                                           mag_key=generator.get('key', 'MA'),
                                           overwrite_sampling_rate=overwrite_sampling_rate,
                                           decimate_events=generator.get('decimate_events', None),
-                                          min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+                                          min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                                          station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                        for data_path, generator in zip(training_params['data_path'], generator_params)]
     full_data_dev = [loader.load_events(data_path, event_metadata_path='test_ev.csv',limit=limit,
                                         parts=(False, True, False),
@@ -2431,7 +2533,8 @@ if __name__ == '__main__':
                                         mag_key=generator.get('key', 'MA'),
                                         overwrite_sampling_rate=overwrite_sampling_rate,
                                         decimate_events=generator.get('decimate_events', None),
-                                        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+                                        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                                        station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                      for data_path, generator in zip(training_params['data_path'], generator_params)]
     full_data_test = [loader.load_events(data_path, event_metadata_path='test_ev.csv', limit=limit,
                                          parts=(False, False, True),
@@ -2441,7 +2544,8 @@ if __name__ == '__main__':
                                          mag_key=generator.get('key', 'MA'),
                                          overwrite_sampling_rate=overwrite_sampling_rate,
                                          decimate_events=generator.get('decimate_events', None),
-                                         min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+                                         min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                                         station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                       for data_path, generator in zip(training_params['data_path'], generator_params)]
 
     event_metadata_train = [d[0] for d in full_data_train]
@@ -2461,7 +2565,8 @@ if __name__ == '__main__':
                                             mag_key=generator.get('key', 'MA'),
                                             overwrite_sampling_rate=overwrite_sampling_rate,
                                             decimate_events=generator.get('decimate_events', None),
-                                            min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+                                            min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                                            station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                          for data_path, generator in zip(training_params['data_path'], generator_params)]
         fixed_overfit_ids = None
         if training_params.get('overfit_event_ids_path'):
@@ -2936,11 +3041,21 @@ if __name__ == '__main__':
                 use_vs30=config['model_params'].get('use_vs30', False),
                 station_experiment=station_experiment_cfg,
             )
+            train_cache = dpk_prior_cache_for_split(training_params, 'train', dataset_id=i)
+            dpk_prior_cache_cfg = training_params.get('dpk_prior_cache') or {}
+            train_defaults = {
+                **defaults,
+                'dpk_prior_cache': train_cache,
+                'dpk_prior_cache_split': 'train',
+                'dpk_prior_cache_dataset_id': i,
+                'dpk_prior_cache_align_realtime': dpk_prior_cache_cfg.get('align_realtime_to_cache', True),
+                'dpk_prior_cache_filter_missing_stations': dpk_prior_cache_cfg.get('filter_missing_stations', True),
+            }
             if training_params.get('deterministic_sampling', False):
-                defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
+                train_defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
             # Config wins: overlay generator_param_set on top of defaults.
             train_override = indexed_config_override(train_generator_overrides, i)
-            merged = {**defaults, **generator_param_set, **train_override}
+            merged = {**train_defaults, **generator_param_set, **train_override}
             if rank == 0:
                 experiment = merged.get('station_experiment') or {}
                 print(
@@ -2966,7 +3081,18 @@ if __name__ == '__main__':
             old_oversample = generator_param_set.get('oversample', 1)
             generator_param_set['oversample'] = 1 if overfit_mode else 4
             validation_override = indexed_config_override(validation_generator_overrides, i)
-            merged_val = {**defaults, **generator_param_set, **validation_override}
+            val_cache = dpk_prior_cache_for_split(training_params, 'dev', dataset_id=i)
+            val_defaults = {
+                **defaults,
+                'dpk_prior_cache': val_cache,
+                'dpk_prior_cache_split': 'dev',
+                'dpk_prior_cache_dataset_id': i,
+                'dpk_prior_cache_align_realtime': dpk_prior_cache_cfg.get('align_realtime_to_cache', True),
+                'dpk_prior_cache_filter_missing_stations': dpk_prior_cache_cfg.get('filter_missing_stations', True),
+            }
+            if training_params.get('deterministic_sampling', False):
+                val_defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
+            merged_val = {**val_defaults, **generator_param_set, **validation_override}
             if rank == 0:
                 experiment_val = merged_val.get('station_experiment') or {}
                 print(
@@ -3023,6 +3149,37 @@ if __name__ == '__main__':
             min_lr=min_lr,
             verbose=1,
         )
+        resume_full_model_path = resolve_full_model_resume_path(training_params, args.resume_full_model)
+        resume_start_epoch = 0
+        resume_best_val = None
+        if resume_full_model_path:
+            if not os.path.isfile(resume_full_model_path):
+                available = available_full_model_checkpoints(training_params)
+                raise FileNotFoundError(
+                    f'Full-model resume checkpoint not found: {resume_full_model_path}. '
+                    f'Available full-model checkpoints: {available or "<none>"}. '
+                    'Use --resume_full_model best/last with an existing checkpoint, '
+                    'or restart this run after clearing/resetting the weight_path.'
+                )
+            full_model, optimizer, lr_decay, resume_start_epoch, resume_last_val = load_checkpoint(
+                full_model,
+                optimizer,
+                lr_decay,
+                resume_full_model_path,
+                device,
+                is_dist=is_dist,
+                rank=rank,
+            )
+            best_checkpoint_path = os.path.join(training_params['weight_path'], 'full_model_best.pth')
+            resume_best_val = checkpoint_loss_value(best_checkpoint_path, is_dist=is_dist, rank=rank)
+            if resume_best_val is None:
+                resume_best_val = resume_last_val
+            if rank == 0:
+                print(
+                    f'[resume] loaded full model from {resume_full_model_path}; '
+                    f'start_epoch={resume_start_epoch}, '
+                    f'last_loss={resume_last_val}, best_loss={resume_best_val}'
+                )
         logdir = os.path.join('logs/scalars/', training_params['weight_path'])
 
         if is_dist:
@@ -3035,15 +3192,18 @@ if __name__ == '__main__':
             train_loader = DataLoader(train_dataset, batch_size=generator_params[0]['batch_size'], shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=generator_params[0]['batch_size'], sampler=val_sampler, shuffle=(val_sampler is None))
         if ((not is_dist) or rank == 0):
-            # Save initial checkpoint before training
-            init_ckpt_path = os.path.join(training_params['weight_path'], 'full_model_init.pth')
             eval_model = full_model.module if is_dist else full_model
-            save_model_checkpoint(
-                init_ckpt_path,
-                eval_model,
-                epoch=0,
-                training_params=training_params,
-            )
+            if resume_start_epoch <= 0:
+                # Save initial checkpoint before training
+                init_ckpt_path = os.path.join(training_params['weight_path'], 'full_model_init.pth')
+                save_model_checkpoint(
+                    init_ckpt_path,
+                    eval_model,
+                    epoch=0,
+                    training_params=training_params,
+                )
+            else:
+                print(f'[resume] skipping full_model_init.pth overwrite at epoch {resume_start_epoch}')
             run_sanity_check(full_model, train_loader, device, name='full_model_train_pre')
         # Task enable switches: set training_params['res_comps'] in the JSON
         # config to e.g. ["pga"] to train PGA only, ["mag","pga"] for mag+PGA,
@@ -3126,6 +3286,8 @@ if __name__ == '__main__':
             station_residual_decorrelation_loss=station_residual_decorrelation_loss_cfg,
             station_local_pga_loss=station_local_pga_loss_cfg,
             freeze_mode=training_params.get('freeze_mode', None),
+            start_epoch=resume_start_epoch,
+            best_val_init=resume_best_val,
         )
 
 #        hist = full_model.fit_generator(generator=train_generator,

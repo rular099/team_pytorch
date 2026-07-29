@@ -424,11 +424,24 @@ front end and the station adapter is not shape-compatible.
 | rt32 | Oracle upper bound for PGA temporal residual | `temporal_token_weight_mode=oracle_nonzero`, `use_pga_temporal_residual=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt32_oracle_nonzero_temporal_residual_chaosuan.json` |
 | rt33 | Deployable non-DPK prior baseline | `station_token_weight_mode=energy` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt33_energy_station_pool_chaosuan.json` |
 | rt34 | Primary DPK event-only station pooling test | `station_token_weight_mode=dpk_event` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt34_dpk_event_station_pool_chaosuan.json` |
+| rt34_fixedtime | Fixed-time cache anchor for rt40-rt43 | rt34 with train realtime times fixed to `[1,3,5,10,20,40,90]`; fixed-time sample keys stay stable across epochs | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt34_fixedtime_dpk_event_station_pool_chaosuan.json` |
 | rt35 | Test whether sparse ppk/spk help station pooling | `station_token_weight_mode=dpk_all` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt35_dpk_all_station_pool_chaosuan.json` |
 | rt36 | vit_adapter learned-pooling baseline | `station_token_weight_mode=learned`, no external prior | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt36_learned_vit_station_pool_baseline_chaosuan.json` |
 | rt37 | DPK event-only prior in temporal residual only | `temporal_token_weight_mode=dpk_event`, `use_pga_temporal_residual=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt37_dpk_event_temporal_residual_chaosuan.json` |
 | rt38 | DPK all-task prior in temporal residual only | `temporal_token_weight_mode=dpk_all`, `use_pga_temporal_residual=true` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt38_dpk_all_temporal_residual_chaosuan.json` |
 | rt39 | Strongest event-only combined path | `station_token_weight_mode=dpk_event`, `temporal_token_weight_mode=dpk_event`, temporal residual on | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt39_dpk_event_station_pool_temporal_residual_chaosuan.json` |
+| rt40 | Strict scale sweep control for cached DPK event station pooling | `station_token_weight_mode=cached_dpk_event`, `token_weight_scale=0` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt40_dpk_event_station_pool_scale0_chaosuan.json` |
+| rt41 | Test balanced cached DPK event prior strength | `station_token_weight_mode=cached_dpk_event`, `token_weight_scale=2` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt41_dpk_event_station_pool_scale2_chaosuan.json` |
+| rt42 | Test strong cached DPK event prior strength | `station_token_weight_mode=cached_dpk_event`, `token_weight_scale=4` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt42_dpk_event_station_pool_scale4_chaosuan.json` |
+| rt43 | Test prior-dominant cached DPK event station pooling | `station_token_weight_mode=cached_dpk_event`, `token_weight_scale=8` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt43_dpk_event_station_pool_scale8_chaosuan.json` |
+| rt44 | Temporal-token residual control with cached prior loaded but inactive | `station_token_weight_mode=none`, `temporal_token_weight_mode=cached_dpk_event`, `token_weight_scale=0` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt44_cached_dpk_event_temporal_residual_scale0_chaosuan.json` |
+| rt45 | Balanced cached event-prior filtering for raw x-token residual | rt44 + `token_weight_scale=2` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt45_cached_dpk_event_temporal_residual_scale2_chaosuan.json` |
+| rt46 | Strong cached event-prior filtering for raw x-token residual | rt44 + `token_weight_scale=4` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt46_cached_dpk_event_temporal_residual_scale4_chaosuan.json` |
+| rt47 | Prior-dominant cached event-prior filtering for raw x-token residual | rt44 + `token_weight_scale=8` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt47_cached_dpk_event_temporal_residual_scale8_chaosuan.json` |
+| rt48 | Combined station-pool prior and temporal-token residual | `station_token_weight_mode=cached_dpk_event`, `temporal_token_weight_mode=cached_dpk_event`, `token_weight_scale=4` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt48_cached_dpk_event_station_pool_temporal_residual_scale4_chaosuan.json` |
+| rt49 | Prior-filtered token context injected inside layerwise target readout | `station_context_mode=layerwise_station_target`, `use_target_temporal_pooling=true`, `temporal_token_weight_mode=cached_dpk_event`, `token_weight_scale=4` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt49_cached_dpk_event_layerwise_temporal_readout_scale4_chaosuan.json` |
+| rt50 | Independent temporal-token residual that avoids collapsed readout attention | rt46 + `pga_temporal_residual_query_source=target_query`, `pga_temporal_residual_station_weighting=uniform` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt50_cached_dpk_event_temporal_residual_independent_scale4_chaosuan.json` |
+| rt51 | Negative control for station-token matching in rt46 | rt46 + `pga_temporal_residual_token_control=station_roll` | `pga_configs/transformer_japan_overfit_pga15_stage2_512_rt51_cached_dpk_event_temporal_residual_stationroll_control_scale4_chaosuan.json` |
 
 How to analyze this group:
 
@@ -454,12 +467,56 @@ How to analyze this group:
 - Compare rt39 vs rt34/rt37. This checks whether filtering before station
   pooling and filtering during target-conditioned temporal readout are
   complementary.
+- Compare rt40/rt41/rt42/rt43 as a cached DPK event-prior strength sweep. These
+  runs consume `dpk_priors.h5` with `source=dpk_finetuned` and `mode=event`,
+  keep `dpk_weight_temperature=1.0`, and vary only `token_weight_scale`, so the
+  station-pool attention is `softmax(score + scale * log(prior))`. rt40
+  deliberately still uses cached DPK priors with scale 0 so the forward path and
+  diagnostics match the other sweep runs, even though the prior has no effect
+  on attention. If rt41/rt42/rt43 improve over rt40, the previous DPK prior was
+  likely too weak. If rt43 is worse while rt41/rt42 improve, the prior is useful
+  but should not dominate learned scores. If all four are similar, the main
+  blocker is probably not prior strength. Precompute both train and dev caches
+  from `rt34_fixedtime` before running these configs; the training path
+  intentionally errors on cache misses instead of silently falling back to no
+  prior. Cached-prior lookup uses
+  `split|dataset_id|event_id|realtime_current_sample|original_station_index`.
+  rt40-rt43 disable nearest-time alignment and missing-station filtering, so the
+  cache must exactly cover the fixed train/dev realtime times. Fixed-time
+  training also keeps the `event + fixed_time` sample key stable across epochs;
+  otherwise station-selection randomness would create cache misses that are not
+  represented in the precomputed file.
+- Implementation note: `cached_dpk_event` and `cached_dpk_all` are cache-only
+  modes. They read the HDF5 prior passed by the dataset and do not initialize
+  the DPK checkpoint inside the model.
+- Compare rt44/rt45/rt46/rt47 as the same prior-strength sweep, but on the raw
+  x-token PGA temporal residual path. This is the memory-safe version of
+  target/token attention: it does not run a full token transformer, and it tests
+  whether event-prior filtering can recover station-specific PGA information
+  that the station adapter collapses.
+- Compare rt46 against rt48. If rt48 improves over rt46 and rt42, station-pool
+  prior and raw-token residual are complementary. If rt48 is similar to rt46,
+  the useful signal is primarily in the token residual branch.
+- Compare rt46 against rt49. rt49 injects prior-filtered token context inside
+  the target readout instead of only adding a final PGA residual. It is a direct
+  test of whether cross-attending to filtered tokens can repair adapter collapse
+  without the memory cost of full token-level attention.
+- Compare rt46 against rt50 and rt51. rt50 reduces dependence on collapsed
+  readout attention by using the target query and uniform station weighting.
+  rt51 rolls temporal tokens across stations; any genuine station-specific
+  token gain should drop in rt51. If rt46 and rt51 are similar, the branch is
+  probably using event-common information or priors rather than matched station
+  waveform tokens.
 
 Required reported metrics:
 
 - Train and validation metrics for PGA, magnitude, and location. The station
   pooling variants change the shared station representation, so mag/loc must be
   tracked even if PGA is the main target.
+- Normal evaluation versus waveform-station mismatch evaluation on both train
+  and validation. If mismatch metrics are close to normal metrics, the model is
+  still mostly using event-common information rather than matched station
+  waveform content.
 - Feature-collapse diagnostics:
   `raw_station_emb_cosine_mean`, `wave_station_emb_cosine_mean`,
   `station_emb_cosine_mean`, module `0` f2/f3/f4/x cosine summaries, and module

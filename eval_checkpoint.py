@@ -9,7 +9,7 @@ Usage:
         [--single_station_checkpoint weights_japan_overfit/single_station_best.pth] \
         [--overfit_n 16] [--device cuda:0] [--input_station_selection epidist] \
         [--case_station_sweep --case_station_counts 3,5,8,12,16,25] \
-        [--num_shards 4 --shard_id 0]
+        [--waveform_station_permutation roll] [--num_shards 4 --shard_id 0]
 """
 
 import argparse
@@ -38,6 +38,7 @@ from train_light import (
     build_diting_args as load_diting_args,
     build_overfit_event_metadata_splits,
     clean_state_dict_keys,
+    dpk_prior_cache_for_split,
     indexed_config_override,
     load_config_file,
     load_model_state_dict_compatible,
@@ -249,7 +250,8 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
         mag_key=g.get('key', 'MA'),
         overwrite_sampling_rate=overwrite_sampling_rate,
         decimate_events=g.get('decimate_events', None),
-        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+        station_filter=g.get('station_filter', training_params.get('station_filter', None)))
         for data_path, g in zip(training_params['data_path'], generator_params)]
 
     full_data_dev = [loader.load_events(
@@ -261,7 +263,8 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
         mag_key=g.get('key', 'MA'),
         overwrite_sampling_rate=overwrite_sampling_rate,
         decimate_events=g.get('decimate_events', None),
-        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+        station_filter=g.get('station_filter', training_params.get('station_filter', None)))
         for data_path, g in zip(training_params['data_path'], generator_params)]
 
     event_metadata_train = [d[0] for d in full_data_train]
@@ -279,7 +282,8 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
             mag_key=g.get('key', 'MA'),
             overwrite_sampling_rate=overwrite_sampling_rate,
             decimate_events=g.get('decimate_events', None),
-            min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
+            min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+            station_filter=g.get('station_filter', training_params.get('station_filter', None)))
             for data_path, g in zip(training_params['data_path'], generator_params)]
         fixed_overfit_ids = None
         if training_params.get('overfit_event_ids_path'):
@@ -313,6 +317,7 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
     station_experiment_cfg = training_params.get('station_experiment', None)
     train_generator_overrides = training_params.get('train_generator_overrides', None)
     validation_generator_overrides = training_params.get('validation_generator_overrides', None)
+    dpk_prior_cache_cfg = training_params.get('dpk_prior_cache') or {}
 
     datasets = {}
     for split_name, em_list, meta_list in [('train', event_metadata_train, metadata_train),
@@ -337,6 +342,24 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
                 station_experiment=station_experiment_cfg,
                 shuffle=False,  # deterministic eval order
             )
+            cache_split = 'train' if split_name == 'train' else 'dev'
+            defaults.update({
+                'dpk_prior_cache': dpk_prior_cache_for_split(
+                    training_params,
+                    cache_split,
+                    dataset_id=i,
+                ),
+                'dpk_prior_cache_split': cache_split,
+                'dpk_prior_cache_dataset_id': i,
+                'dpk_prior_cache_align_realtime': dpk_prior_cache_cfg.get(
+                    'align_realtime_to_cache',
+                    True,
+                ),
+                'dpk_prior_cache_filter_missing_stations': dpk_prior_cache_cfg.get(
+                    'filter_missing_stations',
+                    True,
+                ),
+            })
             if training_params.get('deterministic_sampling', False):
                 defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
             split_overrides = train_generator_overrides if split_name == 'train' else validation_generator_overrides
@@ -830,8 +853,105 @@ def shard_indices(n_items, num_shards=1, shard_id=0):
     return [idx for idx in range(n_items) if idx % num_shards == shard_id]
 
 
+def _station_source_slots(station_valid, mode='none', seed=12345, sample_index=0):
+    """Return source station slots for waveform-station mismatch evaluation."""
+    mode = str(mode or 'none').strip().lower()
+    station_valid = torch.as_tensor(station_valid).bool().flatten()
+    n_station = int(station_valid.numel())
+    source_slots = torch.arange(n_station, dtype=torch.long)
+    valid_slots = torch.nonzero(station_valid, as_tuple=False).flatten().cpu()
+    if mode == 'none' or valid_slots.numel() <= 1:
+        return source_slots
+    if mode == 'roll':
+        source_slots[valid_slots] = torch.roll(valid_slots, shifts=1, dims=0)
+        return source_slots
+    if mode == 'random':
+        rng = np.random.default_rng(int(seed) + int(sample_index) * 1009)
+        n_valid = int(valid_slots.numel())
+        perm = None
+        for _ in range(64):
+            candidate = rng.permutation(n_valid)
+            if not np.any(candidate == np.arange(n_valid)):
+                perm = candidate
+                break
+        if perm is None:
+            perm = np.roll(np.arange(n_valid), 1)
+        source_slots[valid_slots] = valid_slots[torch.from_numpy(perm).long()]
+        return source_slots
+    raise ValueError(f'Unknown waveform_station_permutation mode: {mode}')
+
+
+def _permute_first_dim_if_station_aligned(value, source_slots):
+    if not isinstance(value, torch.Tensor):
+        return value
+    if value.dim() < 1 or int(value.shape[0]) != int(source_slots.numel()):
+        return value
+    return value.index_select(0, source_slots.to(value.device))
+
+
+def _cached_token_weights_input_index(inputs):
+    """Infer cached DPK token-weight input appended by GeminiDataset when present."""
+    if not isinstance(inputs, list) or len(inputs) not in (6, 10):
+        return None
+    if len(inputs) < 3 or not isinstance(inputs[0], torch.Tensor):
+        return None
+    candidate = inputs[-1]
+    if not isinstance(candidate, torch.Tensor):
+        return None
+    if not torch.is_floating_point(candidate) or candidate.dim() < 2:
+        return None
+    if int(candidate.shape[0]) != int(inputs[0].shape[0]):
+        return None
+    return len(inputs) - 1
+
+
+def apply_waveform_station_permutation(
+        inputs,
+        mode='none',
+        seed=12345,
+        sample_index=0,
+        permute_cached_token_weights=True):
+    """Permute waveform slots while keeping station metadata and PGA targets fixed."""
+    mode = str(mode or 'none').strip().lower()
+    if mode == 'none':
+        return inputs, None
+    if not isinstance(inputs, list) or len(inputs) < 3:
+        return inputs, None
+    if not isinstance(inputs[0], torch.Tensor) or not isinstance(inputs[2], torch.Tensor):
+        return inputs, None
+
+    source_slots = _station_source_slots(
+        inputs[2],
+        mode=mode,
+        seed=seed,
+        sample_index=sample_index,
+    )
+    identity = torch.arange(source_slots.numel(), dtype=torch.long)
+    if torch.equal(source_slots.cpu(), identity):
+        return inputs, source_slots.numpy()
+
+    permuted = list(inputs)
+    permuted[0] = _permute_first_dim_if_station_aligned(permuted[0], source_slots)
+    if permute_cached_token_weights:
+        cached_idx = _cached_token_weights_input_index(permuted)
+        if cached_idx is not None:
+            permuted[cached_idx] = _permute_first_dim_if_station_aligned(
+                permuted[cached_idx],
+                source_slots,
+            )
+    return permuted, source_slots.numpy()
+
+
 @torch.no_grad()
-def run_inference(model, dataset, device, config, indices=None):
+def run_inference(
+        model,
+        dataset,
+        device,
+        config,
+        indices=None,
+        waveform_station_permutation='none',
+        waveform_station_permutation_seed=12345,
+        permute_cached_token_weights=True):
     """Run inference on all samples, collect predictions and labels."""
     raw_model = model.module if hasattr(model, 'module') else model
     head_names = raw_model.output_layout  # e.g. ['mag', 'loc', 'pga']
@@ -839,9 +959,25 @@ def run_inference(model, dataset, device, config, indices=None):
     if indices is None:
         indices = range(len(dataset))
 
+    permutation_mode = str(waveform_station_permutation or 'none').strip().lower()
     for idx in indices:
         inputs, labels, p_picks = dataset[idx]
+        inputs, source_slots = apply_waveform_station_permutation(
+            inputs,
+            mode=permutation_mode,
+            seed=waveform_station_permutation_seed,
+            sample_index=idx,
+            permute_cached_token_weights=permute_cached_token_weights,
+        )
         results['event_index'].append(int(idx))
+        if permutation_mode != 'none':
+            if source_slots is None and isinstance(inputs, list) and inputs and isinstance(inputs[0], torch.Tensor):
+                source_slots = np.arange(int(inputs[0].shape[0]), dtype=np.int64)
+            elif source_slots is None:
+                source_slots = np.array([], dtype=np.int64)
+            results['waveform_station_permutation'].append(np.asarray(source_slots, dtype=np.int64))
+            results['waveform_station_permutation_mode'].append(permutation_mode)
+            results['waveform_station_permutation_cached_weights'].append(bool(permute_cached_token_weights))
 
         # Move to device
         inputs_dev = [x.unsqueeze(0).to(device) if isinstance(x, torch.Tensor) else x for x in inputs]
@@ -1705,6 +1841,14 @@ def main():
                         help='Number of automatically selected events per split for --case_station_sweep.')
     parser.add_argument('--case_seed', type=int, default=1234,
                         help='Base numpy seed used to keep PGA target selection comparable in the sweep.')
+    parser.add_argument('--waveform_station_permutation', default='none',
+                        choices=['none', 'roll', 'random'],
+                        help='Mismatch eval: permute waveform slots among valid input stations while keeping '
+                             'station metadata and PGA targets fixed.')
+    parser.add_argument('--waveform_station_permutation_seed', type=int, default=12345,
+                        help='Seed for --waveform_station_permutation=random.')
+    parser.add_argument('--no_permute_cached_token_weights', action='store_true',
+                        help='Do not move cached DPK token weights with permuted waveforms.')
     parser.add_argument('--num_shards', type=int, default=1,
                         help='Split each eval dataset into this many deterministic shards.')
     parser.add_argument('--shard_id', type=int, default=0,
@@ -1730,6 +1874,16 @@ def main():
 
     print('Building model...')
     model = build_model_and_load(config, diting_args, args.checkpoint, device)
+
+    permute_cached_token_weights = not args.no_permute_cached_token_weights
+    if args.waveform_station_permutation != 'none':
+        print(
+            'Waveform-station mismatch eval: '
+            f'mode={args.waveform_station_permutation}, '
+            f'seed={args.waveform_station_permutation_seed}, '
+            f'permute_cached_token_weights={permute_cached_token_weights}'
+        )
+        print('Note: feature/amplitude diagnostics use original station-waveform pairing; mismatch is applied during inference.')
 
     print('Building datasets...')
     datasets = build_datasets(
@@ -1774,7 +1928,16 @@ def main():
         if args.num_shards > 1:
             shard_text = f' shard {args.shard_id}/{args.num_shards} ({len(eval_indices)} samples)'
         print(f'\nRunning inference on {split_name} set ({len(dataset)} samples){shard_text}...')
-        results = run_inference(model, dataset, device, config, indices=eval_indices)
+        results = run_inference(
+            model,
+            dataset,
+            device,
+            config,
+            indices=eval_indices,
+            waveform_station_permutation=args.waveform_station_permutation,
+            waveform_station_permutation_seed=args.waveform_station_permutation_seed,
+            permute_cached_token_weights=permute_cached_token_weights,
+        )
         print_summary(results, split_name, config=config)
         # Prefix keys with split name for saving
         for k, v in results.items():

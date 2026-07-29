@@ -25,6 +25,277 @@ class _EmptySample(Exception):
     """Internal signal: this index has no valid station after cutout; skip it."""
     pass
 
+
+class DPKPriorCache:
+    """Row-aligned reader for precomputed DPK token priors."""
+
+    LEVEL_ORDER = ("f2", "f3", "f4", "x")
+
+    def __init__(self, path, source="dpk_finetuned", mode="event",
+                 token_floor=1e-4, missing_policy="error"):
+        self.path = os.fspath(path)
+        self.source = str(source)
+        self.mode = str(mode)
+        self.token_floor = float(token_floor)
+        self.missing_policy = str(missing_policy or "error").lower()
+        if self.missing_policy not in ("error", "ones"):
+            raise ValueError(
+                "dpk_prior_cache missing_policy must be 'error' or 'ones', "
+                f"got {self.missing_policy!r}."
+            )
+        if not os.path.exists(self.path):
+            raise FileNotFoundError(f"DPK prior cache not found: {self.path}")
+        self._h5 = None
+        with h5py.File(self.path, "r") as h5:
+            required = [
+                f"priors/{self.source}/{self.mode}/{level}"
+                for level in self.LEVEL_ORDER
+            ]
+            missing = [name for name in required if name not in h5]
+            if missing:
+                raise KeyError(
+                    f"DPK prior cache {self.path} is missing datasets: {missing}"
+                )
+            sample_station_keys = h5["index/sample_station_key"][:]
+            if "index/event_station_time_key" in h5:
+                event_station_time_keys = h5["index/event_station_time_key"][:]
+            else:
+                event_station_time_keys = []
+        self.row_by_sample_station_key = self._build_first_row_index(
+            sample_station_keys,
+            normalizer=self._normalize_sample_station_key,
+        )
+        self.row_by_event_station_time_key = self._build_first_row_index(
+            event_station_time_keys,
+            normalizer=self._normalize_event_station_time_key,
+        )
+        (
+            self.current_samples_by_event_key,
+            self.original_stations_by_event_time_key,
+        ) = self._build_event_time_indexes(event_station_time_keys)
+        self.row_by_key = self.row_by_sample_station_key
+        self.level_lengths = None
+        self.max_level_len = None
+
+    @staticmethod
+    def _decode_key(key):
+        return key.decode("utf-8") if isinstance(key, bytes) else str(key)
+
+    @classmethod
+    def _build_first_row_index(cls, keys, normalizer=None):
+        row_by_key = {}
+        for i, key in enumerate(keys):
+            decoded = normalizer(key) if normalizer is not None else cls._decode_key(key)
+            if decoded and decoded not in row_by_key:
+                row_by_key[decoded] = int(i)
+        return row_by_key
+
+    @classmethod
+    def _normalize_sample_station_key(cls, key):
+        decoded = cls._decode_key(key)
+        parts = decoded.split("|")
+        if len(parts) < 4:
+            return decoded
+        split, dataset_id, sample_index, station_slot = parts[:4]
+        try:
+            dataset_id = int(round(float(dataset_id)))
+            sample_index = int(round(float(sample_index)))
+            station_slot = int(round(float(station_slot)))
+        except (TypeError, ValueError):
+            return decoded
+        return f"{split}|{dataset_id}|{sample_index}|{station_slot}"
+
+    @classmethod
+    def _normalize_event_station_time_key(cls, key):
+        decoded = cls._decode_key(key)
+        parts = decoded.split("|")
+        if len(parts) < 5:
+            return decoded
+        split, dataset_id, event_id, current_sample, original_station = parts[:5]
+        try:
+            dataset_id = int(round(float(dataset_id)))
+            current_sample = int(round(float(current_sample)))
+            original_station = int(round(float(original_station)))
+        except (TypeError, ValueError):
+            return decoded
+        return f"{split}|{dataset_id}|{event_id}|{current_sample}|{original_station}"
+
+    @classmethod
+    def _build_event_time_indexes(cls, keys):
+        samples = {}
+        stations = {}
+        for key in keys:
+            parts = cls._decode_key(key).split("|")
+            if len(parts) < 5:
+                continue
+            split, dataset_id, event_id, current_sample, original_station = parts[:5]
+            try:
+                dataset_id = int(round(float(dataset_id)))
+                current_sample = int(round(float(current_sample)))
+                original_station = int(round(float(original_station)))
+            except (TypeError, ValueError):
+                continue
+            event_key = (str(split), dataset_id, str(event_id))
+            time_key = (str(split), dataset_id, str(event_id), current_sample)
+            samples.setdefault(event_key, set()).add(current_sample)
+            stations.setdefault(time_key, set()).add(original_station)
+        sample_index = {
+            key: np.asarray(sorted(value), dtype=np.int64)
+            for key, value in samples.items()
+            if value
+        }
+        station_index = {
+            key: frozenset(value)
+            for key, value in stations.items()
+            if value
+        }
+        return sample_index, station_index
+
+    def _file(self):
+        if self._h5 is None:
+            self._h5 = h5py.File(self.path, "r")
+        return self._h5
+
+    def _ensure_shapes(self):
+        if self.level_lengths is not None:
+            return
+        h5 = self._file()
+        self.level_lengths = [
+            int(h5[f"priors/{self.source}/{self.mode}/{level}"].shape[1])
+            for level in self.LEVEL_ORDER
+        ]
+        self.max_level_len = max(self.level_lengths)
+
+    @staticmethod
+    def _optional_int(value):
+        if value is None:
+            return None
+        try:
+            as_float = float(value)
+        except (TypeError, ValueError):
+            return None
+        if not np.isfinite(as_float):
+            return None
+        return int(round(as_float))
+
+    def nearest_current_sample(self, split, dataset_id, event_id, current_sample):
+        current_sample = self._optional_int(current_sample)
+        if current_sample is None:
+            return None
+        samples = self.current_samples_by_event_key.get(
+            (str(split), int(dataset_id), str(event_id))
+        )
+        if samples is None or samples.size == 0:
+            return None
+        pos = int(np.searchsorted(samples, current_sample))
+        candidates = []
+        if pos < samples.size:
+            candidates.append(int(samples[pos]))
+        if pos > 0:
+            candidates.append(int(samples[pos - 1]))
+        return min(candidates, key=lambda value: abs(value - current_sample))
+
+    def station_available_mask(self, split, dataset_id, event_id, current_sample,
+                               original_station_indices, station_valid=None):
+        current_sample = self._optional_int(current_sample)
+        original_station_indices = np.asarray(original_station_indices)
+        if station_valid is None:
+            station_valid = np.ones(original_station_indices.shape, dtype=bool)
+        else:
+            station_valid = np.asarray(station_valid, dtype=bool)
+        out = np.zeros(original_station_indices.shape, dtype=bool)
+        if current_sample is None:
+            return out
+        available = self.original_stations_by_event_time_key.get(
+            (str(split), int(dataset_id), str(event_id), current_sample),
+            frozenset(),
+        )
+        if not available:
+            return out
+        for station_slot, is_valid in enumerate(station_valid):
+            if not is_valid or station_slot >= len(original_station_indices):
+                continue
+            original_idx = self._optional_int(original_station_indices[station_slot])
+            if original_idx is not None and original_idx >= 0 and original_idx in available:
+                out[station_slot] = True
+        return out
+
+    def lookup_sample(self, split, dataset_id, sample_index, station_valid,
+                      event_id=None, realtime_current_sample=None,
+                      original_station_indices=None):
+        self._ensure_shapes()
+        station_valid = np.asarray(station_valid, dtype=bool)
+        original_station_indices = (
+            None if original_station_indices is None
+            else np.asarray(original_station_indices)
+        )
+        current_sample = self._optional_int(realtime_current_sample)
+        event_station_time_lookup_requested = (
+            event_id is not None
+            and current_sample is not None
+            and original_station_indices is not None
+        )
+        if event_station_time_lookup_requested and not self.row_by_event_station_time_key:
+            raise KeyError(
+                f"DPK prior cache {self.path} has no index/event_station_time_key "
+                "dataset; realtime cached-prior lookup cannot safely fall back to "
+                "sample_index/station_slot."
+            )
+        use_event_station_time_key = event_station_time_lookup_requested
+        out = np.ones(
+            (station_valid.shape[0], len(self.LEVEL_ORDER), self.max_level_len),
+            dtype=np.float32,
+        )
+        h5 = self._file()
+        misses = []
+        for station_slot, is_valid in enumerate(station_valid):
+            if not is_valid:
+                continue
+            if use_event_station_time_key:
+                if station_slot >= len(original_station_indices):
+                    misses.append(
+                        f"{split}|{int(dataset_id)}|{event_id}|"
+                        f"{current_sample}|<missing_original_station_index:{station_slot}>"
+                    )
+                    continue
+                original_idx = self._optional_int(original_station_indices[station_slot])
+                if original_idx is None or original_idx < 0:
+                    misses.append(
+                        f"{split}|{int(dataset_id)}|{event_id}|"
+                        f"{current_sample}|<invalid_original_station_index:{station_slot}>"
+                    )
+                    continue
+                key = (
+                    f"{split}|{int(dataset_id)}|{event_id}|"
+                    f"{current_sample}|{original_idx}"
+                )
+                row = self.row_by_event_station_time_key.get(key)
+            else:
+                key = f"{split}|{int(dataset_id)}|{int(sample_index)}|{int(station_slot)}"
+                row = self.row_by_sample_station_key.get(key)
+            if row is None:
+                misses.append(key)
+                continue
+            for level_idx, (level, length) in enumerate(zip(self.LEVEL_ORDER, self.level_lengths)):
+                values = h5[f"priors/{self.source}/{self.mode}/{level}"][row]
+                out[station_slot, level_idx, :length] = np.asarray(values, dtype=np.float32)
+        if misses and self.missing_policy == "error":
+            preview = ", ".join(misses[:3])
+            suffix = "" if len(misses) <= 3 else f", ... ({len(misses)} misses)"
+            raise KeyError(
+                f"DPK prior cache miss in {self.path}: {preview}{suffix}. "
+                "Check split/dataset_id/event_id/realtime_current_sample/"
+                "original_station_index alignment and deterministic realtime sampling."
+            )
+        return out
+
+    def __del__(self):
+        try:
+            if self._h5 is not None:
+                self._h5.close()
+        except Exception:
+            pass
+
 def setup_distributed(backend='nccl', init_method='env://'):
     if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
         rank = int(os.environ["RANK"])
@@ -98,7 +369,7 @@ def _select_wave_idx_rows(event_df, g_event):
     return wave_idx[wave_idx < max_idx]
 
 
-def _crop_aligned_event_window(waveforms, p_picks, target_length, sampling_rate, noise_seconds):
+def _crop_aligned_event_window(waveforms, p_picks, target_length, sampling_rate, noise_seconds, rng=None):
     if waveforms.shape[1] <= target_length:
         if waveforms.shape[1] == target_length:
             return waveforms, p_picks, 0
@@ -112,7 +383,11 @@ def _crop_aligned_event_window(waveforms, p_picks, target_length, sampling_rate,
     else:
         pre_samples = int(round(noise_seconds * sampling_rate))
 #        start = int(np.floor(np.min(valid_picks))) - pre_samples
-        start = int(np.floor(np.random.choice(valid_picks))) - pre_samples
+        if rng is None:
+            anchor_pick = np.random.choice(valid_picks)
+        else:
+            anchor_pick = rng.choice(valid_picks)
+        start = int(np.floor(anchor_pick)) - pre_samples
         start = max(0, start)
     max_start = waveforms.shape[1] - target_length
     start = min(start, max_start)
@@ -232,7 +507,10 @@ class PreloadedEventGenerator(Dataset):
                  use_coords_rel=False, use_coords_abs=True,
                  use_coords_rel_abs_fusion=False, station_experiment=None,
                  input_station_selection=None, deterministic_sampling_seed=None,
-                 use_vs30=False, realtime_training=None, realtime_target_sampling=None, **kwargs):
+                 use_vs30=False, realtime_training=None, realtime_target_sampling=None,
+                 dpk_prior_cache=None, dpk_prior_cache_split=None,
+                 dpk_prior_cache_dataset_id=0, dpk_prior_cache_align_realtime=True,
+                 dpk_prior_cache_filter_missing_stations=True, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -284,6 +562,11 @@ class PreloadedEventGenerator(Dataset):
         if max_stations is None:
             max_stations = self.waveforms.shape[1]
         self.max_stations = max_stations
+        self.dpk_prior_cache = dpk_prior_cache
+        self.dpk_prior_cache_split = dpk_prior_cache_split
+        self.dpk_prior_cache_dataset_id = int(dpk_prior_cache_dataset_id)
+        self.dpk_prior_cache_align_realtime = bool(dpk_prior_cache_align_realtime)
+        self.dpk_prior_cache_filter_missing_stations = bool(dpk_prior_cache_filter_missing_stations)
         self.trigger_based = trigger_based
         self.disable_station_foreshadowing = disable_station_foreshadowing
         self.selection_skew = selection_skew
@@ -435,6 +718,18 @@ class PreloadedEventGenerator(Dataset):
         cfg['val_times'] = [float(x) for x in val_times]
         if not cfg['val_times'] or any((not np.isfinite(x) or x < 0) for x in cfg['val_times']):
             raise ValueError('realtime_training.val_times must contain non-negative finite values.')
+        train_times = cfg.get('train_times', None)
+        train_time_mode = str(cfg.get('train_time_mode', '')).strip().lower()
+        if train_times is None and train_time_mode in ('fixed', 'fixed_times', 'discrete'):
+            train_times = cfg['val_times']
+        if train_times is not None:
+            cfg['train_times'] = [float(x) for x in train_times]
+            if not cfg['train_times'] or any((not np.isfinite(x) or x < 0) for x in cfg['train_times']):
+                raise ValueError('realtime_training.train_times must contain non-negative finite values.')
+            cfg['train_time_mode'] = 'fixed'
+        else:
+            cfg['train_times'] = None
+            cfg['train_time_mode'] = 'random_bins'
         cfg['bins_per_event_per_epoch'] = max(1, int(cfg.get('bins_per_event_per_epoch', 1)))
         bin_sampling = str(cfg.get('bin_sampling', 'without_replacement')).strip().lower()
         if bin_sampling not in ('without_replacement', 'with_replacement'):
@@ -486,6 +781,9 @@ class PreloadedEventGenerator(Dataset):
         if mode == 'val':
             time_index = -slot - 1 if slot < 0 else slot
             return event_index, {'mode': mode, 'time_index': int(time_index), 'slot': slot}
+        if slot < 0:
+            time_index = -slot - 1
+            return event_index, {'mode': mode, 'time_index': int(time_index), 'slot': slot}
         return event_index, {'mode': mode, 'bin_index': int(slot), 'slot': slot}
 
     def _realtime_pick_valid(self, picks):
@@ -499,12 +797,14 @@ class PreloadedEventGenerator(Dataset):
         if not valid.any():
             raise _EmptySample()
         first_pick = int(round(float(np.min(picks[valid]))))
-        if context['mode'] == 'val':
+        if 'time_index' in context:
             time_index = int(context.get('time_index', 0))
-            if time_index < 0 or time_index >= len(self.realtime_training['val_times']):
-                raise ValueError(f'invalid realtime validation time index: {time_index}')
-            elapsed_requested = float(self.realtime_training['val_times'][time_index])
-            time_bin = -1
+            times_key = 'val_times' if context['mode'] == 'val' else 'train_times'
+            times = self.realtime_training.get(times_key) or []
+            if time_index < 0 or time_index >= len(times):
+                raise ValueError(f'invalid realtime {context["mode"]} time index: {time_index}')
+            elapsed_requested = float(times[time_index])
+            time_bin = -time_index - 1
         else:
             bins = self.realtime_training['train_time_bins']
             bin_index = int(context.get('bin_index', 0))
@@ -1028,6 +1328,7 @@ class PreloadedEventGenerator(Dataset):
 
     def _get_one(self, index):
         # Generate indexes of the batch
+        sample_index_for_cache = int(index)
         index_entry = self.indexes[index]
         indexes = self.indexes[index:(index + 1)]
         rng = self._sample_rng(index_entry)
@@ -1050,6 +1351,10 @@ class PreloadedEventGenerator(Dataset):
             row_selector = _select_wave_idx_rows(event, g_event)
             if isinstance(row_selector, np.ndarray) and row_selector.size == 0:
                 raise _EmptySample()
+            if isinstance(row_selector, slice):
+                original_wave_idx_for_loaded = np.arange(g_event['waveforms'].shape[0], dtype=np.int64)[row_selector]
+            else:
+                original_wave_idx_for_loaded = np.asarray(row_selector, dtype=np.int64)
             data = {}
             for key in g_event:
                 extra_vs30_key = self.use_vs30 and key in (
@@ -1077,6 +1382,7 @@ class PreloadedEventGenerator(Dataset):
         X = np.concatenate(data['waveforms'], axis=0)
         self.metadata = np.concatenate(data['coords'], axis=0) # coords of stations (lat, lon, elev)
         self.waveforms = X
+        self.original_wave_idx = original_wave_idx_for_loaded
 
         has_pga_values = self.pga_key in data
         if has_pga_values:
@@ -1110,6 +1416,7 @@ class PreloadedEventGenerator(Dataset):
             self.trace_length,
             self.sampling_rate,
             self.noise_seconds,
+            rng=rng,
         )
         X = self.waveforms
         if self.pga_key in data:
@@ -1137,6 +1444,7 @@ class PreloadedEventGenerator(Dataset):
         full_p_picks = np.zeros((true_batch_size, true_max_stations_in_batch)) # shape (1, tms)
         p_picks = np.zeros((true_batch_size, self.max_stations)) # shape (1, 25)
         selected_input_indices = -np.ones((true_batch_size, self.max_stations), dtype=np.int64)
+        selected_original_input_indices = -np.ones((true_batch_size, self.max_stations), dtype=np.int64)
         full_selected_indices = -np.ones((true_batch_size, true_max_stations_in_batch), dtype=np.int64)
         # station_valid: True for slots that hold a real station (not padding).
         # Will be tightened later by cutout/blinding/etc.
@@ -1155,6 +1463,7 @@ class PreloadedEventGenerator(Dataset):
                 p_picks[i, :len(self.triggers)] = self.triggers
                 full_p_picks[i, :len(self.triggers)] = self.triggers
                 selected_input_indices[i, :len(X)] = np.arange(len(X), dtype=np.int64)
+                selected_original_input_indices[i, :len(X)] = self.original_wave_idx[:len(X)]
                 full_selected_indices[i, :len(X)] = np.arange(len(X), dtype=np.int64)
                 station_valid_full[i, :len(self.metadata)] = True # all stations init to True
                 reverse_selections += [[]]
@@ -1200,6 +1509,7 @@ class PreloadedEventGenerator(Dataset):
 
                 selection = selection[:self.max_stations]
                 selected_input_indices[i, :len(selection)] = selection
+                selected_original_input_indices[i, :len(selection)] = self.original_wave_idx[selection]
                 waveforms[i] = self.waveforms[selection]
                 p_picks[i] = self.triggers[selection]
 
@@ -1231,6 +1541,12 @@ class PreloadedEventGenerator(Dataset):
         org_waveform_length = waveforms.shape[2]
         raw_p_picks = p_picks.copy()
         realtime_info = None
+        cache_split_for_sample = None
+        if self.dpk_prior_cache is not None:
+            cache_split_for_sample = self.dpk_prior_cache_split
+            if cache_split_for_sample is None:
+                realtime_mode = self.realtime_training.get('mode') if self.realtime_training else 'dev'
+                cache_split_for_sample = 'train' if realtime_mode == 'train' else 'dev'
         if self.realtime_enabled:
             if self.sliding_window:
                 raise ValueError('realtime_training does not support sliding_window=True.')
@@ -1241,6 +1557,27 @@ class PreloadedEventGenerator(Dataset):
                 realtime_context,
                 org_waveform_length,
             )
+            if self.dpk_prior_cache is not None and self.dpk_prior_cache_align_realtime:
+                requested_current_sample = int(realtime_info['current_sample'])
+                aligned_current_sample = self.dpk_prior_cache.nearest_current_sample(
+                    cache_split_for_sample,
+                    self.dpk_prior_cache_dataset_id,
+                    str(ith_event),
+                    requested_current_sample,
+                )
+                if aligned_current_sample is not None:
+                    cutout = int(np.clip(int(aligned_current_sample) + 1, 1, org_waveform_length))
+                    aligned_current_sample = cutout - 1
+                    realtime_info['cache_requested_current_sample'] = requested_current_sample
+                    realtime_info['cache_aligned_current_sample'] = int(aligned_current_sample)
+                    realtime_info['cache_current_sample_delta'] = int(aligned_current_sample - requested_current_sample)
+                    realtime_info['cutout'] = cutout
+                    realtime_info['current_sample'] = int(aligned_current_sample)
+                    first_pick = int(realtime_info['first_p_pick_sample'])
+                    realtime_info['elapsed_time'] = max(
+                        0.0,
+                        (int(aligned_current_sample) - first_pick) / float(self.sampling_rate),
+                    )
 
         if self.cutout or realtime_info is not None:
             if self.sliding_window:
@@ -1521,6 +1858,31 @@ class PreloadedEventGenerator(Dataset):
                 else:
                     pga_targets, pga_values, pga_target_valid = experiment_targets
 
+        dpk_prior_cache_missing_count = 0
+        dpk_prior_cache_available_count = 0
+        if (
+            self.dpk_prior_cache is not None
+            and realtime_info is not None
+            and self.dpk_prior_cache_filter_missing_stations
+        ):
+            cache_available = self.dpk_prior_cache.station_available_mask(
+                cache_split_for_sample,
+                self.dpk_prior_cache_dataset_id,
+                str(ith_event),
+                realtime_info['current_sample'],
+                selected_original_input_indices[0],
+                station_valid[0],
+            )
+            valid_before_cache = station_valid[0].copy()
+            missing_cache = valid_before_cache & ~cache_available
+            dpk_prior_cache_missing_count = int(missing_cache.sum())
+            dpk_prior_cache_available_count = int((valid_before_cache & cache_available).sum())
+            if dpk_prior_cache_missing_count:
+                station_valid[0, missing_cache] = False
+                waveforms[0, missing_cache, :, :] = 0.0
+                if self.use_vs30:
+                    vs30_valid[0, missing_cache] = False
+
         input_pga_values = None
         input_pga_valid = None
         if has_pga_values:
@@ -1599,13 +1961,61 @@ class PreloadedEventGenerator(Dataset):
             pga_target_vs30_valid_t = torch.from_numpy(pga_target_vs30_valid[0]).bool()
             inputs += [station_vs30_t, station_vs30_valid_t, pga_target_vs30_t, pga_target_vs30_valid_t]
 
+        if self.dpk_prior_cache is not None:
+            cache_split = cache_split_for_sample
+            cached_weights = self.dpk_prior_cache.lookup_sample(
+                cache_split,
+                self.dpk_prior_cache_dataset_id,
+                sample_index_for_cache,
+                station_valid[0],
+                event_id=str(ith_event),
+                realtime_current_sample=(
+                    realtime_info['current_sample'] if realtime_info is not None else None
+                ),
+                original_station_indices=selected_original_input_indices[0],
+            )
+            inputs += [torch.from_numpy(cached_weights).float()]
+
         p_pick_info = {
             'shifted': torch.from_numpy(p_picks[0]).float(),
             'raw': torch.from_numpy(raw_p_picks[0]).float(),
             'shift': torch.tensor(float(shift), dtype=torch.float32),
             'event_id': str(ith_event),
             'selected_input_indices': torch.from_numpy(selected_input_indices[0]).long(),
+            'selected_original_input_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
+            'original_station_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
         }
+        if self.dpk_prior_cache is not None:
+            p_pick_info['dpk_prior_cache_path'] = self.dpk_prior_cache.path
+            p_pick_info['dpk_prior_cache_split'] = str(cache_split)
+            p_pick_info['dpk_prior_cache_sample_index'] = torch.tensor(
+                sample_index_for_cache,
+                dtype=torch.long,
+            )
+            if realtime_info is not None:
+                p_pick_info['dpk_prior_cache_realtime_current_sample'] = torch.tensor(
+                    int(realtime_info['current_sample']),
+                    dtype=torch.long,
+                )
+                p_pick_info['dpk_prior_cache_requested_current_sample'] = torch.tensor(
+                    int(realtime_info.get(
+                        'cache_requested_current_sample',
+                        realtime_info['current_sample'],
+                    )),
+                    dtype=torch.long,
+                )
+                p_pick_info['dpk_prior_cache_current_sample_delta'] = torch.tensor(
+                    int(realtime_info.get('cache_current_sample_delta', 0)),
+                    dtype=torch.long,
+                )
+                p_pick_info['dpk_prior_cache_missing_station_count'] = torch.tensor(
+                    dpk_prior_cache_missing_count,
+                    dtype=torch.long,
+                )
+                p_pick_info['dpk_prior_cache_available_station_count'] = torch.tensor(
+                    dpk_prior_cache_available_count,
+                    dtype=torch.long,
+                )
         if self.pga_targets:
             p_pick_info['pga_target_indices'] = torch.from_numpy(pga_target_indices[0]).long()
         if self.realtime_enabled:
@@ -1678,6 +2088,10 @@ class PreloadedEventGenerator(Dataset):
                 for idx in repeated_indexes:
                     for time_index in range(len(self.realtime_training['val_times'])):
                         realtime_indexes.append((int(idx), -int(time_index) - 1))
+            elif self.realtime_training.get('train_time_mode') == 'fixed':
+                for idx in repeated_indexes:
+                    for time_index in range(len(self.realtime_training['train_times'])):
+                        realtime_indexes.append((int(idx), -int(time_index) - 1))
             else:
                 n_bins = len(self.realtime_training['train_time_bins'])
                 n_draw = int(self.realtime_training['bins_per_event_per_epoch'])
@@ -1685,8 +2099,17 @@ class PreloadedEventGenerator(Dataset):
                     self.realtime_training['bin_sampling'] == 'with_replacement'
                     or n_draw > n_bins
                 )
-                for idx in repeated_indexes:
-                    chosen_bins = np.random.choice(n_bins, size=n_draw, replace=replace)
+                for repeat_pos, idx in enumerate(repeated_indexes):
+                    bin_rng = self._sample_rng((
+                        int(idx),
+                        int(self._realtime_epoch),
+                        int(repeat_pos),
+                        104729,
+                    ))
+                    if bin_rng is None:
+                        chosen_bins = np.random.choice(n_bins, size=n_draw, replace=replace)
+                    else:
+                        chosen_bins = bin_rng.choice(n_bins, size=n_draw, replace=replace)
                     for draw_id, bin_index in enumerate(chosen_bins):
                         realtime_indexes.append((
                             int(idx),
@@ -1695,7 +2118,12 @@ class PreloadedEventGenerator(Dataset):
                             int(draw_id),
                         ))
             if self.shuffle:
-                np.random.shuffle(realtime_indexes)
+                shuffle_rng = self._sample_rng((
+                    int(self._realtime_epoch),
+                    int(len(realtime_indexes)),
+                    13007,
+                ))
+                self._rng_shuffle(shuffle_rng, realtime_indexes)
             self.indexes = realtime_indexes
             if self.realtime_training['mode'] == 'train':
                 self._realtime_epoch += 1
@@ -1993,6 +2421,26 @@ def generator_from_config(config, data, event_metadata, time, batch_size=64, sam
     if generator_params.get('coord_keys', None) is not None:
         raise NotImplementedError('Fixed coordinate keys are not implemented in location evaluation')
     generator_params['translate'] = False
+    dpk_prior_cache = None
+    dpk_prior_cache_cfg = training_params.get('dpk_prior_cache', None)
+    if dpk_prior_cache_cfg and dpk_prior_cache_cfg.get('enabled', False):
+        paths = dpk_prior_cache_cfg.get('paths', {})
+        if isinstance(paths, dict):
+            cache_path = paths.get('dev') or paths.get('val') or paths.get('validation')
+        else:
+            cache_path = paths
+        cache_path = cache_path or dpk_prior_cache_cfg.get('dev_path') or dpk_prior_cache_cfg.get('val_path')
+        if not cache_path:
+            raise ValueError(
+                'dpk_prior_cache is enabled but no dev/val cache path is configured for generator_from_config.'
+            )
+        dpk_prior_cache = DPKPriorCache(
+            cache_path,
+            source=dpk_prior_cache_cfg.get('source', 'dpk_finetuned'),
+            mode=dpk_prior_cache_cfg.get('mode', 'event'),
+            token_floor=dpk_prior_cache_cfg.get('token_floor', dpk_prior_cache_cfg.get('floor', 1e-4)),
+            missing_policy=dpk_prior_cache_cfg.get('missing_policy', 'error'),
+        )
     generator = PreloadedEventGenerator(data=data,
                                         event_metadata=event_metadata,
                                         coords_target=True,
@@ -2002,6 +2450,15 @@ def generator_from_config(config, data, event_metadata, time, batch_size=64, sam
                                         sampling_rate=sampling_rate,
                                         shuffle=False,
                                         pga_mode=pga,
+                                        dpk_prior_cache=dpk_prior_cache,
+                                        dpk_prior_cache_split='dev',
+                                        dpk_prior_cache_dataset_id=0 if dataset_id is None else dataset_id,
+                                        dpk_prior_cache_align_realtime=(
+                                            (dpk_prior_cache_cfg or {}).get('align_realtime_to_cache', True)
+                                        ),
+                                        dpk_prior_cache_filter_missing_stations=(
+                                            (dpk_prior_cache_cfg or {}).get('filter_missing_stations', True)
+                                        ),
                                         **generator_params)
     if dataset_id is not None and config['model_params'].get('dataset_bias', False):
         generator = JointGenerator([generator], shuffle=False, dataset_id=True, fake_id=dataset_id)

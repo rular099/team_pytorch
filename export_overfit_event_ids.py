@@ -38,6 +38,7 @@ def main():
         overwrite_sampling_rate=training_params.get('overwrite_sampling_rate', None),
         decimate_events=generator_params[0].get('decimate_events', None),
         min_stalta_ratio_at_pick=training_params.get('min_stalta_ratio_at_pick', 0.1),
+        station_filter=generator_params[0].get('station_filter', training_params.get('station_filter', None)),
     )
     event_ids = select_diverse_event_ids(
         all_data[0],

@@ -203,6 +203,7 @@ def load_split_generators(config, split, limit=None, rank=0):
             overwrite_sampling_rate=overwrite_sampling_rate,
             decimate_events=generator.get("decimate_events", None),
             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+            station_filter=generator.get("station_filter", training_params.get("station_filter", None)),
         )
 
     full_data_train = [
@@ -464,6 +465,17 @@ def sample_scalar(info, key, default=np.nan):
     return value
 
 
+def index_scalar(values, index, default=-1):
+    if values is None or index >= len(values):
+        return default
+    value = values[index]
+    if torch.is_tensor(value):
+        if value.numel() == 0:
+            return default
+        value = value.detach().cpu().reshape(-1)[0].item()
+    return int(round(float(value)))
+
+
 def process_dataset(args, generators, current_encoder, dpk_model, dpk_head, device, rank, world_size):
     array_store = {}
     rows = []
@@ -499,7 +511,15 @@ def process_dataset(args, generators, current_encoder, dpk_model, dpk_head, devi
             if valid_slots.numel() == 0:
                 continue
 
-            selected_input_indices = p_pick_info.get("selected_input_indices")
+            original_station_indices = None
+            for index_key in (
+                "original_station_indices",
+                "selected_original_input_indices",
+                "selected_input_indices",
+            ):
+                if index_key in p_pick_info:
+                    original_station_indices = p_pick_info[index_key]
+                    break
             event_id = str(p_pick_info.get("event_id", ""))
             realtime_current_sample = sample_scalar(p_pick_info, "realtime_current_sample")
             realtime_elapsed_time = sample_scalar(p_pick_info, "realtime_elapsed_time")
@@ -524,10 +544,11 @@ def process_dataset(args, generators, current_encoder, dpk_model, dpk_head, devi
 
                 for local_i, slot_tensor in enumerate(slots):
                     slot = int(slot_tensor.detach().cpu().item())
-                    if selected_input_indices is not None and slot < len(selected_input_indices):
-                        original_station_index = int(selected_input_indices[slot].detach().cpu().item())
-                    else:
-                        original_station_index = slot
+                    original_station_index = index_scalar(
+                        original_station_indices,
+                        slot,
+                        default=slot,
+                    )
                     row = {
                         "split": split_name,
                         "dataset_id": dataset_id,

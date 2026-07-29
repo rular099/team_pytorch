@@ -62,7 +62,10 @@ class TrainDevTestSplitter:
 
 
 def load_events(data_paths, limit=None, parts=None, shuffle_train_dev=False, custom_split=None, data_keys=None,
-                overwrite_sampling_rate=None, min_mag=None, mag_key=None, decimate_events=None):
+                overwrite_sampling_rate=None, min_mag=None, mag_key=None, decimate_events=None,
+                station_filter=None):
+    if station_filter is not None:
+        raise ValueError('station_filter is supported by loader_light.py, not the legacy loader.py.')
     if min_mag is not None and mag_key is None:
         raise ValueError('mag_key needs to be set to enforce magnitude threshold')
     if isinstance(data_paths, str):

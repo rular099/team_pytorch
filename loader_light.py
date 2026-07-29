@@ -11,6 +11,26 @@ MAGNITUDE_KEY_ALIASES = {
     'Magnitude': ['M_J', 'MA'],
 }
 
+STATION_FILTER_PRESETS = {
+    'knt': {'source_network': ['knt']},
+    'knet': {'source_network': ['knt']},
+    'k-net': {'source_network': ['knt']},
+    'kik': {'source_network': ['kik']},
+    'kiknet': {'source_network': ['kik']},
+    'kik-net': {'source_network': ['kik']},
+    'surface': {'sensor_class': ['single_surface', 'surface']},
+    'ground': {'sensor_class': ['single_surface', 'surface']},
+    'knet_surface': {'source_network': ['knt'], 'sensor_class': ['single_surface']},
+    'knt_surface': {'source_network': ['knt'], 'sensor_class': ['single_surface']},
+    'kik_surface': {'source_network': ['kik'], 'sensor_class': ['surface']},
+    'kiknet_surface': {'source_network': ['kik'], 'sensor_class': ['surface']},
+    'kik_ground': {'source_network': ['kik'], 'sensor_class': ['surface']},
+    'kiknet_ground': {'source_network': ['kik'], 'sensor_class': ['surface']},
+    'borehole': {'source_network': ['kik'], 'sensor_class': ['borehole']},
+    'kik_borehole': {'source_network': ['kik'], 'sensor_class': ['borehole']},
+    'kiknet_borehole': {'source_network': ['kik'], 'sensor_class': ['borehole']},
+}
+
 
 class TrainDevTestSplitter:
     @staticmethod
@@ -116,6 +136,157 @@ def resolve_target_key(columns, requested_key):
     return requested_key
 
 
+def _listify_filter_value(value):
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [x.strip() for x in value.split(',') if x.strip()]
+    return [str(x).strip() for x in value if str(x).strip()]
+
+
+def _normalize_source_network(value):
+    value = str(value).strip().lower()
+    if value in ('knet', 'k-net'):
+        return 'knt'
+    if value in ('kiknet', 'kik-net'):
+        return 'kik'
+    return value
+
+
+def _normalize_sensor_class(value):
+    value = str(value).strip().lower()
+    aliases = {
+        'single': 'single_surface',
+        'single-surface': 'single_surface',
+        'knet_surface': 'single_surface',
+        'knt_surface': 'single_surface',
+        'ground': 'surface',
+        'kik_ground': 'surface',
+        'kiknet_ground': 'surface',
+        'kik_surface': 'surface',
+        'kiknet_surface': 'surface',
+        'downhole': 'borehole',
+        'bore': 'borehole',
+        'well': 'borehole',
+    }
+    return aliases.get(value, value)
+
+
+def _merge_station_filter_values(base, extra):
+    merged = {k: list(v) for k, v in base.items()}
+    for key, values in extra.items():
+        if key == 'min_stations_per_event':
+            merged[key] = values
+        else:
+            merged.setdefault(key, [])
+            merged[key].extend(values)
+    return merged
+
+
+def normalize_station_filter(station_filter):
+    if station_filter is None or station_filter is False:
+        return None
+    if isinstance(station_filter, str):
+        cfg = {'preset': station_filter}
+    else:
+        cfg = dict(station_filter)
+
+    merged = {}
+    preset_values = []
+    for key in ('preset', 'mode'):
+        preset_values.extend(_listify_filter_value(cfg.pop(key, None)))
+    for preset in preset_values:
+        preset_key = preset.strip().lower()
+        if preset_key in ('', 'all', 'none'):
+            continue
+        if preset_key not in STATION_FILTER_PRESETS:
+            raise ValueError(
+                f'Unknown station_filter preset {preset!r}. '
+                f'Known presets: {sorted(STATION_FILTER_PRESETS)}'
+            )
+        merged = _merge_station_filter_values(merged, STATION_FILTER_PRESETS[preset_key])
+
+    source_values = (
+        _listify_filter_value(cfg.pop('source_network', None))
+        + _listify_filter_value(cfg.pop('network', None))
+    )
+    sensor_values = (
+        _listify_filter_value(cfg.pop('sensor_class', None))
+        + _listify_filter_value(cfg.pop('sensor', None))
+    )
+    if source_values:
+        merged.setdefault('source_network', [])
+        merged['source_network'].extend(source_values)
+    if sensor_values:
+        merged.setdefault('sensor_class', [])
+        merged['sensor_class'].extend(sensor_values)
+
+    min_stations = cfg.pop('min_stations_per_event', cfg.pop('min_stations', 1))
+    merged['min_stations_per_event'] = int(min_stations)
+
+    if cfg:
+        raise ValueError(f'Unknown station_filter keys: {sorted(cfg)}')
+
+    source = {
+        _normalize_source_network(x)
+        for x in merged.get('source_network', [])
+        if str(x).strip().lower() not in ('', 'all', 'none')
+    }
+    sensor = {
+        _normalize_sensor_class(x)
+        for x in merged.get('sensor_class', [])
+        if str(x).strip().lower() not in ('', 'all', 'none')
+    }
+    if not source and not sensor:
+        return None
+    return {
+        'source_network': source or None,
+        'sensor_class': sensor or None,
+        'min_stations_per_event': max(1, int(merged['min_stations_per_event'])),
+    }
+
+
+def _apply_station_filter(event_metadata, station_filter, event_key):
+    cfg = normalize_station_filter(station_filter)
+    if cfg is None:
+        return event_metadata
+    before_rows = len(event_metadata)
+    before_events = event_metadata[event_key].nunique() if before_rows else 0
+    mask = np.ones(before_rows, dtype=bool)
+
+    if cfg['source_network'] is not None:
+        if 'source_network' not in event_metadata.columns:
+            raise ValueError('station_filter.source_network was requested, but station metadata lacks source_network.')
+        source = event_metadata['source_network'].map(_normalize_source_network)
+        mask &= source.isin(cfg['source_network']).to_numpy()
+
+    if cfg['sensor_class'] is not None:
+        if 'sensor_class' not in event_metadata.columns:
+            raise ValueError('station_filter.sensor_class was requested, but station metadata lacks sensor_class.')
+        sensor = event_metadata['sensor_class'].map(_normalize_sensor_class)
+        mask &= sensor.isin(cfg['sensor_class']).to_numpy()
+
+    filtered = event_metadata.loc[mask].copy()
+    min_stations = cfg['min_stations_per_event']
+    if len(filtered) and min_stations > 1:
+        count_col = 'wave_idx' if 'wave_idx' in filtered.columns else event_key
+        station_counts = filtered.groupby(event_key)[count_col].transform('nunique')
+        filtered = filtered.loc[station_counts >= min_stations].copy()
+
+    after_rows = len(filtered)
+    after_events = filtered[event_key].nunique() if after_rows else 0
+    print(
+        'Applied station_filter '
+        f'source_network={sorted(cfg["source_network"]) if cfg["source_network"] else "all"}, '
+        f'sensor_class={sorted(cfg["sensor_class"]) if cfg["sensor_class"] else "all"}, '
+        f'min_stations_per_event={min_stations}: '
+        f'rows {before_rows}->{after_rows}, events {before_events}->{after_events}'
+    )
+    if after_rows == 0:
+        raise ValueError('station_filter removed all station rows.')
+    return filtered.reset_index(drop=True)
+
+
 def _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=1):
     with h5py.File(data_path, 'r') as f:
         counts = {}
@@ -185,7 +356,7 @@ def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate
 
 def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=None, parts=None, shuffle_train_dev=False, custom_split=None, data_keys=None,
                 overwrite_sampling_rate=None, min_mag=None, mag_key=None, decimate_events=None,
-                min_stalta_ratio_at_pick=0.1):
+                min_stalta_ratio_at_pick=0.1, station_filter=None):
     if min_mag is not None and mag_key is None:
         raise ValueError('mag_key needs to be set to enforce magnitude threshold')
     if isinstance(data_paths, str):
@@ -249,9 +420,11 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
     event_metadata = _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=decimate)
     if min_stalta_ratio_at_pick is not None and 'stalta_ratio_at_pick' in event_metadata.columns:
         event_metadata = event_metadata[event_metadata['stalta_ratio_at_pick'] >= min_stalta_ratio_at_pick].reset_index(drop=True)
+    event_metadata = _apply_station_filter(event_metadata, station_filter, event_key)
 
     metadata['resolved_mag_key'] = resolved_mag_key
     metadata['event_key'] = event_key
     metadata['min_stalta_ratio_at_pick'] = min_stalta_ratio_at_pick
+    metadata['station_filter'] = normalize_station_filter(station_filter)
 
     return event_metadata, data, metadata

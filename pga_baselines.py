@@ -398,18 +398,21 @@ if __name__ == '__main__':
     data_keys = config.get('data_keys', None)
     training_keys = config.get('training_keys', None)
     training_parts = config.get('training_parts', (True, False, False))
+    station_filter = config.get('station_filter', None)
 
     for act_set in ['dev', 'test']:
         event_metadata, data, metadata = loader.load_events(config['data_path'], limit=limit,
                                                             parts=(False, act_set == 'dev', act_set == 'test'),
                                                             shuffle_train_dev=shuffle_train_dev,
-                                                            custom_split=custom_split, data_keys=data_keys)
+                                                            custom_split=custom_split, data_keys=data_keys,
+                                                            station_filter=station_filter)
         if training_keys is not None:
             event_metadata_train, data_train, metadata_train = loader.load_events(
                 config['data_path'], limit=limit,
                 parts=training_parts,
                 shuffle_train_dev=shuffle_train_dev,
-                custom_split=custom_split, data_keys=training_keys)
+                custom_split=custom_split, data_keys=training_keys,
+                station_filter=station_filter)
             training_data = [event_metadata_train] + [data_train[key] for key in training_keys]
         else:
             training_data = None

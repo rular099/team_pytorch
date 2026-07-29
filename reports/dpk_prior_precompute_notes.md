@@ -34,7 +34,7 @@ Default single-node 4-card run:
 
 ```bash
 bash tools/precompute_dpk_priors_slurm.sh \
-  pga_configs/transformer_japan_overfit_pga15_stage2_512_rt34_dpk_event_station_pool_chaosuan.json
+  pga_configs/transformer_japan_overfit_pga15_stage2_512_rt34_fixedtime_dpk_event_station_pool_chaosuan.json
 ```
 
 Useful overrides:
@@ -76,12 +76,14 @@ The HDF5 cache is row-aligned: row `i` of any dataset under `/priors`,
 `/meta`, `/index`, and `/stats` refers to the same station record. The most
 useful lookup keys are:
 
-- `sample_station_key = split|dataset_id|sample_index|station_slot`
 - `event_station_time_key = split|dataset_id|event_id|realtime_current_sample|original_station_index`
+- `sample_station_key = split|dataset_id|sample_index|station_slot`
 
-For deterministic generators, `sample_station_key` is the fastest training-time
-lookup. `event_station_time_key` is more explicit and should be used when
-checking cache consistency across runs.
+For realtime training, `event_station_time_key` is the training-time lookup key.
+It identifies the actual event cutout and original station, so it is robust to
+DataLoader ordering and avoids false hits when `sample_index` changes across
+runs. `sample_station_key` is kept as a debugging key and fallback for
+non-realtime datasets only.
 
 Recommended training-time read pattern:
 
@@ -91,9 +93,11 @@ import h5py
 h5 = h5py.File("dpk_priors.h5", "r")
 key_to_row = {
     key.decode() if isinstance(key, bytes) else key: int(row)
-    for key, row in zip(h5["index/sample_station_key"][:], h5["index/h5_row"][:])
+    for key, row in zip(h5["index/event_station_time_key"][:], h5["index/h5_row"][:])
 }
-row = key_to_row[f"{split}|{dataset_id}|{sample_index}|{station_slot}"]
+row = key_to_row[
+    f"{split}|{dataset_id}|{event_id}|{realtime_current_sample}|{original_station_index}"
+]
 prior = h5["priors/dpk_finetuned/event/x"][row]
 ```
 
@@ -113,6 +117,71 @@ The first diagnostics to inspect are:
 - `compare_event_x_l1` and `compare_event_f2_l1`: small values mean the two
   normalized priors differ little in magnitude.
 
-If DPK fine-tuned priors are clearly sharper or less uniform than `mae_head`,
-the next step is to wire `dpk_priors.h5` as a training-time cache and run a
-cached-prior version of rt34/rt35.
+DPK fine-tuned priors are expected to be the preferred source when they are
+clearly sharper or less uniform than `mae_head`. The training path now supports
+using `dpk_priors.h5` directly as a station-token prior cache.
+
+Current follow-up:
+
+- rt40 to rt43 are a `token_weight_scale` sweep on cached
+  `dpk_finetuned/event` station-pooling priors: scale 0, 2, 4, and 8.
+- This sweep tests whether the prior bias is too weak relative to the learned
+  attention score. The configs now consume `dpk_priors.h5` through
+  `training_params.dpk_prior_cache`.
+- Keep `dpk_weight_temperature=1.0` in this sweep. Sweeping temperature and
+  scale together is redundant because both mainly change the log-prior bias
+  strength.
+- Cached-prior training passes row-aligned station token weights as an extra
+  tensor in `inputs`. The lookup key is
+  `split|dataset_id|event_id|realtime_current_sample|original_station_index`.
+  The rt40-rt43 configs use fixed train realtime times
+  `[1, 3, 5, 10, 20, 40, 90]` and point to a fixed-time rt34 cache anchor. This
+  makes cache lookup an exact match instead of trying to cover the continuous
+  random-cut space. In fixed-time mode the training sample key is stable across
+  epochs as `event + fixed_time`; do not include epoch-dependent randomness in
+  station selection unless the cache is regenerated to cover those variants.
+- Precompute both train and dev split caches. The scale-sweep configs use
+  `missing_policy=error` so that missing train/dev rows fail fast instead of
+  silently turning into no-prior samples.
+- Do not reuse the earlier random-cut rt34 cache for rt40-rt43. Its
+  `(event, current_sample, station)` coverage is not aligned with fixed-time
+  training and will miss rows.
+- 2026-06-16 fix: `_crop_aligned_event_window()` previously chose the crop
+  anchor with global `np.random.choice`, so `deterministic_sampling=true` did
+  not actually make realtime samples deterministic. This made precomputed cache
+  rows and later coverage/training rows disagree even when config and explicit
+  cache paths were correct. Regenerate fixed-time train/dev caches after this
+  fix; old fixed-time caches generated before the fix should be discarded.
+
+Cache commands:
+
+```bash
+SPLIT=train bash tools/precompute_dpk_priors_slurm.sh \
+  pga_configs/transformer_japan_overfit_pga15_stage2_512_rt34_fixedtime_dpk_event_station_pool_chaosuan.json
+
+SPLIT=dev bash tools/precompute_dpk_priors_slurm.sh \
+  pga_configs/transformer_japan_overfit_pga15_stage2_512_rt34_fixedtime_dpk_event_station_pool_chaosuan.json
+```
+
+Before launching rt40-rt43, run an exact coverage check against the generated
+HDF5 files. Do not run this on the login node; submit it through Slurm:
+
+```bash
+bash tools/check_dpk_prior_cache_coverage_slurm.sh \
+  pga_configs/transformer_japan_overfit_pga15_stage2_512_rt40_dpk_event_station_pool_scale0_chaosuan.json train
+
+bash tools/check_dpk_prior_cache_coverage_slurm.sh \
+  pga_configs/transformer_japan_overfit_pga15_stage2_512_rt40_dpk_event_station_pool_scale0_chaosuan.json dev
+```
+
+Coverage must be `1.00000000`, and
+`station_retention_after_cache_filter` should be close to `1.00000000`. If
+coverage is lower, regenerate the cache before training. A miss such as
+`train|0|20240113155600|1160|0` means the train cache does not contain that
+event/current-sample/original-station row; it is not fixed by rerunning rt40
+unless the cache itself is regenerated with the same config and event-id file.
+
+The wrapper writes detailed output to
+`logs/dpk_prior_cache_coverage/<config>_<split>_<jobid>.txt`. It infers the
+cache path from `training_params.dpk_prior_cache.paths[split]`; pass an explicit
+third argument only when checking a cache that is not referenced by the config.

@@ -43,12 +43,25 @@ def _canonical_token_weight_mode(mode):
         "dpk_det_ppk_spk": "dpk_all",
         "dpk_event_bias": "dpk_event",
         "dpk_all_bias": "dpk_all",
+        "dpk_event_cache": "cached_dpk_event",
+        "dpk_cache_event": "cached_dpk_event",
+        "cache_dpk_event": "cached_dpk_event",
+        "cached_event": "cached_dpk_event",
+        "dpk_all_cache": "cached_dpk_all",
+        "dpk_cache_all": "cached_dpk_all",
+        "cache_dpk_all": "cached_dpk_all",
+        "cached_all": "cached_dpk_all",
     }
     return aliases.get(mode, mode)
 
 
 def _token_weight_uses_dpk(mode):
-    return _canonical_token_weight_mode(mode).startswith("dpk_")
+    mode = _canonical_token_weight_mode(mode)
+    return mode.startswith("dpk_") and not mode.startswith("cached_dpk_")
+
+
+def _token_weight_uses_cache(mode):
+    return _canonical_token_weight_mode(mode).startswith("cached_dpk_")
 
 
 def _token_weight_is_active(mode):
@@ -3038,6 +3051,8 @@ class FullModel(nn.Module):
             'dpk_all',
             'dpk_event_learned',
             'dpk_all_learned',
+            'cached_dpk_event',
+            'cached_dpk_all',
         )
         if self.station_token_weight_mode not in valid_token_weight_modes:
             raise ValueError(
@@ -3423,6 +3438,44 @@ class FullModel(nn.Module):
             return weights[0]
         return weights
 
+    def _cached_token_weights_for_lengths(self, mode, lengths, cached_token_weights, ref_tensor):
+        mode = _canonical_token_weight_mode(mode)
+        if mode not in ('cached_dpk_event', 'cached_dpk_all'):
+            return None
+        if cached_token_weights is None:
+            raise ValueError(
+                f"{mode} requires cached station token weights in model inputs. "
+                "Enable training_params.dpk_prior_cache and precompute the matching split."
+            )
+        weights = cached_token_weights.to(device=ref_tensor.device, dtype=ref_tensor.dtype)
+        if weights.dim() != 3:
+            raise ValueError(
+                "Cached station token weights must have shape (B, levels, max_tokens), "
+                f"got {tuple(weights.shape)}"
+            )
+        if weights.shape[1] < len(lengths):
+            raise ValueError(
+                f"Cached station token weights provide {weights.shape[1]} levels, "
+                f"but {len(lengths)} feature levels are required."
+            )
+        out = []
+        for idx, token_len in enumerate(lengths):
+            token_len = int(token_len)
+            cur = weights[:, idx, :]
+            if cur.shape[1] < token_len:
+                cur = F.interpolate(
+                    cur.unsqueeze(1),
+                    size=token_len,
+                    mode='linear',
+                    align_corners=False,
+                ).squeeze(1)
+            else:
+                cur = cur[:, :token_len]
+            out.append(self._normalize_token_signal(cur))
+        if len(out) == 1:
+            return out[0]
+        return out
+
     def _record_dpk_diag(self, ref_tensor):
         if self.dpk_encoder_consistency is None:
             return
@@ -3527,15 +3580,28 @@ class FullModel(nn.Module):
                 dataset = extras[-1]
             extras = extras[:-1]
         station_vs30 = station_vs30_valid = pga_target_vs30 = pga_target_vs30_valid = None
+        cached_station_token_weights = None
         if extras:
-            if len(extras) != 4:
+            if len(extras) in (1, 5):
+                cached_station_token_weights = extras[-1]
+                extras = extras[:-1]
+            if extras and len(extras) != 4:
                 raise ValueError(
                     'Expected four VS30 tensors after pga_target_valid '
-                    '(station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid); '
+                    '(station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid), '
+                    'optionally followed by cached station token weights; '
                     f'got {len(extras)} extra positional inputs.'
                 )
-            station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid = extras
-        return station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid, dataset
+            if extras:
+                station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid = extras
+        return (
+            station_vs30,
+            station_vs30_valid,
+            pga_target_vs30,
+            pga_target_vs30_valid,
+            cached_station_token_weights,
+            dataset,
+        )
 
     def _vs30_feature_tensor(self, values, valid, reference_mask, ref_tensor):
         if values is None:
@@ -3854,7 +3920,8 @@ class FullModel(nn.Module):
             return torch.flip(tokens, dims=[2])
         raise ValueError(f'Unsupported pga temporal token control mode: {mode}')
 
-    def _encode_station_waveform(self, waveform, raw_waveform=None, collect_tokens=False, station_context=None):
+    def _encode_station_waveform(self, waveform, raw_waveform=None, collect_tokens=False,
+                                 station_context=None, cached_token_weights=None):
         uses_metadata = False
         if isinstance(self.waveform_model, nn.Sequential) and len(self.waveform_model) >= 2:
             uses_metadata = getattr(self.waveform_model[1], 'uses_station_metadata', False)
@@ -3880,13 +3947,21 @@ class FullModel(nn.Module):
             if needs_dpk and not separate_dpk_model:
                 dpk_outputs = self._dpk_outputs(waveform, features)
             feature_lengths = self._feature_token_lengths(features)
-            station_token_weights = self._token_weights_for_lengths(
-                self.station_token_weight_mode,
-                feature_lengths,
-                waveform,
-                raw_waveform,
-                dpk_outputs=dpk_outputs,
-            )
+            if _token_weight_uses_cache(self.station_token_weight_mode):
+                station_token_weights = self._cached_token_weights_for_lengths(
+                    self.station_token_weight_mode,
+                    feature_lengths,
+                    cached_token_weights,
+                    waveform,
+                )
+            else:
+                station_token_weights = self._token_weights_for_lengths(
+                    self.station_token_weight_mode,
+                    feature_lengths,
+                    waveform,
+                    raw_waveform,
+                    dpk_outputs=dpk_outputs,
+                )
             if uses_metadata or uses_station_weights:
                 station_emb = self.waveform_model[1](
                     features,
@@ -3903,13 +3978,21 @@ class FullModel(nn.Module):
             if token_getter is None:
                 raise ValueError('station adapter does not expose temporal_tokens().')
             temporal_tokens = token_getter(features)
-            temporal_token_weights = self._token_weights_for_lengths(
-                self.temporal_token_weight_mode,
-                [temporal_tokens.shape[1]],
-                waveform,
-                raw_waveform,
-                dpk_outputs=dpk_outputs,
-            )
+            if _token_weight_uses_cache(self.temporal_token_weight_mode):
+                temporal_token_weights = self._cached_token_weights_for_lengths(
+                    self.temporal_token_weight_mode,
+                    [temporal_tokens.shape[1]],
+                    cached_token_weights,
+                    waveform,
+                )
+            else:
+                temporal_token_weights = self._token_weights_for_lengths(
+                    self.temporal_token_weight_mode,
+                    [temporal_tokens.shape[1]],
+                    waveform,
+                    raw_waveform,
+                    dpk_outputs=dpk_outputs,
+                )
             return station_emb, self._compress_station_temporal_tokens(temporal_tokens), temporal_token_weights
         return self.waveform_model(waveform), None, None
 
@@ -3967,7 +4050,14 @@ class FullModel(nn.Module):
     def forward(self, waveform_inp, metadata_inp, station_valid,
                 pga_targets_inp=None, pga_target_valid=None,
                 *extra_inputs, dataset=None, att_mask=None):
-        station_vs30, station_vs30_valid, pga_target_vs30, pga_target_vs30_valid, dataset = self._parse_extra_inputs(
+        (
+            station_vs30,
+            station_vs30_valid,
+            pga_target_vs30,
+            pga_target_vs30_valid,
+            cached_station_token_weights,
+            dataset,
+        ) = self._parse_extra_inputs(
             extra_inputs,
             dataset,
         )
@@ -3986,11 +4076,17 @@ class FullModel(nn.Module):
         raw_station_emb_list = []
         collect_temporal_tokens = self.use_target_temporal_pooling or self.pga_temporal_residual_head is not None
         for i in range(waveforms_masked.shape[1]):
+            station_cached_weights_i = (
+                cached_station_token_weights[:, i, :, :]
+                if cached_station_token_weights is not None
+                else None
+            )
             station_emb_i, station_tokens_i, station_token_weights_i = self._encode_station_waveform(
                 waveforms_masked[:, i, :, :],
                 raw_waveform=raw_waveform[:, i, :, :],
                 collect_tokens=collect_temporal_tokens,
                 station_context=coords_feat[:, i, :] if coords_feat is not None else None,
+                cached_token_weights=station_cached_weights_i,
             )
             raw_station_emb_list.append(station_emb_i)
             if station_tokens_i is not None:
@@ -4085,6 +4181,8 @@ class FullModel(nn.Module):
             'dpk_all': 5.0,
             'dpk_event_learned': 6.0,
             'dpk_all_learned': 7.0,
+            'cached_dpk_event': 8.0,
+            'cached_dpk_all': 9.0,
         }
         self._last_diag['station_token_weight_mode'] = emb.new_tensor(
             token_mode_codes[self.station_token_weight_mode]

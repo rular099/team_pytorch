@@ -103,6 +103,7 @@ def load_split(config, repo_root, split_name, overfit_n):
                 mag_key=generator.get("key", "MA"),
                 overwrite_sampling_rate=overwrite_sampling_rate,
                 decimate_events=generator.get("decimate_events"),
+                station_filter=generator.get("station_filter", training_params.get("station_filter")),
             )
         )
 

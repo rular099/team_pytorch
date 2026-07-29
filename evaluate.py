@@ -330,13 +330,15 @@ if __name__ == '__main__':
     overwrite_sampling_rate = training_params.get('overwrite_sampling_rate', None)
     min_mag = generator_params.get('min_mag', None)
     mag_key = generator_params.get('key', 'MA')
+    station_filter = generator_params.get('station_filter', training_params.get('station_filter', None))
     event_metadata, data, metadata = loader.load_events(data_path,
                                                         parts=(False, not test_set, test_set),
                                                         shuffle_train_dev=shuffle_train_dev,
                                                         custom_split=custom_split,
                                                         min_mag=min_mag,
                                                         mag_key=mag_key,
-                                                        overwrite_sampling_rate=overwrite_sampling_rate)
+                                                        overwrite_sampling_rate=overwrite_sampling_rate,
+                                                        station_filter=station_filter)
 
     if args.additional_data:
         print('Loading additional data')
@@ -344,7 +346,8 @@ if __name__ == '__main__':
                                                              parts=(True, True, True),
                                                              min_mag=min_mag,
                                                              mag_key=mag_key,
-                                                             overwrite_sampling_rate=overwrite_sampling_rate)
+                                                             overwrite_sampling_rate=overwrite_sampling_rate,
+                                                             station_filter=station_filter)
         event_metadata = pd.concat([event_metadata, event_metadata_add])
         for t_key in data.keys():
             if t_key in data_add:

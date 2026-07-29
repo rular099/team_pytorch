@@ -169,17 +169,20 @@ if __name__ == '__main__':
     shuffle_train_dev = config.get('shuffle_train_dev', False)
     custom_split = config.get('custom_split', None)
     data_keys = config.get('data_keys', None)
+    station_filter = config.get('station_filter', None)
     times = config.get('times', (0.5, 1, 2, 4, 8, 16, 25))
 
     for act_set in ['dev', 'test']:
         event_metadata, data, metadata = loader.load_events(config['data_path'], limit=limit,
                                                             parts=(False, act_set == 'dev', act_set == 'test'),
                                                             shuffle_train_dev=shuffle_train_dev,
-                                                            custom_split=custom_split, data_keys=data_keys)
+                                                            custom_split=custom_split, data_keys=data_keys,
+                                                            station_filter=station_filter)
 
         if 'additional_data' in config:
             event_metadata_add, data_add, _ = loader.load_events(config['additional_data'],
-                                                                 parts=(True, True, True))
+                                                                 parts=(True, True, True),
+                                                                 station_filter=station_filter)
             event_metadata = pd.concat([event_metadata, event_metadata_add])
             for t_key in data.keys():
                 if t_key in data_add:

@@ -20,7 +20,8 @@
 #   CONDA_ENV          Conda env name to activate after module loading
 #   MODULE_UNLOAD      Optional module to unload
 #   MODULE_LOADS       Space-separated modules to load
-#   RESET_WEIGHT_PATH  Delete training_params.weight_path before training when set to 1
+#   RESET_WEIGHT_PATH  Delete training_params.weight_path before training when set to 1; defaults to 0
+#   ALLOW_DELETE_CHECKPOINTS  Also required when RESET_WEIGHT_PATH=1 and checkpoint files already exist
 #   RUN_EVAL           Run eval_checkpoint.py after successful training when set to 1
 #   EVAL_CHECKPOINT    Optional checkpoint path; when unset, evaluates both full_model_last.pth and full_model_best.pth if present
 #   EVAL_SINGLE_STATION_CHECKPOINT Optional single-station checkpoint path; defaults to best/last under weight_path
@@ -53,7 +54,8 @@ DITING_CONFIG=${DITING_CONFIG:-/public/home/test_bigmodel/seismogram/zb/team_pyt
 CONDA_ENV=${CONDA_ENV:-lsm_env}
 MODULE_UNLOAD=${MODULE_UNLOAD:-compiler/rocm/2.9}
 MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04 apps/miniconda/3"}
-RESET_WEIGHT_PATH=${RESET_WEIGHT_PATH:-1}
+RESET_WEIGHT_PATH=${RESET_WEIGHT_PATH:-0}
+ALLOW_DELETE_CHECKPOINTS=${ALLOW_DELETE_CHECKPOINTS:-0}
 RUN_EVAL=${RUN_EVAL:-1}
 DISTRIBUTED_LAUNCHER=${DISTRIBUTED_LAUNCHER:-slurm_direct}
 TORCHRUN_RDZV_MODE=${TORCHRUN_RDZV_MODE:-static}
@@ -205,6 +207,17 @@ if [[ -n "${CONDA_ENV:-}" ]]; then
 fi
 
 if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then
+    if ((EXTRA_ARG_COUNT > 0)); then
+        for arg in "${EXTRA_ARGS[@]}"; do
+            case "$arg" in
+                --resume_full_model|--resume_full_model=*)
+                    echo "Refusing RESET_WEIGHT_PATH=1 together with --resume_full_model; this would delete the checkpoint before resume." >&2
+                    echo "Unset RESET_WEIGHT_PATH or set RESET_WEIGHT_PATH=0 for continuation jobs." >&2
+                    exit 1
+                    ;;
+            esac
+        done
+    fi
     WEIGHT_PATH_TO_RESET=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["training_params"]["weight_path"])' "$CONFIG")
     if [[ -z "$WEIGHT_PATH_TO_RESET" || "$WEIGHT_PATH_TO_RESET" == "/" || "$WEIGHT_PATH_TO_RESET" == "." || "$WEIGHT_PATH_TO_RESET" == ".." ]]; then
         echo "Refusing to reset unsafe weight_path: '$WEIGHT_PATH_TO_RESET'" >&2
@@ -214,6 +227,13 @@ if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then
         /*) WEIGHT_DIR_TO_RESET="$WEIGHT_PATH_TO_RESET" ;;
         *) WEIGHT_DIR_TO_RESET="$WORKDIR/$WEIGHT_PATH_TO_RESET" ;;
     esac
+    if compgen -G "$WEIGHT_DIR_TO_RESET/full_model_*.pth" >/dev/null || compgen -G "$WEIGHT_DIR_TO_RESET/single_station_*.pth" >/dev/null; then
+        if [[ "$ALLOW_DELETE_CHECKPOINTS" != "1" ]]; then
+            echo "Refusing to delete checkpoint-containing weight dir: $WEIGHT_DIR_TO_RESET" >&2
+            echo "Set ALLOW_DELETE_CHECKPOINTS=1 only if you intentionally want to discard these checkpoints." >&2
+            exit 1
+        fi
+    fi
     echo "[INFO] RESET_WEIGHT_PATH=1; removing weight dir: $WEIGHT_DIR_TO_RESET"
     rm -rf -- "$WEIGHT_DIR_TO_RESET"
 fi
