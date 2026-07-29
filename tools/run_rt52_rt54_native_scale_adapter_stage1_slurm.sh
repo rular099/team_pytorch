@@ -86,8 +86,9 @@ print("[OK] rt{}: adapter={}, mask=true, weight_path={}".format(
 ' "$rt" "$cfg_path"
 }
 
-resume_arg_for_weight_dir() {
+resume_mode_for_weight_dir() {
     local weight_dir=$1
+    local entry_count
     if [[ "${RESET_WEIGHT_PATH:-0}" == "1" ]]; then
         echo "RESET_WEIGHT_PATH=1 is not allowed by this stage-1 launcher." >&2
         return 1
@@ -96,25 +97,26 @@ resume_arg_for_weight_dir() {
         return 0
     fi
     if [[ -f "$weight_dir/full_model_last.pth" ]]; then
-        printf '%s\n' "--resume_full_model last"
+        printf '%s\n' "last"
         return 0
     fi
     if [[ -f "$weight_dir/full_model_best.pth" ]]; then
-        printf '%s\n' "--resume_full_model best"
+        printf '%s\n' "best"
         return 0
     fi
     if [[ -f "$weight_dir/full_model_init.pth" ]]; then
-        printf '%s\n' "--resume_full_model init"
+        printf '%s\n' "init"
         return 0
     fi
     if [[ -d "$weight_dir" ]]; then
-        shopt -s nullglob
-        local entries=("$weight_dir"/*)
-        shopt -u nullglob
-        if (( ${#entries[@]} == 0 )); then
+        entry_count=$(
+            find "$weight_dir" -maxdepth 1 -mindepth 1 -printf 'x' |
+                wc -c
+        )
+        if (( entry_count == 0 )); then
             return 0
         fi
-        if (( ${#entries[@]} == 1 )) && [[ "$(basename "${entries[0]}")" == "config.json" ]]; then
+        if (( entry_count == 1 )) && [[ -f "$weight_dir/config.json" ]]; then
             return 0
         fi
         echo "Weight directory is non-empty but has no resumable full-model checkpoint: $weight_dir" >&2
@@ -136,24 +138,29 @@ for rt in $RT_LIST; do
     fi
     validate_config "$rt" "$cfg_path"
     weight_dir=$(weight_dir_for_config "$cfg_path")
-    resume_arg=$(resume_arg_for_weight_dir "$weight_dir")
-    resume_args=()
-    if [[ -n "$resume_arg" ]]; then
-        read -r -a resume_args <<< "$resume_arg"
-    fi
+    resume_mode=$(resume_mode_for_weight_dir "$weight_dir")
     echo "[INFO] rt${rt} config: $cfg_path"
     echo "[INFO] rt${rt} weights: $weight_dir"
-    if [[ -n "$resume_arg" ]]; then
-        echo "[INFO] rt${rt} resume: $resume_arg"
+    if [[ -n "$resume_mode" ]]; then
+        echo "[INFO] rt${rt} resume: --resume_full_model $resume_mode"
     fi
     if [[ "$DRY_RUN" == "1" ]]; then
         continue
     fi
-    WORKDIR="$WORKDIR" \
-    JOB_NAME="${JOB_NAME_PREFIX}${rt}" \
-    RUN_EVAL="$RUN_EVAL" \
-    RESET_WEIGHT_PATH=0 \
-    bash "$TRAIN_SCRIPT" "$cfg_path" "${resume_args[@]}"
+    if [[ -n "$resume_mode" ]]; then
+        WORKDIR="$WORKDIR" \
+        JOB_NAME="${JOB_NAME_PREFIX}${rt}" \
+        RUN_EVAL="$RUN_EVAL" \
+        RESET_WEIGHT_PATH=0 \
+        bash "$TRAIN_SCRIPT" "$cfg_path" \
+            --resume_full_model "$resume_mode"
+    else
+        WORKDIR="$WORKDIR" \
+        JOB_NAME="${JOB_NAME_PREFIX}${rt}" \
+        RUN_EVAL="$RUN_EVAL" \
+        RESET_WEIGHT_PATH=0 \
+        bash "$TRAIN_SCRIPT" "$cfg_path"
+    fi
 done
 
 echo "[INFO] stage-1 training submission complete; E0 remains existing rt46."

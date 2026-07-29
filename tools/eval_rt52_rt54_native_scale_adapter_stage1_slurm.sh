@@ -112,7 +112,6 @@ submit_eval() {
     local output_txt
     local output_npz
     local job_name
-    local extra_args=()
 
     resolve_run_paths "$rt"
     checkpoint_available "$rt" || return 0
@@ -122,10 +121,6 @@ submit_eval() {
     else
         suffix="_waveform_station_${PERMUTATION}"
         job_name="team-nlta-s1-mismatch-rt${rt}"
-        extra_args=(
-            --waveform_station_permutation "$PERMUTATION"
-            --waveform_station_permutation_seed "$PERMUTATION_SEED"
-        )
     fi
     output_txt="$RESOLVED_LOG_DIR/eval_results_last${suffix}.txt"
     output_npz="$RESOLVED_LOG_DIR/eval_results_last${suffix}.npz"
@@ -139,7 +134,7 @@ submit_eval() {
         submitted_count=$((submitted_count + 1))
         return 0
     fi
-    if (( ${#extra_args[@]} > 0 )); then
+    if [[ "$mode" == "mismatch" ]]; then
         WORKDIR="$WORKDIR" \
         JOB_NAME="$job_name" \
         SLURM_TIME="$SLURM_TIME" \
@@ -148,7 +143,8 @@ submit_eval() {
         EVAL_OUTPUT_NPZ="$output_npz" \
         bash "$EVAL_SCRIPT" "$RESOLVED_CONFIG" \
             --skip_single_station \
-            "${extra_args[@]}"
+            --waveform_station_permutation "$PERMUTATION" \
+            --waveform_station_permutation_seed "$PERMUTATION_SEED"
     else
         WORKDIR="$WORKDIR" \
         JOB_NAME="$job_name" \
