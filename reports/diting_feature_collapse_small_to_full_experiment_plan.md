@@ -261,6 +261,21 @@ bash tools/run_rt52_rt54_native_scale_adapter_stage1_slurm.sh
 RT_LIST="52 53" bash tools/run_rt52_rt54_native_scale_adapter_stage1_slurm.sh
 ```
 
+若作业因 Slurm walltime 超时，从每组的 `full_model_last.pth` 严格续训；默认重新申请 48 小时：
+
+```bash
+bash tools/resume_rt52_rt54_native_scale_adapter_stage1_slurm.sh
+```
+
+也可只续训指定实验或覆盖 walltime：
+
+```bash
+RT_LIST="53 54" SLURM_TIME=72:00:00 \
+bash tools/resume_rt52_rt54_native_scale_adapter_stage1_slurm.sh
+```
+
+该脚本不会回退到 best/init，也不会删除权重目录；若存在同名活动任务则默认跳过。超时发生在一个 epoch 中间时，只能从上一个完整 epoch 末保存的 checkpoint 继续。
+
 eval-only：
 
 ```bash
