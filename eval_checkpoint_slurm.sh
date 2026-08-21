@@ -5,6 +5,7 @@
 #   - default config copy: logs/<weight_path>/config.json
 #   - default outputs: logs/<weight_path>/eval_results_last.txt/.npz
 #                      logs/<weight_path>/eval_results_best.txt/.npz
+#     plus one adjacent *.metrics.json file containing formal PGA metrics
 #   - no sharding; one complete eval output per checkpoint
 #
 # Usage:
@@ -287,6 +288,16 @@ if (( ${#EVAL_CHECKPOINT_PATHS[@]} > 1 )) && { [[ -n "${EVAL_OUTPUT_TXT:-}" ]] |
     echo "EVAL_OUTPUT_TXT/EVAL_OUTPUT_NPZ can only be used when EVAL_CHECKPOINT selects one checkpoint." >&2
     exit 1
 fi
+if (( ${#EVAL_CHECKPOINT_PATHS[@]} > 1 )); then
+    for arg in "${EXTRA_ARGS[@]}"; do
+        case "$arg" in
+            --metrics_output|--metrics_output=*)
+                echo "--metrics_output can only be used when EVAL_CHECKPOINT selects one checkpoint." >&2
+                exit 1
+                ;;
+        esac
+    done
+fi
 
 for idx in "${!EVAL_CHECKPOINT_PATHS[@]}"; do
     EVAL_CHECKPOINT_PATH=${EVAL_CHECKPOINT_PATHS[$idx]}
@@ -299,6 +310,7 @@ for idx in "${!EVAL_CHECKPOINT_PATHS[@]}"; do
         EVAL_OUTPUT_NPZ_PATH="$RUN_LOG_DIR/eval_results_${EVAL_LABEL}${EVAL_SUFFIX}.npz"
         EVAL_OUTPUT_TXT_PATH="$RUN_LOG_DIR/eval_results_${EVAL_LABEL}${EVAL_SUFFIX}.txt"
     fi
+    EVAL_METRICS_JSON_PATH="${EVAL_OUTPUT_NPZ_PATH%.npz}.metrics.json"
     mkdir -p "$(dirname "$EVAL_OUTPUT_TXT_PATH")" "$(dirname "$EVAL_OUTPUT_NPZ_PATH")"
 
     EVAL_CMD=(
@@ -328,9 +340,27 @@ for idx in "${!EVAL_CHECKPOINT_PATHS[@]}"; do
             --overfit_n=*)
                 EVAL_CMD+=("${EXTRA_ARGS[$i]}")
                 ;;
-            --input_station_selection|--case_station_sweep|--case_station_counts|--case_splits|--case_event_indices|--case_max_events|--case_seed|--skip_single_station|--waveform_station_permutation|--waveform_station_permutation_seed|--no_permute_cached_token_weights)
+            --splits|--metrics_output)
+                if ((i + 1 >= EXTRA_ARG_COUNT)); then
+                    echo "Missing value for ${EXTRA_ARGS[$i]}" >&2
+                    exit 2
+                fi
+                EVAL_CMD+=("${EXTRA_ARGS[$i]}" "${EXTRA_ARGS[$((i + 1))]}")
+                if [[ "${EXTRA_ARGS[$i]}" == "--metrics_output" ]]; then
+                    EVAL_METRICS_JSON_PATH=${EXTRA_ARGS[$((i + 1))]}
+                fi
+                i=$((i + 1))
+                ;;
+            --splits=*)
                 EVAL_CMD+=("${EXTRA_ARGS[$i]}")
-                if [[ "${EXTRA_ARGS[$i]}" != "--case_station_sweep" && "${EXTRA_ARGS[$i]}" != "--skip_single_station" && "${EXTRA_ARGS[$i]}" != "--no_permute_cached_token_weights" ]] && ((i + 1 < EXTRA_ARG_COUNT)); then
+                ;;
+            --metrics_output=*)
+                EVAL_CMD+=("${EXTRA_ARGS[$i]}")
+                EVAL_METRICS_JSON_PATH=${EXTRA_ARGS[$i]#--metrics_output=}
+                ;;
+            --input_station_selection|--case_station_sweep|--case_station_counts|--case_splits|--case_event_indices|--case_max_events|--case_seed|--skip_single_station|--skip_diagnostics|--waveform_station_permutation|--waveform_station_permutation_seed|--no_permute_cached_token_weights)
+                EVAL_CMD+=("${EXTRA_ARGS[$i]}")
+                if [[ "${EXTRA_ARGS[$i]}" != "--case_station_sweep" && "${EXTRA_ARGS[$i]}" != "--skip_single_station" && "${EXTRA_ARGS[$i]}" != "--skip_diagnostics" && "${EXTRA_ARGS[$i]}" != "--no_permute_cached_token_weights" ]] && ((i + 1 < EXTRA_ARG_COUNT)); then
                     EVAL_CMD+=("${EXTRA_ARGS[$((i + 1))]}")
                     i=$((i + 1))
                 fi
@@ -352,6 +382,15 @@ for idx in "${!EVAL_CHECKPOINT_PATHS[@]}"; do
     echo "[INFO] eval single-station checkpoint: ${EVAL_SINGLE_STATION_CHECKPOINT:-<disabled>}"
     echo "[INFO] eval txt: $EVAL_OUTPUT_TXT_PATH"
     echo "[INFO] eval npz: $EVAL_OUTPUT_NPZ_PATH"
+    echo "[INFO] eval metrics: $EVAL_METRICS_JSON_PATH"
     "${EVAL_CMD[@]}" >"$EVAL_OUTPUT_TXT_PATH" 2>&1
+    if [[ ! -s "$EVAL_OUTPUT_NPZ_PATH" ]]; then
+        echo "Eval finished without a non-empty NPZ: $EVAL_OUTPUT_NPZ_PATH" >&2
+        exit 1
+    fi
+    if [[ ! -s "$EVAL_METRICS_JSON_PATH" ]]; then
+        echo "Eval finished without a non-empty formal metrics JSON: $EVAL_METRICS_JSON_PATH" >&2
+        exit 1
+    fi
     echo "[INFO] eval finished ($EVAL_LABEL); results written to $EVAL_OUTPUT_TXT_PATH"
 done

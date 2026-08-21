@@ -1,0 +1,138 @@
+{
+  "deck_name": "multistation_pga_comparison_3s_replacement_20260727",
+  "language": "Chinese",
+  "goal": "生成一张可手动替换原文献对比页的独立 16:9 PPT 页面，将本项目在 TEAM 和 QuakeFormer 两处的结果统一为 rt48 固定 3 s，并明确两篇文献的时间口径。",
+  "selected_image_backend": "built-in image tool",
+  "max_concurrent_slides": 1,
+  "sample_generation_method": {
+    "backend_used": "built-in image tool",
+    "tool_name": "image_gen",
+    "mode": "generate; use localized edit with the same tool only when QA finds a contained issue",
+    "prompt_source": "../multistation_pga_exchange_20260726/prompts/sample_slide_12.md",
+    "size": "16:9 landscape; approved output 1672x941",
+    "quality": "built-in default",
+    "model_config": "built-in image_gen default",
+    "approved_sample_path": "../multistation_pga_exchange_20260726/origin_image/slide_12.png",
+    "input_context_preparation": "Inspect the original comparison slide and approved sample with view_image; edit the original comparison slide with referenced_image_paths while preserving layout and style.",
+    "handoff_rule": "Use the same built-in image_gen backend. This is an authorized localized revision of an existing approved slide; return a blocker if the built-in edit path or the original slide image is unavailable."
+  },
+  "approved_style_reference": {
+    "path": "../multistation_pga_exchange_20260726/origin_image/slide_12.png",
+    "role": "approved sample slide style reference",
+    "fidelity": "match palette, typography mood, density and finish only; do not copy its exact layout or content"
+  },
+  "style": {
+    "name": "清新低饱和科研答辩风",
+    "visual_direction": "formal Chinese academic defense deck, evidence-first, calm and fresh rather than vivid, structured scientific tables and concise protocol caveats",
+    "color_palette": {
+      "background": "#FAFBFC",
+      "content_fill": "#F2F6F8",
+      "title_and_body": "#2F3742",
+      "train_and_structure": "#5B7FA3",
+      "validation": "#55A6A0",
+      "critical_accent": "#D66F63",
+      "border": "#CCD8E2"
+    },
+    "typography": "Chinese sans-serif; charcoal titles; compact readable academic tables; exact three-decimal metrics",
+    "texture_and_finish": "flat, clean, subtle light-gray-blue cards and fine borders, no gradients",
+    "deck_consistency": "match the approved sample and original comparison slide"
+  },
+  "deck_context": {
+    "source_summary": "本项目 rt48 的固定 3 s 评估来自 eval_results_last.npz；3 s 指首个有效 P 波后 3 s 的实时快照。TEAM 数字来自日本 test 的随时间概率预警。QuakeFormer Figure 3 的 forecasting 数字只使用事件参数和场地信息，不输入实时波形，因而不对应固定秒数。",
+    "core_claim": "本项目统一使用 3 s 后，train 仍显示较强拟合容量，但 validation 明显较弱；跨论文任务、数据集和时间口径不同，数字只用于量级和差距定位。",
+    "canonical_terms": [
+      "TEAM test",
+      "rt48@3 s",
+      "train",
+      "validation",
+      "QuakeFormer forecasting",
+      "seen held-out stations",
+      "unseen held-out stations",
+      "F1 / PR-AUC",
+      "R² / σ_ln"
+    ]
+  },
+  "slides": [
+    {
+      "number": 1,
+      "title": "文献与本项目的数值对比——本项目统一为 3 s",
+      "role": "literature comparison replacement slide",
+      "intent": "在原第 25 页的视觉结构上，将本项目 TEAM-style 阈值表和 QuakeFormer 回归对比都统一替换为 rt48 固定 3 s，并把 QuakeFormer 无固定秒数的 forecasting 口径写清楚。",
+      "key_points": [
+        "左栏：TEAM 日本 test 对比本项目 rt48@3 s train / validation",
+        "右栏：QuakeFormer forecasting 无实时波形、无固定秒数；对比本项目 rt48@3 s train / validation",
+        "本项目 train 仅作容量参照，不当作 held-out 文献对标",
+        "跨论文数字只用于量级与差距定位，不构成排行榜"
+      ],
+      "local_context": {
+        "team_table": [
+          {
+            "threshold": "1%g",
+            "TEAM_test": "0.730 / 0.820",
+            "ours_rt48_3s_train": "0.942 / 0.975",
+            "ours_rt48_3s_validation": "0.573 / 0.560"
+          },
+          {
+            "threshold": "2%g",
+            "TEAM_test": "0.690 / 0.760",
+            "ours_rt48_3s_train": "0.920 / 0.965",
+            "ours_rt48_3s_validation": "0.545 / 0.548"
+          },
+          {
+            "threshold": "5%g",
+            "TEAM_test": "0.630 / 0.680",
+            "ours_rt48_3s_train": "0.945 / 0.957",
+            "ours_rt48_3s_validation": "0.488 / 0.507"
+          }
+        ],
+        "positive_counts": "正例数 train：644 / 237 / 46；validation：113 / 56 / 19。",
+        "quakeformer_table": [
+          {
+            "condition": "QuakeFormer forecasting · seen held-out stations",
+            "R2": "≈0.917",
+            "sigma_ln": "0.570"
+          },
+          {
+            "condition": "QuakeFormer forecasting · unseen held-out stations",
+            "R2": "≈0.837",
+            "sigma_ln": "0.750"
+          },
+          {
+            "condition": "本项目 · rt48@3 s validation",
+            "R2": "0.490",
+            "sigma_ln": "0.927"
+          },
+          {
+            "condition": "本项目 · rt48@3 s train（容量参照）",
+            "R2": "0.955",
+            "sigma_ln": "0.265"
+          }
+        ],
+        "team_protocol": "TEAM：随时间概率预警（首个 P 波后 0.5 s 起，每 0.1 s 更新，最长约 25 s）；本项目：首个有效 P 波后固定 3 s 点预测。",
+        "quakeformer_protocol": "QuakeFormer Figure 3 forecasting：只使用事件参数与场地信息，不使用实时波形，因此无固定秒数；R² 为读图近似。",
+        "caveat": "任务、数据集和划分不同；数字仅用于量级与差距定位，不构成排行榜。"
+      },
+      "required_images": [
+        {
+          "path": "../multistation_pga_exchange_20260726/origin_image/slide_25.png",
+          "role": "strict edit target; original literature-comparison slide",
+          "fidelity": "preserve the approved title hierarchy, two-column layout, table geometry, low-saturation palette, alert box, spacing and overall finish; replace only the specified title, labels, values and protocol notes"
+        }
+      ],
+      "layout": {
+        "composition": "编辑原页而不是重新构图。保留左右双栏：左栏 TEAM 阈值表，右栏 QuakeFormer 与本项目 R²/σ_ln 表，底部横跨全页的红色口径警示框。允许略缩小字号以容纳更精确的 3 s 口径，但所有数字必须清晰。"
+      },
+      "source_image_rules": "原页是严格编辑目标；不要改成新模板，不要改变配色或左右栏结构，不要保留任何 20 s、本项目 historical full-data validation 或本项目非 3 s 的旧行。",
+      "constraints": [
+        "标题必须为：文献与本项目的数值对比——本项目统一为 3 s",
+        "左表所有 F1 / PR-AUC 必须逐字逐数正确，保留三位小数",
+        "右表只保留两行 QuakeFormer forecasting 和两行本项目 rt48@3 s",
+        "必须明确 QuakeFormer forecasting 无实时波形、无固定秒数",
+        "必须明确本项目是首个有效 P 波后固定 3 s",
+        "不得出现 20 s、15 s 或将 QuakeFormer forecasting 标成 3 s",
+        "train 必须标为容量参照",
+        "无水印、无额外页码、无乱码"
+      ]
+    }
+  ]
+}

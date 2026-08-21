@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import os
+import tempfile
 import time
 
 EVENT_KEY_CANDIDATES = ['KiK_File', '#EventID', 'EVENT']
@@ -303,7 +304,8 @@ def _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=
     return event_metadata.loc[mask].reset_index(drop=True)
 
 
-def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate=None, min_stalta_ratio_at_pick=None):
+def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate=None,
+                         min_stalta_ratio_at_pick=None, cache_columns=None):
     t0 = time.time()
     metadata = {}
     with h5py.File(data_path, 'r') as f:
@@ -348,15 +350,86 @@ def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate
     event_metadata = _filter_rows_present_in_hdf5(event_metadata, data_path, event_key, decimate=decimate)
     if min_stalta_ratio_at_pick is not None and 'stalta_ratio_at_pick' in event_metadata.columns:
         event_metadata = event_metadata[event_metadata['stalta_ratio_at_pick'] >= min_stalta_ratio_at_pick].reset_index(drop=True)
-    event_metadata.to_csv(event_metadata_path, index=False)
+    if cache_columns is not None:
+        cache_columns = list(dict.fromkeys(str(column) for column in cache_columns))
+        missing_columns = [column for column in cache_columns if column not in event_metadata.columns]
+        if missing_columns:
+            raise ValueError(
+                f'Requested metadata cache columns are absent from {data_path}: {missing_columns}'
+            )
+        event_metadata = event_metadata.loc[:, cache_columns]
+    cache_dir = os.path.dirname(os.path.abspath(event_metadata_path))
+    os.makedirs(cache_dir, exist_ok=True)
+    # Publish caches atomically.  This avoids readers observing a partial CSV
+    # if multiple DDP ranks reach a missing cache at the same time.
+    fd, tmp_path = tempfile.mkstemp(
+        prefix=f'.{os.path.basename(event_metadata_path)}.',
+        suffix='.tmp',
+        dir=cache_dir,
+    )
+    os.close(fd)
+    try:
+        event_metadata.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, event_metadata_path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
     dt = time.time() - t0
     print(f'Built metadata cache {event_metadata_path} with {len(event_metadata)} rows '
           f'(from {before_rows}) in {dt:.1f}s')
     return event_metadata
 
+
+def station_metadata_cache_path(data_path, event_metadata_path='./event_metadata.csv',
+                                overwrite_sampling_rate=None,
+                                min_stalta_ratio_at_pick=0.1,
+                                cache_columns=None):
+    """Return the cache path for one HDF5 shard.
+
+    The source stat is part of the cache identity so replacing an HDF5 file at
+    the same path cannot silently reuse station metadata from an older copy.
+    """
+    import hashlib
+
+    source_path = os.path.abspath(data_path)
+    source_stat = os.stat(source_path)
+    cache_token = (
+        f'{source_path}|stationmeta_v4|{source_stat.st_size}|'
+        f'{source_stat.st_mtime_ns}|{overwrite_sampling_rate}|'
+        f'{min_stalta_ratio_at_pick}|{tuple(cache_columns) if cache_columns is not None else None}'
+    )
+    data_hash = hashlib.md5(cache_token.encode()).hexdigest()[:12]
+    base_dir = os.path.dirname(os.path.abspath(event_metadata_path)) or os.getcwd()
+    return os.path.join(base_dir, f'station_cache_{data_hash}.csv')
+
+
+def ensure_event_metadata_cache(data_path, event_metadata_path='./event_metadata.csv',
+                                overwrite_sampling_rate=None,
+                                min_stalta_ratio_at_pick=0.1,
+                                cache_columns=None):
+    """Build one shard's station cache if needed and return its path."""
+    cache_path = station_metadata_cache_path(
+        data_path,
+        event_metadata_path=event_metadata_path,
+        overwrite_sampling_rate=overwrite_sampling_rate,
+        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+        cache_columns=cache_columns,
+    )
+    if not os.path.exists(cache_path):
+        print(f'Building station metadata cache for {os.path.basename(data_path)} ...')
+        build_event_metadata(
+            data_path,
+            cache_path,
+            overwrite_sampling_rate,
+            min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+            cache_columns=cache_columns,
+        )
+    return cache_path
+
 def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=None, parts=None, shuffle_train_dev=False, custom_split=None, data_keys=None,
                 overwrite_sampling_rate=None, min_mag=None, mag_key=None, decimate_events=None,
-                min_stalta_ratio_at_pick=0.1, station_filter=None):
+                min_stalta_ratio_at_pick=0.1, station_filter=None,
+                metadata_cache_columns=None):
     if min_mag is not None and mag_key is None:
         raise ValueError('mag_key needs to be set to enforce magnitude threshold')
     if isinstance(data_paths, str):
@@ -365,19 +438,14 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
         raise NotImplementedError('Loading partitioned data is currently not supported')
     data_path = data_paths[0]
 
-    # Derive cache path from data_path to avoid stale CSV when switching datasets
-    import hashlib
-    cache_token = f'{os.path.abspath(data_path)}|stationmeta_v3|{overwrite_sampling_rate}|{min_stalta_ratio_at_pick}'
-    data_hash = hashlib.md5(cache_token.encode()).hexdigest()[:8]
-    base_dir = os.path.dirname(os.path.abspath(event_metadata_path)) or os.getcwd()
-    event_metadata_path = os.path.join(base_dir, f'station_cache_{data_hash}.csv')
-
-    if not os.path.exists(event_metadata_path):
-        print(f'Building station metadata cache for {os.path.basename(data_path)} ...')
-        build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate,
-                             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick)
-    else:
-        print(f'Using station metadata cache {event_metadata_path}')
+    event_metadata_path = ensure_event_metadata_cache(
+        data_path,
+        event_metadata_path=event_metadata_path,
+        overwrite_sampling_rate=overwrite_sampling_rate,
+        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+        cache_columns=metadata_cache_columns,
+    )
+    print(f'Using station metadata cache {event_metadata_path}')
     event_metadata = pd.read_csv(event_metadata_path)
     resolved_mag_key = resolve_target_key(event_metadata.columns, mag_key)
     if min_mag is not None:

@@ -1,271 +1,238 @@
-# Hi-net Velocity Download Workflow
+# Hi-net annual raw-count archive
 
-This document describes the first-pass Hi-net velocity waveform downloader added
-for matching Hi-net stations to existing K-NET/KiK-net acceleration events.
+`tools/download_hinet_velocity.py` downloads Hi-net WIN32 raw counts for the
+events and matched stations in the converted Japan HDF5 datasets. The default
+storage mode keeps exactly one permanent waveform representation: the original
+CNT bytes inside one HDF5 archive per year.
 
-## Scope
+## Full 2000–2024 download
 
-The downloader in `tools/download_hinet_velocity.py` supports:
-
-- full HDF5 event download;
-- random smoke-test download;
-- event-id file selection, including `pga_configs/stage2_512_event_ids.txt`;
-- K-NET/KiK-net to Hi-net station matching by horizontal distance;
-- JMA2001A theoretical P arrivals with ak135 fallback;
-- event-level raw Hi-net WIN32 download;
-- raw-count MiniSEED station cuts when a local WIN32 reader can map channels;
-- channel table / response metadata caching for later physical-unit conversion.
-
-The first version does not support selecting events from
-`/run/media/zhangb/aa0013a6-c6ff-4112-9526-410918058645/Japandata/waveformsnew/`.
-
-## Dependencies
-
-The script uses existing project dependencies plus:
-
-- `HinetPy` for authenticated Hi-net access;
-- `obspy` for ak135 travel times and best-effort WIN32 to MiniSEED conversion.
-
-Install dependencies in the active environment before real downloads:
-
-```bash
-pip install -r requirements.txt
-```
-
-Hi-net credentials are read from environment variables:
+Set Hi-net credentials in the environment and run the launcher:
 
 ```bash
 export HINET_USER='your_hinet_user'
 export HINET_PASSWORD='your_hinet_password'
+bash download_hinet.sh
 ```
 
-Do not put credentials into config files or commit them.
-
-## Output Layout
-
-With `--output-root hinet_velocity_downloads`, the script writes:
+The launcher processes years from 2024 down to 2000. Events inside each year
+are also processed newest first. Its defaults are:
 
 ```text
-hinet_velocity_downloads/
-  inventory/
+HDF5_ROOT=/run/media/zhangb/My Passport/knet_converted/origin_corrected_diting_vel_acc_vs30
+OUTPUT_ROOT=/run/media/zhangb/My Passport/hinet_data
+START_YEAR=2000
+END_YEAR=2024
+MATCH_DISTANCE_KM=0.5
+PRE_SECONDS=120
+POST_SECONDS=120
+MAX_YEAR_ATTEMPTS=3
+HINET_TIMEOUT_SECONDS=300
+HINET_RETRIES=3
+STATION_BATCH_SIZE=40
+HINET_DOWNLOAD_THREADS=1
+MINUTE_FALLBACK=1
+FALLBACK_SPAN_MINUTES=1
+SUBREQUEST_SLEEP_SECONDS=0
+```
+
+Any value can be overridden without editing the script. For example:
+
+```bash
+START_YEAR=2023 END_YEAR=2024 MAX_YEAR_ATTEMPTS=5 bash download_hinet.sh
+```
+
+The origin-corrected source HDF5 files already store the corrected
+`Origin_Time(JST)` and correction provenance. Do not pass the old annual
+`--origin-corrections` CSV when using this HDF5 root.
+
+## Permanent layout
+
+```text
+hinet_data/
+  archive/
+    hinet_raw_2000.h5
+    ...
+    hinet_raw_2024.h5
+  catalog/
     hinet_stations.csv
-  matches/
-    hinet_kiknet_station_matches.csv
-  raw/
-    <event_id>/
-      *.cnt                  # merged event window if catwin32 is available
-      *.ch
-      segments/
-        *.cnt                # one-minute Hi-net files kept if merge fails
-        *.euc.ch
-  responses/
-    <event_id>/
-      *.ch
-      *.channels.csv
-      SAC_PZs_*              # if HinetPy response extraction succeeds
-  mseed/
-    <event_id>/
-      <knet_station>__<hinet_station>.mseed
-  manifests/
-    download_manifest.csv
-    summary.csv
-    events/
-      <event_id>/
-        arrivals.csv
-        download_manifest.csv
+    hinet_kiknet_station_matches_YYYY.csv
+    hinet_events_YYYY.csv
+    hinet_attempts_YYYY.csv
+    hinet_archive_YYYY.json
+  logs/
+    download_hinet_YYYY.log
+  .staging/
+    YYYY/raw/<event_id>/        # temporary; removed after verified commit
 ```
 
-Raw Hi-net `.cnt` files are kept as the authoritative waveform archive. If
-HinetPy downloads the one-minute files but local `catwin32` merging fails, the
-manifest records `raw_status=downloaded_unmerged` and keeps the segment files
-under `raw/<event_id>/segments/`. MiniSEED station cuts are written from the
-merged file when available, or directly from the raw segments with a pure Python
-WIN32 parser when `catwin32` is unavailable.
+An in-progress archive is named `hinet_raw_YYYY.partial.h5`. After every event,
+the downloader:
 
-## Station Matching
+1. downloads native CNT segments and their `.ch` table to `.staging`;
+2. appends the exact bytes to the annual archive;
+3. stores byte offsets, lengths, original names and SHA256 hashes;
+4. reads the bytes back from HDF5 and verifies the hashes;
+5. removes that event's staging directory only after verification.
 
-The script reads K-NET/KiK-net station metadata from
-`metadata/station_metadata` when present. If that table is absent, it falls back
-to per-event datasets only when `station_codes` and `coords` exist.
+The committed event row is the transaction marker. On restart, an uncommitted
+append tail is truncated and already committed events are skipped. Once every
+source event has a terminal committed record, the partial archive is marked
+complete and atomically renamed to `hinet_raw_YYYY.h5`.
 
-Hi-net station metadata is cached in `inventory/hinet_stations.csv`. Matching is
-done by haversine distance between K-NET/KiK-net and Hi-net station coordinates.
-The default threshold is `1.0 km`.
+Resume also checks an archive identity containing the source HDF5 stat, station
+match CSV hash, travel-time table hash, event selection and requested window.
+If these inputs change, the downloader refuses to mix incompatible events in
+the same annual archive and requires a new archive path.
 
-The match table includes:
+Events without an accepted station match are committed with
+`raw_status=no_matched_stations`; download failures are not committed and are
+retried on the next attempt or launcher rerun.
 
-- K-NET/KiK-net station code and coordinates;
-- nearest Hi-net station and coordinates;
-- nearest and second-nearest distances;
-- `accepted`;
-- `ambiguous_within_2x`.
+## Robust retries for incomplete years
 
-Inspect this file before large downloads:
+Each event is downloaded with the following all-or-nothing procedure:
+
+1. unique Hi-net stations are split into batches (40 by default), which keeps
+   large-earthquake ZIP responses smaller and reduces the risk of the old
+   60-second HinetPy transport timeout;
+2. the complete event window is requested once for each station batch;
+3. if that request fails, the same batch is retried as consecutive one-minute
+   requests;
+4. every returned CNT set is checked for the full requested time coverage;
+   every requested station must have vertical, north and east channel-table
+   entries, and those exact channels must be present throughout the CNT window;
+5. the event is committable only after every station batch and every time slice
+   passes validation.
+
+When an event needs multiple provider requests, unique `.ch` payloads are
+concatenated byte-for-byte (without line rewriting) into the event's archived
+channel table. Repeated identical minute tables are deduplicated by SHA-256.
+
+The downloader overrides HinetPy 0.12's private ZIP transport so that the
+configured timeout is also used by its internally created download clients.
+HTTP, timeout and invalid/empty ZIP errors are retained in the annual attempt
+journal instead of being collapsed to `NoneType object is not iterable`.
+
+Transport settings are deliberately excluded from `archive_identity`: changing
+the timeout, batch size or fallback strategy does not change the requested
+scientific dataset, so existing `.partial.h5` archives remain resumable. The
+strategy actually used for each newly committed event is stored in its manifest
+as `raw_download_strategy` and `raw_batch_count`.
+
+To retry the eight post-2004 years that currently each lack one technical
+event, while reusing every committed event:
 
 ```bash
-column -s, -t hinet_velocity_downloads/matches/hinet_kiknet_station_matches.csv | less -S
+for year in 2005 2007 2012 2013 2016 2018 2022 2024; do
+  START_YEAR="$year" END_YEAR="$year" \
+  HINET_TIMEOUT_SECONDS=600 STATION_BATCH_SIZE=40 \
+  MAX_YEAR_ATTEMPTS=1 bash download_hinet.sh
+done
 ```
 
-If the distance distribution looks too loose, rerun with a stricter threshold:
+For provider throttling, set `SUBREQUEST_SLEEP_SECONDS=1`. To diagnose whether
+the minute fallback is responsible for a result, disable it explicitly with
+`MINUTE_FALLBACK=0`; this is not recommended for recovery runs.
 
-```bash
-python tools/download_hinet_velocity.py \
-  --hdf5 /path/to/japan_2024.hdf5 \
-  --mode smoketest \
-  --num-events 3 \
-  --match-distance-km 0.5 \
-  --overwrite-matches \
-  --output-root hinet_velocity_smoke
+## Archive schema
+
+```text
+/raw/cnt_bytes                   concatenated native CNT uint8 bytes
+/raw/channel_table_bytes         concatenated original .ch bytes
+/raw/manifest_bytes              per-event station manifest CSV bytes
+/index/segments                  CNT offset/length/name/hash rows
+/index/events                    committed event rows and manifest offsets
+/index/attempts                  download attempt and failure journal
+/metadata/provenance_json        command and preprocessing provenance
 ```
 
-## Travel Times and Windows
+CNT and `.ch` payloads are deduplicated by SHA256. HDF5 compression is not
+applied to CNT because WIN32 counts are already compact; HDF5 Fletcher32 checks
+are enabled in addition to the per-payload SHA256 hashes.
 
-For every matched event-station pair:
+The archive does **not** persist MiniSEED, SAC, PZ files, NPY/NPZ waveform
+arrays, or decoded waveform shards. Original `.ch` bytes are sufficient to
+regenerate response information later.
 
-1. predict P travel time using JMA2001A;
-2. fall back to ak135 if the JMA table is unavailable or the requested point is
-   outside the JMA grid;
-3. define the station cut as `P - 120 s` to `P + 120 s`;
-4. download one event-level raw Hi-net window from the earliest cut start to the
-   latest cut end among matched stations.
+## Direct archive access
 
-The manifest records:
+`tools/hinet_raw_archive.py` provides process-local readers and a collection
+index across multiple annual files:
 
-- `travel_time_model`: `jma2001a` or `ak135`;
-- `travel_time_status`: `ok` or `fallback`;
-- `p_seconds_after_origin`;
-- `ppick_time_jst`;
-- `cut_start_jst`;
-- `cut_end_jst`.
+```python
+from pathlib import Path
+from tools.hinet_raw_archive import AnnualHinetArchiveReader
 
-Some K-NET/KiK-net event headers only preserve origin time to the minute. Before
-large Hi-net downloads, fetch JMA daily hypocenters and create a second-level
-origin correction table:
-
-```bash
-python tools/fetch_jma_hypocenters.py \
-  --hdf5 /path/to/japan_2024.hdf5 \
-  --output-csv jma_origin_corrections/japan_2024_origin_corrections.csv \
-  --catalog-csv jma_origin_corrections/jma_2024_daily_catalog.csv \
-  --summary-json jma_origin_corrections/japan_2024_origin_corrections_summary.json \
-  --cache-dir jma_origin_corrections/cache
+archive = Path('/path/to/hinet_data/archive/hinet_raw_2024.h5')
+with AnnualHinetArchiveReader(archive) as reader:
+    event_ids = reader.event_ids()
+    manifest = reader.manifest(event_ids[0])
+    channel_name, channel_table = reader.channel_table_item(event_ids[0])
+    series = reader.read_series(event_ids[0], {'4a93', '4a94', '4a95'})
 ```
 
-Then pass the accepted corrections to the Hi-net downloader:
+`series[channel_id]` is a pair of absolute timestamps and decoded `int32`
+counts. Window selection, padding masks, resampling and normalization remain
+runtime operations and do not create a second permanent waveform copy.
 
-```bash
-python tools/download_hinet_velocity.py \
-  --hdf5 /path/to/japan_2024.hdf5 \
-  --origin-corrections jma_origin_corrections/japan_2024_origin_corrections.csv \
-  --mode smoketest \
-  --num-events 3 \
-  --output-root hinet_velocity_smoke
+In a PyTorch DataLoader, do not open an h5py handle in the parent process and
+pass it to forked workers. Each persistent worker should lazily open its own
+read-only `AnnualHinetArchiveReader` and cache only a small number of decoded
+events in memory. Temporary decoded caches may be placed in node-local
+`$SLURM_TMPDIR` and discarded after the job.
+
+For a frozen event-level split, the module also provides a map-style dataset:
+
+```python
+from pathlib import Path
+from tools.hinet_raw_archive import HinetArchiveEventDataset
+
+archives = sorted(Path('/path/to/hinet_data/archive').glob('hinet_raw_*.h5'))
+train = HinetArchiveEventDataset.from_event_id_file(
+    archives,
+    Path('splits/v1/train_events.txt'),
+    components=('U', 'N', 'E'),
+    max_open_archives=4,
+)
+sample = train[0]
+# sample: event metadata, station manifest, parsed channel table and transient
+# channel_id -> (absolute timestamps, int32 counts) series
 ```
 
-The downloader filters to `accepted==1` by default. Use
-`--use-unaccepted-origin-corrections` only for manually reviewed ambiguous
-matches.
-
-## Commands
-
-### Smoke Test
-
-Run a small random event sample first:
-
-```bash
-python tools/download_hinet_velocity.py \
-  --hdf5 /path/to/japan_2024.hdf5 \
-  --mode smoketest \
-  --num-events 3 \
-  --seed 42 \
-  --output-root hinet_velocity_smoke
-```
-
-### QC Plot: Acceleration vs Hi-net Velocity
-
-After a smoke test, draw matched K-NET/KiK-net acceleration and Hi-net velocity
-for manual timing checks:
+The existing waveform QC tool also detects the annual archive directly:
 
 ```bash
 python tools/plot_hinet_accel_velocity_qc.py \
-  --event-id 20240101185300 \
-  --station ISKH01 \
-  --output-dir hinet_velocity_qc
+  --hdf5 '/path/to/2024/japan_2024.hdf5' \
+  --download-root '/path/to/hinet_data' \
+  --event-id 20240101193800
 ```
 
-The script defaults to the `--hdf5` and `--output-root` values recorded in
-`download_hinet.sh` and shows theoretical P +/- 50 s. The default plot keeps the
-waveforms readable: theoretical P is the only vertical pick line; PGA is marked
-with a small triangle on the acceleration panel time axis; trigger and final
-training picks are marked with small triangles on the velocity panel time axis.
-`travel_pred` is not drawn separately because it is the training-side
-theoretical P estimate, and `travel_coarse` is not drawn because it is the
-clipped coarse pick derived from that estimate.
+## One-year command
 
-`qc_summary.csv` still records every available pick offset from the theoretical
-P time. For detailed debugging, add `--show-candidate-picks` to mark STALTA and
-DiTing candidate picks on the velocity-panel time axis, and
-`--show-search-windows` to shade the travel-time/STALTA search windows. The
-script first uses MiniSEED if present, then falls back to raw Hi-net `*.cnt`
-plus `*.ch` files when MiniSEED was not produced.
-
-Use `--dry-run` to plan windows and matching without downloading waveforms. If
-the Hi-net inventory cache does not exist yet, real network access is still
-needed once to create it:
+The launcher invokes this equivalent command for each year:
 
 ```bash
-python tools/download_hinet_velocity.py \
-  --hdf5 /path/to/japan_2024.hdf5 \
-  --mode smoketest \
-  --num-events 3 \
-  --dry-run \
-  --output-root hinet_velocity_smoke
-```
-
-### Stage2 512 Events
-
-```bash
-python tools/download_hinet_velocity.py \
-  --hdf5 /path/to/japan_2024.hdf5 \
-  --event-ids pga_configs/stage2_512_event_ids.txt \
-  --output-root hinet_velocity_stage2_512
-```
-
-### Full HDF5
-
-```bash
-python tools/download_hinet_velocity.py \
-  --hdf5 /path/to/japan_2024.hdf5 \
+python -u tools/download_hinet_velocity.py \
+  --hdf5 '/path/to/2024/japan_2024.hdf5' \
+  --year 2024 \
   --mode all \
-  --output-root hinet_velocity_all
+  --storage-mode annual-hdf5 \
+  --archive-path '/path/to/hinet_data/archive/hinet_raw_2024.h5' \
+  --output-root '/path/to/hinet_data' \
+  --match-distance-km 0.5 \
+  --pre-seconds 120 \
+  --post-seconds 120 \
+  --hinet-timeout-seconds 300 \
+  --hinet-retries 3 \
+  --station-batch-size 40 \
+  --minute-fallback \
+  --fallback-span-minutes 1 \
+  --no-write-mseed \
+  --response-mode none
 ```
 
-## Useful Options
-
-- `--match-distance-km 1.0`: station matching threshold.
-- `--pre-seconds 120 --post-seconds 120`: station cut window around predicted P.
-- `--overwrite-inventory`: refresh cached Hi-net station list.
-- `--overwrite-matches`: rebuild station matching table.
-- `--overwrite-raw`: redownload raw event windows.
-- `--no-write-mseed`: keep raw WIN32 and metadata only.
-- `--pad-mseed`: zero-pad MiniSEED cuts when raw coverage is short. This is off
-  by default because padded zeros can be confused with real raw counts.
-- `--sleep-seconds N`: sleep between events to reduce server load.
-
-## Notes for Developers
-
-- Raw `.cnt` and `.ch` files are the primary preservation format. Do not delete
-  them after MiniSEED conversion.
-- HinetPy's SAC conversion tools may remove sensitivity and output physical
-  velocity units. This workflow avoids using SAC conversion as the waveform
-  source because the requested data product is raw counts.
-- The response cache stores the Hi-net channel table and attempts to write SAC
-  pole-zero files via HinetPy. If response extraction fails, the channel table is
-  still saved and the manifest records the failure.
-- The MiniSEED path depends on mapping WIN32 channel ids back to Hi-net station
-  components from the channel table. If this mapping fails in a new HinetPy
-  version, inspect `responses/<event_id>/*.channels.csv` and adjust
-  `read_channel_table()` or `COMPONENT_MAP` in the script.
-- Existing dirty files in the training/report workflow are unrelated to this
-  downloader. Keep future downloader changes scoped to `tools/` and `docs/`
-  unless the HDF5 schema itself changes.
+The legacy file-tree output remains available with `--storage-mode files`.
+MiniSEED and SAC PZ products are opt-in there via `--write-mseed` and
+`--response-mode pz`; they are intentionally forbidden in annual archive mode.

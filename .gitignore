@@ -14,6 +14,7 @@ logs_train_light_*.log
 
 # Local data artifacts
 *.hdf5
+/cache/
 hinet_velocity_downloads/
 jma_origin_corrections/cache/
 jma_origin_corrections/jma_*_daily_catalog.csv
@@ -28,8 +29,17 @@ ISC_chinamainland_mag*_*.csv
 # Local scratch / backups
 *.bak
 *.pptx
+/logs.zip
 ppt_figures_bak/
 resume_codex.txt
 CLAUDE.md
 review.txt
 see*.txt
+
+# Generated image-deck runtime artifacts
+/reports/technical_exchange/*/origin_image/
+/reports/technical_exchange/*/assets/papers/
+/reports/technical_exchange/*/.slide_jobs.json.lock
+/reports/technical_exchange/*/.slide_run_state.json.lock
+/reports/technical_exchange/*/slide_jobs.json
+/reports/technical_exchange/*/slide_run_state.json

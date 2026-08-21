@@ -1,0 +1,43 @@
+{
+  "slide": 26,
+  "title": "KNET-only 512-event overfit——train 与 validation 成对",
+  "prompt": "# Codex PPT Slide Image Prompt\n\n## Canvas\n{\n  \"type\": \"16:9 full-slide PowerPoint image\",\n  \"language\": \"Chinese\",\n  \"slide_number\": 26,\n  \"render_slide_number\": false\n}\n\n## Deck Goal\n面向科研交流，说明多台站目标位置 PGA 估计的方法、最新实验进展、泛化瓶颈及与 TEAM、QuakeFormer 的定量差距。\n\n## Required Background\n{\n  \"deck_context\": {\n    \"source_summary\": \"本项目从可变数量的日本强震台站三分量波形与位置出发，预测任意目标位置的 log PGA。历史 full-data 使用 699 train、101 validation、201 test 事件；最新 rt44–rt51 是 512-event controlled overfit 实验，现已取得完整 KNET-only normal 与 station-roll last eval，并补齐 3 个事件级台站数案例和震中距分桶。\",\n    \"core_claim\": \"模型已具备很强的训练集拟合能力，当前主要瓶颈是 held-out 泛化、强 PGA 低估和概率校准。KNET-only 自身结果中 rt48/rt49 领先，但 2716 个共同目标上的配对检验没有显示 KNET 筛选带来泛化收益；station-roll 的验证影响稳定但较小。\",\n    \"evaluation_rules\": [\n      \"区分 full-data system result 与 512-event overfit experiment。\",\n      \"512-event 页面必须同时报告 train 和 validation。\",\n      \"mixed-source 与 KNET-only 比较必须优先采用共同 event/time/target coordinate，不用目标集合不同的均值差替代配对证据。\",\n      \"文献数字只用于量级和差距定位，不构成跨数据集排行榜。\",\n      \"本项目原始误差为 log10 PGA；与 QuakeFormer 残差比较时换算为自然对数单位。\"\n    ],\n    \"canonical_terms\": [\n      \"PGA\",\n      \"multi-station\",\n      \"target location\",\n      \"full-data\",\n      \"512-event overfit\",\n      \"validation\",\n      \"strong PGA\",\n      \"unseen station\"\n    ]\n  },\n  \"slide_local_context\": {\n    \"runs\": [\n      {\n        \"run\": \"rt44\",\n        \"train_mae\": 0.054,\n        \"train_r2\": 0.9512,\n        \"train_slope\": 0.9896,\n        \"validation_mae\": 0.2976,\n        \"validation_r2\": 0.4552,\n        \"validation_slope\": 0.5617\n      },\n      {\n        \"run\": \"rt45\",\n        \"train_mae\": 0.0994,\n        \"train_r2\": 0.9142,\n        \"train_slope\": 0.9541,\n        \"validation_mae\": 0.3092,\n        \"validation_r2\": 0.4264,\n        \"validation_slope\": 0.5554\n      },\n      {\n        \"run\": \"rt46\",\n        \"train_mae\": 0.0733,\n        \"train_r2\": 0.9319,\n        \"train_slope\": 0.9515,\n        \"validation_mae\": 0.2971,\n        \"validation_r2\": 0.4579,\n        \"validation_slope\": 0.5471\n      },\n      {\n        \"run\": \"rt47\",\n        \"train_mae\": 0.049,\n        \"train_r2\": 0.9535,\n        \"train_slope\": 0.9691,\n        \"validation_mae\": 0.2998,\n        \"validation_r2\": 0.4511,\n        \"validation_slope\": 0.5487\n      },\n      {\n        \"run\": \"rt48\",\n        \"train_mae\": 0.0498,\n        \"train_r2\": 0.9549,\n        \"train_slope\": 0.9839,\n        \"validation_mae\": 0.2877,\n        \"validation_r2\": 0.4817,\n        \"validation_slope\": 0.5723\n      },\n      {\n        \"run\": \"rt49\",\n        \"train_mae\": 0.0552,\n        \"train_r2\": 0.9588,\n        \"train_slope\": 0.9336,\n        \"validation_mae\": 0.2881,\n        \"validation_r2\": 0.4873,\n        \"validation_slope\": 0.5362\n      },\n      {\n        \"run\": \"rt50\",\n        \"train_mae\": 0.0618,\n        \"train_r2\": 0.9424,\n        \"train_slope\": 0.9081,\n        \"validation_mae\": 0.2991,\n        \"validation_r2\": 0.4502,\n        \"validation_slope\": 0.5208\n      },\n      {\n        \"run\": \"rt51\",\n        \"train_mae\": 0.0742,\n        \"train_r2\": 0.9324,\n        \"train_slope\": 0.8809,\n        \"validation_mae\": 0.2968,\n        \"validation_r2\": 0.454,\n        \"validation_slope\": 0.5192\n      }\n    ],\n    \"eight_run_mean\": {\n      \"train_mae\": 0.0646,\n      \"train_r2\": 0.9424,\n      \"train_slope\": 0.9464,\n      \"validation_mae\": 0.2969,\n      \"validation_r2\": 0.458,\n      \"validation_slope\": 0.5452,\n      \"mae_gap\": 0.2323\n    }\n  }\n}\n\n## Global Style\n{\n  \"name\": \"清新低饱和科研答辩风\",\n  \"visual_direction\": \"formal Chinese academic defense deck, evidence-first, calm and fresh rather than vivid, structured scientific diagrams and concise conclusions\",\n  \"color_palette\": {\n    \"background\": \"#FAFBFC\",\n    \"content_fill\": \"#F2F6F8\",\n    \"title_and_body\": \"#2F3742\",\n    \"train_and_structure\": \"#5B7FA3\",\n    \"validation\": \"#55A6A0\",\n    \"critical_accent\": \"#D66F63\",\n    \"border\": \"#CCD8E2\"\n  },\n  \"typography\": \"Chinese sans-serif; charcoal or dark-gray titles; compact readable academic tables; exact four-decimal metrics where specified\",\n  \"texture_and_finish\": \"flat, clean, subtle light-gray-blue cards and fine borders, no gradients\",\n  \"deck_consistency\": \"keep palette, typography, border treatment and evidence-first mood consistent; vary layout by page role\"\n}\n\n## Input Images\n\n- Image 1: /home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png — approved sample slide style reference; match palette, typography mood, density and finish only; do not copy its exact layout or content\n\n\n## Slide\n{\n  \"number\": 26,\n  \"title\": \"KNET-only 512-event overfit——train 与 validation 成对\",\n  \"role\": \"capacity and generalization table\",\n  \"intent\": \"逐 run 同屏列出 rt44–rt51 的 train 和 validation MAE、R²、slope，直接展示容量—泛化差距。\"\n}\n\n## Text\n{\n  \"title\": \"KNET-only 512-event overfit——train 与 validation 成对\",\n  \"key_points\": [\n    \"8-run mean train MAE / R² / slope：0.0646 / 0.9424 / 0.9464\",\n    \"8-run mean validation：0.2969 / 0.4580 / 0.5452\",\n    \"平均 validation−train MAE gap 0.2323，单 run 约 0.210–0.251\",\n    \"rt48 validation MAE 最低；rt49 validation R² 最高，两者为并列候选\"\n  ],\n  \"speaker_focus\": null\n}\n\n## Layout\n{\n  \"composition\": \"主视觉为 8 行 × 7 列紧凑表，train 三列用低饱和蓝、validation 三列用低饱和青；底部放 mean 与 gap 结论卡\"\n}\n\n## Constraints\n[\n  \"所有数值严格取 local_context 并保留四位小数\",\n  \"必须完整显示 8 个 run 的 train 与 validation 三项指标\",\n  \"不得在此页加入共同目标配对、station-roll 或 Brier，以保证表格可读\",\n  \"rt48 与 rt49 标为并列候选，不宣称显著排名\"\n]\n\n## Style Reference Rule\nUse Image 1 as the approved sample-slide style reference. Match its palette, typography mood, density, texture, and overall visual identity. Do not copy its exact layout unless this slide's layout explicitly asks for it.\n\n## Input Image Handling Rules\nFor any input image marked as a strict input asset, include it visibly and preserve its content. Do not redraw, replace, relabel, or invent a similar figure. Scale and crop only as needed for composition while keeping the important labels, arrows, data, and relationships recognizable.\n\n## Universal Constraints\n- The final image itself must contain the title and key points.\n- Render Chinese text exactly and legibly; avoid garbled characters.\n- Keep the confirmed deck style consistent while varying layout by slide role.\n- No watermark, unrelated logo, or extra slide number.\n",
+  "out": "slide_26.png",
+  "input_images": [
+    {
+      "path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png",
+      "role": "approved sample slide style reference",
+      "fidelity": "match palette, typography mood, density and finish only; do not copy its exact layout or content"
+    }
+  ],
+  "requires_context_images": true,
+  "expected_backend": "built-in image tool",
+  "sample_generation_method": {
+    "backend_used": "built-in image tool",
+    "tool_name": "image_gen",
+    "mode": "generate; use localized edit with the same tool only when QA finds a contained issue",
+    "prompt_source": "prompts/sample_slide_12.md",
+    "size": "16:9 landscape; approved output 1672x941",
+    "quality": "built-in default",
+    "model_config": "built-in image_gen default",
+    "approved_sample_path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png",
+    "input_context_preparation": "Inspect local source images with view_image; pass the approved sample through referenced_image_paths as a style-only reference.",
+    "handoff_rule": "Use the same built-in image_gen backend and the approved low-saturation style. Return a blocker if that path or any strict source image is unavailable."
+  },
+  "generation_contract": {
+    "must_use_selected_image_backend": true,
+    "must_match_sample_generation_method": true,
+    "forbidden_final_image_methods": [
+      "local drawing/rendering scripts",
+      "Pillow-generated slides",
+      "SVG/HTML/CSS/canvas screenshots",
+      "python-pptx/PptxGenJS/native PPT layout screenshots",
+      "manually composited text/image overlays"
+    ],
+    "must_return": [
+      "backend_used",
+      "selected_source",
+      "qa_note"
+    ]
+  }
+}

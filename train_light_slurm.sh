@@ -218,7 +218,14 @@ if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then
             esac
         done
     fi
-    WEIGHT_PATH_TO_RESET=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["training_params"]["weight_path"])' "$CONFIG")
+    WEIGHT_PATH_TO_RESET=$(python -c '
+import json, os, sys
+value = json.load(open(sys.argv[1]))["training_params"]["weight_path"]
+value = os.path.expanduser(os.path.expandvars(value))
+if "$" in value:
+    raise SystemExit("Unresolved environment variable in weight_path: " + value)
+print(value)
+' "$CONFIG")
     if [[ -z "$WEIGHT_PATH_TO_RESET" || "$WEIGHT_PATH_TO_RESET" == "/" || "$WEIGHT_PATH_TO_RESET" == "." || "$WEIGHT_PATH_TO_RESET" == ".." ]]; then
         echo "Refusing to reset unsafe weight_path: '$WEIGHT_PATH_TO_RESET'" >&2
         exit 1
@@ -238,7 +245,14 @@ if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then
     rm -rf -- "$WEIGHT_DIR_TO_RESET"
 fi
 
-WEIGHT_PATH=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["training_params"]["weight_path"])' "$CONFIG")
+WEIGHT_PATH=$(python -c '
+import json, os, sys
+value = json.load(open(sys.argv[1]))["training_params"]["weight_path"]
+value = os.path.expanduser(os.path.expandvars(value))
+if "$" in value:
+    raise SystemExit("Unresolved environment variable in weight_path: " + value)
+print(value)
+' "$CONFIG")
 if [[ -z "$WEIGHT_PATH" || "$WEIGHT_PATH" == "/" || "$WEIGHT_PATH" == "." || "$WEIGHT_PATH" == ".." ]]; then
     echo "Unsafe weight_path in config: '$WEIGHT_PATH'" >&2
     exit 1

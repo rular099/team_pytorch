@@ -762,6 +762,15 @@ class PreloadedEventGenerator(Dataset):
                     row_selector,
                     station_count,
                 ).reshape(-1)
+            elif 'record_start_sample' in g_event:
+                # Japan origin-aligned shards store the leading insertion
+                # offset under this name.  It is the validity start, not a
+                # timestamp or an offset relative to the cropped model input.
+                starts = self._select_station_aligned_values(
+                    g_event['record_start_sample'],
+                    row_selector,
+                    station_count,
+                ).reshape(-1)
             else:
                 starts = np.zeros_like(lengths)
             station_rows = raw_waveforms.shape[0]
@@ -771,7 +780,9 @@ class PreloadedEventGenerator(Dataset):
                 starts = np.repeat(starts, station_rows)
             if lengths.size != station_rows or starts.size != station_rows:
                 raise ValueError(
-                    "valid_n_samples/valid_start_sample must have one value per loaded station; "
+                    "valid_n_samples and its start field "
+                    "(valid_start_sample or record_start_sample) must have one value "
+                    "per loaded station; "
                     f"got lengths={lengths.size}, starts={starts.size}, stations={station_rows}"
                 )
             mask = np.zeros(raw_waveforms.shape[:2], dtype=bool)

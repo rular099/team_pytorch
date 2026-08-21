@@ -1,27 +1,34 @@
 #!/usr/bin/env python3
-"""Download Hi-net velocity waveforms for existing K-NET/KiK-net events.
+"""Download Hi-net raw-count waveforms for existing K-NET/KiK-net events.
 
-The script is intentionally conservative:
+The default storage policy is intentionally conservative:
 
 * Hi-net credentials are read from HINET_USER/HINET_PASSWORD.
-* Hi-net station metadata and response channel tables are cached on disk.
 * K-NET/KiK-net stations are matched to Hi-net stations by horizontal distance.
-* Raw WIN32 count files are always kept. MiniSEED cuts are best-effort raw-count
-  exports from the raw WIN32 files; conversion failures are recorded in the
-  manifest without discarding the raw download.
+* Native CNT and channel-table bytes are committed once to an annual HDF5
+  archive, with checksums and byte-offset indexes.
+* Temporary Hi-net files are removed only after the event commit is flushed.
+* MiniSEED and per-channel SAC PZ files are opt-in legacy products; the annual
+  archive never persists a second waveform representation.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import inspect
+import json
 import math
 import os
+import platform
+import re
+import shlex
 import shutil
-import struct
 import sys
+import tempfile
 import time
+import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -47,6 +54,13 @@ from japan_dataset_builder import (  # noqa: E402
     JMATravelTimeTable,
     haversine_distance_km,
 )
+from tools.hinet_raw_archive import (  # noqa: E402
+    AnnualHinetArchiveReader,
+    AnnualHinetArchiveWriter,
+    partial_archive_path,
+    read_hinet_vm_cnt_paths,
+    scan_hinet_vm_cnt_paths,
+)
 
 
 JST = timezone(timedelta(hours=9))
@@ -70,6 +84,11 @@ class EventInfo:
     depth_km: float
     magnitude: float | None
     origin_source: str
+    origin_time_jst_raw: str
+    origin_time_correction_s: float | None
+    origin_time_correction_status: str
+    origin_time_correction_source: str
+    origin_time_jma_event_id: str
 
 
 @dataclass(frozen=True)
@@ -79,6 +98,21 @@ class RawDownloadResult:
     segment_paths: tuple[Path, ...]
     raw_status: str
     raw_error: str
+    batch_count: int = 1
+    download_strategy: str = "single_request"
+
+
+@dataclass(frozen=True)
+class RawBatchResult:
+    segment_paths: tuple[Path, ...]
+    channel_path: Path | None
+    success: bool
+    used_minute_fallback: bool
+    detail: str
+
+
+class HinetDownloadError(RuntimeError):
+    """A Hi-net transport failure with the swallowed HinetPy cause restored."""
 
 
 def _decode_array(values):
@@ -107,6 +141,29 @@ def find_column(columns: Iterable[str], candidates: Iterable[str], required: boo
     if required:
         raise KeyError(f"None of {list(candidates)} found in columns {list(columns)}")
     return None
+
+
+def clean_metadata_text(value: object) -> str:
+    if value is None:
+        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except (TypeError, ValueError):
+        pass
+    text = str(value).strip()
+    return "" if text.lower() == "nan" else text
+
+
+def clean_metadata_float(value: object) -> float | None:
+    text = clean_metadata_text(value)
+    if not text:
+        return None
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    return number if math.isfinite(number) else None
 
 
 def parse_origin_time(value: object, event_id: str) -> tuple[str, float, str]:
@@ -234,6 +291,31 @@ def load_events(
         ["Origin_Time(JST)", "Origin Time", "origin_time", "origin_time_jst", "Time"],
         required=False,
     )
+    origin_raw_key = find_column(
+        event_df.columns,
+        ["Origin_Time(JST)_Raw", "origin_time_jst_raw"],
+        required=False,
+    )
+    correction_s_key = find_column(
+        event_df.columns,
+        ["Origin_Time_Correction_S", "origin_time_correction_s"],
+        required=False,
+    )
+    correction_status_key = find_column(
+        event_df.columns,
+        ["Origin_Time_Correction_Status", "origin_time_correction_status"],
+        required=False,
+    )
+    correction_source_key = find_column(
+        event_df.columns,
+        ["Origin_Time_Correction_Source", "origin_time_correction_source"],
+        required=False,
+    )
+    correction_jma_id_key = find_column(
+        event_df.columns,
+        ["Origin_Time_JMA_Event_ID", "origin_time_jma_event_id"],
+        required=False,
+    )
 
     events: dict[str, EventInfo] = {}
     for _, row in event_df.iterrows():
@@ -242,6 +324,11 @@ def load_events(
             continue
         origin_value = row[origin_key] if origin_key else None
         origin_iso, origin_ts, origin_source = parse_origin_time(origin_value, event_id)
+        origin_time_jst_raw = clean_metadata_text(row[origin_raw_key]) if origin_raw_key else ""
+        correction_s = clean_metadata_float(row[correction_s_key]) if correction_s_key else None
+        correction_status = clean_metadata_text(row[correction_status_key]) if correction_status_key else ""
+        correction_source = clean_metadata_text(row[correction_source_key]) if correction_source_key else ""
+        correction_jma_id = clean_metadata_text(row[correction_jma_id_key]) if correction_jma_id_key else ""
         if origin_corrections and event_id in origin_corrections:
             correction = origin_corrections[event_id]
             origin_iso = str(correction["origin_time_jst"])
@@ -249,6 +336,9 @@ def load_events(
             status = correction.get("match_status", "")
             delta = correction.get("origin_time_correction_s", "")
             origin_source = f"jma_origin_correction:{status}:delta_s={delta}"
+            correction_s = clean_metadata_float(delta)
+            correction_status = clean_metadata_text(status)
+            correction_source = clean_metadata_text(correction.get("source", ""))
         events[event_id] = EventInfo(
             event_id=event_id,
             origin_time_jst=origin_iso,
@@ -258,6 +348,11 @@ def load_events(
             depth_km=float(row[depth_key]),
             magnitude=None if mag_key is None or pd.isna(row[mag_key]) else float(row[mag_key]),
             origin_source=origin_source,
+            origin_time_jst_raw=origin_time_jst_raw,
+            origin_time_correction_s=correction_s,
+            origin_time_correction_status=correction_status,
+            origin_time_correction_source=correction_source,
+            origin_time_jma_event_id=correction_jma_id,
         )
     return events
 
@@ -289,7 +384,7 @@ def load_or_download_hinet_inventory(args) -> pd.DataFrame:
     if inventory_path.exists() and not args.overwrite_inventory:
         return pd.read_csv(inventory_path, dtype=str)
 
-    client = make_hinet_client()
+    client = make_hinet_client(args)
     if args.dry_run and not args.allow_network_in_dry_run:
         raise FileNotFoundError(
             f"Inventory cache not found: {inventory_path}. "
@@ -302,7 +397,92 @@ def load_or_download_hinet_inventory(args) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def make_hinet_client():
+def _diagnostic_hinet_client_class(base_client_class):
+    """Return a Client subclass that propagates timeout and preserves errors.
+
+    HinetPy 0.12.0 creates a fresh download client with its default 60-second
+    timeout and catches every download/unzip exception without reporting it.
+    The override intentionally mirrors only that private transport method.  It
+    keeps the public request/splitting logic while making failures actionable.
+    """
+
+    class DiagnosticHinetClient(base_client_class):
+        def _download_cont_waveform(self, job):
+            download_client = base_client_class(
+                self.user,
+                self.password,
+                timeout=self.timeout,
+                retries=self.retries,
+                sleep_time_in_seconds=self.sleep_time_in_seconds,
+                max_sleep_count=self.max_sleep_count,
+            )
+            failures: list[str] = []
+            last_exception: Exception | None = None
+            try:
+                for attempt in range(1, int(self.retries) + 1):
+                    response = None
+                    downloaded_bytes = 0
+                    try:
+                        response = download_client.session.post(
+                            self._CONT_DOWNLOAD,
+                            data={"id": job.id},
+                            stream=True,
+                            timeout=self.timeout,
+                        )
+                        response.raise_for_status()
+                        with tempfile.NamedTemporaryFile() as temporary:
+                            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                                if chunk:
+                                    temporary.write(chunk)
+                                    downloaded_bytes += len(chunk)
+                            temporary.flush()
+                            with zipfile.ZipFile(temporary.name) as archive:
+                                names = archive.namelist()
+                                cnt_names = sorted(name for name in names if name.endswith(".cnt"))
+                                channel_names = sorted(
+                                    name for name in names if name.endswith(".euc.ch")
+                                )
+                                if not cnt_names:
+                                    raise HinetDownloadError(
+                                        "Hi-net ZIP contained no CNT members "
+                                        f"(job={job.id}, bytes={downloaded_bytes}, "
+                                        f"members={names[:8]})"
+                                    )
+                                if not channel_names:
+                                    raise HinetDownloadError(
+                                        "Hi-net ZIP contained no .euc.ch member "
+                                        f"(job={job.id}, bytes={downloaded_bytes}, "
+                                        f"members={names[:8]})"
+                                    )
+                                channel_name = channel_names[0]
+                                archive.extractall(members=[*cnt_names, channel_name])
+                                return cnt_names, channel_name
+                    except Exception as exc:  # noqa: BLE001 - preserve provider cause
+                        last_exception = exc
+                        status = getattr(response, "status_code", "not_received")
+                        detail = (
+                            f"attempt={attempt}/{self.retries} status={status} "
+                            f"bytes={downloaded_bytes} error={type(exc).__name__}: {exc}"
+                        )
+                        failures.append(detail)
+                        print(f"[WARN] Hi-net download job {job.id}: {detail}", file=sys.stderr)
+                    finally:
+                        if response is not None:
+                            response.close()
+                joined = " | ".join(failures)
+                raise HinetDownloadError(
+                    f"Hi-net download job {job.id} failed after {self.retries} attempts: {joined}"
+                ) from last_exception
+            finally:
+                session = getattr(download_client, "session", None)
+                if session is not None:
+                    session.close()
+
+    DiagnosticHinetClient.__name__ = "DiagnosticHinetClient"
+    return DiagnosticHinetClient
+
+
+def make_hinet_client(args=None):
     user = os.environ.get("HINET_USER")
     password = os.environ.get("HINET_PASSWORD")
     if not user or not password:
@@ -311,7 +491,14 @@ def make_hinet_client():
         from HinetPy import Client
     except ImportError as exc:
         raise ImportError("HinetPy is required for Hi-net downloads. Install it with `pip install HinetPy`.") from exc
-    return Client(user, password)
+    timeout = float(getattr(args, "hinet_timeout_seconds", 300.0))
+    retries = int(getattr(args, "hinet_retries", 3))
+    if timeout <= 0:
+        raise ValueError("--hinet-timeout-seconds must be positive")
+    if retries <= 0:
+        raise ValueError("--hinet-retries must be positive")
+    client_class = _diagnostic_hinet_client_class(Client)
+    return client_class(user, password, timeout=timeout, retries=retries)
 
 
 def fetch_hinet_station_rows(client, network_code: str) -> list[dict[str, object]]:
@@ -373,7 +560,18 @@ def first_present(row: dict[str, object], keys: Iterable[str], default=None):
 def build_station_matches(args, station_df: pd.DataFrame, hinet_df: pd.DataFrame) -> pd.DataFrame:
     match_path = args.match_csv
     if match_path.exists() and not args.overwrite_matches:
-        return pd.read_csv(match_path, dtype={"knet_station": str, "hinet_station": str})
+        cached = pd.read_csv(match_path, dtype={"knet_station": str, "hinet_station": str})
+        if "match_threshold_km" in cached.columns and not cached.empty:
+            cached_thresholds = pd.to_numeric(cached["match_threshold_km"], errors="coerce").dropna()
+            if not cached_thresholds.empty and not np.allclose(
+                cached_thresholds.to_numpy(dtype=float),
+                float(args.match_distance_km),
+            ):
+                raise ValueError(
+                    f"Cached station matches in {match_path} use a different threshold. "
+                    "Pass --overwrite-matches and use a new annual archive path."
+                )
+        return cached
 
     station_key = find_column(station_df.columns, ["station_code", "Station Code"])
     lat_key = find_column(station_df.columns, ["station_lat", "Station Lat.", "latitude"])
@@ -468,12 +666,12 @@ def hinet_time_string(dt: datetime) -> str:
 
 
 def _list_segment_cnts(segment_dir: Path) -> tuple[Path, ...]:
-    return tuple(sorted(p for p in segment_dir.glob("*.cnt") if p.is_file()))
+    return tuple(sorted(p for p in segment_dir.rglob("*.cnt") if p.is_file()))
 
 
 def _find_segment_channel_table(segment_dir: Path) -> Path | None:
-    candidates = sorted([p for p in segment_dir.glob("*.euc.ch") if p.is_file()])
-    candidates.extend(sorted([p for p in segment_dir.glob("*.ch") if p.is_file() and p not in candidates]))
+    candidates = sorted([p for p in segment_dir.rglob("*.euc.ch") if p.is_file()])
+    candidates.extend(sorted([p for p in segment_dir.rglob("*.ch") if p.is_file() and p not in candidates]))
     return candidates[0] if candidates else None
 
 
@@ -486,6 +684,10 @@ def _call_hinet_in_directory(
     ctable: Path,
     outdir: Path,
     cwd: Path,
+    *,
+    max_span: int | None = None,
+    threads: int = 1,
+    cleanup: bool = False,
 ) -> None:
     cwd.mkdir(parents=True, exist_ok=True)
     old_cwd = Path.cwd()
@@ -499,13 +701,384 @@ def _call_hinet_in_directory(
             data=data,
             ctable=ctable,
             outdir=outdir,
+            max_span=max_span,
+            threads=threads,
+            cleanup=cleanup,
         )
     finally:
         os.chdir(old_cwd)
 
 
+def _compact_error(value: object, maximum: int = 1200) -> str:
+    text = " ".join(str(value).split())
+    return text if len(text) <= maximum else text[: maximum - 3] + "..."
+
+
+def _reset_staging_directory(path: Path, allowed_root: Path) -> None:
+    path = Path(path)
+    allowed_root = Path(allowed_root).resolve()
+    resolved = path.resolve()
+    if resolved == allowed_root or allowed_root not in resolved.parents:
+        raise RuntimeError(f"Refusing to reset staging directory outside {allowed_root}: {resolved}")
+    if path.exists():
+        shutil.rmtree(path)
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def _normalize_channel_id(value: object) -> str:
+    channel_id = str(value).strip().lower()
+    if channel_id.startswith("0x"):
+        channel_id = channel_id[2:]
+    return channel_id.zfill(4)
+
+
+def _requested_station_channels(
+    ch_path: Path,
+    stations: Iterable[str],
+) -> tuple[dict[str, dict[str, str]], list[str]]:
+    table = read_channel_table(ch_path)
+    if table.empty:
+        return {}, sorted(set(str(value).upper() for value in stations))
+    station_rows: dict[str, pd.DataFrame] = {}
+    for station, rows in table.groupby(table["hinet_station"].astype(str).str.upper()):
+        station_rows[str(station)] = rows
+    requested: dict[str, dict[str, str]] = {}
+    missing: list[str] = []
+    for station in sorted(set(str(value).upper() for value in stations)):
+        rows = station_rows.get(station)
+        if rows is None:
+            missing.append(station)
+            continue
+        components = rows["component"].astype(str).str.strip().str.upper()
+        channel_ids: dict[str, str] = {}
+        for canonical, aliases in (("U", {"U", "Z"}), ("N", {"N", "1"}), ("E", {"E", "2"})):
+            matches = rows[components.isin(aliases)]
+            if matches.empty:
+                break
+            channel_ids[canonical] = _normalize_channel_id(matches.iloc[0]["channel_id"])
+        if len(channel_ids) != 3:
+            missing.append(station)
+            continue
+        requested[station] = channel_ids
+    return requested, missing
+
+
+def _channel_table_missing_stations(ch_path: Path, stations: Iterable[str]) -> list[str]:
+    _, missing = _requested_station_channels(ch_path, stations)
+    return missing
+
+
+def _validate_station_channel_samples(
+    cnt_paths: Iterable[Path],
+    requested_channels: dict[str, dict[str, str]],
+    *,
+    request_start_timestamp: float,
+    request_end_timestamp: float,
+    tolerance_seconds: float,
+) -> tuple[bool, str]:
+    wanted = {
+        channel_id
+        for station_channels in requested_channels.values()
+        for channel_id in station_channels.values()
+    }
+    try:
+        series = read_hinet_vm_cnt_paths(cnt_paths, wanted)
+    except Exception as exc:
+        return False, f"requested-channel CNT decode failed: {exc!r}"
+
+    failures: list[str] = []
+    expected_start_second = math.floor(request_start_timestamp)
+    expected_end_second = math.ceil(request_end_timestamp)
+    expected_seconds = max(0, expected_end_second - expected_start_second)
+    allowed_missing_seconds = max(0, int(math.floor(tolerance_seconds)))
+    for station, component_channels in requested_channels.items():
+        for component, channel_id in component_channels.items():
+            item = series.get(channel_id)
+            label = f"{station}.{component}/{channel_id}"
+            if item is None or item[0].size == 0:
+                failures.append(f"{label}:absent")
+                continue
+            times = np.asarray(item[0], dtype=np.float64)
+            times = times[np.isfinite(times)]
+            if times.size == 0:
+                failures.append(f"{label}:no-finite-times")
+                continue
+            unique_seconds = np.unique(np.floor(times + 1.0e-6).astype(np.int64))
+            covered_seconds = unique_seconds[
+                (unique_seconds >= expected_start_second)
+                & (unique_seconds < expected_end_second)
+            ].size
+            missing_seconds = max(0, expected_seconds - int(covered_seconds))
+            if (
+                float(times[0]) > request_start_timestamp + tolerance_seconds
+                or float(times[-1]) < request_end_timestamp - tolerance_seconds
+                or missing_seconds > allowed_missing_seconds
+            ):
+                failures.append(
+                    f"{label}:samples={times.size},seconds={covered_seconds}/{expected_seconds},"
+                    f"range=[{times[0]:.3f},{times[-1]:.3f}]"
+                )
+    if failures:
+        preview = "; ".join(failures[:6])
+        suffix = "" if len(failures) <= 6 else f"; ...({len(failures)} channels failed)"
+        return False, "incomplete requested-channel coverage: " + preview + suffix
+    return True, "ok"
+
+
+def _validate_raw_request(
+    cnt_paths: Iterable[Path],
+    ch_path: Path | None,
+    *,
+    request_start_timestamp: float,
+    request_end_timestamp: float,
+    stations: Iterable[str],
+    tolerance_seconds: float = 1.1,
+) -> tuple[bool, str]:
+    cnt_paths = tuple(Path(path) for path in cnt_paths)
+    if not cnt_paths:
+        return False, "no CNT files returned"
+    if ch_path is None or not Path(ch_path).is_file():
+        return False, "no channel table returned"
+    empty = [str(path) for path in [*cnt_paths, Path(ch_path)] if path.stat().st_size <= 0]
+    if empty:
+        return False, "empty files: " + ", ".join(empty)
+    try:
+        coverage = scan_hinet_vm_cnt_paths(cnt_paths)
+    except Exception as exc:
+        return False, f"CNT coverage scan failed: {exc!r}"
+    if (
+        coverage.record_count <= 0
+        or not math.isfinite(coverage.start_timestamp)
+        or not math.isfinite(coverage.end_timestamp)
+        or coverage.start_timestamp > request_start_timestamp + tolerance_seconds
+        or coverage.end_timestamp < request_end_timestamp - tolerance_seconds
+    ):
+        return (
+            False,
+            "incomplete CNT coverage: "
+            f"records={coverage.record_count} "
+            f"coverage=[{coverage.start_timestamp}, {coverage.end_timestamp}) "
+            f"requested=[{request_start_timestamp}, {request_end_timestamp})",
+        )
+    requested_channels, missing = _requested_station_channels(Path(ch_path), stations)
+    if missing:
+        preview = ",".join(missing[:8])
+        suffix = "" if len(missing) <= 8 else f",...({len(missing)} total)"
+        return False, f"channel table lacks complete 3-component stations: {preview}{suffix}"
+    samples_valid, samples_detail = _validate_station_channel_samples(
+        cnt_paths,
+        requested_channels,
+        request_start_timestamp=request_start_timestamp,
+        request_end_timestamp=request_end_timestamp,
+        tolerance_seconds=tolerance_seconds,
+    )
+    if not samples_valid:
+        return False, samples_detail
+    return True, "ok"
+
+
+def _merge_channel_tables(paths: Iterable[Path], output_path: Path) -> Path:
+    """Losslessly concatenate unique provider channel-table payloads."""
+    payloads: list[bytes] = []
+    seen_hashes: set[str] = set()
+    for path in paths:
+        payload = Path(path).read_bytes()
+        digest = hashlib.sha256(payload).hexdigest()
+        if payload and digest not in seen_hashes:
+            seen_hashes.add(digest)
+            payloads.append(payload)
+    if not payloads:
+        raise RuntimeError("Cannot merge empty Hi-net channel tables")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    combined = bytearray()
+    for payload in payloads:
+        if combined and not combined.endswith((b"\n", b"\r")):
+            combined.extend(b"\n")
+        combined.extend(payload)
+    output_path.write_bytes(bytes(combined))
+    return output_path
+
+
+def _request_raw_window(
+    args,
+    client,
+    *,
+    request_dir: Path,
+    allowed_root: Path,
+    request_label: str,
+    request_start_dt: datetime,
+    span_minutes: int,
+    stations: list[str],
+) -> RawBatchResult:
+    _reset_staging_directory(request_dir, allowed_root)
+    segment_dir = request_dir / "segments"
+    segment_dir.mkdir(parents=True, exist_ok=True)
+    stem = f"{request_label}_{request_start_dt.strftime('%Y%m%dT%H%M')}_{span_minutes:04d}min"
+    cnt_path = request_dir / f"{stem}.cnt"
+    ch_path = request_dir / f"{stem}.ch"
+    call_error = ""
+    try:
+        _call_hinet_in_directory(
+            client=client,
+            network=args.hinet_network,
+            starttime=hinet_time_string(request_start_dt),
+            span=int(span_minutes),
+            data=cnt_path,
+            ctable=ch_path,
+            outdir=request_dir,
+            cwd=segment_dir,
+            max_span=min(int(span_minutes), 60),
+            threads=int(getattr(args, "hinet_download_threads", 1)),
+            cleanup=False,
+        )
+    except Exception as exc:  # native files may still be usable after merge failure
+        call_error = _compact_error(repr(exc))
+
+    cnt_paths = _list_segment_cnts(segment_dir)
+    if not cnt_paths and cnt_path.is_file():
+        cnt_paths = (cnt_path,)
+    channel_path = _find_segment_channel_table(segment_dir)
+    if channel_path is None and ch_path.is_file():
+        channel_path = ch_path
+    start_timestamp = request_start_dt.timestamp()
+    end_timestamp = start_timestamp + int(span_minutes) * 60.0
+    valid, validation = _validate_raw_request(
+        cnt_paths,
+        channel_path,
+        request_start_timestamp=start_timestamp,
+        request_end_timestamp=end_timestamp,
+        stations=stations,
+    )
+    if valid:
+        detail = "primary request valid"
+        if call_error:
+            detail += f"; HinetPy post-processing failed but native files passed: {call_error}"
+        return RawBatchResult(cnt_paths, channel_path, True, False, detail)
+    detail_parts = [validation]
+    if call_error:
+        detail_parts.append(f"transport={call_error}")
+    return RawBatchResult(tuple(), channel_path, False, False, _compact_error("; ".join(detail_parts)))
+
+
+def _download_station_batch(
+    args,
+    client,
+    *,
+    event_raw_dir: Path,
+    event_id: str,
+    batch_index: int,
+    stations: list[str],
+    request_start_dt: datetime,
+    span_minutes: int,
+) -> RawBatchResult:
+    batch_root = event_raw_dir / "requests" / f"batch_{batch_index:03d}"
+    batch_root.mkdir(parents=True, exist_ok=True)
+    select_hinet_stations(client, args.hinet_network, stations)
+    primary = _request_raw_window(
+        args,
+        client,
+        request_dir=batch_root / "primary",
+        allowed_root=event_raw_dir,
+        request_label=f"{event_id}_b{batch_index:03d}",
+        request_start_dt=request_start_dt,
+        span_minutes=span_minutes,
+        stations=stations,
+    )
+    if primary.success:
+        return primary
+    if not bool(getattr(args, "minute_fallback", True)):
+        return primary
+
+    fallback_span = max(1, int(getattr(args, "fallback_span_minutes", 1)))
+    fallback_segments: list[Path] = []
+    fallback_channels: list[Path] = []
+    offset = 0
+    while offset < span_minutes:
+        sub_span = min(fallback_span, span_minutes - offset)
+        sub_start = request_start_dt + timedelta(minutes=offset)
+        result = _request_raw_window(
+            args,
+            client,
+            request_dir=batch_root / "minute_fallback" / f"minute_{offset:04d}",
+            allowed_root=event_raw_dir,
+            request_label=f"{event_id}_b{batch_index:03d}_m{offset:04d}",
+            request_start_dt=sub_start,
+            span_minutes=sub_span,
+            stations=stations,
+        )
+        if not result.success or result.channel_path is None:
+            return RawBatchResult(
+                tuple(),
+                result.channel_path,
+                False,
+                True,
+                _compact_error(
+                    f"primary failed: {primary.detail}; minute fallback offset={offset} "
+                    f"span={sub_span} failed: {result.detail}"
+                ),
+            )
+        fallback_segments.extend(result.segment_paths)
+        fallback_channels.append(result.channel_path)
+        offset += sub_span
+        delay = float(getattr(args, "subrequest_sleep_seconds", 0.0))
+        if delay > 0 and offset < span_minutes:
+            time.sleep(delay)
+
+    combined_channel = _merge_channel_tables(
+        fallback_channels,
+        batch_root / f"{event_id}_b{batch_index:03d}_minute_fallback.euc.ch",
+    )
+    missing = _channel_table_missing_stations(combined_channel, stations)
+    if missing:
+        return RawBatchResult(
+            tuple(),
+            combined_channel,
+            False,
+            True,
+            f"minute fallback channel table incomplete: {','.join(missing[:8])}",
+        )
+    return RawBatchResult(
+        tuple(fallback_segments),
+        combined_channel,
+        True,
+        True,
+        _compact_error(f"minute fallback succeeded after primary failure: {primary.detail}"),
+    )
+
+
+def _stage_complete_event_download(
+    event_raw_dir: Path,
+    event_id: str,
+    batch_results: list[RawBatchResult],
+    stations: list[str],
+) -> tuple[tuple[Path, ...], Path]:
+    aggregate_root = event_raw_dir / "complete"
+    _reset_staging_directory(aggregate_root, event_raw_dir)
+    staged_segments: list[Path] = []
+    channel_paths: list[Path] = []
+    for batch_index, result in enumerate(batch_results):
+        if not result.success or result.channel_path is None:
+            raise RuntimeError(f"Cannot stage incomplete batch {batch_index}")
+        channel_paths.append(result.channel_path)
+        # Keep the files in their isolated request directories. The archive
+        # index ordinal disambiguates duplicate provider filenames across
+        # station batches, so their original names do not need to be rewritten.
+        staged_segments.extend(result.segment_paths)
+    channel_path = _merge_channel_tables(
+        channel_paths,
+        aggregate_root / f"{event_id}_combined.euc.ch",
+    )
+    missing = _channel_table_missing_stations(channel_path, stations)
+    if missing:
+        raise RuntimeError(
+            "combined channel table lacks requested stations: " + ",".join(missing[:8])
+        )
+    return tuple(staged_segments), channel_path
+
+
 def download_raw_event(args, client, event: EventInfo, arrivals: pd.DataFrame) -> RawDownloadResult:
-    event_raw_dir = args.output_root / "raw" / event.event_id
+    raw_work_root = getattr(args, "raw_work_root", args.output_root / "raw")
+    event_raw_dir = raw_work_root / event.event_id
     event_raw_dir.mkdir(parents=True, exist_ok=True)
     segment_dir = event_raw_dir / "segments"
     segment_dir.mkdir(parents=True, exist_ok=True)
@@ -515,6 +1088,8 @@ def download_raw_event(args, client, event: EventInfo, arrivals: pd.DataFrame) -
     request_start_dt = floor_to_minute(start_ts)
     request_start_ts = request_start_dt.timestamp()
     span_min = ceil_span_minutes(request_start_ts, end_ts)
+    request_end_ts = request_start_ts + span_min * 60.0
+    stations = sorted(set(str(x) for x in arrivals["hinet_station"]))
 
     cnt_name = f"{event.event_id}_{request_start_dt.strftime('%Y%m%dT%H%M')}_{span_min:04d}min.cnt"
     ch_name = f"{event.event_id}_{request_start_dt.strftime('%Y%m%dT%H%M')}_{span_min:04d}min.ch"
@@ -530,62 +1105,128 @@ def download_raw_event(args, client, event: EventInfo, arrivals: pd.DataFrame) -
         segment_dir.mkdir(parents=True, exist_ok=True)
 
     if cnt_path.exists() and ch_path.exists() and not args.overwrite_raw:
-        return RawDownloadResult(cnt_path, ch_path, tuple(), "skipped_existing", "")
+        valid, detail = _validate_raw_request(
+            (cnt_path,),
+            ch_path,
+            request_start_timestamp=request_start_ts,
+            request_end_timestamp=request_end_ts,
+            stations=stations,
+        )
+        if valid:
+            return RawDownloadResult(cnt_path, ch_path, tuple(), "skipped_existing", "")
+        print(
+            f"[WARN] event {event.event_id}: ignoring incomplete staged merged files: {detail}",
+            file=sys.stderr,
+        )
+    if not args.overwrite_raw:
+        existing_segments = _list_segment_cnts(segment_dir)
+        existing_segment_ch = _find_segment_channel_table(segment_dir)
+        valid, detail = _validate_raw_request(
+            existing_segments,
+            existing_segment_ch,
+            request_start_timestamp=request_start_ts,
+            request_end_timestamp=request_end_ts,
+            stations=stations,
+        )
+        if valid:
+            return RawDownloadResult(
+                None,
+                existing_segment_ch,
+                existing_segments,
+                "skipped_existing_segments",
+                "",
+            )
+        if existing_segments or existing_segment_ch is not None:
+            print(
+                f"[WARN] event {event.event_id}: ignoring incomplete staged segments: {detail}",
+                file=sys.stderr,
+            )
     if args.dry_run:
         return RawDownloadResult(None, None, tuple(), "dry_run", "")
 
-    stations = sorted(set(str(x) for x in arrivals["hinet_station"]))
-    select_hinet_stations(client, args.hinet_network, stations)
-
-    try:
-        _call_hinet_in_directory(
-            client=client,
-            network=args.hinet_network,
-            starttime=hinet_time_string(request_start_dt),
-            span=span_min,
-            data=cnt_path,
-            ctable=ch_path,
-            outdir=event_raw_dir,
-            cwd=segment_dir,
+    configured_batch_size = int(getattr(args, "station_batch_size", 40))
+    batch_size = len(stations) if configured_batch_size <= 0 else configured_batch_size
+    station_batches = [stations[start : start + batch_size] for start in range(0, len(stations), batch_size)]
+    batch_results: list[RawBatchResult] = []
+    for batch_index, station_batch in enumerate(station_batches):
+        result = _download_station_batch(
+            args,
+            client,
+            event_raw_dir=event_raw_dir,
+            event_id=event.event_id,
+            batch_index=batch_index,
+            stations=station_batch,
+            request_start_dt=request_start_dt,
+            span_minutes=span_min,
         )
-    except Exception as exc:
-        segment_paths = _list_segment_cnts(segment_dir)
-        segment_ch_path = _find_segment_channel_table(segment_dir)
-        if segment_paths and segment_ch_path is not None:
+        if not result.success:
             return RawDownloadResult(
                 None,
-                segment_ch_path,
-                segment_paths,
-                "downloaded_unmerged",
-                f"merge_failed:{exc!r}",
+                result.channel_path,
+                tuple(),
+                "download_failed",
+                _compact_error(
+                    f"station batch {batch_index + 1}/{len(station_batches)} failed "
+                    f"for {len(station_batch)} stations: {result.detail}",
+                    maximum=1800,
+                ),
+                batch_count=len(station_batches),
+                download_strategy="batched_with_minute_fallback",
             )
-        return RawDownloadResult(None, segment_ch_path, segment_paths, "download_failed", repr(exc))
+        batch_results.append(result)
 
-    if not cnt_path.exists():
-        found = list(event_raw_dir.glob("*.cnt"))
-        cnt_path = found[0] if found else cnt_path
-    if not ch_path.exists():
-        found = list(event_raw_dir.glob("*.ch"))
-        ch_path = found[0] if found else ch_path
-    if not cnt_path.exists() or not ch_path.exists():
-        segment_paths = _list_segment_cnts(segment_dir)
-        segment_ch_path = _find_segment_channel_table(segment_dir)
-        if segment_paths and segment_ch_path is not None:
-            return RawDownloadResult(
-                None,
-                segment_ch_path,
-                segment_paths,
-                "downloaded_unmerged",
-                f"missing merged cnt={cnt_path.exists()} ch={ch_path.exists()}",
-            )
-        return RawDownloadResult(
-            None,
-            segment_ch_path,
-            segment_paths,
-            "download_missing_files",
-            f"missing cnt={cnt_path.exists()} ch={ch_path.exists()}",
-        )
-    return RawDownloadResult(cnt_path, ch_path, tuple(), "downloaded", "")
+    staged_segments, combined_channel = _stage_complete_event_download(
+        event_raw_dir,
+        event.event_id,
+        batch_results,
+        stations,
+    )
+    used_fallback = any(result.used_minute_fallback for result in batch_results)
+    if len(station_batches) > 1 and used_fallback:
+        raw_status = "downloaded_batched_minute_fallback"
+        strategy = "station_batches+minute_fallback"
+    elif len(station_batches) > 1:
+        raw_status = "downloaded_batched"
+        strategy = "station_batches"
+    elif used_fallback:
+        raw_status = "downloaded_minute_fallback"
+        strategy = "minute_fallback"
+    else:
+        raw_status = "downloaded_unmerged"
+        strategy = "single_request_native_segments"
+    notes = [result.detail for result in batch_results if result.detail != "primary request valid"]
+    return RawDownloadResult(
+        None,
+        combined_channel,
+        staged_segments,
+        raw_status,
+        _compact_error(" | ".join(notes), maximum=1800),
+        batch_count=len(station_batches),
+        download_strategy=strategy,
+    )
+
+
+def canonical_raw_files(args, event_id: str, raw: RawDownloadResult) -> tuple[tuple[Path, ...], Path | None]:
+    """Choose exactly one native representation for an archive commit.
+
+    HinetPy may leave both its original one-minute segments and a merged CNT.
+    The annual archive keeps the native segments when present and otherwise the
+    merged file, never both.
+    """
+    # Explicit paths are authoritative for the new batched workflow. This also
+    # prevents stale files from an older failed attempt taking precedence over
+    # the fully validated aggregate staged under complete/.
+    if raw.segment_paths:
+        return tuple(raw.segment_paths), raw.ch_path
+    if raw.cnt_path is not None:
+        return (raw.cnt_path,), raw.ch_path
+    event_raw_dir = getattr(args, "raw_work_root", args.output_root / "raw") / str(event_id)
+    segment_dir = event_raw_dir / "segments"
+    native_segments = _list_segment_cnts(segment_dir) if segment_dir.exists() else tuple()
+    if native_segments:
+        native_ch = _find_segment_channel_table(segment_dir)
+        return native_segments, native_ch or raw.ch_path
+    return tuple(), raw.ch_path
 
 
 def select_hinet_stations(client, network: str, stations: list[str]) -> None:
@@ -608,7 +1249,19 @@ def select_hinet_stations(client, network: str, stations: list[str]) -> None:
     raise AttributeError("HinetPy Client has no select_stations method")
 
 
-def call_get_continuous_waveform(client, network: str, starttime: str, span: int, data: str, ctable: str, outdir: Path) -> None:
+def call_get_continuous_waveform(
+    client,
+    network: str,
+    starttime: str,
+    span: int,
+    data: str,
+    ctable: str,
+    outdir: Path,
+    *,
+    max_span: int | None = None,
+    threads: int = 1,
+    cleanup: bool = False,
+) -> None:
     if not hasattr(client, "get_continuous_waveform"):
         raise AttributeError("HinetPy Client has no get_continuous_waveform method")
     method = getattr(client, "get_continuous_waveform")
@@ -619,13 +1272,17 @@ def call_get_continuous_waveform(client, network: str, starttime: str, span: int
         "data": str(data),
         "ctable": str(ctable),
         "outdir": str(outdir),
+        "max_span": max_span,
+        "threads": threads,
+        "cleanup": cleanup,
     }
     sig = inspect.signature(method)
     filtered = {key: value for key, value in kwargs.items() if key in sig.parameters}
     if "code" in sig.parameters:
         method(**filtered)
     else:
-        filtered.pop("code", None)
+        for positional_name in ("code", "starttime", "span"):
+            filtered.pop(positional_name, None)
         method(network, starttime, span, **filtered)
 
 
@@ -714,122 +1371,8 @@ def safe_station_code(value: str) -> str:
     return text[:8] if len(text) > 8 else text
 
 
-def bcd_to_int(value: int) -> int:
-    return (value >> 4) * 10 + (value & 0x0F)
-
-
-def parse_hinet_vm_timestamp(buf: bytes) -> float:
-    if len(buf) < 8:
-        raise ValueError("timestamp buffer too short")
-    dt = datetime(
-        bcd_to_int(buf[0]) * 100 + bcd_to_int(buf[1]),
-        bcd_to_int(buf[2]),
-        bcd_to_int(buf[3]),
-        bcd_to_int(buf[4]),
-        bcd_to_int(buf[5]),
-        bcd_to_int(buf[6]),
-        tzinfo=JST,
-    )
-    return dt.timestamp()
-
-
-def decode_win32_diffs(first: int, encoded: bytes, datawide: float, srate: int) -> np.ndarray:
-    if srate <= 0:
-        return np.asarray([], dtype=np.int32)
-    values = np.empty(srate, dtype=np.int64)
-    values[0] = first
-    if datawide == 0.5:
-        previous = first
-        idx = 1
-        for i, byte in enumerate(encoded):
-            high = byte >> 4
-            if high & 0x8:
-                high -= 0x10
-            previous += high
-            if idx < srate:
-                values[idx] = previous
-                idx += 1
-            low = byte & 0x0F
-            if low & 0x8:
-                low -= 0x10
-            previous += low
-            if i == len(encoded) - 1 and srate % 2 == 0:
-                break
-            if idx < srate:
-                values[idx] = previous
-                idx += 1
-        return values[:idx].astype(np.int32, copy=False)
-    if datawide == 1:
-        diffs = np.frombuffer(encoded, dtype=np.int8).astype(np.int64)
-    elif datawide == 2:
-        diffs = np.frombuffer(encoded, dtype=">i2").astype(np.int64)
-    elif datawide == 3:
-        diffs = np.empty(len(encoded) // 3, dtype=np.int64)
-        for i in range(diffs.size):
-            raw = int.from_bytes(encoded[3 * i:3 * i + 3], "big", signed=False)
-            if raw & 0x800000:
-                raw -= 0x1000000
-            diffs[i] = raw
-    elif datawide == 4:
-        diffs = np.frombuffer(encoded, dtype=">i4").astype(np.int64)
-    else:
-        raise NotImplementedError(f"Unsupported WIN32 data width: {datawide}")
-    n = min(diffs.size + 1, srate)
-    if n > 1:
-        values[1:n] = first + np.cumsum(diffs[: n - 1])
-    return values[:n].astype(np.int32, copy=False)
-
-
 def read_hinet_vm_cnt_segments(cnt_paths: Iterable[Path], channel_ids: set[str]) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-    wanted = {str(channel_id).lower() for channel_id in channel_ids}
-    values_by_channel: dict[str, list[np.ndarray]] = {channel_id: [] for channel_id in wanted}
-    times_by_channel: dict[str, list[np.ndarray]] = {channel_id: [] for channel_id in wanted}
-    for path in sorted(cnt_paths):
-        data = path.read_bytes()
-        offset = 4 if len(data) > 20 and data[:4] == b"\x00\x00\x00\x00" else 0
-        while offset + 16 <= len(data):
-            try:
-                record_ts = parse_hinet_vm_timestamp(data[offset:offset + 8])
-            except Exception:
-                break
-            payload_len = struct.unpack(">i", data[offset + 12:offset + 16])[0]
-            payload_start = offset + 16
-            payload_end = payload_start + payload_len
-            if payload_len <= 0 or payload_end > len(data):
-                break
-            cursor = payload_start
-            while cursor + 10 <= payload_end:
-                if data[cursor:cursor + 2] in (b"\x01\x01", b"\x01\x03"):
-                    cursor += 2
-                channel_id = f"{data[cursor]:02x}{data[cursor + 1]:02x}"
-                raw_width = data[cursor + 2] >> 4
-                srate = int(data[cursor + 3])
-                cursor += 4
-                datawide = 0.5 if raw_width == 0 else float(raw_width)
-                encoded_len = srate // 2 if raw_width == 0 else (srate - 1) * raw_width
-                if cursor + 4 + encoded_len > payload_end:
-                    break
-                first = struct.unpack(">i", data[cursor:cursor + 4])[0]
-                cursor += 4
-                encoded = data[cursor:cursor + encoded_len]
-                cursor += encoded_len
-                if channel_id not in wanted:
-                    continue
-                decoded = decode_win32_diffs(first, encoded, datawide, srate)
-                if decoded.size == 0:
-                    continue
-                values_by_channel[channel_id].append(decoded)
-                times_by_channel[channel_id].append(record_ts + np.arange(decoded.size, dtype=np.float64) / float(srate))
-            offset = payload_end
-
-    out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
-    for channel_id in wanted:
-        if values_by_channel[channel_id]:
-            t = np.concatenate(times_by_channel[channel_id])
-            y = np.concatenate(values_by_channel[channel_id])
-            order = np.argsort(t)
-            out[channel_id] = (t[order], y[order])
-    return out
+    return read_hinet_vm_cnt_paths(cnt_paths, channel_ids)
 
 
 def infer_sampling_rate_hz(times: np.ndarray) -> float:
@@ -1136,7 +1679,12 @@ def build_event_arrivals(
         out = {
             "event_id": event.event_id,
             "origin_time_jst": event.origin_time_jst,
+            "origin_time_jst_raw": event.origin_time_jst_raw,
             "origin_timestamp": event.origin_timestamp,
+            "origin_time_correction_s": "" if event.origin_time_correction_s is None else event.origin_time_correction_s,
+            "origin_time_correction_status": event.origin_time_correction_status,
+            "origin_time_correction_source": event.origin_time_correction_source,
+            "origin_time_jma_event_id": event.origin_time_jma_event_id,
             "event_lat": event.latitude,
             "event_lon": event.longitude,
             "event_depth_km": event.depth_km,
@@ -1201,7 +1749,7 @@ def write_dataframe(path: Path, df: pd.DataFrame) -> None:
     df.to_csv(path, index=False)
 
 
-def process_events(args) -> None:
+def load_download_context(args):
     selected_ids = select_event_ids(args.hdf5, args.mode, args.event_ids, args.num_events, args.seed)
     origin_corrections = load_origin_corrections(args.origin_corrections, require_accepted=not args.use_unaccepted_origin_corrections)
     events = load_events(args.hdf5, selected_ids, origin_corrections=origin_corrections)
@@ -1221,7 +1769,378 @@ def process_events(args) -> None:
         print(f"[INFO] loaded {len(origin_corrections)} origin corrections; used {used_corrections} for selected events")
 
     jma_table, ak135 = build_travel_time_model(args.jma_travel_time_zip)
-    client = None if args.dry_run else make_hinet_client()
+    return events, station_df, matches, jma_table, ak135
+
+
+def archive_provenance(args) -> dict[str, object]:
+    source_stat = args.hdf5.stat()
+    match_csv = getattr(args, "match_csv", None)
+    event_ids_file = getattr(args, "event_ids", None)
+    origin_corrections_file = getattr(args, "origin_corrections", None)
+    travel_time_path = getattr(args, "jma_travel_time_zip", None) or DEFAULT_JMA2001A_ZIP
+
+    def small_file_identity(path: Path | None) -> dict[str, object]:
+        if path is None:
+            return {"path": "", "sha256": ""}
+        resolved = Path(path).expanduser().resolve()
+        if not resolved.exists():
+            return {"path": str(resolved), "sha256": "missing"}
+        digest = hashlib.sha256()
+        with resolved.open("rb") as fp:
+            for block in iter(lambda: fp.read(1024 * 1024), b""):
+                digest.update(block)
+        return {"path": str(resolved), "sha256": digest.hexdigest()}
+
+    identity = {
+        "source_hdf5": str(args.hdf5),
+        "source_hdf5_size_bytes": int(source_stat.st_size),
+        "source_hdf5_mtime_ns": int(source_stat.st_mtime_ns),
+        "year": int(args.year),
+        "hinet_network": args.hinet_network,
+        "match_distance_km": float(args.match_distance_km),
+        "pre_seconds": float(args.pre_seconds),
+        "post_seconds": float(args.post_seconds),
+        "mode": args.mode,
+        "station_matches": small_file_identity(match_csv),
+        "event_ids": small_file_identity(event_ids_file),
+        "origin_corrections": small_file_identity(origin_corrections_file),
+        "travel_time_table": small_file_identity(travel_time_path),
+    }
+    return {
+        "archive_identity": identity,
+        "command": shlex.join(sys.argv),
+        "source_hdf5": str(args.hdf5),
+        "source_hdf5_size_bytes": int(source_stat.st_size),
+        "source_hdf5_mtime_ns": int(source_stat.st_mtime_ns),
+        "year": int(args.year),
+        "hinet_network": args.hinet_network,
+        "match_distance_km": float(args.match_distance_km),
+        "pre_seconds": float(args.pre_seconds),
+        "post_seconds": float(args.post_seconds),
+        "mode": args.mode,
+        "event_ids_file": "" if event_ids_file is None else str(event_ids_file),
+        "origin_corrections_file": "" if origin_corrections_file is None else str(origin_corrections_file),
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "archive_policy": "native_cnt_segments_preferred;sha256_deduplicated;no_mseed;no_sacpz",
+        # These transport controls may change between retries without changing
+        # the requested scientific dataset or invalidating a partial archive.
+        "download_transport": {
+            "hinet_timeout_seconds": float(getattr(args, "hinet_timeout_seconds", 300.0)),
+            "hinet_retries": int(getattr(args, "hinet_retries", 3)),
+            "station_batch_size": int(getattr(args, "station_batch_size", 40)),
+            "hinet_download_threads": int(getattr(args, "hinet_download_threads", 1)),
+            "minute_fallback": bool(getattr(args, "minute_fallback", True)),
+            "fallback_span_minutes": int(getattr(args, "fallback_span_minutes", 1)),
+            "subrequest_sleep_seconds": float(getattr(args, "subrequest_sleep_seconds", 0.0)),
+        },
+    }
+
+
+def cleanup_staged_event(args, event_id: str) -> None:
+    if args.keep_staging:
+        return
+    root = Path(args.raw_work_root).resolve()
+    event_dir = root / str(event_id)
+    if event_dir.parent != root:
+        raise RuntimeError(f"Refusing to clean unexpected staging path: {event_dir}")
+    if event_dir.exists():
+        shutil.rmtree(event_dir)
+
+
+def export_archive_catalog(archive_path: Path, output_root: Path, year: int) -> None:
+    catalog_dir = output_root / "catalog"
+    catalog_dir.mkdir(parents=True, exist_ok=True)
+    with AnnualHinetArchiveReader(archive_path) as reader:
+        reader.events_dataframe().to_csv(catalog_dir / f"hinet_events_{year}.csv", index=False)
+        reader.attempts_dataframe().to_csv(catalog_dir / f"hinet_attempts_{year}.csv", index=False)
+        summary = {
+            "archive": str(archive_path),
+            "year": reader.year,
+            "complete": reader.complete,
+            "committed_event_count": len(reader.event_ids()),
+        }
+    (catalog_dir / f"hinet_archive_{year}.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def resolve_archive_work_path(final_path: Path) -> tuple[Path, bool]:
+    """Return the append target and whether the final archive is already complete."""
+    final_path = Path(final_path)
+    partial_path = partial_archive_path(final_path)
+    if final_path.exists():
+        with AnnualHinetArchiveReader(final_path) as reader:
+            if reader.complete:
+                return final_path, True
+        if partial_path.exists():
+            raise RuntimeError(f"Both incomplete final and partial archives exist: {final_path}, {partial_path}")
+        return final_path, False
+    if partial_path.exists():
+        return partial_path, False
+    return partial_path, False
+
+
+def process_events_archive(args) -> dict[str, object]:
+    if args.write_mseed:
+        raise ValueError("--write-mseed is incompatible with --storage-mode annual-hdf5")
+    if args.response_mode != "none":
+        raise ValueError("Response side products are disabled in annual archive mode; raw .ch bytes are archived instead")
+    if args.overwrite_raw:
+        raise ValueError("--overwrite-raw is not supported for append-only archives; use a new archive path")
+
+    events, station_df, matches, jma_table, ak135 = load_download_context(args)
+    expected_ids = set(events)
+    if args.dry_run:
+        station_total = 0
+        for event_number, event_id in enumerate(sorted(events, reverse=True), start=1):
+            arrivals = build_event_arrivals(
+                events[event_id],
+                station_df,
+                matches,
+                jma_table,
+                ak135,
+                pre_seconds=args.pre_seconds,
+                post_seconds=args.post_seconds,
+            )
+            station_total += len(arrivals)
+            print(
+                f"[DRY-RUN] [{event_number}/{len(events)}] event={event_id} "
+                f"matched_stations={len(arrivals)}"
+            )
+        print(f"[DRY-RUN] events={len(events)} matched_event_stations={station_total}; no archive was created")
+        return {"complete": True, "failed": 0, "dry_run": True, "archive_path": ""}
+
+    provenance = archive_provenance(args)
+    archive_work_path, already_complete = resolve_archive_work_path(args.archive_path)
+    if already_complete:
+        with AnnualHinetArchiveReader(archive_work_path) as reader:
+            missing = expected_ids - set(reader.event_ids())
+            identity_matches = reader.archive_identity == provenance["archive_identity"]
+        if missing:
+            raise RuntimeError(
+                f"Completed archive {archive_work_path} is missing {len(missing)} events from the current source"
+            )
+        if not identity_matches:
+            raise RuntimeError(
+                f"Completed archive identity differs from the current source/configuration: {archive_work_path}"
+            )
+        print(f"[INFO] annual archive is already complete: {archive_work_path}")
+        export_archive_catalog(archive_work_path, args.output_root, args.year)
+        return {"complete": True, "failed": 0, "archive_path": str(archive_work_path)}
+
+    args.raw_work_root = args.output_root / ".staging" / str(args.year) / "raw"
+    args.raw_work_root.mkdir(parents=True, exist_ok=True)
+    client = None
+    run_failures: list[str] = []
+    newly_committed = 0
+    skipped_committed = 0
+
+    writer = AnnualHinetArchiveWriter(
+        archive_work_path,
+        year=args.year,
+        source_hdf5=args.hdf5,
+        provenance=provenance,
+        chunk_bytes=args.archive_chunk_bytes,
+    )
+    try:
+        for event_number, event_id in enumerate(sorted(events, reverse=True), start=1):
+            event = events[event_id]
+            if writer.has_event(event_id):
+                skipped_committed += 1
+                cleanup_staged_event(args, event_id)
+                print(f"[INFO] [{event_number}/{len(events)}] event {event_id}: already committed")
+                continue
+
+            print(
+                f"[INFO] [{event_number}/{len(events)}] event {event_id} "
+                f"origin={event.origin_time_jst}"
+            )
+            station_count = 0
+            try:
+                arrivals = build_event_arrivals(
+                    event,
+                    station_df,
+                    matches,
+                    jma_table,
+                    ak135,
+                    pre_seconds=args.pre_seconds,
+                    post_seconds=args.post_seconds,
+                )
+                station_count = len(arrivals)
+                if arrivals.empty:
+                    writer.commit_event_bytes(
+                        event,
+                        arrivals,
+                        [],
+                        ("", b""),
+                        raw_status="no_matched_stations",
+                    )
+                    writer.verify_event(event_id)
+                    cleanup_staged_event(args, event_id)
+                    newly_committed += 1
+                    continue
+                if client is None:
+                    client = make_hinet_client(args)
+                raw = download_raw_event(args, client, event, arrivals)
+                if not (
+                    raw.raw_status.startswith("downloaded")
+                    or raw.raw_status.startswith("skipped_existing")
+                ):
+                    raise RuntimeError(
+                        f"raw download did not complete: status={raw.raw_status}; error={raw.raw_error}"
+                    )
+                cnt_paths, channel_table_path = canonical_raw_files(args, event_id, raw)
+                if not cnt_paths or channel_table_path is None:
+                    raise RuntimeError(
+                        f"raw download is incomplete: status={raw.raw_status}; "
+                        f"cnt_segments={len(cnt_paths)}; channel_table={channel_table_path}; "
+                        f"error={raw.raw_error}"
+                    )
+                empty_files = [str(path) for path in cnt_paths if path.stat().st_size <= 0]
+                if channel_table_path.stat().st_size <= 0:
+                    empty_files.append(str(channel_table_path))
+                if empty_files:
+                    raise RuntimeError("downloaded empty raw files: " + ", ".join(empty_files))
+
+                missing_stations = _channel_table_missing_stations(
+                    channel_table_path,
+                    arrivals["hinet_station"].astype(str),
+                )
+                if missing_stations:
+                    raise RuntimeError(
+                        "raw channel table lacks complete 3-component stations: "
+                        + ",".join(missing_stations[:8])
+                    )
+
+                coverage = scan_hinet_vm_cnt_paths(cnt_paths)
+                request_start = float(arrivals["cut_start_timestamp"].min())
+                request_end = float(arrivals["cut_end_timestamp"].max())
+                coverage_tolerance_s = 1.1
+                if (
+                    coverage.record_count <= 0
+                    or not math.isfinite(coverage.start_timestamp)
+                    or not math.isfinite(coverage.end_timestamp)
+                    or coverage.start_timestamp > request_start + coverage_tolerance_s
+                    or coverage.end_timestamp < request_end - coverage_tolerance_s
+                ):
+                    raise RuntimeError(
+                        "raw CNT time coverage is incomplete: "
+                        f"records={coverage.record_count}; "
+                        f"coverage=[{coverage.start_timestamp}, {coverage.end_timestamp}); "
+                        f"requested=[{request_start}, {request_end}]"
+                    )
+
+                arrivals = arrivals.copy()
+                arrivals["raw_status"] = raw.raw_status
+                arrivals["raw_error"] = raw.raw_error
+                arrivals["raw_batch_count"] = raw.batch_count
+                arrivals["raw_download_strategy"] = raw.download_strategy
+                arrivals["hinet_timeout_seconds"] = float(
+                    getattr(args, "hinet_timeout_seconds", 300.0)
+                )
+                arrivals["hinet_retries"] = int(getattr(args, "hinet_retries", 3))
+                arrivals["station_batch_size"] = int(getattr(args, "station_batch_size", 40))
+                arrivals["minute_fallback_enabled"] = int(
+                    bool(getattr(args, "minute_fallback", True))
+                )
+                arrivals["fallback_span_minutes"] = int(
+                    getattr(args, "fallback_span_minutes", 1)
+                )
+                arrivals["raw_storage"] = "annual_hdf5_native_cnt_bytes"
+                arrivals["archive_path"] = str(args.archive_path)
+                arrivals["archive_event_id"] = event_id
+                arrivals["raw_segment_count"] = len(cnt_paths)
+                arrivals["raw_segment_filenames"] = ";".join(path.name for path in cnt_paths)
+                arrivals["raw_record_count"] = coverage.record_count
+                arrivals["raw_coverage_start_timestamp"] = coverage.start_timestamp
+                arrivals["raw_coverage_end_timestamp_exclusive"] = coverage.end_timestamp
+                arrivals["raw_time_coverage_complete"] = 1
+                arrivals["channel_table_filename"] = channel_table_path.name
+                arrivals["response_status"] = "raw_channel_table_archived"
+                arrivals["mseed_status"] = "disabled_archive"
+
+                writer.commit_event_files(
+                    event,
+                    arrivals,
+                    cnt_paths,
+                    channel_table_path,
+                    raw_status=raw.raw_status,
+                    raw_error=raw.raw_error,
+                )
+                writer.verify_event(event_id)
+                cleanup_staged_event(args, event_id)
+                newly_committed += 1
+                if args.sleep_seconds > 0:
+                    time.sleep(args.sleep_seconds)
+            except KeyboardInterrupt:
+                raise
+            except Exception as exc:
+                # If an archive append failed, discard its uncommitted tail
+                # before recording the failure or processing another event.
+                writer.recover()
+                if writer.has_event(event_id):
+                    # A committed row is authoritative. Never downgrade or
+                    # silently finalize it if readback verification failed.
+                    try:
+                        writer.verify_event(event_id)
+                    except Exception as verify_exc:
+                        raise RuntimeError(
+                            f"Committed archive data failed verification for event {event_id}"
+                        ) from verify_exc
+                    newly_committed += 1
+                    print(
+                        f"[WARN] event {event_id} was committed and verified, but post-commit cleanup failed: {exc!r}",
+                        file=sys.stderr,
+                    )
+                    continue
+                writer.record_attempt(
+                    event_id,
+                    "failed",
+                    station_count=station_count,
+                    error=repr(exc),
+                )
+                run_failures.append(event_id)
+                print(f"[WARN] event {event_id} failed: {exc!r}", file=sys.stderr)
+
+        missing_after_run = expected_ids - writer.committed_event_ids()
+        can_finalize = (
+            not args.dry_run
+            and args.mode == "all"
+            and args.event_ids is None
+            and not missing_after_run
+        )
+        if can_finalize:
+            writer.mark_complete(expected_ids)
+    finally:
+        writer.close()
+
+    completed = bool(can_finalize)
+    output_archive = archive_work_path
+    if completed and archive_work_path != args.archive_path:
+        os.replace(archive_work_path, args.archive_path)
+        output_archive = args.archive_path
+    export_archive_catalog(output_archive, args.output_root, args.year)
+
+    missing_count = len(expected_ids - writer.committed_event_ids())
+    print(
+        f"[INFO] archive summary year={args.year}: total={len(events)} "
+        f"new={newly_committed} resumed={skipped_committed} missing={missing_count} "
+        f"path={output_archive}"
+    )
+    return {
+        "complete": completed,
+        "failed": missing_count,
+        "run_failures": run_failures,
+        "archive_path": str(output_archive),
+    }
+
+
+def process_events_files(args) -> dict[str, object]:
+    events, station_df, matches, jma_table, ak135 = load_download_context(args)
+
+    client = None if args.dry_run else make_hinet_client(args)
     all_rows: list[pd.DataFrame] = []
     summary_rows: list[dict[str, object]] = []
 
@@ -1243,15 +2162,26 @@ def process_events(args) -> None:
                 continue
             write_dataframe(args.output_root / "manifests" / "events" / event_id / "arrivals.csv", arrivals)
             raw = download_raw_event(args, client, event, arrivals)
+            if not args.dry_run and not (
+                raw.raw_status.startswith("downloaded")
+                or raw.raw_status.startswith("skipped_existing")
+            ):
+                raise RuntimeError(
+                    f"raw download did not complete: status={raw.raw_status}; error={raw.raw_error}"
+                )
             arrivals["raw_status"] = raw.raw_status
             arrivals["raw_error"] = raw.raw_error
+            arrivals["raw_batch_count"] = raw.batch_count
+            arrivals["raw_download_strategy"] = raw.download_strategy
             arrivals["raw_count_path"] = "" if raw.cnt_path is None else str(raw.cnt_path)
             arrivals["raw_segment_paths"] = ";".join(str(path) for path in raw.segment_paths)
             arrivals["raw_segment_count"] = len(raw.segment_paths)
             arrivals["channel_table_path"] = "" if raw.ch_path is None else str(raw.ch_path)
 
-            if raw.ch_path is not None:
+            if raw.ch_path is not None and args.response_mode == "pz":
                 arrivals["response_status"] = cache_response_files(args, raw.ch_path, event_id)
+            elif raw.ch_path is not None:
+                arrivals["response_status"] = "raw_channel_table_only"
             else:
                 arrivals["response_status"] = "not_available"
 
@@ -1295,12 +2225,30 @@ def process_events(args) -> None:
     if all_rows:
         write_dataframe(args.output_root / "manifests" / "download_manifest.csv", pd.concat(all_rows, ignore_index=True))
     write_csv(args.output_root / "manifests" / "summary.csv", summary_rows, ["event_id", "status", "stations", "raw_error"])
+    failed = sum(row.get("status") == "failed" for row in summary_rows)
+    return {"complete": failed == 0, "failed": failed, "archive_path": ""}
+
+
+def process_events(args) -> dict[str, object]:
+    if args.storage_mode == "annual-hdf5":
+        return process_events_archive(args)
+    return process_events_files(args)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Download matched Hi-net velocity windows for K-NET/KiK-net events.")
+    parser = argparse.ArgumentParser(description="Download and archive matched Hi-net raw-count windows.")
     parser.add_argument("--hdf5", type=Path, required=True, help="Converted K-NET/KiK-net HDF5 file.")
     parser.add_argument("--output-root", type=Path, default=Path("hinet_velocity_downloads"))
+    parser.add_argument(
+        "--storage-mode",
+        choices=("annual-hdf5", "files"),
+        default="annual-hdf5",
+        help="Store byte-exact CNT/CH data in one annual HDF5 archive (default) or use the legacy file tree.",
+    )
+    parser.add_argument("--year", type=int, default=None, help="Archive year; inferred from japan_YYYY.hdf5 when omitted.")
+    parser.add_argument("--archive-path", type=Path, default=None, help="Final annual archive path.")
+    parser.add_argument("--archive-chunk-bytes", type=int, default=1024 * 1024)
+    parser.add_argument("--keep-staging", action="store_true", help="Keep temporary native CNT/CH files after verified archive commits.")
     parser.add_argument("--mode", choices=["all", "smoketest"], default="all")
     parser.add_argument("--num-events", type=int, default=3, help="Number of events for --mode smoketest.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for --mode smoketest.")
@@ -1312,6 +2260,48 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Use all rows in --origin-corrections instead of filtering accepted==1.",
     )
     parser.add_argument("--hinet-network", default="0101", help="Hi-net network code used by HinetPy.")
+    parser.add_argument(
+        "--hinet-timeout-seconds",
+        type=float,
+        default=300.0,
+        help="Read timeout for each Hi-net ZIP download (HinetPy defaults to 60 seconds).",
+    )
+    parser.add_argument(
+        "--hinet-retries",
+        type=int,
+        default=3,
+        help="Transport retries per Hi-net download job.",
+    )
+    parser.add_argument(
+        "--station-batch-size",
+        type=int,
+        default=40,
+        help="Maximum selected Hi-net stations per request; 0 disables station splitting.",
+    )
+    parser.add_argument(
+        "--hinet-download-threads",
+        type=int,
+        default=1,
+        help="HinetPy download threads per request; one is safest for provider throttling.",
+    )
+    parser.add_argument(
+        "--minute-fallback",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Retry a failed full window as short consecutive requests.",
+    )
+    parser.add_argument(
+        "--fallback-span-minutes",
+        type=int,
+        default=1,
+        help="Minutes per request during fallback (1-60).",
+    )
+    parser.add_argument(
+        "--subrequest-sleep-seconds",
+        type=float,
+        default=0.0,
+        help="Optional delay between consecutive fallback subrequests.",
+    )
     parser.add_argument("--inventory-csv", type=Path, default=None)
     parser.add_argument("--match-csv", type=Path, default=None)
     parser.add_argument("--match-distance-km", type=float, default=1.0)
@@ -1319,8 +2309,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--post-seconds", type=float, default=120.0)
     parser.add_argument("--jma-travel-time-zip", type=Path, default=None)
     parser.add_argument("--win-century", default="20", help="Century prefix for ObsPy WIN timestamp parser.")
-    parser.add_argument("--write-mseed", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--write-mseed", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--pad-mseed", action="store_true", help="Pad cut MiniSEED traces with zero counts if coverage is short.")
+    parser.add_argument(
+        "--response-mode",
+        choices=("none", "pz"),
+        default="none",
+        help="Legacy file mode only: optionally extract per-channel SAC PZ files.",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Plan events/windows without downloading raw waveforms.")
     parser.add_argument("--allow-network-in-dry-run", action="store_true")
     parser.add_argument("--overwrite-inventory", action="store_true")
@@ -1337,12 +2333,37 @@ def main() -> int:
     args.hdf5 = args.hdf5.expanduser().resolve()
     args.output_root = args.output_root.expanduser().resolve()
     args.output_root.mkdir(parents=True, exist_ok=True)
+    if args.year is None:
+        match = re.search(r"(?:japan_|/)(?P<year>20\d{2})(?:\.hdf5|/)", str(args.hdf5))
+        if match is None:
+            raise ValueError("Pass --year because it could not be inferred from --hdf5")
+        args.year = int(match.group("year"))
+    if not 1900 <= int(args.year) <= 2200:
+        raise ValueError(f"Invalid --year: {args.year}")
+    if args.archive_chunk_bytes <= 0:
+        raise ValueError("--archive-chunk-bytes must be positive")
+    if args.hinet_timeout_seconds <= 0:
+        raise ValueError("--hinet-timeout-seconds must be positive")
+    if args.hinet_retries <= 0:
+        raise ValueError("--hinet-retries must be positive")
+    if args.station_batch_size < 0:
+        raise ValueError("--station-batch-size must be zero or positive")
+    if args.hinet_download_threads <= 0:
+        raise ValueError("--hinet-download-threads must be positive")
+    if not 1 <= args.fallback_span_minutes <= 60:
+        raise ValueError("--fallback-span-minutes must be in [1, 60]")
+    if args.subrequest_sleep_seconds < 0:
+        raise ValueError("--subrequest-sleep-seconds must be non-negative")
+    if args.archive_path is None:
+        args.archive_path = args.output_root / "archive" / f"hinet_raw_{args.year}.h5"
+    else:
+        args.archive_path = args.archive_path.expanduser().resolve()
     if args.inventory_csv is None:
-        args.inventory_csv = args.output_root / "inventory" / "hinet_stations.csv"
+        args.inventory_csv = args.output_root / "catalog" / "hinet_stations.csv"
     else:
         args.inventory_csv = args.inventory_csv.expanduser().resolve()
     if args.match_csv is None:
-        args.match_csv = args.output_root / "matches" / "hinet_kiknet_station_matches.csv"
+        args.match_csv = args.output_root / "catalog" / f"hinet_kiknet_station_matches_{args.year}.csv"
     else:
         args.match_csv = args.match_csv.expanduser().resolve()
     if args.event_ids is not None:
@@ -1353,8 +2374,8 @@ def main() -> int:
         args.jma_travel_time_zip = args.jma_travel_time_zip.expanduser().resolve()
     if not args.hdf5.exists():
         raise FileNotFoundError(args.hdf5)
-    process_events(args)
-    return 0
+    result = process_events(args)
+    return 0 if result.get("complete", False) else 2
 
 
 if __name__ == "__main__":

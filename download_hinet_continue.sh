@@ -1,0 +1,10 @@
+#!/bin/bash
+for year in 2005 2007 2012 2013 2016 2018 2022 2024; do
+  START_YEAR="$year" END_YEAR="$year" \
+  HINET_TIMEOUT_SECONDS=600 \
+  STATION_BATCH_SIZE=40 \
+  MINUTE_FALLBACK=1 \
+  SUBREQUEST_SLEEP_SECONDS=1 \
+  MAX_YEAR_ATTEMPTS=1 \
+  bash download_hinet.sh
+done

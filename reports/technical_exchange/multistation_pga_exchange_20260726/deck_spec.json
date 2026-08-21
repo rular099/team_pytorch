@@ -1,0 +1,803 @@
+{
+  "deck_name": "multistation_pga_exchange_20260726",
+  "language": "Chinese",
+  "goal": "面向科研交流，说明多台站目标位置 PGA 估计的方法、最新实验进展、泛化瓶颈及与 TEAM、QuakeFormer 的定量差距。",
+  "selected_image_backend": "built-in image tool",
+  "max_concurrent_slides": 3,
+  "sample_generation_method": {
+    "backend_used": "built-in image tool",
+    "tool_name": "image_gen",
+    "mode": "generate; use localized edit with the same tool only when QA finds a contained issue",
+    "prompt_source": "prompts/sample_slide_12.md",
+    "size": "16:9 landscape; approved output 1672x941",
+    "quality": "built-in default",
+    "model_config": "built-in image_gen default",
+    "approved_sample_path": "origin_image/slide_12.png",
+    "input_context_preparation": "Inspect local source images with view_image; pass the approved sample through referenced_image_paths as a style-only reference.",
+    "handoff_rule": "Use the same built-in image_gen backend and the approved low-saturation style. Return a blocker if that path or any strict source image is unavailable."
+  },
+  "approved_style_reference": {
+    "path": "origin_image/slide_12.png",
+    "role": "approved sample slide style reference",
+    "fidelity": "match palette, typography mood, density and finish only; do not copy its exact layout or content"
+  },
+  "style": {
+    "name": "清新低饱和科研答辩风",
+    "visual_direction": "formal Chinese academic defense deck, evidence-first, calm and fresh rather than vivid, structured scientific diagrams and concise conclusions",
+    "color_palette": {
+      "background": "#FAFBFC",
+      "content_fill": "#F2F6F8",
+      "title_and_body": "#2F3742",
+      "train_and_structure": "#5B7FA3",
+      "validation": "#55A6A0",
+      "critical_accent": "#D66F63",
+      "border": "#CCD8E2"
+    },
+    "typography": "Chinese sans-serif; charcoal or dark-gray titles; compact readable academic tables; exact four-decimal metrics where specified",
+    "texture_and_finish": "flat, clean, subtle light-gray-blue cards and fine borders, no gradients",
+    "deck_consistency": "keep palette, typography, border treatment and evidence-first mood consistent; vary layout by page role"
+  },
+  "deck_context": {
+    "source_summary": "本项目从可变数量的日本强震台站三分量波形与位置出发，预测任意目标位置的 log PGA。历史 full-data 使用 699 train、101 validation、201 test 事件；最新 rt44–rt51 是 512-event controlled overfit 实验，现已取得完整 KNET-only normal 与 station-roll last eval，并补齐 3 个事件级台站数案例和震中距分桶。",
+    "core_claim": "模型已具备很强的训练集拟合能力，当前主要瓶颈是 held-out 泛化、强 PGA 低估和概率校准。KNET-only 自身结果中 rt48/rt49 领先，但 2716 个共同目标上的配对检验没有显示 KNET 筛选带来泛化收益；station-roll 的验证影响稳定但较小。",
+    "evaluation_rules": [
+      "区分 full-data system result 与 512-event overfit experiment。",
+      "512-event 页面必须同时报告 train 和 validation。",
+      "mixed-source 与 KNET-only 比较必须优先采用共同 event/time/target coordinate，不用目标集合不同的均值差替代配对证据。",
+      "文献数字只用于量级和差距定位，不构成跨数据集排行榜。",
+      "本项目原始误差为 log10 PGA；与 QuakeFormer 残差比较时换算为自然对数单位。"
+    ],
+    "canonical_terms": [
+      "PGA",
+      "multi-station",
+      "target location",
+      "full-data",
+      "512-event overfit",
+      "validation",
+      "strong PGA",
+      "unseen station"
+    ]
+  },
+  "slides": [
+    {
+      "number": 1,
+      "title": "多台站波形驱动的目标位置 PGA 估计",
+      "role": "cover",
+      "approved_sample": true,
+      "intent": "建立正式科研交流语境，并明确报告只讨论多台站 PGA 技术线。",
+      "key_points": [
+        "方法进展、实验结果与文献对比",
+        "2026-07-26"
+      ],
+      "layout": {
+        "composition": "左侧大标题和副标题，右侧为简洁的日本台站—目标位置抽象空间示意；大面积留白",
+        "variation_rule": "封面比内容页更疏朗，但保持批准样稿的低饱和色系"
+      },
+      "visual_elements": {
+        "main_visual": "日本轮廓上的低饱和台站节点、波形线和目标位置连线，不使用照片或虚构 logo"
+      },
+      "constraints": [
+        "标题用炭黑或深灰，不使用纯蓝",
+        "不出现摄像头技术线",
+        "不显示页码"
+      ]
+    },
+    {
+      "number": 2,
+      "title": "本次交流回答三个问题",
+      "role": "agenda",
+      "approved_sample": true,
+      "intent": "用三个研究问题建立报告证据链。",
+      "key_points": [
+        "如何从可变数量台站波形预测任意目标位置 PGA？",
+        "当前精度如何，随输入时间和台站数量怎样变化？",
+        "主要泛化瓶颈是什么，全量训练值得期待什么？"
+      ],
+      "layout": {
+        "composition": "三个编号问题横向展开，下方以细箭头串联相关方法、实验结果、对比和下一步",
+        "relationship_to_previous_slide": "从封面进入结构化路线图"
+      },
+      "visual_elements": {
+        "main_visual": "三段式问题链，不使用通用商业图标"
+      },
+      "constraints": [
+        "不把 station-specific waveform 判断写成显式主问题"
+      ]
+    },
+    {
+      "number": 3,
+      "title": "研究任务——目标位置 PGA 估计",
+      "role": "concept",
+      "approved_sample": true,
+      "intent": "清楚区分输入台站、查询目标与地点相关 PGA 输出。",
+      "key_points": [
+        "输入：可变数量台站的三分量波形、位置与有效 mask",
+        "查询：一个或多个任意目标位置，目标不必是输入台站",
+        "输出：目标位置 log PGA / PGA；PGA 不等同于事件整体震级"
+      ],
+      "required_images": [
+        {
+          "path": "../assets/task_setup_multistation.png",
+          "role": "strict input asset; multi-station task diagram",
+          "fidelity": "preserve input stations, target locations, waveform and output relationships"
+        }
+      ],
+      "layout": {
+        "composition": "左侧任务定义，右侧放大严格输入任务图，底部一句地点相关性结论"
+      },
+      "source_image_rules": "图像必须可辨认，不得重画或更改关系。",
+      "constraints": [
+        "不加入摄像头或视觉输入"
+      ]
+    },
+    {
+      "number": 4,
+      "title": "传统 GMPE 与波形驱动模型",
+      "role": "comparison",
+      "approved_sample": true,
+      "intent": "解释为什么需要从实时波形和空间关系直接估计 PGA。",
+      "key_points": [
+        "GMPE 依赖震级、距离、断层与场地参数，解释清楚且速度快",
+        "复杂路径、方向性和局部场地效应往往进入残差项",
+        "多台站波形模型希望直接学习事件演化、传播路径与目标位置关系"
+      ],
+      "layout": {
+        "composition": "左右对比：GMPE 参数链 vs 多台站波形—目标位置链；中间用受控箭头连接共同输出 PGA"
+      },
+      "visual_elements": {
+        "main_visual": "简洁技术对比图，不使用论文结果数字"
+      }
+    },
+    {
+      "number": 5,
+      "title": "TEAM——任意台站集合到概率 PGA",
+      "role": "method",
+      "approved_sample": true,
+      "intent": "仅介绍 TEAM 的关键方法，结果留到同屏对比页。",
+      "key_points": [
+        "输入任意数量、任意位置台站的原始强震波形和坐标",
+        "Transformer 将多台站信息映射到任意目标位置",
+        "输出 PGA 概率密度，并按阈值和超越概率发布预警",
+        "随机输入/目标台站与随机截断时间支持实时处理"
+      ],
+      "required_images": [
+        {
+          "path": "assets/papers/team_p4.png",
+          "role": "strict input asset; TEAM Figure 3 workflow",
+          "fidelity": "preserve the original workflow, threshold and ShakeMap information"
+        }
+      ],
+      "layout": {
+        "composition": "论文工作流占约三分之二，右侧放四条方法要点；不单列论文结论"
+      },
+      "source_image_rules": "保持论文图的标签、箭头和关系可辨认。",
+      "constraints": [
+        "不要加入 TEAM 的独立结果表"
+      ]
+    },
+    {
+      "number": 6,
+      "title": "QuakeFormer——统一 forecasting、interpolation 与 EEW",
+      "role": "method",
+      "approved_sample": true,
+      "intent": "仅介绍 QuakeFormer 的统一建模方式，结果留到同屏对比页。",
+      "key_points": [
+        "用 masked Transformer 统一表达预测、插值和早期预警",
+        "通过任务相关 mask 控制站点强度、波形与事件信息的可见性",
+        "同时编码绝对位置和基于 RoPE 的相对空间关系",
+        "forecasting/interpolation 预训练后再微调 EEW"
+      ],
+      "required_images": [
+        {
+          "path": "assets/papers/quakeformer_p7.png",
+          "role": "strict input asset; QuakeFormer Figure 2 framework",
+          "fidelity": "preserve the three tasks, token masks and self-attention masks"
+        }
+      ],
+      "layout": {
+        "composition": "方法图居中偏左，右侧为四条机制说明；与上一页形成镜像布局"
+      },
+      "source_image_rules": "保持论文图中的任务名称、mask 和连接关系可辨认。",
+      "constraints": [
+        "不要加入 QuakeFormer 的独立结论页内容"
+      ]
+    },
+    {
+      "number": 7,
+      "title": "数据集与评估口径",
+      "role": "data overview",
+      "approved_sample": true,
+      "intent": "建立 full-data 与 512-event 两种口径，防止后续数字混用。",
+      "key_points": [
+        "日本 K-NET / KiK-net：1,001 个事件、52,102 条台站记录",
+        "原始划分：699 train、101 validation、201 test 事件",
+        "最新机制实验：512-event controlled setting，validation 独立评估",
+        "指标：log PGA 空间的 MAE、RMSE、Corr、R²、slope 与 bias"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/data_split_summary.png",
+          "role": "strict input asset; dataset split summary",
+          "fidelity": "preserve all counts, labels and categories"
+        },
+        {
+          "path": "../../pga_academic_report_assets_current/data_event_station_map.png",
+          "role": "strict input asset; Japan event and station map",
+          "fidelity": "preserve map, event and station distribution"
+        }
+      ],
+      "layout": {
+        "composition": "左侧数据统计，右侧日本分布图，底部用双色口径条区分 full-data 与 512-event"
+      }
+    },
+    {
+      "number": 8,
+      "title": "当前模型结构",
+      "role": "architecture",
+      "approved_sample": true,
+      "intent": "展示从单台站波形编码到目标位置查询的完整数据流。",
+      "key_points": [
+        "DiTing encoder 提取单台站波形 token",
+        "station adapter 与 TEAM-style Transformer 建模台站集合",
+        "target-wise cross-attention 让每个目标位置独立查询 station tokens",
+        "最新分支加入 DPK eventness prior 与 temporal residual"
+      ],
+      "required_images": [
+        {
+          "path": "../assets/architecture_implementation_detail.png",
+          "role": "strict input asset; current model architecture",
+          "fidelity": "preserve module names, arrows, inputs and outputs"
+        }
+      ],
+      "layout": {
+        "composition": "架构图作为主体，下方用四个短标签对应关键模块"
+      },
+      "source_image_rules": "不得改写模块名称或连接方向。"
+    },
+    {
+      "number": 9,
+      "title": "训练策略与三类实验口径",
+      "role": "process",
+      "approved_sample": true,
+      "intent": "说明系统成绩、容量实验和诊断实验各自回答什么。",
+      "key_points": [
+        "single-station pretrain：mag / epidist / PGA 多任务",
+        "full-data：回答完整训练集上的最终泛化水平",
+        "512-event overfit：先检验结构能否拟合，再观察 train–validation gap",
+        "时间、台站数和 strong-PGA 分桶定位输入与样本瓶颈",
+        "station-roll 只作为补充鲁棒性检查"
+      ],
+      "layout": {
+        "composition": "上方训练链路，下方三类实验卡片，使用不同但低饱和的边框色"
+      }
+    },
+    {
+      "number": 10,
+      "title": "rt44–rt51 最新实验矩阵",
+      "role": "comparison matrix",
+      "approved_sample": true,
+      "intent": "快速说明各 run 的唯一机制差异和可比较范围。",
+      "key_points": [
+        "rt44–rt47：DPK event temporal residual，scale 0 / 2 / 4 / 8",
+        "rt48：station-pool + temporal residual",
+        "rt49：layerwise temporal readout",
+        "rt50：independent residual / uniform weighting control",
+        "rt51：station-roll training control",
+        "rt47 normal eval 不完整，不进入完整横向结果表"
+      ],
+      "layout": {
+        "composition": "紧凑六行矩阵：run、核心变化、实验角色、结果可用性；rt47 用灰色缺失标记"
+      },
+      "constraints": [
+        "不把 rt47 的局部结果补造成完整结果"
+      ]
+    },
+    {
+      "number": 11,
+      "title": "历史 full-data 结果——先建立系统级锚点",
+      "role": "data evidence",
+      "approved_sample": true,
+      "intent": "用 train/validation 配对结果建立完整数据训练的经验锚点。",
+      "key_points": [
+        "Train：MAE 0.2234，RMSE 0.3073，Corr 0.8750，R² 0.7633，slope 0.7634",
+        "Validation：MAE 0.2966，RMSE 0.3875，Corr 0.7278，R² 0.5221，slope 0.5931",
+        "MAE gap 0.0732；R² gap 0.2413",
+        "validation slope 低于 1，强 PGA 动态范围仍被压缩"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/main_pga_metrics.png",
+          "role": "strict input asset; historical full-data metric chart",
+          "fidelity": "preserve metric names, values and train/validation distinction"
+        },
+        {
+          "path": "../../pga_academic_report_assets_current/scatter_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+          "role": "strict input asset; historical validation predicted-vs-true scatter",
+          "fidelity": "preserve points, axes, labels and reference line"
+        }
+      ],
+      "layout": {
+        "composition": "左侧 train/validation 指标表，右侧散点证据，下方给出泛化 gap 和 slope 结论"
+      }
+    },
+    {
+      "number": 12,
+      "title": "512-event overfit：拟合能力强，泛化尚未同步",
+      "role": "data evidence",
+      "intent": "以批准样稿同时展示七个 run 的 train 与 validation。",
+      "key_points": [
+        "train MAE 0.049–0.076，R² 0.938–0.959",
+        "validation MAE 0.297–0.308，R² 0.479–0.512",
+        "MAE gap 0.230–0.259",
+        "rt48 validation MAE 0.2968、R² 0.5122"
+      ],
+      "layout": {
+        "composition": "使用已经批准的样稿，不重新生成"
+      },
+      "sample_approved": true,
+      "constraints": [
+        "复用 origin_image/slide_12.png",
+        "不要生成 rt47"
+      ]
+    },
+    {
+      "number": 13,
+      "title": "若使用全部数据训练，可以期待什么",
+      "role": "expectation framework",
+      "approved_sample": true,
+      "intent": "用容量上限、经验锚点和验收线约束预期，避免无依据承诺。",
+      "key_points": [
+        "容量证据：512-event train MAE 0.049–0.076、R² 0.938–0.959",
+        "历史锚点：full-data validation MAE 0.2966、R² 0.5221、Corr 0.7278、slope 0.5931",
+        "实验规划区间：MAE 0.28–0.30、R² 0.52–0.60；这是预期而非观测结果",
+        "最低验收线：MAE < 0.2966、R² > 0.5221、slope > 0.5931",
+        "还必须缩小 gap，并改善 strong-PGA 与 unseen-station"
+      ],
+      "layout": {
+        "composition": "横向三层标尺：容量上限、历史锚点、预期与验收区间；底部风险注释"
+      },
+      "constraints": [
+        "醒目标注“预期区间，非观测结果”",
+        "不把 train capacity 当作 validation 预测"
+      ]
+    },
+    {
+      "number": 14,
+      "title": "实时输入窗口——多看几秒有多大收益",
+      "role": "timeline data evidence",
+      "approved_sample": true,
+      "intent": "说明性能随输入波形增长而改善，并在较长时间后趋于饱和。",
+      "key_points": [
+        "1 s：validation MAE 约 0.38–0.40",
+        "5 s：多数模型降至约 0.28–0.30",
+        "40 s：rt46 0.2586，rt48 0.2589，通常接近最优",
+        "90 s 未稳定继续改善，存在收益饱和"
+      ],
+      "layout": {
+        "composition": "主视觉为 1–90 s 多模型 MAE 趋势图；右侧三条时间结论；40 s 区域用淡珊瑚标记"
+      },
+      "constraints": [
+        "只给已提供的数值加精确标签，其余曲线不制造伪精确",
+        "强调精度与预警时效的折中"
+      ]
+    },
+    {
+      "number": 15,
+      "title": "输入台站数量——更多观测是否更好",
+      "role": "binned data evidence",
+      "approved_sample": true,
+      "intent": "呈现单台站到多台站的收益与 16+ 台站后的非单调性。",
+      "key_points": [
+        "单台站 validation MAE 约 0.45–0.57",
+        "6–10 台站后误差明显下降",
+        "11–15 台站多数模型最好；rt49 为 0.2274",
+        "16+ 台站不再单调改善，空间分布与事件难度同样重要"
+      ],
+      "layout": {
+        "composition": "横轴为台站数量分桶的趋势图，右侧用三个低饱和证据卡解释递减收益"
+      },
+      "constraints": [
+        "不把更多台站表述为必然单调更好"
+      ]
+    },
+    {
+      "number": 16,
+      "title": "案例 1——M4.7 事件的空间残差",
+      "role": "event-level spatial evidence",
+      "intent": "用 validation event 51 的六幅空间残差图展示台站增加时总体持续受益、局部略有波动。",
+      "key_points": [
+        "validation event 51，M4.7；同一事件和 15 个目标，仅改变输入台站数量",
+        "requested / actual stations：3、5、8、12、16、25",
+        "更多台站主要缓解负残差幅度，东侧空间覆盖逐步扩展",
+        "这是一个总体持续改善、局部轻微波动的事件级案例"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/case_station_maps_1_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+          "role": "strict input asset; six spatial residual maps for validation event 51",
+          "fidelity": "preserve all six panels, requested and actual station counts, input stations, event star, targets, maps, color scale, labels and numeric values exactly"
+        }
+      ],
+      "layout": {
+        "composition": "标题下方让严格输入六面板地图占约 78% 画面；右侧或底部只放三条短注释，不遮挡原图"
+      },
+      "source_image_rules": "原图必须完整、清晰、等比例放置，不重绘、不裁掉六个面板或色条，不修改任何数值。",
+      "constraints": [
+        "明确这是 event-level case，不把单一事件当作总体统计",
+        "不添加原图没有的数据"
+      ]
+    },
+    {
+      "number": 17,
+      "title": "案例 1——台站增加带来持续收益",
+      "role": "event-level quantitative evidence",
+      "intent": "量化 event 51 随输入台站数增加的 MAE、bias 和空间异质性。",
+      "key_points": [
+        "MAE：0.3498 / 0.2863 / 0.2937 / 0.2344 / 0.1952 / 0.1636",
+        "3→25 台下降 0.1862，约 53%；5→8 台轻微反弹",
+        "bias 从 -0.2102 缓解到 -0.1308，低估减弱但未消失",
+        "同一事件不同目标仍有显著 residual–distance 空间异质性"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/case_station_sweep_1_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+          "role": "strict input asset; station-count sweep and residual-distance panels for validation event 51",
+          "fidelity": "preserve the line plot, all residual-versus-distance panels, axes, legend, labels and values exactly"
+        }
+      ],
+      "layout": {
+        "composition": "严格输入图占约 72%；右侧纵向结论卡突出 3→25 台 MAE -0.1862（约 53%）和 bias 变化"
+      },
+      "source_image_rules": "原图必须完整、清晰、等比例放置，不重绘、不裁掉折线或散点，不修改任何数值。",
+      "constraints": [
+        "与上一页视觉连续，但不得重复地图",
+        "明确单例用于解释总体趋势，不替代 Slide 15 分桶统计"
+      ]
+    },
+    {
+      "number": 18,
+      "title": "案例 2——M5.4 事件的空间残差",
+      "role": "event-level spatial evidence",
+      "intent": "用 validation event 94 展示少量台站带来大幅收益、12 台后不再单调改善。",
+      "key_points": [
+        "validation event 94，M5.4；保持事件和目标集合不变",
+        "3→8 台时空间残差幅度明显收敛",
+        "12–16 台后格局趋稳；25 台时部分远目标再次出现更强负残差",
+        "这一事件体现早期收益大、后期不单调"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/case_station_maps_2_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+          "role": "strict input asset; six spatial residual maps for validation event 94",
+          "fidelity": "preserve all six panels, requested and actual station counts, input stations, event star, targets, maps, color scale, labels and numeric values exactly"
+        }
+      ],
+      "layout": {
+        "composition": "标题下方让严格输入六面板地图占约 78% 画面；右侧或底部只放三条短注释，不遮挡原图"
+      },
+      "source_image_rules": "原图必须完整、清晰、等比例放置，不重绘、不裁掉六个面板或色条，不修改任何数值。",
+      "constraints": [
+        "明确这是 event-level case",
+        "不添加原图没有的数据"
+      ]
+    },
+    {
+      "number": 19,
+      "title": "案例 2——主要收益集中在 3→12 台",
+      "role": "event-level quantitative evidence",
+      "intent": "量化 event 94 的主要收益区间、bias 转换和 12 台后的平台。",
+      "key_points": [
+        "MAE：0.6759 / 0.3888 / 0.2287 / 0.1603 / 0.1640 / 0.1969",
+        "3→12 台下降 0.5157，约 76%；12 台后进入平台并在 25 台回升",
+        "bias 从 +0.6196 降至 +0.0156，16 / 25 台变为轻微负偏",
+        "更多台站有效，但并非越多越好"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/case_station_sweep_2_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+          "role": "strict input asset; station-count sweep and residual-distance panels for validation event 94",
+          "fidelity": "preserve the line plot, all residual-versus-distance panels, axes, legend, labels and values exactly"
+        }
+      ],
+      "layout": {
+        "composition": "严格输入图占约 72%；右侧纵向结论卡突出 3→12 台 MAE -0.5157（约 76%）和 12 台后平台"
+      },
+      "source_image_rules": "原图必须完整、清晰、等比例放置，不重绘、不裁掉折线或散点，不修改任何数值。",
+      "constraints": [
+        "使用精确值 0.6759 / 0.3888 / 0.2287 / 0.1603 / 0.1640 / 0.1969",
+        "不得把 12 台最优外推为所有事件的固定规律"
+      ]
+    },
+    {
+      "number": 20,
+      "title": "案例 3——M5.0 事件的空间残差",
+      "role": "event-level spatial evidence",
+      "intent": "用 validation event 91 展示台站位置和事件—目标几何可比数量本身更关键。",
+      "key_points": [
+        "validation event 91，M5.0；输入台站依次为 3、5、8、12、16、25",
+        "输入台站主要集中在事件西北方向，空间覆盖有明显方向性",
+        "目标残差正负并存，新增台站没有案例 2 那样快速收敛",
+        "台站位置与事件—目标几何可比数量本身更重要"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/case_station_maps_3_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+          "role": "strict input asset; six spatial residual maps for validation event 91",
+          "fidelity": "preserve all six panels, requested and actual station counts, input stations, event star, targets, maps, color scale, labels and numeric values exactly"
+        }
+      ],
+      "layout": {
+        "composition": "标题下方让严格输入六面板地图占约 78% 画面；右侧或底部只放三条短注释，不遮挡原图"
+      },
+      "source_image_rules": "原图必须完整、清晰、等比例放置，不重绘、不裁掉六个面板或色条，不修改任何数值。",
+      "constraints": [
+        "明确这是 event-level case",
+        "不添加原图没有的数据"
+      ]
+    },
+    {
+      "number": 21,
+      "title": "案例 3——非单调但最终略有改善",
+      "role": "event-level quantitative evidence",
+      "intent": "量化 event 91 的非单调响应与有限最终收益。",
+      "key_points": [
+        "MAE：0.2654 / 0.3091 / 0.2782 / 0.2282 / 0.2329 / 0.2160",
+        "3→5 台反而变差；25 台相对 3 台下降 0.0495，约 19%",
+        "bias 在 -0.0164 至 -0.1138 之间波动，低估未稳定消除",
+        "三个案例共同说明平均收益真实存在，但事件级响应高度异质"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/case_station_sweep_3_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+          "role": "strict input asset; station-count sweep and residual-distance panels for validation event 91",
+          "fidelity": "preserve the line plot, all residual-versus-distance panels, axes, legend, labels and values exactly"
+        }
+      ],
+      "layout": {
+        "composition": "严格输入图占约 72%；右侧纵向结论卡突出非单调、最终 MAE -0.0495（约 19%）和 bias 波动"
+      },
+      "source_image_rules": "原图必须完整、清晰、等比例放置，不重绘、不裁掉折线或散点，不修改任何数值。",
+      "constraints": [
+        "不得将 3→5 台退化隐藏或改写",
+        "保持事件级案例与总体分桶的区别"
+      ]
+    },
+    {
+      "number": 22,
+      "title": "震中距变化——中距离最好，远距离退化",
+      "role": "distance-binned evidence",
+      "intent": "展示 historical full-data best validation 随震中距的 U 形误差与距离相关 bias。",
+      "key_points": [
+        "0–50 / 50–100 / 100–200 / 200–400 / 400–800 km 的 MAE 为 0.3258 / 0.2929 / 0.2670 / 0.3067 / 0.4633",
+        "100–200 km 最好：n=475，MAE 0.2670，Corr 0.7359",
+        "bias 从近距离 -0.1082 转为远距离 +0.3432",
+        "400–800 km 仅 n=13，退化方向清楚但不宜过度外推"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/val_mae_by_epicentral_distance.png",
+          "role": "strict input asset; validation MAE by epicentral-distance bin",
+          "fidelity": "preserve all bins, curve, axes, labels and numeric relationships exactly"
+        }
+      ],
+      "local_context": {
+        "distance_bins": [
+          {"distance_km": "0–50", "n": 415, "mae": 0.3258, "bias": -0.1082, "corr": 0.6538},
+          {"distance_km": "50–100", "n": 377, "mae": 0.2929, "bias": -0.0028, "corr": 0.7042},
+          {"distance_km": "100–200", "n": 475, "mae": 0.2670, "bias": 0.0578, "corr": 0.7359},
+          {"distance_km": "200–400", "n": 113, "mae": 0.3067, "bias": 0.1420, "corr": 0.6700},
+          {"distance_km": "400–800", "n": 13, "mae": 0.4633, "bias": 0.3432, "corr": 0.4894}
+        ]
+      },
+      "layout": {
+        "composition": "左侧严格输入距离分桶图占约 58%；右侧为五行紧凑表，突出 100–200 km 最优和 400–800 km 小样本；底部一句 U 形结论"
+      },
+      "source_image_rules": "原图必须完整、清晰、等比例放置，不重绘或修改数值。",
+      "constraints": [
+        "所有数字保留四位小数",
+        "400–800 km 必须同时标出 n=13 的小样本提醒"
+      ]
+    },
+    {
+      "number": 23,
+      "title": "空间与强弱 PGA 误差结构",
+      "role": "diagnostic evidence",
+      "approved_sample": true,
+      "intent": "把总体误差拆成强弱 PGA、时间与目标类型的结构性问题。",
+      "key_points": [
+        "弱 PGA 存在正偏，强 PGA 仍系统性低估",
+        "rt48 strong subset：MAE 0.3359、bias -0.2778",
+        "未触发目标、较长 lead time 和早期 1–3 s 更困难",
+        "稀有强震样本与动态范围压缩是跨模型共同瓶颈"
+      ],
+      "required_images": [
+        {
+          "path": "../../pga_academic_report_assets_current/pga_strength_bins_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+          "role": "strict input asset; historical PGA strength-bin chart",
+          "fidelity": "preserve bins, axes, labels, values and trend"
+        }
+      ],
+      "layout": {
+        "composition": "复用已确认的原 Slide 18 图像，现移动到 Slide 23"
+      }
+    },
+    {
+      "number": 24,
+      "title": "台站对应关系——验证集影响稳定但较小",
+      "role": "robustness comparison",
+      "approved_sample": true,
+      "intent": "用完整 mixed-source 与 KNET-only station-roll 结果，区分训练集依赖和跨事件验证影响。",
+      "key_points": [
+        "事件内滚动打乱 waveform–station 对应，其余评估流程不变",
+        "mixed-source 7-run：train MAE +0.1114，validation MAE +0.0122",
+        "KNET-only 8-run：train MAE +0.0988，validation MAE +0.0115；8/8 validation 变差",
+        "KNET-only validation R² 平均 -0.0433；strong-PGA bias -0.2677 → -0.3049",
+        "rt51 station-roll training control：validation MAE +0.0150、R² -0.0573"
+      ],
+      "local_context": {
+        "test_definition": "Within each event, roll waveform-to-station correspondence while keeping all other evaluation steps unchanged.",
+        "mixed_source_mean": {"run_count": 7, "train_delta_mae": 0.1114, "validation_delta_mae": 0.0122},
+        "knet_only_mean": {"run_count": 8, "train_delta_mae": 0.0988, "validation_delta_mae": 0.0115, "validation_delta_r2": -0.0433, "normal_strong_bias": -0.2677, "roll_strong_bias": -0.3049},
+        "rt51_control": {"validation_delta_mae": 0.0150, "validation_delta_r2": -0.0573}
+      },
+      "layout": {
+        "composition": "复用已确认且已删除底部“不作为报告主线”文字的原 Slide 19 图像，现移动到 Slide 24"
+      },
+      "constraints": [
+        "不得出现“不作为报告主线”或同义底部横幅",
+        "所有 delta 明确写为 roll minus normal，正值代表 MAE 变差"
+      ]
+    },
+    {
+      "number": 25,
+      "title": "文献与本项目的数值对比——显式区分 train / held-out",
+      "role": "literature comparison",
+      "intent": "补齐本项目 rt48 的 train 与 validation，并明确 TEAM test 和 QuakeFormer seen/unseen 的真实口径。",
+      "key_points": [
+        "TEAM 论文只公开日本 test 阈值结果，没有 train 行",
+        "本项目 rt48@20 s 同时列 train / validation：train 仅表示拟合容量",
+        "QuakeFormer seen / unseen 是两种 held-out station 条件，不是 train / validation",
+        "跨论文数字只用于量级和差距定位，不构成排行榜"
+      ],
+      "local_context": {
+        "team_table": [
+          {"threshold": "1%g", "TEAM_test_F1": 0.730, "TEAM_test_PR_AUC": 0.820, "ours_train_F1": 0.965, "ours_train_PR_AUC": 0.995, "ours_validation_F1": 0.620, "ours_validation_PR_AUC": 0.642, "train_positive_count": 543, "validation_positive_count": 125},
+          {"threshold": "2%g", "TEAM_test_F1": 0.690, "TEAM_test_PR_AUC": 0.760, "ours_train_F1": 0.952, "ours_train_PR_AUC": 0.985, "ours_validation_F1": 0.545, "ours_validation_PR_AUC": 0.536, "train_positive_count": 196, "validation_positive_count": 55},
+          {"threshold": "5%g", "TEAM_test_F1": 0.630, "TEAM_test_PR_AUC": 0.680, "ours_train_F1": 0.932, "ours_train_PR_AUC": 0.985, "ours_validation_F1": 0.438, "ours_validation_PR_AUC": 0.372, "train_positive_count": 49, "validation_positive_count": 13}
+        ],
+        "team_protocol": "本项目使用固定 20 s 点预测；F1 cutoff 在 train / validation 各自优化，PR-AUC 为阈值无关排序指标；train 只表征容量。",
+        "quakeformer_table": [
+          {"split": "QuakeFormer forecasting, seen held-out stations", "R2": "≈0.917", "sigma_ln": 0.57},
+          {"split": "QuakeFormer forecasting, unseen held-out stations", "R2": "≈0.837", "sigma_ln": 0.75},
+          {"split": "ours historical full-data validation", "R2": 0.522, "sigma_ln": 0.892},
+          {"split": "ours rt48 validation", "R2": 0.512, "sigma_ln": 0.898},
+          {"split": "ours rt48 train; capacity only", "R2": 0.955, "sigma_ln": 0.267}
+        ],
+        "caveat": "TEAM 是概率预警随时间评估，本项目是固定 20 s 点预测；QuakeFormer 数据约 20 万事件、400 万条记录且划分不同。数字用于量级和差距定位，不构成排行榜。"
+      },
+      "layout": {
+        "composition": "左右双栏：左侧 TEAM 阈值表含 TEAM test、本项目 train、本项目 validation；右侧 QuakeFormer 回归量级表；底部口径警示"
+      },
+      "constraints": [
+        "F1 和 PR-AUC 每格以 F1 / PR-AUC 成对显示，均保留三位小数",
+        "TEAM 必须标为 test；本项目必须标为 train 和 validation",
+        "QuakeFormer seen / unseen 必须写成 held-out station 条件",
+        "σ 统一为自然对数单位，QuakeFormer R² 标为读图近似",
+        "不把本项目 train 当作 held-out 文献对标"
+      ]
+    },
+    {
+      "number": 26,
+      "title": "KNET-only 512-event overfit——train 与 validation 成对",
+      "role": "capacity and generalization table",
+      "intent": "逐 run 同屏列出 rt44–rt51 的 train 和 validation MAE、R²、slope，直接展示容量—泛化差距。",
+      "key_points": [
+        "8-run mean train MAE / R² / slope：0.0646 / 0.9424 / 0.9464",
+        "8-run mean validation：0.2969 / 0.4580 / 0.5452",
+        "平均 validation−train MAE gap 0.2323，单 run 约 0.210–0.251",
+        "rt48 validation MAE 最低；rt49 validation R² 最高，两者为并列候选"
+      ],
+      "local_context": {
+        "runs": [
+          {"run": "rt44", "train_mae": 0.0540, "train_r2": 0.9512, "train_slope": 0.9896, "validation_mae": 0.2976, "validation_r2": 0.4552, "validation_slope": 0.5617},
+          {"run": "rt45", "train_mae": 0.0994, "train_r2": 0.9142, "train_slope": 0.9541, "validation_mae": 0.3092, "validation_r2": 0.4264, "validation_slope": 0.5554},
+          {"run": "rt46", "train_mae": 0.0733, "train_r2": 0.9319, "train_slope": 0.9515, "validation_mae": 0.2971, "validation_r2": 0.4579, "validation_slope": 0.5471},
+          {"run": "rt47", "train_mae": 0.0490, "train_r2": 0.9535, "train_slope": 0.9691, "validation_mae": 0.2998, "validation_r2": 0.4511, "validation_slope": 0.5487},
+          {"run": "rt48", "train_mae": 0.0498, "train_r2": 0.9549, "train_slope": 0.9839, "validation_mae": 0.2877, "validation_r2": 0.4817, "validation_slope": 0.5723},
+          {"run": "rt49", "train_mae": 0.0552, "train_r2": 0.9588, "train_slope": 0.9336, "validation_mae": 0.2881, "validation_r2": 0.4873, "validation_slope": 0.5362},
+          {"run": "rt50", "train_mae": 0.0618, "train_r2": 0.9424, "train_slope": 0.9081, "validation_mae": 0.2991, "validation_r2": 0.4502, "validation_slope": 0.5208},
+          {"run": "rt51", "train_mae": 0.0742, "train_r2": 0.9324, "train_slope": 0.8809, "validation_mae": 0.2968, "validation_r2": 0.4540, "validation_slope": 0.5192}
+        ],
+        "eight_run_mean": {"train_mae": 0.0646, "train_r2": 0.9424, "train_slope": 0.9464, "validation_mae": 0.2969, "validation_r2": 0.4580, "validation_slope": 0.5452, "mae_gap": 0.2323}
+      },
+      "layout": {
+        "composition": "主视觉为 8 行 × 7 列紧凑表，train 三列用低饱和蓝、validation 三列用低饱和青；底部放 mean 与 gap 结论卡"
+      },
+      "constraints": [
+        "所有数值严格取 local_context 并保留四位小数",
+        "必须完整显示 8 个 run 的 train 与 validation 三项指标",
+        "不得在此页加入共同目标配对、station-roll 或 Brier，以保证表格可读",
+        "rt48 与 rt49 标为并列候选，不宣称显著排名"
+      ]
+    },
+    {
+      "number": 27,
+      "title": "KNET-only 受控比较——共同目标与校准",
+      "role": "controlled comparison and calibration",
+      "intent": "把非配对表面改善、共同目标配对结论、strong-PGA 和校准缺口分开展示。",
+      "key_points": [
+        "非配对 7-run：mixed-source 0.3034 → KNET-only 0.2965，但 target 4512 vs 4082",
+        "2716 个共同目标：KNET−mixed MAE +0.0001，event-bootstrap 95% CI [-0.0124, +0.0124]",
+        "KNET-only strong-PGA bias 均值 -0.2677",
+        "1σ / 2σ coverage 13.8% / 27.0%；Brier 0.2265，高于常数基线 0.2112"
+      ],
+      "local_context": {
+        "unpaired_comparison": {"run_count": 7, "mixed_source_mae": 0.3034, "knet_only_mae": 0.2965, "apparent_delta": -0.0069, "runs_improved": "6/7", "mixed_target_count": 4512, "knet_target_count": 4082},
+        "common_target_comparison": {"target_count": 2716, "knet_minus_mixed_mae": 0.0001, "event_bootstrap_ci95": [-0.0124, 0.0124], "interpretation": "no evidence that KNET-only training itself improves held-out generalization"},
+        "strong_bias_mean": -0.2677,
+        "calibration": {"coverage_1sigma_mean": 0.138, "coverage_2sigma_mean": 0.270, "brier_mean": 0.2265, "prevalence_baseline_brier": 0.2112, "best_run_note": "Only rt49, Brier 0.2049, is slightly better than the constant baseline."}
+      },
+      "layout": {
+        "composition": "左侧用 4512 / 4082 → 2716 的漏斗式流程区分非配对与共同目标；右上为 strong-bias 卡；右下为 coverage 与 Brier 校准卡"
+      },
+      "constraints": [
+        "醒目区分非配对 -0.0069 与共同目标 +0.0001",
+        "结论写为“无证据证明 KNET-only 训练改善泛化”",
+        "不在 PPT 中展开解释常数基线的定义",
+        "不得把 rt49 的单点 Brier 夸大为总体校准已解决"
+      ]
+    },
+    {
+      "number": 28,
+      "title": "阶段结论与下一步",
+      "role": "summary",
+      "intent": "用总体、三个案例、距离效应、容量—泛化和受控比较共同收束报告。",
+      "key_points": [
+        "validation MAE 约 0.30；更多台站和更长波形总体有效",
+        "三个事件分别呈持续改善、12 台后反弹、非单调小幅改善；空间覆盖比数量本身更关键",
+        "100–200 km MAE 最低 0.2670；400–800 km 为 0.4633，但 n=13",
+        "512-event train R² 0.94–0.96，而 KNET validation R² 均值 0.4580：主要矛盾仍是 held-out gap",
+        "共同目标差 +0.0001，尚无证据证明 KNET-only 筛选改善泛化",
+        "station-roll 平均 +0.0115；strong-PGA 负偏与校准仍待解决"
+      ],
+      "local_context": {
+        "acceptance_line": {"validation_mae_below": 0.2966, "validation_r2_above": 0.5221, "validation_slope_above": 0.5931},
+        "priority_actions": [
+          "固定共同 event/time/target coordinate 的 mixed-source × KNET-only 2×2 controlled design",
+          "rt48 / rt49 / rt46 full-data 复验",
+          "多个 station-roll mismatch seeds 与 unseen-station split",
+          "重校准预测方差和阈值概率，并加强 strong-PGA 训练"
+        ]
+      },
+      "layout": {
+        "composition": "上半部四张结论卡：输入收益与案例、距离效应、容量与泛化、KNET 配对与校准；下半部为四步行动路线和 full-data 验收线"
+      },
+      "constraints": [
+        "必须显示三个案例的异质性与远距离 n=13",
+        "必须显示共同目标 +0.0001 与 roll +0.0115",
+        "验收线 MAE/R²/slope 三项同时展示",
+        "避免写成 KNET-only 已经改善泛化"
+      ]
+    },
+    {
+      "number": 29,
+      "title": "参考文献",
+      "role": "references",
+      "approved_sample": true,
+      "intent": "给出本报告涉及的核心论文与数据网络文献。",
+      "key_points": [
+        "Münchmeyer, J. et al. (2021). The Transformer Earthquake Alerting Model. GJI / arXiv:2009.06316.",
+        "Feng, Y., Zhu, W. & Lu, X. (2024). QuakeFormer. arXiv:2412.00815.",
+        "Boore, D. M. & Atkinson, G. M. (2008). Ground-motion prediction equations for PGA, PGV and PSA.",
+        "Aoi, S., Kunugi, T. & Fujiwara, H. (2004). K-NET and KiK-net."
+      ],
+      "layout": {
+        "composition": "复用已确认的原 Slide 23 参考文献图像，现移动到 Slide 29"
+      },
+      "constraints": [
+        "不添加不存在的 DOI 或期刊信息",
+        "保持文本清晰，不使用装饰性图片"
+      ]
+    }
+  ]
+}

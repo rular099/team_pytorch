@@ -14,6 +14,7 @@ import pickle
 import argparse
 import json
 import math
+import re
 import time
 import torch
 import torch.optim as optim
@@ -34,11 +35,83 @@ from dtbench.training.modeling import build_interaction_indexes, parse_hps
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def load_config_file(path):
+def _deep_merge_config(base, override):
+    """Recursively merge a small experiment override into a base config."""
+    merged = copy.deepcopy(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge_config(merged[key], value)
+        else:
+            merged[key] = copy.deepcopy(value)
+    return merged
+
+
+_CONFIG_ENV_PATTERN = re.compile(r'\$(?:[A-Za-z_][A-Za-z0-9_]*|\{[A-Za-z_][A-Za-z0-9_]*\})')
+
+
+def _expand_config_environment(value):
+    if isinstance(value, dict):
+        return {key: _expand_config_environment(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_expand_config_environment(item) for item in value]
+    if isinstance(value, str):
+        expanded = os.path.expanduser(os.path.expandvars(value))
+        unresolved = _CONFIG_ENV_PATTERN.search(expanded)
+        if unresolved:
+            raise ValueError(
+                f'Unresolved environment variable {unresolved.group(0)!r} in config value {value!r}.'
+            )
+        return expanded
+    return value
+
+
+def load_config_file(path, _stack=None):
+    """Load JSON/YAML, optional ``extends``, and environment placeholders."""
+    path = os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
+    stack = [] if _stack is None else list(_stack)
+    if path in stack:
+        raise ValueError(f'Config inheritance cycle: {stack + [path]}')
+    stack.append(path)
     with open(path, 'r') as f:
         if path.endswith(('.yml', '.yaml')):
-            return yaml.safe_load(f)
-        return json.load(f)
+            config = yaml.safe_load(f)
+        else:
+            config = json.load(f)
+    if not isinstance(config, dict):
+        raise ValueError(f'Config root must be an object: {path}')
+    parent = config.pop('extends', None)
+    if parent:
+        parent = os.path.expanduser(os.path.expandvars(str(parent)))
+        if not os.path.isabs(parent):
+            parent = os.path.join(os.path.dirname(path), parent)
+        config = _deep_merge_config(load_config_file(parent, _stack=stack), config)
+    return _expand_config_environment(config)
+
+
+def expand_partitioned_generator_params(training_params):
+    """Broadcast one generator template across all HDF5 shards."""
+    data_paths = training_params['data_path']
+    if isinstance(data_paths, str):
+        data_paths = [data_paths]
+        training_params['data_path'] = data_paths
+    generator_params = training_params.get('generator_params', [training_params.copy()])
+    if not isinstance(generator_params, list) or not generator_params:
+        raise ValueError('training_params.generator_params must be a non-empty list.')
+    if len(generator_params) == 1 and len(data_paths) > 1:
+        generator_params = [copy.deepcopy(generator_params[0]) for _ in data_paths]
+    if len(generator_params) != len(data_paths):
+        raise ValueError(
+            'generator_params/data_path length mismatch: '
+            f'{len(generator_params)} generators for {len(data_paths)} HDF5 shards.'
+        )
+    training_params['generator_params'] = generator_params
+    return generator_params
+
+
+def metadata_cache_stub_path(training_params):
+    cache_dir = training_params.get('metadata_cache_dir', '.')
+    cache_dir = os.path.abspath(os.path.expanduser(os.path.expandvars(str(cache_dir))))
+    return os.path.join(cache_dir, 'event_metadata.csv')
 
 
 def _normalize_optional_path(path):
@@ -433,7 +506,10 @@ def _checkpoint_state_dict(raw_model, training_params=None):
 
 
 def save_model_checkpoint(path, model, epoch, training_params=None, optimizer=None,
-                          scheduler=None, loss=None, extra=None):
+                          scheduler=None, loss=None, extra=None,
+                          scheduler_step_completed=None,
+                          scheduler_monitor=None,
+                          scheduler_monitor_loss=None):
     raw_model = model.module if hasattr(model, 'module') else model
     state_dict, excluded_prefixes, excluded_count, total_count = _checkpoint_state_dict(
         raw_model, training_params=training_params
@@ -456,6 +532,17 @@ def save_model_checkpoint(path, model, epoch, training_params=None, optimizer=No
         payload['optimizer_state_dict'] = optimizer.state_dict()
     if cfg['save_optimizer_state'] and scheduler is not None:
         payload['scheduler_state_dict'] = scheduler.state_dict()
+        if scheduler_step_completed is not None:
+            payload['scheduler_step_completed'] = bool(scheduler_step_completed)
+            payload['scheduler_state_timing'] = (
+                'after_epoch_step'
+                if scheduler_step_completed
+                else 'before_epoch_step'
+            )
+        if scheduler_monitor is not None:
+            payload['scheduler_monitor'] = str(scheduler_monitor)
+        if scheduler_monitor_loss is not None:
+            payload['scheduler_monitor_loss'] = float(scheduler_monitor_loss)
     if extra:
         payload.update(extra)
     torch.save(payload, path)
@@ -641,6 +728,8 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
     checkpoint_training_params = {
         'checkpoint': checkpoint_params if checkpoint_params is not None else pretrain_params.get('checkpoint', {})
     }
+    last_val_loss = None
+    last_monitor_loss = None
     try:
         for epoch in range(num_epochs):
             if is_dist and train_sampler is not None:
@@ -719,6 +808,10 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
             else:
                 val_loss = val_running_loss / max(num_val_batches, 1)
 
+            is_best = val_loss < best_val
+            if is_best:
+                best_val = val_loss
+
             if (not is_dist) or rank == 0:
                 _record_scalar(writer, scalar_history, 'single_station/train_epoch_loss', epoch_loss, epoch)
                 _record_scalar(writer, scalar_history, 'single_station/val_epoch_loss', val_loss, epoch)
@@ -732,23 +825,28 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
                     )
                 print(f'[single] Epoch [{epoch+1}/{num_epochs}], train={epoch_loss:.4f}, val={val_loss:.4f}')
 
-                if val_loss < best_val:
-                    best_val = val_loss
-                    save_model_checkpoint(
-                        best_path,
-                        raw_model,
-                        epoch=epoch + 1,
-                        training_params=checkpoint_training_params,
-                        optimizer=optimizer,
-                        scheduler=scheduler,
-                        loss=val_loss,
-                        extra={'tasks': tasks},
-                    )
-
+            monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
             if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                scheduler.step(epoch_loss if lr_monitor == 'train' else val_loss)
+                scheduler.step(monitor_loss)
             else:
                 scheduler.step()
+            last_val_loss = val_loss
+            last_monitor_loss = monitor_loss
+
+            if ((not is_dist) or rank == 0) and is_best:
+                save_model_checkpoint(
+                    best_path,
+                    raw_model,
+                    epoch=epoch + 1,
+                    training_params=checkpoint_training_params,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    loss=val_loss,
+                    extra={'tasks': tasks},
+                    scheduler_step_completed=True,
+                    scheduler_monitor=lr_monitor,
+                    scheduler_monitor_loss=monitor_loss,
+                )
             if is_dist:
                 dist.barrier()
 
@@ -760,8 +858,11 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
                 training_params=checkpoint_training_params,
                 optimizer=optimizer,
                 scheduler=scheduler,
-                loss=best_val,
-                extra={'tasks': tasks},
+                loss=last_val_loss if last_val_loss is not None else best_val,
+                extra={'tasks': tasks, 'best_val_loss': best_val},
+                scheduler_step_completed=last_monitor_loss is not None,
+                scheduler_monitor=lr_monitor,
+                scheduler_monitor_loss=last_monitor_loss,
             )
     finally:
         if (not is_dist) or rank == 0:
@@ -1778,6 +1879,22 @@ def maybe_dump_model_batch(input_dump_config, split_name, epoch_idx, batch_idx, 
     torch.save(payload, path)
 
 
+def refresh_training_dataset_epoch(dataset, epoch):
+    """Regenerate deterministic per-epoch sampling for plain or joint datasets."""
+    children = getattr(dataset, 'generators', None)
+    targets = list(children) if children is not None else [dataset]
+    for target in targets:
+        if hasattr(target, '_realtime_epoch'):
+            target._realtime_epoch = int(epoch)
+        on_epoch_end = getattr(target, 'on_epoch_end', None)
+        if callable(on_epoch_end):
+            on_epoch_end()
+    if children is not None:
+        on_epoch_end = getattr(dataset, 'on_epoch_end', None)
+        if callable(on_epoch_end):
+            on_epoch_end()
+
+
 def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epochs, clipnorm=None, is_dist=False, rank=0, save_name=None,
                 res_comps=None, res_weight=None, post_train_sanity=False, epoch_sanity=False, train_sampler=None, lr_monitor='val',
                 input_dump_config=None, loss_type='mdn', huber_delta=1.0, checkpoint_params=None,
@@ -1812,6 +1929,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
     last_path = os.path.join(training_params['weight_path'], f'{save_name}_last.pth')
     try:
         for epoch in range(start_epoch, num_epochs):
+            refresh_training_dataset_epoch(train_loader.dataset, epoch)
             if is_dist and train_sampler is not None:
                 train_sampler.set_epoch(epoch)
             model.train()
@@ -2116,12 +2234,25 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             else:
                 val_loss = val_running_loss / max(num_val_batches, 1)
 
+            is_best = val_loss < best_val
+            if is_best:
+                best_val = val_loss
+
             if (not is_dist) or (is_dist and (rank == 0)):
                 _record_scalar(writer, scalar_history, 'val/epoch_loss', val_loss, epoch)
                 print(f'Validation Loss: {val_loss:.4f}')
 
-                if val_loss < best_val:
-                    best_val = val_loss
+            monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(monitor_loss)
+            else:
+                scheduler.step()
+
+            # Checkpoints must contain the scheduler state *after* consuming
+            # this epoch's monitor value.  Historical checkpoints were saved
+            # before this step and are repaired once by load_checkpoint().
+            if (not is_dist) or (is_dist and (rank == 0)):
+                if is_best:
                     save_model_checkpoint(
                         best_path,
                         eval_model,
@@ -2130,6 +2261,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         optimizer=optimizer,
                         scheduler=scheduler,
                         loss=val_loss,
+                        scheduler_step_completed=True,
+                        scheduler_monitor=lr_monitor,
+                        scheduler_monitor_loss=monitor_loss,
                     )
                 save_model_checkpoint(
                     last_path,
@@ -2139,12 +2273,10 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     optimizer=optimizer,
                     scheduler=scheduler,
                     loss=val_loss,
+                    scheduler_step_completed=True,
+                    scheduler_monitor=lr_monitor,
+                    scheduler_monitor_loss=monitor_loss,
                 )
-            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
-                scheduler.step(monitor_loss)
-            else:
-                scheduler.step()
             if is_dist:
                 dist.barrier()
             if epoch_sanity and ((not is_dist) or (is_dist and (rank == 0))):
@@ -2169,7 +2301,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 if rank == 0:
                     print(f'[WARN] final distributed barrier failed during cleanup: {exc}')
 
-def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dist=False, rank=0):
+def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device,
+                    is_dist=False, rank=0, lr_monitor='val'):
     checkpoint = None
 
     if rank == 0:
@@ -2195,11 +2328,45 @@ def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device, is_dis
     if optimizer and 'optimizer_state_dict' in checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    if scheduler and 'scheduler_state_dict' in checkpoint:
+    scheduler_state_loaded = scheduler is not None and 'scheduler_state_dict' in checkpoint
+    if scheduler_state_loaded:
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
     start_epoch = checkpoint.get('epoch', 0)
     val_loss = checkpoint.get('val_loss', checkpoint.get('loss', None))
+
+    # Until scheduler timing metadata was added, full-model checkpoints were
+    # written immediately before scheduler.step().  Replaying the missing
+    # ReduceLROnPlateau observation makes an old last/best checkpoint resume at
+    # exactly the state it would have had without interruption.  New marked
+    # checkpoints skip this branch, preventing a double step.
+    scheduler_step_completed = checkpoint.get('scheduler_step_completed', None)
+    if (
+        scheduler_state_loaded
+        and isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau)
+        and scheduler_step_completed is not True
+    ):
+        monitor_name = str(checkpoint.get('scheduler_monitor', lr_monitor))
+        monitor_loss = checkpoint.get('scheduler_monitor_loss', None)
+        if monitor_loss is None and monitor_name == 'val':
+            monitor_loss = val_loss
+        try:
+            monitor_loss = float(monitor_loss)
+        except (TypeError, ValueError):
+            monitor_loss = None
+        if monitor_loss is not None and math.isfinite(monitor_loss):
+            scheduler.step(monitor_loss)
+            if rank == 0:
+                print(
+                    '[resume] replayed legacy missing ReduceLROnPlateau step: '
+                    f'monitor={monitor_name}, loss={monitor_loss:.8g}'
+                )
+        elif rank == 0:
+            print(
+                '[resume][WARN] legacy scheduler checkpoint predates the '
+                'post-step marker, but its monitor loss is unavailable; '
+                'scheduler state was loaded without replay.'
+            )
 
     return model, optimizer, scheduler, start_epoch, val_loss
 
@@ -2476,6 +2643,12 @@ if __name__ == '__main__':
     parser.add_argument('--skip_single_station_pretrain', action='store_true')
     parser.add_argument('--single_station_only', action='store_true')
     parser.add_argument(
+        '--epochs_full_model',
+        type=int,
+        default=None,
+        help='Override training_params.epochs_full_model (the total epoch target, including resumed epochs).',
+    )
+    parser.add_argument(
         '--resume_full_model',
         nargs='?',
         const='auto',
@@ -2489,6 +2662,10 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
     config = load_config_file(args.config)
+    if args.epochs_full_model is not None:
+        if args.epochs_full_model <= 0:
+            raise ValueError('--epochs_full_model must be positive.')
+        config['training_params']['epochs_full_model'] = int(args.epochs_full_model)
     set_seed(config.get('seed', 42))
 
     is_dist, rank, world_size, local_rank = util.setup_distributed()
@@ -2509,7 +2686,7 @@ if __name__ == '__main__':
     args.overfit_n = args.overfit_n or int(training_params.get('overfit_n', 0))
     checkpoint_cfg = training_params.setdefault('checkpoint', {})
     checkpoint_cfg.setdefault('encoder_source', getattr(diting_args, 'pretrained', None))
-    generator_params = training_params.get('generator_params', [training_params.copy()])
+    generator_params = expand_partitioned_generator_params(training_params)
 
     if (not is_dist) or (is_dist and (rank == 0)):
         os.makedirs(training_params['weight_path'], exist_ok=True)
@@ -2533,13 +2710,23 @@ if __name__ == '__main__':
     else:
         limit = None
 
-    if not isinstance(training_params['data_path'], list):
-        training_params['data_path'] = [training_params['data_path']]
-
-    assert len(generator_params) == len(training_params['data_path'])
-
     overwrite_sampling_rate = training_params.get('overwrite_sampling_rate', None)
     min_stalta_ratio_at_pick = training_params.get('min_stalta_ratio_at_pick', 0.1)
+    metadata_cache_columns = training_params.get('metadata_cache_columns', None)
+    metadata_cache_stub = metadata_cache_stub_path(training_params)
+    if (not is_dist) or rank == 0:
+        os.makedirs(os.path.dirname(metadata_cache_stub), exist_ok=True)
+        print(f'[metadata_cache] root={os.path.dirname(metadata_cache_stub)}')
+        for data_path in training_params['data_path']:
+            loader.ensure_event_metadata_cache(
+                data_path,
+                event_metadata_path=metadata_cache_stub,
+                overwrite_sampling_rate=overwrite_sampling_rate,
+                min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                cache_columns=metadata_cache_columns,
+            )
+    if is_dist:
+        dist.barrier()
     input_dump_config = prepare_input_dump_config(training_params)
     if ((not is_dist) or (is_dist and (rank == 0))) and input_dump_config['enabled']:
         print(
@@ -2549,7 +2736,7 @@ if __name__ == '__main__':
             f'root={input_dump_config["dump_root"]}'
         )
 
-    full_data_train = [loader.load_events(data_path, event_metadata_path='train_ev.csv',limit=limit,
+    full_data_train = [loader.load_events(data_path, event_metadata_path=metadata_cache_stub,limit=limit,
                                           parts=(True, False, False),
                                           shuffle_train_dev=generator.get('shuffle_train_dev', False),
                                           custom_split=generator.get('custom_split', None),
@@ -2558,9 +2745,10 @@ if __name__ == '__main__':
                                           overwrite_sampling_rate=overwrite_sampling_rate,
                                           decimate_events=generator.get('decimate_events', None),
                                           min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                                          metadata_cache_columns=metadata_cache_columns,
                                           station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                        for data_path, generator in zip(training_params['data_path'], generator_params)]
-    full_data_dev = [loader.load_events(data_path, event_metadata_path='test_ev.csv',limit=limit,
+    full_data_dev = [loader.load_events(data_path, event_metadata_path=metadata_cache_stub,limit=limit,
                                         parts=(False, True, False),
                                         shuffle_train_dev=generator.get('shuffle_train_dev', False),
                                         custom_split=generator.get('custom_split', None),
@@ -2569,9 +2757,10 @@ if __name__ == '__main__':
                                         overwrite_sampling_rate=overwrite_sampling_rate,
                                         decimate_events=generator.get('decimate_events', None),
                                         min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                                        metadata_cache_columns=metadata_cache_columns,
                                         station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                      for data_path, generator in zip(training_params['data_path'], generator_params)]
-    full_data_test = [loader.load_events(data_path, event_metadata_path='test_ev.csv', limit=limit,
+    full_data_test = [loader.load_events(data_path, event_metadata_path=metadata_cache_stub, limit=limit,
                                          parts=(False, False, True),
                                          shuffle_train_dev=generator.get('shuffle_train_dev', False),
                                          custom_split=generator.get('custom_split', None),
@@ -2580,6 +2769,7 @@ if __name__ == '__main__':
                                          overwrite_sampling_rate=overwrite_sampling_rate,
                                          decimate_events=generator.get('decimate_events', None),
                                          min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                                         metadata_cache_columns=metadata_cache_columns,
                                          station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                       for data_path, generator in zip(training_params['data_path'], generator_params)]
 
@@ -2592,7 +2782,7 @@ if __name__ == '__main__':
     selected_event_ids = [None for _ in generator_params]
 
     if args.overfit_n > 0:
-        full_data_all = [loader.load_events(data_path, event_metadata_path='overfit_ev.csv', limit=limit,
+        full_data_all = [loader.load_events(data_path, event_metadata_path=metadata_cache_stub, limit=limit,
                                             parts=None,
                                             shuffle_train_dev=generator.get('shuffle_train_dev', False),
                                             custom_split=generator.get('custom_split', None),
@@ -2601,6 +2791,7 @@ if __name__ == '__main__':
                                             overwrite_sampling_rate=overwrite_sampling_rate,
                                             decimate_events=generator.get('decimate_events', None),
                                             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+                                            metadata_cache_columns=metadata_cache_columns,
                                             station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                          for data_path, generator in zip(training_params['data_path'], generator_params)]
         fixed_overfit_ids = None
@@ -3155,8 +3346,19 @@ if __name__ == '__main__':
             val_dataset = validation_generators[0]
         else:
             dataset_bias = config['model_params'].get('dataset_bias', False)
-            train_dataset = util.JointGenerator(train_generators, shuffle=True, dataset_id=dataset_bias)
-            val_dataset = util.JointGenerator(validation_generators, shuffle=True, dataset_id=dataset_bias)
+            # DistributedSampler owns the cross-shard shuffle in DDP.  Keeping
+            # JointGenerator order fixed there guarantees that a global index
+            # resolves to the same (shard, sample) pair on every rank.
+            train_dataset = util.JointGenerator(
+                train_generators,
+                shuffle=not is_dist,
+                dataset_id=dataset_bias,
+            )
+            val_dataset = util.JointGenerator(
+                validation_generators,
+                shuffle=False,
+                dataset_id=dataset_bias,
+            )
 
         pga_target_norm_cfg = resolve_pga_target_normalization(
             training_params,
@@ -3204,6 +3406,7 @@ if __name__ == '__main__':
                 device,
                 is_dist=is_dist,
                 rank=rank,
+                lr_monitor=training_params.get('lr_monitor', 'val'),
             )
             best_checkpoint_path = os.path.join(training_params['weight_path'], 'full_model_best.pth')
             resume_best_val = checkpoint_loss_value(best_checkpoint_path, is_dist=is_dist, rank=rank)

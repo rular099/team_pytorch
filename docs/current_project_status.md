@@ -1,6 +1,11 @@
 # TEAM PyTorch 当前项目状态
 
-更新日期：2026-05-21
+更新日期：2026-08-21
+
+> 当前权威状态请先读仓库根目录的 `SESSION_SUMMARY.md`。rt55 已训练到 checkpoint
+> epoch 34，best 为 epoch 32；epoch 32 validation normal/roll 已完成，formal test
+> 尚未在本地结果包中出现。本文后续大部分内容保留 2026-05 阶段的历史设计与实验
+> 记录，不能覆盖 `SESSION_SUMMARY.md` 中的最新 checkpoint、指标和下一步。
 
 本文档记录当前 `team_pytorch` 项目的工程状态、已完成实验、主要结论和下一步建议。当前工程重点包括基于 `target_cross_attention` readout 的 PGA 全数据训练，以及 Japan 训练集 origin time 校正、理论 P 到时诊断和 Hi-net velocity 对照检查。
 
@@ -18,9 +23,10 @@
 | `rebuild_japan_training_data.sh` | 本地重建训练集脚本，默认使用 JMA correction CSV，并可选择 DiTing pick 或 STA/LTA final pick。 |
 | `rebuild_japan_training_data_server.sh` | 服务器重建训练集脚本，基于服务器路径和 checkpoint 默认值，可自动生成缺失的 JMA correction CSV。 |
 | `rebuild_japan_training_data_server_diting_vel_acc.sh` | 服务器严格 DiTing pick 数据集重建 preset，默认输出到 `/opt/zb/data/japan_origin_corrected_diting_vel_acc`。 |
-| `tools/download_hinet_velocity.py` | 根据训练 HDF5 中的事件和台站，下载匹配 Hi-net velocity raw WIN32 数据，并写 station-level MiniSEED。 |
+| `tools/download_hinet_velocity.py` | 根据年度训练 HDF5 下载匹配 Hi-net raw WIN32 数据；默认把原始 CNT/CH 字节写入年度 HDF5 归档，不再生成永久 MiniSEED 副本。 |
+| `tools/hinet_raw_archive.py` | 年度 CNT/CH 字节池、SHA256 去重与校验、断点恢复，以及面向 DataLoader 的进程本地只读接口。 |
 | `tools/plot_hinet_accel_velocity_qc.py` | 画同一事件/台站的训练加速度与 Hi-net 速度，上下两行按理论 P 到时对齐，并标出训练数据中的各类 P pick。 |
-| `docs/hinet_velocity_download.md` | 记录下载、fallback、MiniSEED 和 QC 绘图用法。 |
+| `docs/hinet_velocity_download.md` | 记录 2000–2024 全量年度归档、断点恢复和直接训练读取方法。 |
 
 关键实现细节：
 
@@ -45,10 +51,9 @@
 - `theoretical_p_record_coverage_summary.csv` 和
   `theoretical_p_record_offset_hist.png` 用于批量检查理论 P 与记录窗口的关系。
 - `download_hinet_velocity.py` 新增 `--origin-corrections`，Hi-net 下载窗口也使用同一套秒级 origin correction，避免训练集重建和速度下载使用不同的起点。
-- HinetPy 的一分钟 `.cnt/.euc.ch` 临时文件现在落到
-  `output-root/raw/<event_id>/segments/`，不再污染仓库当前目录。
-- 若本机缺少 `catwin32` 导致合并 raw WIN32 失败，manifest 记录
-  `raw_status=downloaded_unmerged`，并保留 segments 作为权威 raw 数据。
+- HinetPy 的一分钟 `.cnt/.euc.ch` 临时文件落到
+  `output-root/.staging/<year>/raw/<event_id>/segments/`；写入年度归档并回读校验后自动清理。
+- 若本机缺少 `catwin32`，原生一分钟 segments 会直接进入年度字节池；即使合并成功，也优先归档原生 segments，避免同时保存合并和分段 CNT。
 - MiniSEED 写出不再强依赖 `catwin32/win2sac_32`。当只有 raw segments
   可用时，脚本用纯 Python WIN32 parser 抽取匹配 Hi-net 台站的 U/N/E
   分量，写出 raw-count MiniSEED。

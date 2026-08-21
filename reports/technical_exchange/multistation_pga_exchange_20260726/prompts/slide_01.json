@@ -1,0 +1,43 @@
+{
+  "slide": 1,
+  "title": "多台站波形驱动的目标位置 PGA 估计",
+  "prompt": "# Codex PPT Slide Image Prompt\n\n## Canvas\n{\n  \"type\": \"16:9 full-slide PowerPoint image\",\n  \"language\": \"Chinese\",\n  \"slide_number\": 1,\n  \"render_slide_number\": false\n}\n\n## Deck Goal\n面向科研交流，说明多台站目标位置 PGA 估计的方法、最新实验进展、泛化瓶颈及与 TEAM、QuakeFormer 的定量差距。\n\n## Required Background\n{\n  \"deck_context\": {\n    \"source_summary\": \"本项目从可变数量的日本强震台站三分量波形与位置出发，预测任意目标位置的 log PGA。历史 full-data 使用 699 train、101 validation、201 test 事件；最新 rt44–rt51 是 512-event controlled overfit 实验，现已取得完整 KNET-only normal 与 station-roll last eval，并补齐 3 个事件级台站数案例和震中距分桶。\",\n    \"core_claim\": \"模型已具备很强的训练集拟合能力，当前主要瓶颈是 held-out 泛化、强 PGA 低估和概率校准。KNET-only 自身结果中 rt48/rt49 领先，但 2716 个共同目标上的配对检验没有显示 KNET 筛选带来泛化收益；station-roll 的验证影响稳定但较小。\",\n    \"evaluation_rules\": [\n      \"区分 full-data system result 与 512-event overfit experiment。\",\n      \"512-event 页面必须同时报告 train 和 validation。\",\n      \"mixed-source 与 KNET-only 比较必须优先采用共同 event/time/target coordinate，不用目标集合不同的均值差替代配对证据。\",\n      \"文献数字只用于量级和差距定位，不构成跨数据集排行榜。\",\n      \"本项目原始误差为 log10 PGA；与 QuakeFormer 残差比较时换算为自然对数单位。\"\n    ],\n    \"canonical_terms\": [\n      \"PGA\",\n      \"multi-station\",\n      \"target location\",\n      \"full-data\",\n      \"512-event overfit\",\n      \"validation\",\n      \"strong PGA\",\n      \"unseen station\"\n    ]\n  }\n}\n\n## Global Style\n{\n  \"name\": \"清新低饱和科研答辩风\",\n  \"visual_direction\": \"formal Chinese academic defense deck, evidence-first, calm and fresh rather than vivid, structured scientific diagrams and concise conclusions\",\n  \"color_palette\": {\n    \"background\": \"#FAFBFC\",\n    \"content_fill\": \"#F2F6F8\",\n    \"title_and_body\": \"#2F3742\",\n    \"train_and_structure\": \"#5B7FA3\",\n    \"validation\": \"#55A6A0\",\n    \"critical_accent\": \"#D66F63\",\n    \"border\": \"#CCD8E2\"\n  },\n  \"typography\": \"Chinese sans-serif; charcoal or dark-gray titles; compact readable academic tables; exact four-decimal metrics where specified\",\n  \"texture_and_finish\": \"flat, clean, subtle light-gray-blue cards and fine borders, no gradients\",\n  \"deck_consistency\": \"keep palette, typography, border treatment and evidence-first mood consistent; vary layout by page role\"\n}\n\n## Input Images\n\n- Image 1: /home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png — approved sample slide style reference; match palette, typography mood, density and finish only; do not copy its exact layout or content\n\n\n## Slide\n{\n  \"number\": 1,\n  \"title\": \"多台站波形驱动的目标位置 PGA 估计\",\n  \"role\": \"cover\",\n  \"intent\": \"建立正式科研交流语境，并明确报告只讨论多台站 PGA 技术线。\"\n}\n\n## Text\n{\n  \"title\": \"多台站波形驱动的目标位置 PGA 估计\",\n  \"key_points\": [\n    \"方法进展、实验结果与文献对比\",\n    \"2026-07-26\"\n  ],\n  \"speaker_focus\": null\n}\n\n## Layout\n{\n  \"composition\": \"左侧大标题和副标题，右侧为简洁的日本台站—目标位置抽象空间示意；大面积留白\",\n  \"variation_rule\": \"封面比内容页更疏朗，但保持批准样稿的低饱和色系\"\n}\n\n## Visual Elements\n{\n  \"main_visual\": \"日本轮廓上的低饱和台站节点、波形线和目标位置连线，不使用照片或虚构 logo\"\n}\n\n## Constraints\n[\n  \"标题用炭黑或深灰，不使用纯蓝\",\n  \"不出现摄像头技术线\",\n  \"不显示页码\"\n]\n\n## Style Reference Rule\nUse Image 1 as the approved sample-slide style reference. Match its palette, typography mood, density, texture, and overall visual identity. Do not copy its exact layout unless this slide's layout explicitly asks for it.\n\n## Input Image Handling Rules\nFor any input image marked as a strict input asset, include it visibly and preserve its content. Do not redraw, replace, relabel, or invent a similar figure. Scale and crop only as needed for composition while keeping the important labels, arrows, data, and relationships recognizable.\n\n## Universal Constraints\n- The final image itself must contain the title and key points.\n- Render Chinese text exactly and legibly; avoid garbled characters.\n- Keep the confirmed deck style consistent while varying layout by slide role.\n- No watermark, unrelated logo, or extra slide number.\n",
+  "out": "slide_01.png",
+  "input_images": [
+    {
+      "path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png",
+      "role": "approved sample slide style reference",
+      "fidelity": "match palette, typography mood, density and finish only; do not copy its exact layout or content"
+    }
+  ],
+  "requires_context_images": true,
+  "expected_backend": "built-in image tool",
+  "sample_generation_method": {
+    "backend_used": "built-in image tool",
+    "tool_name": "image_gen",
+    "mode": "generate; use localized edit with the same tool only when QA finds a contained issue",
+    "prompt_source": "prompts/sample_slide_12.md",
+    "size": "16:9 landscape; approved output 1672x941",
+    "quality": "built-in default",
+    "model_config": "built-in image_gen default",
+    "approved_sample_path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png",
+    "input_context_preparation": "Inspect local source images with view_image; pass the approved sample through referenced_image_paths as a style-only reference.",
+    "handoff_rule": "Use the same built-in image_gen backend and the approved low-saturation style. Return a blocker if that path or any strict source image is unavailable."
+  },
+  "generation_contract": {
+    "must_use_selected_image_backend": true,
+    "must_match_sample_generation_method": true,
+    "forbidden_final_image_methods": [
+      "local drawing/rendering scripts",
+      "Pillow-generated slides",
+      "SVG/HTML/CSS/canvas screenshots",
+      "python-pptx/PptxGenJS/native PPT layout screenshots",
+      "manually composited text/image overlays"
+    ],
+    "must_return": [
+      "backend_used",
+      "selected_source",
+      "qa_note"
+    ]
+  }
+}

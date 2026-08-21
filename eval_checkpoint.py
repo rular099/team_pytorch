@@ -1,5 +1,5 @@
 """
-Evaluate a trained TEAM checkpoint on train/val sets.
+Evaluate a trained TEAM checkpoint on train/validation/test splits.
 
 Usage:
     python eval_checkpoint.py --config pga_configs/transformer_japan_overfit.json \
@@ -9,7 +9,8 @@ Usage:
         [--single_station_checkpoint weights_japan_overfit/single_station_best.pth] \
         [--overfit_n 16] [--device cuda:0] [--input_station_selection epidist] \
         [--case_station_sweep --case_station_counts 3,5,8,12,16,25] \
-        [--waveform_station_permutation roll] [--num_shards 4 --shard_id 0]
+        [--splits val] [--waveform_station_permutation roll] \
+        [--num_shards 4 --shard_id 0]
 """
 
 import argparse
@@ -39,9 +40,11 @@ from train_light import (
     build_overfit_event_metadata_splits,
     clean_state_dict_keys,
     dpk_prior_cache_for_split,
+    expand_partitioned_generator_params,
     indexed_config_override,
     load_config_file,
     load_model_state_dict_compatible,
+    metadata_cache_stub_path,
     read_overfit_event_ids,
 )
 
@@ -137,6 +140,34 @@ def _mixture_tail_prob_1d(weights, mu, sigma, threshold):
     return np.sum(weights * tail, axis=-1)
 
 
+def _logsumexp_np(values, axis=-1):
+    values = np.asarray(values, dtype=np.float64)
+    maximum = np.max(values, axis=axis, keepdims=True)
+    summed = np.sum(np.exp(values - maximum), axis=axis, keepdims=True)
+    return np.squeeze(maximum + np.log(np.maximum(summed, np.finfo(np.float64).tiny)), axis=axis)
+
+
+def _mixture_nll_1d(weights, mu, sigma, target, alpha_logits=None):
+    """Return per-target MDN NLL in the same coordinate system as mu/sigma."""
+    weights = np.asarray(weights, dtype=np.float64)
+    mu = np.asarray(mu, dtype=np.float64)[..., 0]
+    sigma = np.maximum(np.asarray(sigma, dtype=np.float64)[..., 0], 1e-8)
+    target = np.asarray(target, dtype=np.float64).reshape(weights.shape[:-1])
+    target = target[..., None]
+    if alpha_logits is None:
+        log_weights = np.log(np.maximum(weights, np.finfo(np.float64).tiny))
+    else:
+        alpha_logits = np.asarray(alpha_logits, dtype=np.float64)
+        log_weights = alpha_logits - _logsumexp_np(alpha_logits, axis=-1)[..., None]
+    log_component = (
+        log_weights
+        - 0.5 * math.log(2.0 * math.pi)
+        - np.log(sigma)
+        - 0.5 * ((target - mu) / sigma) ** 2
+    )
+    return -_logsumexp_np(log_component, axis=-1)
+
+
 def _point_mu_from_output(name, out_np):
     if name == 'pga':
         return np.asarray(out_np)[..., 0]
@@ -182,6 +213,11 @@ def build_model_and_load(config, diting_args, checkpoint_path, device):
         context=checkpoint_path,
         allowed_missing_prefixes=tuple(checkpoint.get('excluded_prefixes', CHECKPOINT_ENCODER_PREFIXES)),
     )
+    full_model._eval_checkpoint_metadata = {
+        key: checkpoint.get(key)
+        for key in ('epoch', 'loss', 'checkpoint_format', 'encoder_source')
+        if checkpoint.get(key) is not None
+    }
     full_model.eval()
 
     epoch = checkpoint.get('epoch', '?')
@@ -233,48 +269,84 @@ def build_single_station_model_and_load(config, diting_args, checkpoint_path, de
     return single_model
 
 
-def build_datasets(config, overfit_n=0, input_station_selection='config'):
-    """Build train and val datasets, matching train_light.py logic."""
+def _canonical_eval_splits(splits=None):
+    if splits is None:
+        return ['train', 'val']
+    if isinstance(splits, str):
+        values = splits.split(',')
+    else:
+        values = splits
+    aliases = {
+        'train': 'train',
+        'training': 'train',
+        'val': 'val',
+        'validation': 'val',
+        'dev': 'val',
+        'test': 'test',
+    }
+    parsed = []
+    for value in values:
+        name = str(value).strip().lower()
+        if not name:
+            continue
+        if name not in aliases:
+            raise ValueError(
+                f'Unknown eval split {value!r}; expected train, val/validation/dev, or test.'
+            )
+        canonical = aliases[name]
+        if canonical not in parsed:
+            parsed.append(canonical)
+    if not parsed:
+        raise ValueError('At least one eval split is required.')
+    return parsed
+
+
+def build_datasets(config, overfit_n=0, input_station_selection='config', splits=None):
+    """Build deterministic eval datasets, matching train_light.py split logic."""
     training_params = config['training_params']
-    generator_params = training_params.get('generator_params', [training_params.copy()])
+    generator_params = expand_partitioned_generator_params(training_params)
+    requested_splits = _canonical_eval_splits(splits)
 
     overwrite_sampling_rate = training_params.get('overwrite_sampling_rate', None)
     min_stalta_ratio_at_pick = training_params.get('min_stalta_ratio_at_pick', 0.1)
+    metadata_cache_columns = training_params.get('metadata_cache_columns', None)
+    metadata_cache_stub = metadata_cache_stub_path(training_params)
+    os.makedirs(os.path.dirname(metadata_cache_stub), exist_ok=True)
 
-    full_data_train = [loader.load_events(
-        data_path, event_metadata_path='train_ev.csv',
-        parts=(True, False, False),
-        shuffle_train_dev=g.get('shuffle_train_dev', False),
-        custom_split=g.get('custom_split', None),
-        min_mag=g.get('min_mag', None),
-        mag_key=g.get('key', 'MA'),
-        overwrite_sampling_rate=overwrite_sampling_rate,
-        decimate_events=g.get('decimate_events', None),
-        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
-        station_filter=g.get('station_filter', training_params.get('station_filter', None)))
-        for data_path, g in zip(training_params['data_path'], generator_params)]
+    split_parts = {
+        'train': (True, False, False),
+        'val': (False, True, False),
+        'test': (False, False, True),
+    }
+    full_data_by_split = {}
+    for split_name in requested_splits:
+        full_data_by_split[split_name] = [loader.load_events(
+            data_path,
+            event_metadata_path=metadata_cache_stub,
+            parts=split_parts[split_name],
+            shuffle_train_dev=g.get('shuffle_train_dev', False),
+            custom_split=g.get('custom_split', None),
+            min_mag=g.get('min_mag', None),
+            mag_key=g.get('key', 'MA'),
+            overwrite_sampling_rate=overwrite_sampling_rate,
+            decimate_events=g.get('decimate_events', None),
+            min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+            metadata_cache_columns=metadata_cache_columns,
+            station_filter=g.get('station_filter', training_params.get('station_filter', None)),
+        ) for data_path, g in zip(training_params['data_path'], generator_params)]
 
-    full_data_dev = [loader.load_events(
-        data_path, event_metadata_path='test_ev.csv',
-        parts=(False, True, False),
-        shuffle_train_dev=g.get('shuffle_train_dev', False),
-        custom_split=g.get('custom_split', None),
-        min_mag=g.get('min_mag', None),
-        mag_key=g.get('key', 'MA'),
-        overwrite_sampling_rate=overwrite_sampling_rate,
-        decimate_events=g.get('decimate_events', None),
-        min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
-        station_filter=g.get('station_filter', training_params.get('station_filter', None)))
-        for data_path, g in zip(training_params['data_path'], generator_params)]
-
-    event_metadata_train = [d[0] for d in full_data_train]
-    metadata_train = [d[2] for d in full_data_train]
-    event_metadata_dev = [d[0] for d in full_data_dev]
-    metadata_dev = [d[2] for d in full_data_dev]
+    event_metadata_by_split = {
+        split_name: [data[0] for data in split_data]
+        for split_name, split_data in full_data_by_split.items()
+    }
+    metadata_by_split = {
+        split_name: [data[2] for data in split_data]
+        for split_name, split_data in full_data_by_split.items()
+    }
 
     if overfit_n > 0:
         full_data_all = [loader.load_events(
-            data_path, event_metadata_path='overfit_ev.csv',
+            data_path, event_metadata_path=metadata_cache_stub,
             parts=None,
             shuffle_train_dev=g.get('shuffle_train_dev', False),
             custom_split=g.get('custom_split', None),
@@ -283,6 +355,7 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
             overwrite_sampling_rate=overwrite_sampling_rate,
             decimate_events=g.get('decimate_events', None),
             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
+            metadata_cache_columns=metadata_cache_columns,
             station_filter=g.get('station_filter', training_params.get('station_filter', None)))
             for data_path, g in zip(training_params['data_path'], generator_params)]
         fixed_overfit_ids = None
@@ -290,9 +363,16 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
             if len(full_data_all) != 1:
                 raise ValueError('overfit_event_ids_path currently supports exactly one data_path')
             fixed_overfit_ids = [read_overfit_event_ids(training_params['overfit_event_ids_path'])]
-        event_metadata_train, event_metadata_dev, _, _ = build_overfit_event_metadata_splits(
+        overfit_train, overfit_dev, overfit_test, _ = build_overfit_event_metadata_splits(
             full_data_all, generator_params, overfit_n, selected_event_ids=fixed_overfit_ids
         )
+        overfit_splits = {
+            'train': overfit_train,
+            'val': overfit_dev,
+            'test': overfit_test,
+        }
+        for split_name in requested_splits:
+            event_metadata_by_split[split_name] = overfit_splits[split_name]
         generator_params = [copy.deepcopy(g) for g in generator_params]
         for gp in generator_params:
             realtime_cfg = gp.get('realtime_training') or {}
@@ -310,18 +390,29 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
             gp['oversample'] = 1
             gp['magnitude_resampling'] = 1.0
 
-    sampling_rate = metadata_train[0]['sampling_rate']
+    sampling_rates = {
+        metadata['sampling_rate']
+        for split_name in requested_splits
+        for metadata in metadata_by_split[split_name]
+    }
+    if len(sampling_rates) != 1:
+        raise ValueError(f'Eval datasets must share one sampling rate, got {sorted(sampling_rates)}')
+    sampling_rate = sampling_rates.pop()
     max_stations = config['model_params']['max_stations']
     n_pga_targets = config['model_params'].get('n_pga_targets', 0)
     no_event_token = config['model_params'].get('no_event_token', False)
     station_experiment_cfg = training_params.get('station_experiment', None)
     train_generator_overrides = training_params.get('train_generator_overrides', None)
     validation_generator_overrides = training_params.get('validation_generator_overrides', None)
+    test_generator_overrides = training_params.get(
+        'test_generator_overrides',
+        validation_generator_overrides,
+    )
     dpk_prior_cache_cfg = training_params.get('dpk_prior_cache') or {}
 
     datasets = {}
-    for split_name, em_list, meta_list in [('train', event_metadata_train, metadata_train),
-                                            ('val', event_metadata_dev, metadata_dev)]:
+    for split_name in requested_splits:
+        em_list = event_metadata_by_split[split_name]
         generators = []
         for i, gp in enumerate(generator_params):
             noise_seconds = gp.get('noise_seconds', 5)
@@ -342,7 +433,7 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
                 station_experiment=station_experiment_cfg,
                 shuffle=False,  # deterministic eval order
             )
-            cache_split = 'train' if split_name == 'train' else 'dev'
+            cache_split = {'train': 'train', 'val': 'dev', 'test': 'test'}[split_name]
             defaults.update({
                 'dpk_prior_cache': dpk_prior_cache_for_split(
                     training_params,
@@ -362,9 +453,18 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
             })
             if training_params.get('deterministic_sampling', False):
                 defaults['deterministic_sampling_seed'] = int(config.get('seed', 42)) + i * 1000003
-            split_overrides = train_generator_overrides if split_name == 'train' else validation_generator_overrides
+            split_overrides = {
+                'train': train_generator_overrides,
+                'val': validation_generator_overrides,
+                'test': test_generator_overrides,
+            }[split_name]
             split_override = indexed_config_override(split_overrides, i)
             merged = {**defaults, **gp_copy, **split_override}
+            # Evaluation must never duplicate or reshuffle events. Test inherits
+            # the validation realtime override by default, yielding the same
+            # fixed 1/3/5/10/20/40/90-second protocol for rt55.
+            merged['oversample'] = 1
+            merged['shuffle'] = False
             if input_station_selection and input_station_selection not in ('config', 'default'):
                 merged['input_station_selection'] = input_station_selection
                 if input_station_selection == 'random':
@@ -384,7 +484,7 @@ def build_datasets(config, overfit_n=0, input_station_selection='config'):
                 f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
             )
             generators.append(util.PreloadedEventGenerator(
-                event_metadata=em_list[i], metadata=meta_list[i],
+                event_metadata=em_list[i], metadata=metadata_by_split[split_name][i],
                 data_path=training_params['data_path'][i],
                 generator_params=generator_params[i],
                 **merged))
@@ -1130,6 +1230,7 @@ def run_inference(
             if 'loc_center' in p_picks:
                 results['loc_center'].append(_to_numpy(p_picks['loc_center']))
             for info_key in (
+                'event_id',
                 'pga_target_indices',
                 'realtime_elapsed_time',
                 'realtime_requested_elapsed_time',
@@ -1180,6 +1281,30 @@ def run_inference(
                 results[f'{name}_mu_best'].append(mu_mean)
                 results[f'{name}_sigma'].append(sigma_mix)
                 if name == 'pga':
+                    raw_target = np.asarray(
+                        results['pga_label'][-1],
+                        dtype=np.float64,
+                    ).reshape(weights.shape[:-1])
+                    norm = _pga_norm_config(config)
+                    if norm is None:
+                        target_model = raw_target
+                        target_std = 1.0
+                    else:
+                        target_mean, target_std = norm
+                        target_model = (raw_target - target_mean) / target_std
+                    nll_model = _mixture_nll_1d(
+                        weights,
+                        mu,
+                        sigma,
+                        target_model,
+                        alpha_logits=out_np[..., 0],
+                    )
+                    results['pga_nll_model_space'].append(nll_model)
+                    # If z=(y-mean)/std, then p_y(y)=p_z(z)/std.  Report the
+                    # formal NLL in the raw log10(m/s^2) target coordinate.
+                    results['pga_nll_log10_mps2'].append(
+                        nll_model + math.log(target_std)
+                    )
                     threshold = (
                         (config or {})
                         .get('training_params', {})
@@ -1590,6 +1715,150 @@ def _stack_result_array(results, key, dtype=None):
     return stacked
 
 
+def _finite_mean_or_none(values):
+    values = np.asarray(values, dtype=np.float64).reshape(-1)
+    values = values[np.isfinite(values)]
+    if values.size == 0:
+        return None
+    return float(np.mean(values))
+
+
+def compute_formal_pga_metrics(results, config=None):
+    """Compute publication-facing PGA metrics over valid target slots.
+
+    MAE/RMSE/R2 and the primary NLL use the raw log10(m/s^2) target
+    coordinate.  NLL and Brier are unweighted evaluation metrics; training
+    loss weighting and auxiliary losses are intentionally not applied here.
+    """
+    labels = _stack_result_array(results, 'pga_label', dtype=float)
+    predictions = _stack_result_array(results, 'pga_mu_best', dtype=float)
+    if labels is None or predictions is None:
+        return {}
+
+    n_samples = int(labels.shape[0])
+    labels = np.asarray(labels, dtype=np.float64).reshape(n_samples, -1)
+    predictions = np.asarray(predictions, dtype=np.float64).reshape(n_samples, -1)
+    target_valid = _stack_result_array(results, 'pga_target_valid', dtype=bool)
+    if target_valid is None:
+        target_valid = np.ones_like(labels, dtype=bool)
+    else:
+        target_valid = np.asarray(target_valid, dtype=bool).reshape(n_samples, -1)
+    valid = target_valid & np.isfinite(labels) & np.isfinite(predictions)
+
+    event_ids = _stack_result_array(results, 'event_id')
+    if event_ids is None:
+        unique_events = n_samples
+    else:
+        unique_events = len({str(value) for value in np.asarray(event_ids).reshape(-1)})
+
+    metrics = {
+        'coordinate': 'log10(m/s^2)',
+        'point_estimate': 'predictive_mixture_mean',
+        'events': int(unique_events),
+        'realtime_samples': n_samples,
+        'target_slots': int(labels.size),
+        'targets': int(valid.sum()),
+        'valid_target_fraction': float(valid.mean()) if valid.size else None,
+        'mae': None,
+        'rmse': None,
+        'bias': None,
+        'correlation': None,
+        'r2': None,
+        'slope': None,
+        'intercept': None,
+        'nll': None,
+        'nll_log10_mps2': None,
+        'nll_model_space': None,
+        'predictive_sigma_mean': None,
+        'predictive_sigma_median': None,
+        'coverage_1sigma': None,
+        'coverage_2sigma': None,
+        'brier': None,
+        'brier_threshold_log10_mps2': None,
+        'brier_positive_rate': None,
+        'probability_mean': None,
+    }
+    if not np.any(valid):
+        return metrics
+
+    label_values = labels[valid]
+    prediction_values = predictions[valid]
+    residuals = prediction_values - label_values
+    metrics['mae'] = float(np.mean(np.abs(residuals)))
+    metrics['rmse'] = float(np.sqrt(np.mean(residuals ** 2)))
+    metrics['bias'] = float(np.mean(residuals))
+
+    if label_values.size > 1:
+        label_std = float(np.std(label_values))
+        prediction_std = float(np.std(prediction_values))
+        if label_std > 0 and prediction_std > 0:
+            metrics['correlation'] = float(
+                np.corrcoef(label_values, prediction_values)[0, 1]
+            )
+        ss_tot = float(np.sum((label_values - np.mean(label_values)) ** 2))
+        if ss_tot > 0:
+            ss_res = float(np.sum(residuals ** 2))
+            metrics['r2'] = float(1.0 - ss_res / ss_tot)
+            slope, intercept = np.polyfit(label_values, prediction_values, 1)
+            metrics['slope'] = float(slope)
+            metrics['intercept'] = float(intercept)
+
+    nll_raw = _stack_result_array(results, 'pga_nll_log10_mps2', dtype=float)
+    if nll_raw is not None:
+        nll_raw = np.asarray(nll_raw, dtype=np.float64).reshape(n_samples, -1)
+        nll_mask = valid & np.isfinite(nll_raw)
+        metrics['nll_log10_mps2'] = _finite_mean_or_none(nll_raw[nll_mask])
+        metrics['nll'] = metrics['nll_log10_mps2']
+    nll_model = _stack_result_array(results, 'pga_nll_model_space', dtype=float)
+    if nll_model is not None:
+        nll_model = np.asarray(nll_model, dtype=np.float64).reshape(n_samples, -1)
+        nll_model_mask = valid & np.isfinite(nll_model)
+        metrics['nll_model_space'] = _finite_mean_or_none(
+            nll_model[nll_model_mask]
+        )
+
+    sigma = _stack_result_array(results, 'pga_sigma', dtype=float)
+    if sigma is not None:
+        sigma = np.asarray(sigma, dtype=np.float64).reshape(n_samples, -1)
+        sigma_mask = valid & np.isfinite(sigma) & (sigma >= 0)
+        if np.any(sigma_mask):
+            sigma_values = sigma[sigma_mask]
+            absolute_error = np.abs(predictions[sigma_mask] - labels[sigma_mask])
+            metrics['predictive_sigma_mean'] = float(np.mean(sigma_values))
+            metrics['predictive_sigma_median'] = float(np.median(sigma_values))
+            metrics['coverage_1sigma'] = float(
+                np.mean(absolute_error <= sigma_values)
+            )
+            metrics['coverage_2sigma'] = float(
+                np.mean(absolute_error <= 2.0 * sigma_values)
+            )
+
+    pga_probability = _stack_result_array(
+        results,
+        'pga_prob_ge_threshold',
+        dtype=float,
+    )
+    weighting_cfg = (
+        (config or {}).get('training_params', {}).get('pga_loss_weighting') or {}
+    )
+    threshold = weighting_cfg.get('threshold')
+    if pga_probability is not None and threshold is not None:
+        pga_probability = np.asarray(
+            pga_probability,
+            dtype=np.float64,
+        ).reshape(n_samples, -1)
+        probability_mask = valid & np.isfinite(pga_probability)
+        if np.any(probability_mask):
+            probabilities = np.clip(pga_probability[probability_mask], 0.0, 1.0)
+            outcomes = (labels[probability_mask] >= float(threshold)).astype(np.float64)
+            metrics['brier'] = float(np.mean((probabilities - outcomes) ** 2))
+            metrics['brier_threshold_log10_mps2'] = float(threshold)
+            metrics['brier_positive_rate'] = float(np.mean(outcomes))
+            metrics['probability_mean'] = float(np.mean(probabilities))
+
+    return metrics
+
+
 def _print_pga_metric_line(prefix, label_values, pred_values):
     if label_values.size == 0:
         return
@@ -1801,6 +2070,7 @@ def print_realtime_pga_summary(results, labels_flat, preds_flat, valid_mask, con
 
 def print_summary(results, split_name, config=None):
     """Print summary statistics of predictions vs labels."""
+    summary_metrics = {}
     # Detect which heads are present from result keys
     head_names = []
     for candidate in ['mag', 'loc', 'pga']:
@@ -1869,6 +2139,20 @@ def print_summary(results, split_name, config=None):
                 import warnings
                 warnings.warn('pga_target_valid not found in results; falling back to NaN-based mask')
                 mask = ~np.isnan(labels_flat)
+
+            formal_metrics = compute_formal_pga_metrics(results, config=config)
+            summary_metrics['pga'] = formal_metrics
+            print(
+                '  Formal PGA metrics [log10(m/s^2), predictive mixture mean]: '
+                f'targets={formal_metrics.get("targets")}, '
+                f'MAE={formal_metrics.get("mae")}, '
+                f'RMSE={formal_metrics.get("rmse")}, '
+                f'R^2={formal_metrics.get("r2")}, '
+                f'NLL={formal_metrics.get("nll")}, '
+                f'Brier={formal_metrics.get("brier")}, '
+                f'coverage_1sigma={formal_metrics.get("coverage_1sigma")}, '
+                f'coverage_2sigma={formal_metrics.get("coverage_2sigma")}'
+            )
 
             for i in range(min(len(labels), 4)):
                 l = labels_flat[i]
@@ -1976,6 +2260,23 @@ def print_summary(results, split_name, config=None):
                 print_realtime_pga_summary(results, labels_flat, mu_best, mask, config=config)
             else:
                 print(f'  No valid PGA targets found')
+    return summary_metrics
+
+
+def _json_safe(value):
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, torch.Tensor):
+        value = value.detach().cpu().numpy()
+    if isinstance(value, np.ndarray):
+        return _json_safe(value.tolist())
+    if isinstance(value, np.generic):
+        value = value.item()
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
 
 
 def main():
@@ -1989,6 +2290,10 @@ def main():
     parser.add_argument('--skip_single_station', action='store_true',
                         help='Disable single-station checkpoint evaluation')
     parser.add_argument('--output', default='eval_results.npz', help='Output file for results')
+    parser.add_argument('--metrics_output', default=None,
+                        help='Formal metrics JSON path. Defaults to <output stem>.metrics.json.')
+    parser.add_argument('--splits', default='train,val',
+                        help='Comma-separated eval splits: train, val/validation/dev, test.')
     parser.add_argument('--overfit_n', type=int, default=0)
     parser.add_argument('--device', default='cuda:0' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--input_station_selection', default='config',
@@ -2019,10 +2324,13 @@ def main():
                         help='Split each eval dataset into this many deterministic shards.')
     parser.add_argument('--shard_id', type=int, default=0,
                         help='Shard id to evaluate, in [0, num_shards).')
+    parser.add_argument('--skip_diagnostics', action='store_true',
+                        help='Skip the three first-sample feature/amplitude/embedding diagnostics.')
     args = parser.parse_args()
 
     config = load_config_file(args.config)
     args.overfit_n = args.overfit_n or int(config['training_params'].get('overfit_n', 0))
+    requested_splits = _canonical_eval_splits(args.splits)
 
     # Reproducible evaluation
     import random
@@ -2056,6 +2364,7 @@ def main():
         config,
         overfit_n=args.overfit_n,
         input_station_selection=args.input_station_selection,
+        splits=requested_splits,
     )
 
     single_station_model = None
@@ -2078,13 +2387,17 @@ def main():
                 device,
             )
 
-    # Diagnose diting features on first available dataset
-    first_dataset = next(iter(datasets.values()))
-    diagnose_diting_features(model, first_dataset, device)
-    diagnose_amplitude_sensitivity(model, first_dataset, device, config)
-    diagnose_embedding_scales(model, first_dataset, device)
+    if not args.skip_diagnostics:
+        # Diagnose DiTing features on the first available dataset.
+        first_dataset = next(iter(datasets.values()))
+        diagnose_diting_features(model, first_dataset, device)
+        diagnose_amplitude_sensitivity(model, first_dataset, device, config)
+        diagnose_embedding_scales(model, first_dataset, device)
+    else:
+        print('Skipping first-sample feature/amplitude/embedding diagnostics.')
 
     all_results = {}
+    formal_metrics = {}
     case_station_counts = _parse_int_list(args.case_station_counts)
     case_splits = set(_parse_name_list(args.case_splits))
     explicit_case_indices = _parse_int_list(args.case_event_indices)
@@ -2104,7 +2417,11 @@ def main():
             waveform_station_permutation_seed=args.waveform_station_permutation_seed,
             permute_cached_token_weights=permute_cached_token_weights,
         )
-        print_summary(results, split_name, config=config)
+        formal_metrics[split_name] = print_summary(
+            results,
+            split_name,
+            config=config,
+        )
         # Prefix keys with split name for saving
         for k, v in results.items():
             all_results[f'{split_name}_{k}'] = np.array(v, dtype=object)
@@ -2143,8 +2460,41 @@ def main():
             for k, v in single_results.items():
                 all_results[f'single_{split_name}_{k}'] = np.array(v, dtype=object)
 
+    output_parent = os.path.dirname(os.path.abspath(args.output))
+    os.makedirs(output_parent, exist_ok=True)
     np.savez(args.output, **all_results)
     print(f'\nResults saved to {args.output}')
+
+    metrics_output = args.metrics_output
+    if metrics_output is None:
+        metrics_output = os.path.splitext(args.output)[0] + '.metrics.json'
+    metrics_parent = os.path.dirname(os.path.abspath(metrics_output))
+    os.makedirs(metrics_parent, exist_ok=True)
+    metrics_payload = {
+        'schema_version': 1,
+        'checkpoint': os.path.abspath(args.checkpoint),
+        'checkpoint_metadata': getattr(model, '_eval_checkpoint_metadata', {}),
+        'config': os.path.abspath(args.config),
+        'splits': requested_splits,
+        'num_shards': int(args.num_shards),
+        'shard_id': int(args.shard_id),
+        'waveform_station_permutation': args.waveform_station_permutation,
+        'waveform_station_permutation_seed': int(
+            args.waveform_station_permutation_seed
+        ),
+        'metric_protocol': {
+            'pga_coordinate': 'log10(m/s^2)',
+            'point_estimate': 'predictive_mixture_mean',
+            'nll': 'unweighted mean MDN NLL over valid PGA targets in log10(m/s^2)',
+            'brier': 'unweighted mean squared probability error at the configured PGA threshold',
+            'coverage': '|predictive_mean-target| <= k * predictive_mixture_std',
+        },
+        'metrics': formal_metrics,
+    }
+    with open(metrics_output, 'w', encoding='utf-8') as f:
+        json.dump(_json_safe(metrics_payload), f, indent=2, sort_keys=True)
+        f.write('\n')
+    print(f'Formal metrics saved to {metrics_output}')
 
 
 if __name__ == '__main__':

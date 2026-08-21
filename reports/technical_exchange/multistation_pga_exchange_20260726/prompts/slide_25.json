@@ -1,0 +1,43 @@
+{
+  "slide": 25,
+  "title": "文献与本项目的数值对比——显式区分 train / held-out",
+  "prompt": "# Codex PPT Slide Image Prompt\n\n## Canvas\n{\n  \"type\": \"16:9 full-slide PowerPoint image\",\n  \"language\": \"Chinese\",\n  \"slide_number\": 25,\n  \"render_slide_number\": false\n}\n\n## Deck Goal\n面向科研交流，说明多台站目标位置 PGA 估计的方法、最新实验进展、泛化瓶颈及与 TEAM、QuakeFormer 的定量差距。\n\n## Required Background\n{\n  \"deck_context\": {\n    \"source_summary\": \"本项目从可变数量的日本强震台站三分量波形与位置出发，预测任意目标位置的 log PGA。历史 full-data 使用 699 train、101 validation、201 test 事件；最新 rt44–rt51 是 512-event controlled overfit 实验，现已取得完整 KNET-only normal 与 station-roll last eval，并补齐 3 个事件级台站数案例和震中距分桶。\",\n    \"core_claim\": \"模型已具备很强的训练集拟合能力，当前主要瓶颈是 held-out 泛化、强 PGA 低估和概率校准。KNET-only 自身结果中 rt48/rt49 领先，但 2716 个共同目标上的配对检验没有显示 KNET 筛选带来泛化收益；station-roll 的验证影响稳定但较小。\",\n    \"evaluation_rules\": [\n      \"区分 full-data system result 与 512-event overfit experiment。\",\n      \"512-event 页面必须同时报告 train 和 validation。\",\n      \"mixed-source 与 KNET-only 比较必须优先采用共同 event/time/target coordinate，不用目标集合不同的均值差替代配对证据。\",\n      \"文献数字只用于量级和差距定位，不构成跨数据集排行榜。\",\n      \"本项目原始误差为 log10 PGA；与 QuakeFormer 残差比较时换算为自然对数单位。\"\n    ],\n    \"canonical_terms\": [\n      \"PGA\",\n      \"multi-station\",\n      \"target location\",\n      \"full-data\",\n      \"512-event overfit\",\n      \"validation\",\n      \"strong PGA\",\n      \"unseen station\"\n    ]\n  },\n  \"slide_local_context\": {\n    \"team_table\": [\n      {\n        \"threshold\": \"1%g\",\n        \"TEAM_test_F1\": 0.73,\n        \"TEAM_test_PR_AUC\": 0.82,\n        \"ours_train_F1\": 0.965,\n        \"ours_train_PR_AUC\": 0.995,\n        \"ours_validation_F1\": 0.62,\n        \"ours_validation_PR_AUC\": 0.642,\n        \"train_positive_count\": 543,\n        \"validation_positive_count\": 125\n      },\n      {\n        \"threshold\": \"2%g\",\n        \"TEAM_test_F1\": 0.69,\n        \"TEAM_test_PR_AUC\": 0.76,\n        \"ours_train_F1\": 0.952,\n        \"ours_train_PR_AUC\": 0.985,\n        \"ours_validation_F1\": 0.545,\n        \"ours_validation_PR_AUC\": 0.536,\n        \"train_positive_count\": 196,\n        \"validation_positive_count\": 55\n      },\n      {\n        \"threshold\": \"5%g\",\n        \"TEAM_test_F1\": 0.63,\n        \"TEAM_test_PR_AUC\": 0.68,\n        \"ours_train_F1\": 0.932,\n        \"ours_train_PR_AUC\": 0.985,\n        \"ours_validation_F1\": 0.438,\n        \"ours_validation_PR_AUC\": 0.372,\n        \"train_positive_count\": 49,\n        \"validation_positive_count\": 13\n      }\n    ],\n    \"team_protocol\": \"本项目使用固定 20 s 点预测；F1 cutoff 在 train / validation 各自优化，PR-AUC 为阈值无关排序指标；train 只表征容量。\",\n    \"quakeformer_table\": [\n      {\n        \"split\": \"QuakeFormer forecasting, seen held-out stations\",\n        \"R2\": \"≈0.917\",\n        \"sigma_ln\": 0.57\n      },\n      {\n        \"split\": \"QuakeFormer forecasting, unseen held-out stations\",\n        \"R2\": \"≈0.837\",\n        \"sigma_ln\": 0.75\n      },\n      {\n        \"split\": \"ours historical full-data validation\",\n        \"R2\": 0.522,\n        \"sigma_ln\": 0.892\n      },\n      {\n        \"split\": \"ours rt48 validation\",\n        \"R2\": 0.512,\n        \"sigma_ln\": 0.898\n      },\n      {\n        \"split\": \"ours rt48 train; capacity only\",\n        \"R2\": 0.955,\n        \"sigma_ln\": 0.267\n      }\n    ],\n    \"caveat\": \"TEAM 是概率预警随时间评估，本项目是固定 20 s 点预测；QuakeFormer 数据约 20 万事件、400 万条记录且划分不同。数字用于量级和差距定位，不构成排行榜。\"\n  }\n}\n\n## Global Style\n{\n  \"name\": \"清新低饱和科研答辩风\",\n  \"visual_direction\": \"formal Chinese academic defense deck, evidence-first, calm and fresh rather than vivid, structured scientific diagrams and concise conclusions\",\n  \"color_palette\": {\n    \"background\": \"#FAFBFC\",\n    \"content_fill\": \"#F2F6F8\",\n    \"title_and_body\": \"#2F3742\",\n    \"train_and_structure\": \"#5B7FA3\",\n    \"validation\": \"#55A6A0\",\n    \"critical_accent\": \"#D66F63\",\n    \"border\": \"#CCD8E2\"\n  },\n  \"typography\": \"Chinese sans-serif; charcoal or dark-gray titles; compact readable academic tables; exact four-decimal metrics where specified\",\n  \"texture_and_finish\": \"flat, clean, subtle light-gray-blue cards and fine borders, no gradients\",\n  \"deck_consistency\": \"keep palette, typography, border treatment and evidence-first mood consistent; vary layout by page role\"\n}\n\n## Input Images\n\n- Image 1: /home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png — approved sample slide style reference; match palette, typography mood, density and finish only; do not copy its exact layout or content\n\n\n## Slide\n{\n  \"number\": 25,\n  \"title\": \"文献与本项目的数值对比——显式区分 train / held-out\",\n  \"role\": \"literature comparison\",\n  \"intent\": \"补齐本项目 rt48 的 train 与 validation，并明确 TEAM test 和 QuakeFormer seen/unseen 的真实口径。\"\n}\n\n## Text\n{\n  \"title\": \"文献与本项目的数值对比——显式区分 train / held-out\",\n  \"key_points\": [\n    \"TEAM 论文只公开日本 test 阈值结果，没有 train 行\",\n    \"本项目 rt48@20 s 同时列 train / validation：train 仅表示拟合容量\",\n    \"QuakeFormer seen / unseen 是两种 held-out station 条件，不是 train / validation\",\n    \"跨论文数字只用于量级和差距定位，不构成排行榜\"\n  ],\n  \"speaker_focus\": null\n}\n\n## Layout\n{\n  \"composition\": \"左右双栏：左侧 TEAM 阈值表含 TEAM test、本项目 train、本项目 validation；右侧 QuakeFormer 回归量级表；底部口径警示\"\n}\n\n## Constraints\n[\n  \"F1 和 PR-AUC 每格以 F1 / PR-AUC 成对显示，均保留三位小数\",\n  \"TEAM 必须标为 test；本项目必须标为 train 和 validation\",\n  \"QuakeFormer seen / unseen 必须写成 held-out station 条件\",\n  \"σ 统一为自然对数单位，QuakeFormer R² 标为读图近似\",\n  \"不把本项目 train 当作 held-out 文献对标\"\n]\n\n## Style Reference Rule\nUse Image 1 as the approved sample-slide style reference. Match its palette, typography mood, density, texture, and overall visual identity. Do not copy its exact layout unless this slide's layout explicitly asks for it.\n\n## Input Image Handling Rules\nFor any input image marked as a strict input asset, include it visibly and preserve its content. Do not redraw, replace, relabel, or invent a similar figure. Scale and crop only as needed for composition while keeping the important labels, arrows, data, and relationships recognizable.\n\n## Universal Constraints\n- The final image itself must contain the title and key points.\n- Render Chinese text exactly and legibly; avoid garbled characters.\n- Keep the confirmed deck style consistent while varying layout by slide role.\n- No watermark, unrelated logo, or extra slide number.\n",
+  "out": "slide_25.png",
+  "input_images": [
+    {
+      "path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png",
+      "role": "approved sample slide style reference",
+      "fidelity": "match palette, typography mood, density and finish only; do not copy its exact layout or content"
+    }
+  ],
+  "requires_context_images": true,
+  "expected_backend": "built-in image tool",
+  "sample_generation_method": {
+    "backend_used": "built-in image tool",
+    "tool_name": "image_gen",
+    "mode": "generate; use localized edit with the same tool only when QA finds a contained issue",
+    "prompt_source": "prompts/sample_slide_12.md",
+    "size": "16:9 landscape; approved output 1672x941",
+    "quality": "built-in default",
+    "model_config": "built-in image_gen default",
+    "approved_sample_path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png",
+    "input_context_preparation": "Inspect local source images with view_image; pass the approved sample through referenced_image_paths as a style-only reference.",
+    "handoff_rule": "Use the same built-in image_gen backend and the approved low-saturation style. Return a blocker if that path or any strict source image is unavailable."
+  },
+  "generation_contract": {
+    "must_use_selected_image_backend": true,
+    "must_match_sample_generation_method": true,
+    "forbidden_final_image_methods": [
+      "local drawing/rendering scripts",
+      "Pillow-generated slides",
+      "SVG/HTML/CSS/canvas screenshots",
+      "python-pptx/PptxGenJS/native PPT layout screenshots",
+      "manually composited text/image overlays"
+    ],
+    "must_return": [
+      "backend_used",
+      "selected_source",
+      "qa_note"
+    ]
+  }
+}

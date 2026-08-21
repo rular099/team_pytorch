@@ -15,6 +15,7 @@ import os
 import re
 import shlex
 import struct
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -26,6 +27,11 @@ import pandas as pd
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from tools.hinet_raw_archive import AnnualHinetArchiveReader  # noqa: E402
+
 JST = timezone(timedelta(hours=9))
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib-codex")
@@ -138,7 +144,7 @@ def parse_download_script(path: Path) -> dict[str, str]:
         return {}
     out: dict[str, str] = {}
     for i, token in enumerate(tokens[:-1]):
-        if token in {"--hdf5", "--output-root"}:
+        if token in {"--hdf5", "--output-root", "--match-distance-km"}:
             out[token] = tokens[i + 1]
     return out
 
@@ -149,6 +155,8 @@ def resolve_inputs(args: argparse.Namespace) -> None:
         args.hdf5 = Path(parsed["--hdf5"])
     if args.download_root is None and "--output-root" in parsed:
         args.download_root = Path(parsed["--output-root"])
+    if args.max_match_distance_km is None and "--match-distance-km" in parsed:
+        args.max_match_distance_km = float(parsed["--match-distance-km"])
     if args.hdf5 is None:
         raise SystemExit("Provide --hdf5 or keep it in --download-script.")
     if args.download_root is None:
@@ -158,17 +166,47 @@ def resolve_inputs(args: argparse.Namespace) -> None:
     args.output_dir = (args.output_dir or (REPO_ROOT / "hinet_velocity_qc")).expanduser().resolve()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     args.raw_search_dir = [p.expanduser().resolve() for p in args.raw_search_dir]
+    if args.max_match_distance_km is None:
+        args.max_match_distance_km = 1.0
 
 
-def load_manifest(download_root: Path) -> pd.DataFrame:
+def load_manifest(args: argparse.Namespace) -> pd.DataFrame:
+    download_root = args.download_root
     manifest_path = download_root / "manifests" / "download_manifest.csv"
     if manifest_path.exists():
         df = pd.read_csv(manifest_path, dtype={"event_id": str, "knet_station": str, "hinet_station": str})
     else:
         event_manifests = sorted((download_root / "manifests" / "events").glob("*/download_manifest.csv"))
-        if not event_manifests:
-            raise FileNotFoundError(f"No download manifest found under {download_root}")
-        df = pd.concat((pd.read_csv(p, dtype={"event_id": str, "knet_station": str, "hinet_station": str}) for p in event_manifests), ignore_index=True)
+        if event_manifests:
+            df = pd.concat((pd.read_csv(p, dtype={"event_id": str, "knet_station": str, "hinet_station": str}) for p in event_manifests), ignore_index=True)
+        else:
+            if args.event_id and str(args.event_id)[:4].isdigit():
+                archive_year = str(args.event_id)[:4]
+            else:
+                year_match = re.search(r"japan_(20\d{2})\.hdf5$", args.hdf5.name)
+                archive_year = year_match.group(1) if year_match else ""
+            archive_candidates = []
+            if archive_year:
+                archive_candidates.extend((download_root / "archive").glob(f"hinet_raw_{archive_year}*.h5"))
+            if not archive_candidates:
+                archive_candidates.extend((download_root / "archive").glob("hinet_raw_*.h5"))
+            frames = []
+            for archive_path in sorted(set(archive_candidates)):
+                with AnnualHinetArchiveReader(archive_path) as reader:
+                    event_ids = reader.event_ids()
+                    if args.event_id:
+                        event_ids = [event_id for event_id in event_ids if event_id == str(args.event_id)]
+                    for event_id in event_ids:
+                        event_manifest = reader.manifest(event_id)
+                        if event_manifest.empty:
+                            continue
+                        event_manifest = event_manifest.copy()
+                        event_manifest["archive_path"] = str(archive_path)
+                        event_manifest["archive_event_id"] = event_id
+                        frames.append(event_manifest)
+            if not frames:
+                raise FileNotFoundError(f"No legacy or annual-archive manifest found under {download_root}")
+            df = pd.concat(frames, ignore_index=True)
     subset = [c for c in ("event_id", "knet_station", "knet_height_m", "hinet_station", "ppick_timestamp") if c in df.columns]
     if subset:
         df = df.drop_duplicates(subset=subset).reset_index(drop=True)
@@ -678,7 +716,85 @@ def load_raw_velocity(row: pd.Series, args: argparse.Namespace) -> VelocitySerie
     return VelocitySeries(t_rel[mask], values[mask], "raw_win32", "loaded", label, ",".join(str(p) for p in cnt_paths), 1)
 
 
+def load_archive_velocity(row: pd.Series, args: argparse.Namespace) -> VelocitySeries | None:
+    archive_value = row.get("archive_path", "")
+    if archive_value is None or pd.isna(archive_value) or not str(archive_value).strip():
+        return None
+    archive_path = Path(str(archive_value)).expanduser()
+    if not archive_path.exists():
+        return VelocitySeries(
+            np.array([]),
+            np.array([]),
+            "annual_hdf5",
+            "archive_missing",
+            "Hi-net annual CNT archive",
+            str(archive_path),
+            0,
+        )
+    event_id = str(row.get("archive_event_id", row["event_id"]))
+    hinet_station = str(row["hinet_station"])
+    if args.component == "norm":
+        components = ("U", "Z", "N", "1", "E", "2")
+    else:
+        components = HINET_COMPONENT_BY_MODE[args.component]
+    try:
+        with AnnualHinetArchiveReader(archive_path) as reader:
+            component_series = reader.read_station_series(event_id, hinet_station, components)
+    except Exception as exc:
+        return VelocitySeries(
+            np.array([]),
+            np.array([]),
+            "annual_hdf5",
+            f"read_failed:{exc!r}",
+            "Hi-net annual CNT archive",
+            str(archive_path),
+            0,
+        )
+    if not component_series:
+        return VelocitySeries(
+            np.array([]),
+            np.array([]),
+            "annual_hdf5",
+            "channel_not_found",
+            "Hi-net annual CNT archive",
+            str(archive_path),
+            0,
+        )
+
+    ppick_ts = float(row["ppick_timestamp"])
+    if args.component == "norm":
+        base_t = max((series[0] for series in component_series.values()), key=lambda values: values.size)
+        arrays = [
+            np.interp(base_t, times, values, left=np.nan, right=np.nan)
+            for times, values in component_series.values()
+        ]
+        values = np.sqrt(np.nansum(np.vstack(arrays) ** 2, axis=0))
+        times = base_t
+        label = "Hi-net annual CNT archive norm counts"
+    else:
+        preferred = HINET_COMPONENT_BY_MODE[args.component]
+        selected_component = next((name for name in preferred if name in component_series), None)
+        if selected_component is None:
+            selected_component = next(iter(component_series))
+        times, values = component_series[selected_component]
+        label = f"Hi-net annual CNT archive {hinet_station} {selected_component} counts"
+    t_rel = times - ppick_ts
+    mask = (t_rel >= -float(args.pre_seconds)) & (t_rel <= float(args.post_seconds))
+    return VelocitySeries(
+        t_rel[mask],
+        np.asarray(values)[mask],
+        "annual_hdf5",
+        "loaded",
+        label,
+        f"{archive_path}#{event_id}",
+        len(component_series),
+    )
+
+
 def load_velocity(row: pd.Series, args: argparse.Namespace) -> VelocitySeries:
+    archived = load_archive_velocity(row, args)
+    if archived is not None and archived.t_rel.size:
+        return archived
     mseed = load_mseed_velocity(row, args)
     if mseed is not None and mseed.t_rel.size:
         return mseed
@@ -687,6 +803,8 @@ def load_velocity(row: pd.Series, args: argparse.Namespace) -> VelocitySeries:
         return raw
     if raw is not None:
         return raw
+    if archived is not None:
+        return archived
     if mseed is not None:
         return mseed
     return VelocitySeries(np.array([]), np.array([]), "none", "missing_velocity", "Hi-net velocity unavailable", "", 0)
@@ -760,24 +878,161 @@ def safe_slug(*parts: object) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", text).strip("_")
 
 
-def plot_pair(training: TrainingStation, velocity: VelocitySeries, row: pd.Series, args: argparse.Namespace) -> Path:
+def waveform_qc_metrics(
+    training: TrainingStation,
+    velocity: VelocitySeries,
+    row: pd.Series,
+    args: argparse.Namespace,
+) -> dict[str, object]:
+    """Return timestamp, coverage, finite-value, and station-match checks."""
+    metrics: dict[str, object] = {}
+    fail_reasons: list[str] = []
+    warn_reasons: list[str] = []
+
+    acc_finite = np.isfinite(training.acceleration)
+    metrics["acceleration_n_samples"] = int(training.acceleration.size)
+    metrics["acceleration_finite_fraction"] = float(acc_finite.mean()) if acc_finite.size else 0.0
+    acc_contains_p = bool(
+        training.valid_start_rel_seconds <= 0.0 <= training.valid_end_rel_seconds
+    )
+    metrics["acceleration_contains_theoretical_p"] = int(acc_contains_p)
+    if not acc_contains_p:
+        fail_reasons.append("theoretical_P_outside_acc_record")
+    if metrics["acceleration_finite_fraction"] < 0.999:
+        fail_reasons.append("nonfinite_acceleration")
+
+    metrics["velocity_n_samples"] = int(velocity.values.size)
+    if velocity.values.size == 0 or velocity.t_rel.size == 0:
+        metrics.update({
+            "velocity_finite_fraction": 0.0,
+            "velocity_start_minus_p_s": np.nan,
+            "velocity_end_minus_p_s": np.nan,
+            "velocity_median_dt_s": np.nan,
+            "velocity_gap_count": 0,
+            "velocity_nonmonotonic_count": 0,
+            "velocity_contains_theoretical_p": 0,
+            "velocity_covers_requested_window": 0,
+        })
+        fail_reasons.append("velocity_missing")
+    else:
+        finite = np.isfinite(velocity.values) & np.isfinite(velocity.t_rel)
+        finite_fraction = float(finite.mean())
+        metrics["velocity_finite_fraction"] = finite_fraction
+        metrics["velocity_start_minus_p_s"] = float(np.nanmin(velocity.t_rel))
+        metrics["velocity_end_minus_p_s"] = float(np.nanmax(velocity.t_rel))
+        diffs = np.diff(velocity.t_rel[np.isfinite(velocity.t_rel)])
+        positive = diffs[diffs > 0]
+        median_dt = float(np.median(positive)) if positive.size else np.nan
+        gap_count = int(np.sum(diffs > 1.5 * median_dt)) if np.isfinite(median_dt) else 0
+        nonmonotonic_count = int(np.sum(diffs <= 0))
+        tolerance = max(0.05, 2.0 * median_dt) if np.isfinite(median_dt) else 0.05
+        contains_p = bool(
+            metrics["velocity_start_minus_p_s"] <= tolerance
+            and metrics["velocity_end_minus_p_s"] >= -tolerance
+        )
+        covers_window = bool(
+            metrics["velocity_start_minus_p_s"] <= -float(args.pre_seconds) + tolerance
+            and metrics["velocity_end_minus_p_s"] >= float(args.post_seconds) - tolerance
+        )
+        metrics.update({
+            "velocity_median_dt_s": median_dt,
+            "velocity_gap_count": gap_count,
+            "velocity_nonmonotonic_count": nonmonotonic_count,
+            "velocity_contains_theoretical_p": int(contains_p),
+            "velocity_covers_requested_window": int(covers_window),
+        })
+        if finite_fraction < 0.999:
+            fail_reasons.append("nonfinite_velocity")
+        if nonmonotonic_count:
+            fail_reasons.append("nonmonotonic_velocity_time")
+        if not contains_p:
+            fail_reasons.append("theoretical_P_outside_velocity")
+        if gap_count:
+            warn_reasons.append(f"velocity_gaps={gap_count}")
+        if not covers_window:
+            warn_reasons.append("velocity_short_coverage")
+
+    match_distance = finite_float(row.get("match_distance_km"), default=np.nan)
+    match_ok = bool(
+        np.isfinite(match_distance)
+        and match_distance <= float(args.max_match_distance_km) + 1e-9
+    )
+    metrics["station_match_distance_km"] = match_distance
+    metrics["station_match_threshold_km"] = float(args.max_match_distance_km)
+    metrics["station_match_within_threshold"] = int(match_ok)
+    if not match_ok:
+        fail_reasons.append("station_match_distance_exceeded")
+
+    if fail_reasons:
+        status = "FAIL"
+    elif warn_reasons:
+        status = "WARN"
+    else:
+        status = "PASS"
+    metrics["qc_status"] = status
+    metrics["qc_fail_reasons"] = ";".join(fail_reasons)
+    metrics["qc_warn_reasons"] = ";".join(warn_reasons)
+    return metrics
+
+
+def set_relative_and_absolute_time_ticks(ax, ppick_ts: float, args: argparse.Namespace) -> None:
+    """Use two-line ticks: relative seconds above the corresponding JST time."""
+    ticks = np.linspace(-float(args.pre_seconds), float(args.post_seconds), 5)
+    timestamps = [datetime.fromtimestamp(ppick_ts + float(x), tz=JST) for x in ticks]
+    crosses_date = len({stamp.date() for stamp in timestamps}) > 1
+    labels = [
+        (
+            f"{offset:+.0f} s\n{stamp.strftime('%m-%d %H:%M:%S')}"
+            if crosses_date
+            else f"{offset:+.0f} s\n{stamp.strftime('%H:%M:%S')}"
+        )
+        for offset, stamp in zip(ticks, timestamps)
+    ]
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(labels, fontsize=8)
+    date_label = timestamps[len(timestamps) // 2].strftime("%Y-%m-%d")
+    ax.set_xlabel(
+        f"seconds relative to theoretical P / absolute time JST ({date_label})",
+        fontsize=9,
+    )
+
+
+def plot_pair(
+    training: TrainingStation,
+    velocity: VelocitySeries,
+    row: pd.Series,
+    qc: dict[str, object],
+    args: argparse.Namespace,
+) -> Path:
     import matplotlib.pyplot as plt
 
-    fig, axes = plt.subplots(2, 1, figsize=(12, 6.2), sharex=True)
-    axes[0].plot(training.acceleration_t_rel, training.acceleration, color="0.20", linewidth=0.8)
+    acceleration_color = "#0072B2"
+    velocity_color = "#D55E00"
+    p_color = "#009E73"
+    fig, axes = plt.subplots(2, 1, figsize=(12, 7.2), sharex=True, constrained_layout=True)
+    axes[0].plot(
+        training.acceleration_t_rel,
+        training.acceleration,
+        color=acceleration_color,
+        linewidth=0.8,
+    )
     add_invalid_acceleration_shading(axes[0], training, args)
-    axes[0].axvline(0.0, color="tab:green", linewidth=1.3, label="theoretical_P")
+    axes[0].axvline(0.0, color=p_color, linewidth=1.3, linestyle="--", label="theoretical_P")
     if args.show_search_windows:
         add_search_windows(axes[0], training.span_rel_seconds)
     add_compact_pick_markers(axes[0], training.pick_rel_seconds, DEFAULT_TOP_MARKERS)
-    axes[0].set_ylabel("K-NET/KiK-net acc. m/s^2" if args.component != "norm" else "K-NET/KiK-net |acc.| m/s^2")
+    axes[0].set_ylabel(
+        "K-NET/KiK-net original acceleration (m s⁻²)"
+        if args.component != "norm"
+        else "K-NET/KiK-net original |acceleration| (m s⁻²)"
+    )
     dedupe_legend(axes[0])
 
     if velocity.t_rel.size:
-        axes[1].plot(velocity.t_rel, velocity.values, color="0.20", linewidth=0.8)
+        axes[1].plot(velocity.t_rel, velocity.values, color=velocity_color, linewidth=0.8)
     else:
         axes[1].text(0.5, 0.5, f"Velocity unavailable: {velocity.status}", ha="center", va="center", transform=axes[1].transAxes, fontsize=10)
-    axes[1].axvline(0.0, color="tab:green", linewidth=1.3, label="theoretical_P")
+    axes[1].axvline(0.0, color=p_color, linewidth=1.3, linestyle="--", label="theoretical_P")
     if args.show_search_windows:
         add_search_windows(axes[1], training.span_rel_seconds)
     add_compact_pick_markers(axes[1], training.pick_rel_seconds, DEFAULT_BOTTOM_MARKERS)
@@ -785,34 +1040,63 @@ def plot_pair(training: TrainingStation, velocity: VelocitySeries, row: pd.Serie
     add_axis_marker(axes[1], final_pick, "final", "black", 0.10)
     if args.show_candidate_picks:
         add_candidate_pick_markers(axes[1], training.pick_rel_seconds)
-    axes[1].set_ylabel(velocity.label)
-    axes[1].set_xlabel("seconds relative to theoretical P arrival")
+    axes[1].set_ylabel(velocity.label.replace("Hi-net", "Hi-net velocity sensor"))
     axes[1].set_xlim(-args.pre_seconds, args.post_seconds)
     dedupe_legend(axes[1])
+
+    ppick_ts = float(row["ppick_timestamp"])
+    set_relative_and_absolute_time_ticks(axes[1], ppick_ts, args)
 
     final_offset = first_finite_pick(training.pick_rel_seconds, ("p_picks", "p_pick_refined_aligned"))
     match_distance = finite_float(row.get("match_distance_km"), default=np.nan)
     epi_distance = finite_float(row.get("epicentral_distance_km"), default=np.nan)
-    title = (
-        f"{training.event_id} {training.station_code}->"
-        f"{row.get('hinet_station', '')} wave_idx={training.wave_idx} "
-        f"{training.sensor_class} h={training.height_m:.1f}m "
-        f"epi={epi_distance:.1f}km match={match_distance:.3f}km "
-        f"p_pick-P={final_offset:.2f}s vel={velocity.source}:{velocity.status}"
+    origin_ts = finite_float(row.get("origin_timestamp"), default=np.nan)
+    origin_jst = (
+        datetime.fromtimestamp(origin_ts, tz=JST).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + " JST"
+        if np.isfinite(origin_ts)
+        else str(row.get("origin_time_jst", ""))
     )
-    axes[0].set_title(title, fontsize=10, loc="left")
+    p_jst = datetime.fromtimestamp(ppick_ts, tz=JST).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + " JST"
+    magnitude = finite_float(row.get("event_magnitude"), default=np.nan)
+    depth = finite_float(row.get("event_depth_km"), default=np.nan)
+    title = (
+        f"Hi-net download QC [{qc['qc_status']}] | event {training.event_id} | "
+        f"M {magnitude:.1f}, depth {depth:.1f} km | origin {origin_jst}\n"
+        f"K-NET/KiK-net {training.station_code} ({training.sensor_class}, wave {training.wave_idx}) ↔ "
+        f"Hi-net {row.get('hinet_station', '')} | station separation {match_distance:.3f} km | "
+        f"epicentral distance {epi_distance:.1f} km\n"
+        f"theoretical P {p_jst} | final pick − P {final_offset:.2f} s | "
+        f"waveform source {velocity.source}:{velocity.status}"
+    )
+    fig.suptitle(title, fontsize=9.5, x=0.01, ha="left")
+    qc_note = (
+        f"n={int(qc['velocity_n_samples'])}, Δt={finite_float(qc['velocity_median_dt_s']):.5f} s, "
+        f"gaps={int(qc['velocity_gap_count'])}, finite={100.0 * finite_float(qc['velocity_finite_fraction']):.2f}%"
+    )
+    axes[1].text(
+        0.995,
+        0.02,
+        qc_note,
+        transform=axes[1].transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=8,
+        color="0.25",
+        bbox={"facecolor": "white", "edgecolor": "0.8", "alpha": 0.85, "pad": 2.5},
+    )
     for ax in axes:
         ax.grid(True, axis="x", alpha=0.18)
-    fig.tight_layout()
     filename = safe_slug(training.event_id, training.station_code, f"wave{training.wave_idx}", row.get("hinet_station", ""), args.component) + ".png"
     out_path = args.output_dir / filename
     fig.savefig(out_path, dpi=args.dpi)
+    if args.save_pdf:
+        fig.savefig(out_path.with_suffix(".pdf"))
     plt.close(fig)
     return out_path
 
 
 def process(args: argparse.Namespace) -> pd.DataFrame:
-    manifest = select_rows(load_manifest(args.download_root), args)
+    manifest = select_rows(load_manifest(args), args)
     rows = []
     with h5py.File(args.hdf5, "r") as h5:
         for _, row in manifest.iterrows():
@@ -820,8 +1104,10 @@ def process(args: argparse.Namespace) -> pd.DataFrame:
             try:
                 training = load_training_station(h5, row, args)
                 velocity = load_velocity(row, args)
-                plot_path = plot_pair(training, velocity, row, args)
+                qc = waveform_qc_metrics(training, velocity, row, args)
+                plot_path = plot_pair(training, velocity, row, qc, args)
                 summary.update(training.summary)
+                summary.update(qc)
                 summary.update({
                     "velocity_source": velocity.source,
                     "velocity_status": velocity.status,
@@ -861,12 +1147,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pre-seconds", type=float, default=50.0, help="Seconds before theoretical P arrival to show.")
     parser.add_argument("--post-seconds", type=float, default=50.0, help="Seconds after theoretical P arrival to show.")
     parser.add_argument("--component", choices=["vertical", "ns", "ew", "norm"], default="vertical")
+    parser.add_argument(
+        "--max-match-distance-km",
+        type=float,
+        default=None,
+        help="QC threshold for station separation. Defaults to --match-distance-km parsed from download_hinet.sh, then 1 km.",
+    )
     parser.add_argument("--large-offset-seconds", type=float, default=20.0, help="Flag p_picks offsets larger than this threshold.")
     parser.add_argument("--prefer-written-mseed", action="store_true", help="In batch mode, plot rows with MiniSEED first.")
     parser.add_argument("--raw-search-dir", type=Path, action="append", default=[], help="Extra directory containing raw *.cnt/*.ch files.")
     parser.add_argument("--show-candidate-picks", action="store_true", help="Also mark STALTA and DiTing candidate picks on the velocity-panel time axis.")
     parser.add_argument("--show-search-windows", action="store_true", help="Also shade travel-time/STALTA search windows.")
     parser.add_argument("--dpi", type=int, default=160)
+    parser.add_argument("--save-pdf", action="store_true", help="Also save a vector PDF beside each PNG QC plot.")
     return parser
 
 

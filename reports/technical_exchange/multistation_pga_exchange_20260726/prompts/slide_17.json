@@ -1,0 +1,48 @@
+{
+  "slide": 17,
+  "title": "案例 1——台站增加带来持续收益",
+  "prompt": "# Codex PPT Slide Image Prompt\n\n## Canvas\n{\n  \"type\": \"16:9 full-slide PowerPoint image\",\n  \"language\": \"Chinese\",\n  \"slide_number\": 17,\n  \"render_slide_number\": false\n}\n\n## Deck Goal\n面向科研交流，说明多台站目标位置 PGA 估计的方法、最新实验进展、泛化瓶颈及与 TEAM、QuakeFormer 的定量差距。\n\n## Required Background\n{\n  \"deck_context\": {\n    \"source_summary\": \"本项目从可变数量的日本强震台站三分量波形与位置出发，预测任意目标位置的 log PGA。历史 full-data 使用 699 train、101 validation、201 test 事件；最新 rt44–rt51 是 512-event controlled overfit 实验，现已取得完整 KNET-only normal 与 station-roll last eval，并补齐 3 个事件级台站数案例和震中距分桶。\",\n    \"core_claim\": \"模型已具备很强的训练集拟合能力，当前主要瓶颈是 held-out 泛化、强 PGA 低估和概率校准。KNET-only 自身结果中 rt48/rt49 领先，但 2716 个共同目标上的配对检验没有显示 KNET 筛选带来泛化收益；station-roll 的验证影响稳定但较小。\",\n    \"evaluation_rules\": [\n      \"区分 full-data system result 与 512-event overfit experiment。\",\n      \"512-event 页面必须同时报告 train 和 validation。\",\n      \"mixed-source 与 KNET-only 比较必须优先采用共同 event/time/target coordinate，不用目标集合不同的均值差替代配对证据。\",\n      \"文献数字只用于量级和差距定位，不构成跨数据集排行榜。\",\n      \"本项目原始误差为 log10 PGA；与 QuakeFormer 残差比较时换算为自然对数单位。\"\n    ],\n    \"canonical_terms\": [\n      \"PGA\",\n      \"multi-station\",\n      \"target location\",\n      \"full-data\",\n      \"512-event overfit\",\n      \"validation\",\n      \"strong PGA\",\n      \"unseen station\"\n    ]\n  }\n}\n\n## Global Style\n{\n  \"name\": \"清新低饱和科研答辩风\",\n  \"visual_direction\": \"formal Chinese academic defense deck, evidence-first, calm and fresh rather than vivid, structured scientific diagrams and concise conclusions\",\n  \"color_palette\": {\n    \"background\": \"#FAFBFC\",\n    \"content_fill\": \"#F2F6F8\",\n    \"title_and_body\": \"#2F3742\",\n    \"train_and_structure\": \"#5B7FA3\",\n    \"validation\": \"#55A6A0\",\n    \"critical_accent\": \"#D66F63\",\n    \"border\": \"#CCD8E2\"\n  },\n  \"typography\": \"Chinese sans-serif; charcoal or dark-gray titles; compact readable academic tables; exact four-decimal metrics where specified\",\n  \"texture_and_finish\": \"flat, clean, subtle light-gray-blue cards and fine borders, no gradients\",\n  \"deck_consistency\": \"keep palette, typography, border treatment and evidence-first mood consistent; vary layout by page role\"\n}\n\n## Input Images\n\n- Image 1: /home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png — approved sample slide style reference; match palette, typography mood, density and finish only; do not copy its exact layout or content\n- Image 2: /home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/pga_academic_report_assets_current/case_station_sweep_1_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png — strict input asset; station-count sweep and residual-distance panels for validation event 51; preserve the line plot, all residual-versus-distance panels, axes, legend, labels and values exactly\n\n\n## Slide\n{\n  \"number\": 17,\n  \"title\": \"案例 1——台站增加带来持续收益\",\n  \"role\": \"event-level quantitative evidence\",\n  \"intent\": \"量化 event 51 随输入台站数增加的 MAE、bias 和空间异质性。\"\n}\n\n## Text\n{\n  \"title\": \"案例 1——台站增加带来持续收益\",\n  \"key_points\": [\n    \"MAE：0.3498 / 0.2863 / 0.2937 / 0.2344 / 0.1952 / 0.1636\",\n    \"3→25 台下降 0.1862，约 53%；5→8 台轻微反弹\",\n    \"bias 从 -0.2102 缓解到 -0.1308，低估减弱但未消失\",\n    \"同一事件不同目标仍有显著 residual–distance 空间异质性\"\n  ],\n  \"speaker_focus\": null\n}\n\n## Layout\n{\n  \"composition\": \"严格输入图占约 72%；右侧纵向结论卡突出 3→25 台 MAE -0.1862（约 53%）和 bias 变化\"\n}\n\n## Source Image Rules\n原图必须完整、清晰、等比例放置，不重绘、不裁掉折线或散点，不修改任何数值。\n\n## Constraints\n[\n  \"与上一页视觉连续，但不得重复地图\",\n  \"明确单例用于解释总体趋势，不替代 Slide 15 分桶统计\"\n]\n\n## Style Reference Rule\nUse Image 1 as the approved sample-slide style reference. Match its palette, typography mood, density, texture, and overall visual identity. Do not copy its exact layout unless this slide's layout explicitly asks for it.\n\n## Input Image Handling Rules\nFor any input image marked as a strict input asset, include it visibly and preserve its content. Do not redraw, replace, relabel, or invent a similar figure. Scale and crop only as needed for composition while keeping the important labels, arrows, data, and relationships recognizable.\n\n## Universal Constraints\n- The final image itself must contain the title and key points.\n- Render Chinese text exactly and legibly; avoid garbled characters.\n- Keep the confirmed deck style consistent while varying layout by slide role.\n- No watermark, unrelated logo, or extra slide number.\n",
+  "out": "slide_17.png",
+  "input_images": [
+    {
+      "path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png",
+      "role": "approved sample slide style reference",
+      "fidelity": "match palette, typography mood, density and finish only; do not copy its exact layout or content"
+    },
+    {
+      "path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/pga_academic_report_assets_current/case_station_sweep_1_japan_overfit_pga15_cross_attention_overfitall_fixed_inputs_random_targets_best_val.png",
+      "role": "strict input asset; station-count sweep and residual-distance panels for validation event 51",
+      "fidelity": "preserve the line plot, all residual-versus-distance panels, axes, legend, labels and values exactly"
+    }
+  ],
+  "requires_context_images": true,
+  "expected_backend": "built-in image tool",
+  "sample_generation_method": {
+    "backend_used": "built-in image tool",
+    "tool_name": "image_gen",
+    "mode": "generate; use localized edit with the same tool only when QA finds a contained issue",
+    "prompt_source": "prompts/sample_slide_12.md",
+    "size": "16:9 landscape; approved output 1672x941",
+    "quality": "built-in default",
+    "model_config": "built-in image_gen default",
+    "approved_sample_path": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch/reports/technical_exchange/multistation_pga_exchange_20260726/origin_image/slide_12.png",
+    "input_context_preparation": "Inspect local source images with view_image; pass the approved sample through referenced_image_paths as a style-only reference.",
+    "handoff_rule": "Use the same built-in image_gen backend and the approved low-saturation style. Return a blocker if that path or any strict source image is unavailable."
+  },
+  "generation_contract": {
+    "must_use_selected_image_backend": true,
+    "must_match_sample_generation_method": true,
+    "forbidden_final_image_methods": [
+      "local drawing/rendering scripts",
+      "Pillow-generated slides",
+      "SVG/HTML/CSS/canvas screenshots",
+      "python-pptx/PptxGenJS/native PPT layout screenshots",
+      "manually composited text/image overlays"
+    ],
+    "must_return": [
+      "backend_used",
+      "selected_source",
+      "qa_note"
+    ]
+  }
+}

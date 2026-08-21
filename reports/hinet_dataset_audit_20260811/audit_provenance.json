@@ -1,0 +1,16 @@
+{
+  "acceleration_root": "/run/media/zhangb/My Passport/knet_data",
+  "processed_root": "/run/media/zhangb/My Passport/knet_converted/origin_corrected_diting_vel_acc_vs30",
+  "velocity_root": "/run/media/zhangb/My Passport/hinet_data",
+  "validate_all_tars": true,
+  "sample_events_per_year": 3,
+  "figure_backend": "Python/matplotlib",
+  "waveform_qc_window_seconds": [
+    -120,
+    120
+  ],
+  "representative_plot_window_seconds": [
+    -20,
+    60
+  ]
+}

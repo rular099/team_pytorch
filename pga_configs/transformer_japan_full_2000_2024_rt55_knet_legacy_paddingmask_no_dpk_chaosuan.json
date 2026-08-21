@@ -1,0 +1,172 @@
+{
+    "extends": "transformer_japan_overfit_pga15_stage2_512_rt52_knet_legacy_paddingmask_cached_dpk_event_temporal_residual_scale4_chaosuan.json",
+    "model_params": {
+        "diting_station_adapter": "legacy",
+        "station_token_weight_mode": "none",
+        "temporal_token_weight_mode": "none",
+        "dpk_checkpoint_path": null,
+        "dpk_share_encoder_if_identical": false,
+        "dpk_compare_encoder": false,
+        "use_pga_temporal_residual": false
+    },
+    "training_params": {
+        "epochs_full_model": 12,
+        "data_path": [
+            "${JAPAN_FULL_DATA_ROOT}/2000/japan_2000.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2001/japan_2001.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2002/japan_2002.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2003/japan_2003.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2004/japan_2004.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2005/japan_2005.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2006/japan_2006.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2007/japan_2007.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2008/japan_2008.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2009/japan_2009.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2010/japan_2010.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2011/japan_2011.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2012/japan_2012.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2013/japan_2013.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2014/japan_2014.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2015/japan_2015.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2016/japan_2016.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2017/japan_2017.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2018/japan_2018.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2019/japan_2019.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2020/japan_2020.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2021/japan_2021.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2022/japan_2022.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2023/japan_2023.hdf5",
+            "${JAPAN_FULL_DATA_ROOT}/2024/japan_2024.hdf5"
+        ],
+        "weight_path": "${JAPAN_FULL_WEIGHT_PATH}",
+        "metadata_cache_dir": "cache/japan_full_2000_2024_station_metadata",
+        "metadata_cache_columns": [
+            "EVENT",
+            "wave_idx",
+            "Magnitude",
+            "Latitude",
+            "Longitude",
+            "DEPTH",
+            "Origin_Time(JST)",
+            "source_network",
+            "sensor_class",
+            "stalta_ratio_at_pick",
+            "station_code"
+        ],
+        "min_stalta_ratio_at_pick": 0.1,
+        "lr_monitor": "val",
+        "lr_decay_patience": 2,
+        "lr_decay_factor": 0.5,
+        "min_lr": 1e-05,
+        "generator_params": [
+            {
+                "key": "Magnitude",
+                "batch_size": 8,
+                "min_upsample_magnitude": 8,
+                "magnitude_resampling": 1.0,
+                "translate": false,
+                "disable_station_foreshadowing": true,
+                "selection_skew": null,
+                "pga_from_inactive": true,
+                "pga_key": "pga",
+                "shuffle_train_dev": false,
+                "trigger_based": true,
+                "select_first_inputs": true,
+                "select_first_pga_targets": false,
+                "input_station_selection": "p_pick",
+                "integrate": false,
+                "scale_metadata": false,
+                "transform_target_only": false,
+                "pga_selection_skew": null,
+                "noise_seconds": 5,
+                "emit_waveform_padding_mask": true,
+                "waveform_padding_mask_eps": 1e-08,
+                "cutout_start": 0,
+                "cutout_end": 90,
+                "pos_offset": [
+                    37,
+                    140
+                ],
+                "random_input_station_count": null,
+                "realtime_training": {
+                    "enabled": true,
+                    "mode": "train",
+                    "reference": "first_p_pick",
+                    "train_time_bins": [
+                        [0, 1],
+                        [1, 3],
+                        [3, 5],
+                        [5, 10],
+                        [10, 20],
+                        [20, 40],
+                        [40, 90]
+                    ],
+                    "val_times": [1, 3, 5, 10, 20, 40, 90],
+                    "bins_per_event_per_epoch": 3,
+                    "bin_sampling": "without_replacement",
+                    "train_time_mode": "random_bins",
+                    "train_times": null
+                },
+                "realtime_target_sampling": {
+                    "enabled": true,
+                    "input_ratio": 0.3,
+                    "triggered_noninput_ratio": 0.2,
+                    "untriggered_ratio": 0.5,
+                    "fill_missing": true
+                }
+            }
+        ],
+        "validation_generator_overrides": {
+            "oversample": 1,
+            "realtime_training": {
+                "enabled": true,
+                "mode": "val",
+                "reference": "first_p_pick",
+                "train_time_bins": [
+                    [0, 1],
+                    [1, 3],
+                    [3, 5],
+                    [5, 10],
+                    [10, 20],
+                    [20, 40],
+                    [40, 90]
+                ],
+                "val_times": [1, 3, 5, 10, 20, 40, 90],
+                "bins_per_event_per_epoch": 1,
+                "bin_sampling": "without_replacement"
+            }
+        },
+        "pga_target_normalization": {
+            "enabled": true,
+            "mean": -1.1228067351176172,
+            "std": 0.4312468402225416,
+            "count": 146842,
+            "source": "2000-2024 default event-level train split, source_network=knt, finite pga_norm_resampled_mps2"
+        },
+        "overfit_event_ids_path": null,
+        "overfit_n": 0,
+        "dpk_prior_cache": null,
+        "lr_pga_temporal_residual": null,
+        "transfer_model_path": "weights_japan_overfit_pga15_stage2_512_rt10_b54_realtime_pga_mdn3_mag_gaussian_loc_mdn3_meanaux010/full_model_best.pth",
+        "station_filter": "knet"
+    },
+    "full_data_manifest": {
+        "years": "2000-2024",
+        "hdf5_shards": 25,
+        "all_events": 14153,
+        "all_station_rows": 501956,
+        "knet_station_rows": 211546,
+        "expected_split_before_knet_empty_event_removal": {
+            "train_events": 9885,
+            "dev_events": 1429,
+            "test_events": 2839
+        },
+        "expected_split_after_knet_filter": {
+            "train_events": 9627,
+            "dev_events": 1383,
+            "test_events": 2769
+        }
+    },
+    "experiment_note": "Fast full-data mainline after rt52-rt54: retain the rt52 legacy station adapter and explicit storage-valid waveform mask; use 25 annual HDF5 shards from 2000-2024 with KNET-only station filtering. DPK cache, DPK token weighting, and the PGA temporal-residual head are disabled. Each train event draws three of seven realtime bins per epoch; validation evaluates all seven fixed times once. Start with 12 total epochs and extend only through checkpoint resume if validation is still improving.",
+    "station_filter_note": "source_network=knt only. The converted shards already contain corrected origin time/provenance, aligned P picks, log10 PGA in m/s^2, record_start_sample + valid_n_samples, and VS30. No origin-correction or DPK preprocessing is required after upload."
+}
