@@ -1,6 +1,6 @@
 # TEAM PyTorch 项目交接文档
 
-更新时间：2026-08-21（Asia/Shanghai）
+更新时间：2026-08-23（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威入口。先读完本文，再检查超算端状态和 Git
 工作区；不要根据旧聊天记录、文件名或本地旧 checkpoint 猜测当前状态。
@@ -10,7 +10,7 @@
 - 工作区：`/home/zhangb/work/people/zhangbei/team_claude`
 - 主仓库：`/home/zhangb/work/people/zhangbei/team_claude/team_pytorch`
 - 当前分支：`zhangb/native-scale-adapter-scaling`
-- 本次同步前基线：`8979ec2 Add strict Slurm continuation launcher`
+- 本次 rt56 修改前基线：`8dd3bb3 Sync rt55 formal evaluation and project handoff`
 - GitHub：`github.com/rular099/team_pytorch`
 - 主实验：`rt55`，Japan 2000–2024 KNET-only 全量实时 PGA 概率预测
 - 本地结果：`../chaosuan_res/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42`
@@ -27,9 +27,11 @@
    为 MAE `0.11663`、RMSE `0.18055`、R² `0.75412`、NLL `-0.88674`。
 4. roll 后 MAE 升至 `0.24898`、R² 降至 `0.20691`，证明模型显著依赖正确匹配的
    台站波形；“模型只看坐标”的担忧不成立。
-5. 正式 test 指标尚未出现在本地结果包中。下一会话第一步是确认远端 epoch 32
-   checkpoint 已固定归档，然后提交或检查 formal test job。
-6. 极重要：本地 `full_model_best.pth` 和 `full_model_last.pth` 都仍是 epoch 20，不能
+5. 用户在 2026-08-23 报告超算已同步运行 epoch 20 和 epoch 32 formal test；本地尚无
+   新 test 结果，完成状态和指标仍须从超算核验，不能根据 test 结果反向改实验协议。
+6. rt56 random geometry 已实现：ep32 zero-shot random mask 与 50% rt55 / 50% causal
+   random mixed fine-tuning 可独立并行提交；rt55 配置、模型结构和原加载/推理路径不变。
+7. 极重要：本地 `full_model_best.pth` 和 `full_model_last.pth` 都仍是 epoch 20，不能
    用它们代替远端 epoch 32/34 checkpoint。最新结果包没有覆盖这两个大文件。
 
 ## 1. 项目当前目标
@@ -222,7 +224,25 @@ station cosine 约 `0.987–0.988`，event-centered residual norm 只占公共�
 mask 实际正常。后续应按 `station_valid` 聚合全部有效 station，并在固定 eval split 上
 统计，不要继续解释最后 slot 快照。
 
-### 2.8 Hi-net 年度原始归档与审计
+### 2.8 rt56 causal random geometry
+
+rt56 从固定的 rt55 epoch 32 checkpoint 做 weight-only 初始化，optimizer、scheduler、
+epoch 计数和 best-loss 状态全部重新开始；DiTing encoder 继续冻结，model parameters 与
+rt55 完全一致。
+
+- train：50% 保留 rt55 协议，50% 使用 causal random geometry；
+- validation/zero-shot：100% random geometry，固定 seed 和 1/3/5/10/20/40/90 秒；
+- 输入数从 1/3/5/8/12/16 中抽取上限，只从当前时刻已触发且有有效波形的完整事件台站
+  集合中采样，发生在 25 台站截断之前；
+- 随机分支至少保留一个有限 PGA 的非输入台站，PGA targets 明确排除输入台站；
+- 未选输入 waveform 与 sample-valid mask 同时归零，避免坐标 slot 被误当作有效波形；
+- 新输出会记录 random mask 是否生效、候选/请求/实际输入台站数直方图。
+
+入口：`tools/run_rt56_random_geometry_slurm.sh`。`ACTION=all` 会提交 zero-shot 与
+fine-tune 两个无依赖并行 job；默认只允许 dry-run，真实提交必须设置 `CONFIRM_RT56=1`。
+截至本文更新，代码和脚本已准备完成，但本会话未替用户调用 `sbatch`。
+
+### 2.9 Hi-net 年度原始归档与审计
 
 Hi-net 工作流保留 CNT/CH 原始 bytes 的唯一永久副本，每年一个 HDF5，支持 SHA256
 回读校验和事务恢复，不额外永久保存 MiniSEED/SAC/NPZ waveform shard。
@@ -269,7 +289,18 @@ launcher 的旧 Bash 空数组 `resume_args[@]: unbound variable` 已修复：�
 | `tests/test_eval_checkpoint_formal.py` | split、NLL、valid target、roll 测试 | 锁定指标语义 |
 | `tests/test_scheduler_checkpoint_resume.py` | legacy/new scheduler 恢复测试 | 防止恢复回归 |
 
-### 3.3 Hi-net
+### 3.3 rt56 random geometry
+
+| 文件 | 修改 | 原因 |
+|---|---|---|
+| `gemini_util_light.py` | causal full-event random input mask、非输入 PGA target sampling、诊断字段 | 支持任意因果台站到任意非输入位置 PGA |
+| `train_light.py` | nullable load/transfer path、generator 日志 | weight-only ep32 初始化且保持 rt55 非空路径行为 |
+| `eval_checkpoint.py` | random geometry 元数据收集和 formal metrics | 审计实际随机台站数分布 |
+| `pga_configs/...rt56...json` | ep32 初始化、50/50 mixed train、100% random val | 固定新实验协议 |
+| `tools/run_rt56_random_geometry_slurm.sh` | 双任务、路径/输出/job guard、dry-run | 安全并行提交 zero-shot 和 fine-tune |
+| `tests/test_causal_random_geometry.py` | helper、端到端 generator、rt55/rt56 config 兼容测试 | 防止泄漏和 rt55 回归 |
+
+### 3.4 Hi-net
 
 | 文件 | 修改 |
 |---|---|
@@ -330,7 +361,7 @@ raw waveform
 
 ## 5. 未完成事项（按优先级）
 
-### P0：固定 checkpoint 并完成一次性 formal test
+### P0：完成正在运行的 formal test 并归档
 
 1. 在超算读取 `full_model_best.pth` 和 `full_model_last.pth` 元数据，确认分别为 epoch
    32 和 34，并确认 epoch 32 loss 为 `0.012362980283796787`。
@@ -341,11 +372,20 @@ raw waveform
    cp -n full_model_last.pth full_model_last_ep34.pth
    ```
 
-3. 检查 `squeue` 和 test 输出是否已经存在。若没有，先 dry-run，再用明确 pinned 的
-   epoch 32 checkpoint 提交 normal test；建议将 walltime 覆盖为 3 天。
-4. test 完成后下载 TXT、NPZ、metrics JSON 和新 checkpoint 元数据，不要只下载标量
+3. 检查用户所述 epoch 20/32 test jobs 的 `squeue`、日志与输出；不要重复提交同一输出。
+4. jobs 完成后下载 TXT、NPZ、metrics JSON 和新 checkpoint 元数据，不要只下载标量
    CSV；放入一个新的本地目录或保留原文件名，避免自动生成 `_1/_2` 后失去语义。
-5. 只报告预先固定的 epoch 32 normal test。roll 是稳健性对照，不参与模型选择。
+5. epoch 32 是预先固定的主结果；epoch 20 仅作事先声明的 sensitivity reference，不能
+   根据两者 test 表现重新选择模型。roll 是稳健性对照，也不参与选择。
+
+### P0：运行 rt56 zero-shot 与 mixed-random fine-tuning
+
+1. 同步新 commit 后先在超算执行 `DRY_RUN=1 ACTION=all`；
+2. 核对源 checkpoint 是远端 `full_model_best_ep32.pth`、25 个年度 shard 均存在、新权重
+   目录为空，且 zero-shot 输出未存在；
+3. 用 `CONFIRM_RT56=1 ACTION=all` 提交两个并行任务；
+4. fine-tune 只按 random-geometry validation 选择 checkpoint；后续 retention eval 要用
+   原 resolved rt55 config 加载所选 rt56 checkpoint，不能修改 rt55 正在运行的 test。
 
 ### P1：结果整理
 
@@ -406,9 +446,9 @@ formal test 和多 seed 计划确定后再选：
 
 ## 7. 下一会话第一步
 
-不要先改模型，也不要继续训练。
+不要再改 rt55 模型，也不要继续 rt55 原设置训练。
 
-第一步是在超算确认 epoch 32 固定 checkpoint 和 formal test 状态：
+第一步是在超算确认正在运行的 epoch 20/32 formal test 和 rt56 同步状态：
 
 ```bash
 cd /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team
@@ -432,29 +472,16 @@ PY
 
 squeue -u "$USER" -n team-rt55-test
 ls -lh "logs/$RUN"/eval_test_best_normal.* 2>/dev/null || true
+
+DRY_RUN=1 ACTION=all bash tools/run_rt56_random_geometry_slurm.sh
 ```
 
-如果 best=32、last=34 且 test 尚未提交：
+只有在确认 formal test 实际未提交、没有输出且用户仍要求补交时，才使用原 rt55 test
+launcher；不要在用户所述任务仍运行时重复提交。rt56 的真实提交命令为：
 
 ```bash
-cp -n "$RUN/full_model_best.pth" "$RUN/full_model_best_ep32.pth"
-cp -n "$RUN/full_model_last.pth" "$RUN/full_model_last_ep34.pth"
-
-CKPT="$PWD/$RUN/full_model_best_ep32.pth"
-
-CHECKPOINT="$CKPT" \
-SLURM_TIME=3-00:00:00 \
-DRY_RUN=1 \
-bash tools/eval_rt55_test_formal_slurm.sh
-
-CHECKPOINT="$CKPT" \
-SLURM_TIME=3-00:00:00 \
-CONFIRM_TEST_EVAL=1 \
-bash tools/eval_rt55_test_formal_slurm.sh
+CONFIRM_RT56=1 ACTION=all bash tools/run_rt56_random_geometry_slurm.sh
 ```
-
-dry-run 必须显示 `test_events=2769`、`test_station_rows=42368`、`splits=test`、
-`permutation=none`。
 
 ## 8. 不要做什么
 
@@ -518,10 +545,11 @@ logs/$RUN/eval_test_best_normal.metrics.json
 
 ### 9.4 当前快速测试
 
-2026-08-21 本地执行通过 21 个测试：
+2026-08-23 本地执行通过 28 个测试：
 
 ```bash
 python -m unittest -v \
+  tests.test_causal_random_geometry \
   tests.test_scheduler_checkpoint_resume \
   tests.test_eval_checkpoint_formal \
   tests.test_hinet_raw_archive \
@@ -539,7 +567,8 @@ bash -n \
   train_light_slurm.sh eval_checkpoint_slurm.sh \
   tools/run_rt55_japan_full_2000_2024_slurm.sh \
   tools/eval_rt55_validation_normal_roll_slurm.sh \
-  tools/eval_rt55_test_formal_slurm.sh
+  tools/eval_rt55_test_formal_slurm.sh \
+  tools/run_rt56_random_geometry_slurm.sh
 ```
 
 测试输出中的 `Please 'pip install apex'` / `xformers` 是可选依赖提示，不是测试失败。

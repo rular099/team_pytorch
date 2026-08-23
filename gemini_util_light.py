@@ -548,6 +548,7 @@ class PreloadedEventGenerator(Dataset):
                  use_coords_rel_abs_fusion=False, station_experiment=None,
                  input_station_selection=None, deterministic_sampling_seed=None,
                  use_vs30=False, realtime_training=None, realtime_target_sampling=None,
+                 causal_random_input_mask=None,
                  dpk_prior_cache=None, dpk_prior_cache_split=None,
                  dpk_prior_cache_dataset_id=0, dpk_prior_cache_align_realtime=True,
                  dpk_prior_cache_filter_missing_stations=True,
@@ -676,6 +677,20 @@ class PreloadedEventGenerator(Dataset):
             realtime_target_sampling,
             realtime_enabled=self.realtime_enabled,
         )
+        self.causal_random_input_mask = self._normalize_causal_random_input_mask(
+            causal_random_input_mask,
+            realtime_enabled=self.realtime_enabled,
+        )
+        if self.causal_random_input_mask.get('enabled', False) and self.random_input_station_count is not None:
+            raise ValueError(
+                'causal_random_input_mask and random_input_station_count cannot be enabled together; '
+                'use causal_random_input_mask.station_counts for realtime random-geometry sampling.'
+            )
+        if self.causal_random_input_mask.get('enabled', False) and self.dpk_prior_cache is not None:
+            raise ValueError(
+                'causal_random_input_mask is not compatible with dpk_prior_cache because cache-aligned '
+                'cutoffs may differ from the causal station-selection cutoff.'
+            )
         if self.realtime_enabled and self.pga_mode:
             raise ValueError('realtime_training is not compatible with pga_mode evaluation.')
 
@@ -879,7 +894,114 @@ class PreloadedEventGenerator(Dataset):
         if any((not np.isfinite(x) or x < 0) for x in ratios) or sum(ratios) <= 0:
             raise ValueError('realtime_target_sampling ratios must be non-negative and sum to > 0.')
         cfg['fill_missing'] = bool(cfg.get('fill_missing', True))
+        cfg['exclude_inputs'] = bool(cfg.get('exclude_inputs', False))
         return cfg
+
+    @classmethod
+    def _normalize_causal_random_input_mask(cls, value, realtime_enabled=False):
+        if value is None:
+            return {'enabled': False}
+        if isinstance(value, bool):
+            cfg = {'enabled': value}
+        else:
+            cfg = dict(value)
+            cfg['enabled'] = bool(cfg.get('enabled', False))
+        if not cfg['enabled']:
+            return {'enabled': False}
+        if not realtime_enabled:
+            raise ValueError('causal_random_input_mask requires realtime_training.enabled=true.')
+
+        probability = float(cfg.get('apply_probability', cfg.get('probability', 1.0)))
+        if not np.isfinite(probability) or not (0.0 <= probability <= 1.0):
+            raise ValueError('causal_random_input_mask.apply_probability must be between 0 and 1.')
+        station_counts = cls._normalize_station_count_choices(
+            cfg.get('station_counts', (1, 3, 5, 8, 12, 16))
+        )
+        normalized = {
+            'enabled': True,
+            'apply_probability': probability,
+            'station_counts': station_counts,
+            'order_selected_by_pick': bool(cfg.get('order_selected_by_pick', True)),
+        }
+        target_sampling = cfg.get('target_sampling', cfg.get('realtime_target_sampling'))
+        if target_sampling is not None:
+            normalized['target_sampling'] = cls._normalize_realtime_target_sampling(
+                target_sampling,
+                realtime_enabled=True,
+            )
+        return normalized
+
+    def _sample_causal_random_input_indices(self, picks, station_coords, waveforms,
+                                            current_sample, target_values=None, rng=None):
+        """Select a causal random station set from the full event before max-station truncation."""
+        cfg = self.causal_random_input_mask
+        if not cfg.get('enabled', False):
+            return {
+                'applied': False,
+                'available_count': 0,
+                'requested_count': 0,
+                'selected_indices': np.zeros((0,), dtype=np.int64),
+            }
+
+        draw = float(self._rng_random(rng, ()))
+        applied = draw < cfg['apply_probability']
+        picks = np.asarray(picks, dtype=float).reshape(-1)
+        coords = np.asarray(station_coords)
+        waves = np.asarray(waveforms)
+        coord_valid = np.isfinite(coords).all(axis=-1)
+        pick_valid = self._realtime_pick_valid(picks) & (picks <= int(current_sample))
+        signal_stop = min(int(current_sample) + 1, waves.shape[1])
+        if signal_stop <= 0:
+            has_signal = np.zeros(picks.shape, dtype=bool)
+        else:
+            has_signal = (np.abs(waves[:, :signal_stop, :]) > self.wave_eps).any(axis=(1, 2))
+        candidates = np.where(coord_valid & pick_valid & has_signal)[0]
+        if candidates.size == 0:
+            raise _EmptySample()
+
+        if not applied:
+            return {
+                'applied': False,
+                'available_count': int(candidates.size),
+                'requested_count': 0,
+                'selected_indices': np.zeros((0,), dtype=np.int64),
+            }
+
+        # Keep at least one finite-PGA station outside the waveform inputs so
+        # the random-geometry branch always represents a genuine spatial
+        # prediction task.  Prefer reserving a non-causal station because that
+        # does not reduce the currently available input pool.
+        input_candidates = candidates
+        if target_values is not None:
+            target_values = np.asarray(target_values, dtype=float).reshape(-1)
+            if target_values.shape != picks.shape:
+                raise ValueError(
+                    'causal random target_values must align with station picks; '
+                    f'got {target_values.shape} and {picks.shape}'
+                )
+            target_candidates = np.where(coord_valid & np.isfinite(target_values))[0]
+            if target_candidates.size:
+                outside_causal = target_candidates[~np.isin(target_candidates, candidates)]
+                reserve_pool = outside_causal if outside_causal.size else target_candidates
+                reserved_target = int(self._rng_choice(rng, reserve_pool))
+                input_candidates = candidates[candidates != reserved_target]
+        if input_candidates.size == 0:
+            raise _EmptySample()
+
+        requested = int(self._rng_choice(rng, cfg['station_counts']))
+        selected = self._pick_random_subset(
+            input_candidates,
+            min(requested, self.max_stations, input_candidates.size),
+            rng=rng,
+        )
+        if cfg.get('order_selected_by_pick', True) and selected.size > 1:
+            selected = selected[np.lexsort((selected, picks[selected]))]
+        return {
+            'applied': True,
+            'available_count': int(candidates.size),
+            'requested_count': requested,
+            'selected_indices': np.asarray(selected, dtype=np.int64),
+        }
 
     @staticmethod
     def _ratio_quotas(ratios, total):
@@ -1284,15 +1406,22 @@ class PreloadedEventGenerator(Dataset):
         return target_type
 
     def _sample_realtime_pga_targets(self, active, input_station_valid, full_p_picks,
-                                     current_sample, n_targets, rng=None):
+                                     current_sample, n_targets, rng=None,
+                                     sampling_config=None):
         active = np.asarray(active, dtype=np.int64)
         if active.size == 0:
             return active, np.zeros((0,), dtype=np.int64)
+
+        sampling_config = sampling_config or self.realtime_target_sampling
 
         picks = np.asarray(full_p_picks, dtype=float)
         input_mask = np.zeros_like(picks, dtype=bool)
         n_input = min(input_station_valid.shape[0], input_mask.shape[0])
         input_mask[:n_input] = input_station_valid[:n_input]
+        if sampling_config.get('exclude_inputs', False):
+            active = active[~input_mask[active]]
+            if active.size == 0:
+                return active, np.zeros((0,), dtype=np.int64)
         pick_valid = self._realtime_pick_valid(picks)
         triggered = pick_valid & (picks <= current_sample)
 
@@ -1304,9 +1433,9 @@ class PreloadedEventGenerator(Dataset):
             np.where(active_mask & ~triggered & ~input_mask)[0],
         ]
         ratios = [
-            self.realtime_target_sampling['input_ratio'],
-            self.realtime_target_sampling['triggered_noninput_ratio'],
-            self.realtime_target_sampling['untriggered_ratio'],
+            sampling_config['input_ratio'],
+            sampling_config['triggered_noninput_ratio'],
+            sampling_config['untriggered_ratio'],
         ]
         quotas = self._ratio_quotas(ratios, n_targets)
 
@@ -1325,8 +1454,18 @@ class PreloadedEventGenerator(Dataset):
                 used.add(station_idx)
 
         remaining_slots = min(n_targets, active.size) - len(selected)
-        if remaining_slots > 0 and self.realtime_target_sampling.get('fill_missing', True):
-            remaining = np.asarray([int(x) for x in active if int(x) not in used], dtype=np.int64)
+        if remaining_slots > 0 and sampling_config.get('fill_missing', True):
+            remaining = np.asarray(
+                [
+                    int(x) for x in active
+                    if int(x) not in used
+                    and not (
+                        sampling_config.get('exclude_inputs', False)
+                        and input_mask[int(x)]
+                    )
+                ],
+                dtype=np.int64,
+            )
             picked = self._pick_random_subset(remaining, remaining_slots, rng=rng)
             picked_types = self._classify_realtime_targets(
                 picked,
@@ -1575,6 +1714,37 @@ class PreloadedEventGenerator(Dataset):
             event_target_for_input_selection = self.event_metadata.get_group(ith_event)[self.coord_keys].values
         true_batch_size = 1
 
+        preselection_realtime_info = None
+        causal_random_sample = {
+            'applied': False,
+            'available_count': 0,
+            'requested_count': 0,
+            'selected_indices': np.zeros((0,), dtype=np.int64),
+        }
+        if self.causal_random_input_mask.get('enabled', False):
+            full_coord_valid = np.isfinite(self.metadata).all(axis=-1)
+            preselection_realtime_info = self._select_realtime_cutout(
+                self.triggers[None, :],
+                full_coord_valid[None, :],
+                rng,
+                realtime_context,
+                self.waveforms.shape[1],
+            )
+            causal_random_sample = self._sample_causal_random_input_indices(
+                self.triggers,
+                self.metadata,
+                self.waveforms,
+                preselection_realtime_info['current_sample'],
+                target_values=(
+                    self.pga
+                    if self.causal_random_input_mask.get(
+                        'target_sampling', {}
+                    ).get('exclude_inputs', False)
+                    else None
+                ),
+                rng=rng,
+            )
+
         waveforms = np.zeros((true_batch_size, self.max_stations) + self.waveforms.shape[1:])  # shape (1, 25, 10000, 3)
         waveform_sample_valid = (
             np.zeros(waveforms.shape[:3], dtype=bool)
@@ -1621,7 +1791,15 @@ class PreloadedEventGenerator(Dataset):
                 station_valid_full[i, :len(self.metadata)] = True # all stations init to True
                 reverse_selections += [[]]
             else:
-                if self.selection_skew is None or self.selection_skew <= 0:  # random select
+                if causal_random_sample['applied']:
+                    selected_random = causal_random_sample['selected_indices']
+                    selected_set = set(int(x) for x in selected_random)
+                    remaining = np.asarray(
+                        [j for j in range(len(self.waveforms)) if j not in selected_set],
+                        dtype=np.int64,
+                    )
+                    selection = np.concatenate((selected_random, remaining))
+                elif self.selection_skew is None or self.selection_skew <= 0:  # random select
                     selection = np.arange(0, len(self.waveforms)) # all stations
                     self._rng_shuffle(rng, selection)
                 else:  # pick_time + randomness
@@ -1634,7 +1812,11 @@ class PreloadedEventGenerator(Dataset):
                     coeffs[self.triggers > self.waveforms.shape[1]] = 0
                     selection = np.argsort(-coeffs)
 
-                if self.input_station_selection in ('epidist', 'p_pick'):
+                if causal_random_sample['applied']:
+                    # The selected random stations are already first.  Keep that
+                    # set intact; only legacy selection modes reorder here.
+                    pass
+                elif self.input_station_selection in ('epidist', 'p_pick'):
                     event_coord = self._first_event_coord(event_target_for_input_selection)
                     selection = self._input_station_order(
                         selection,
@@ -1695,14 +1877,14 @@ class PreloadedEventGenerator(Dataset):
 
         org_waveform_length = waveforms.shape[2]
         raw_p_picks = p_picks.copy()
-        realtime_info = None
+        realtime_info = preselection_realtime_info
         cache_split_for_sample = None
         if self.dpk_prior_cache is not None:
             cache_split_for_sample = self.dpk_prior_cache_split
             if cache_split_for_sample is None:
                 realtime_mode = self.realtime_training.get('mode') if self.realtime_training else 'dev'
                 cache_split_for_sample = 'train' if realtime_mode == 'train' else 'dev'
-        if self.realtime_enabled:
+        if self.realtime_enabled and realtime_info is None:
             if self.sliding_window:
                 raise ValueError('realtime_training does not support sliding_window=True.')
             realtime_info = self._select_realtime_cutout(
@@ -1849,6 +2031,13 @@ class PreloadedEventGenerator(Dataset):
             p_picks=p_picks,
             rng=rng,
         )
+        if causal_random_sample['applied']:
+            selected_random = causal_random_sample['selected_indices']
+            causal_slot_mask = np.isin(selected_input_indices, selected_random)
+            input_station_valid_for_model &= causal_slot_mask
+            waveforms[~causal_slot_mask] = 0.0
+            if waveform_sample_valid is not None:
+                waveform_sample_valid[~causal_slot_mask] = False
 
         if self.pga_targets:
             pga_values = np.zeros(
@@ -1937,7 +2126,19 @@ class PreloadedEventGenerator(Dataset):
                             self.pga_targets,
                             rng=rng,
                         )
-                    elif self.realtime_enabled and self.realtime_target_sampling.get('enabled', False):
+                    elif self.realtime_enabled and (
+                        self.realtime_target_sampling.get('enabled', False)
+                        or (
+                            causal_random_sample['applied']
+                            and self.causal_random_input_mask.get('target_sampling', {}).get('enabled', False)
+                        )
+                    ):
+                        target_sampling_config = self.realtime_target_sampling
+                        if causal_random_sample['applied']:
+                            target_sampling_config = self.causal_random_input_mask.get(
+                                'target_sampling',
+                                target_sampling_config,
+                            )
                         active, active_target_types = self._sample_realtime_pga_targets(
                             active,
                             input_station_valid_for_model[i],
@@ -1945,6 +2146,7 @@ class PreloadedEventGenerator(Dataset):
                             realtime_info['current_sample'],
                             self.pga_targets,
                             rng=rng,
+                            sampling_config=target_sampling_config,
                         )
                     else:
                         self._rng_shuffle(rng, active)
@@ -2203,6 +2405,25 @@ class PreloadedEventGenerator(Dataset):
             'selected_original_input_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
             'original_station_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
         }
+        if self.causal_random_input_mask.get('enabled', False):
+            p_pick_info.update({
+                'causal_random_mask_applied': torch.tensor(
+                    bool(causal_random_sample['applied']),
+                    dtype=torch.bool,
+                ),
+                'causal_random_available_station_count': torch.tensor(
+                    int(causal_random_sample['available_count']),
+                    dtype=torch.long,
+                ),
+                'causal_random_requested_station_count': torch.tensor(
+                    int(causal_random_sample['requested_count']),
+                    dtype=torch.long,
+                ),
+                'causal_random_selected_station_count': torch.tensor(
+                    int(station_valid[0].sum()) if causal_random_sample['applied'] else 0,
+                    dtype=torch.long,
+                ),
+            })
         if waveform_valid_sample_count is not None:
             p_pick_info['waveform_valid_sample_count'] = torch.from_numpy(
                 waveform_valid_sample_count[0]

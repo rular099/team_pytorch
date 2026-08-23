@@ -3146,7 +3146,7 @@ if __name__ == '__main__':
                 find_unused_parameters=True,
             )
 
-        if 'load_model_path' in training_params:
+        if training_params.get('load_model_path'):
             print('Loading full model')
             ckpt = torch.load(training_params['load_model_path'], map_location=device)
             state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
@@ -3162,7 +3162,7 @@ if __name__ == '__main__':
                 ),
             )
 
-        if 'transfer_model_path' in training_params:
+        if training_params.get('transfer_model_path'):
             print('Transfering model weights')
             ensemble_load = training_params.get('ensemble_load', False)
             wait_for_load = training_params.get('wait_for_load', False)
@@ -3177,7 +3177,7 @@ if __name__ == '__main__':
             param.requires_grad = False
 
         station_pretrain_path = training_params.get('station_pretrain_path', auto_station_pretrain_path)
-        if station_pretrain_path and 'load_model_path' in training_params and 'station_pretrain_path' not in training_params:
+        if station_pretrain_path and training_params.get('load_model_path') and 'station_pretrain_path' not in training_params:
             station_pretrain_path = None
 
         reinit_fpn = training_params.get('reinit_fpn', True)
@@ -3292,6 +3292,7 @@ if __name__ == '__main__':
                     f'selection_skew={merged.get("selection_skew")}, '
                     f'pga_selection_skew={merged.get("pga_selection_skew")}, '
                     f'pga_target_sampling={merged.get("pga_target_sampling")}, '
+                    f'causal_random_input_mask={merged.get("causal_random_input_mask")}, '
                     f'max_stations={merged.get("max_stations")}, '
                     f'use_vs30={merged.get("use_vs30", False)}, '
                     f'station_experiment={experiment.get("mode") if experiment.get("enabled") else None}, '
@@ -3329,6 +3330,7 @@ if __name__ == '__main__':
                     f'selection_skew={merged_val.get("selection_skew")}, '
                     f'pga_selection_skew={merged_val.get("pga_selection_skew")}, '
                     f'pga_target_sampling={merged_val.get("pga_target_sampling")}, '
+                    f'causal_random_input_mask={merged_val.get("causal_random_input_mask")}, '
                     f'max_stations={merged_val.get("max_stations")}, '
                     f'use_vs30={merged_val.get("use_vs30", False)}, '
                     f'station_experiment={experiment_val.get("mode") if experiment_val.get("enabled") else None}, '

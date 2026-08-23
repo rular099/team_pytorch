@@ -479,6 +479,7 @@ def build_datasets(config, overfit_n=0, input_station_selection='config', splits
                 f'integrate={merged.get("integrate", False)}, '
                 f'selection_skew={merged.get("selection_skew")}, '
                 f'pga_selection_skew={merged.get("pga_selection_skew")}, '
+                f'causal_random_input_mask={merged.get("causal_random_input_mask")}, '
                 f'max_stations={merged.get("max_stations")}, '
                 f'station_experiment={experiment.get("mode") if experiment.get("enabled") else None}, '
                 f'cutout=({merged["cutout"][0]}, {merged["cutout"][1]})'
@@ -1243,6 +1244,12 @@ def run_inference(
                 'waveform_valid_seconds',
                 'waveform_post_p_valid_sample_count',
                 'waveform_post_p_valid_seconds',
+                'selected_input_indices',
+                'selected_original_input_indices',
+                'causal_random_mask_applied',
+                'causal_random_available_station_count',
+                'causal_random_requested_station_count',
+                'causal_random_selected_station_count',
             ):
                 if info_key in p_picks:
                     results[info_key].append(_to_numpy(p_picks[info_key]))
@@ -1781,6 +1788,52 @@ def compute_formal_pga_metrics(results, config=None):
     if not np.any(valid):
         return metrics
 
+    random_mask_applied = _stack_result_array(
+        results,
+        'causal_random_mask_applied',
+        dtype=bool,
+    )
+    if random_mask_applied is not None:
+        applied = np.asarray(random_mask_applied, dtype=bool).reshape(-1)
+        requested = _stack_result_array(
+            results,
+            'causal_random_requested_station_count',
+            dtype=int,
+        )
+        available = _stack_result_array(
+            results,
+            'causal_random_available_station_count',
+            dtype=int,
+        )
+        selected = _stack_result_array(
+            results,
+            'causal_random_selected_station_count',
+            dtype=int,
+        )
+        geometry = {
+            'enabled': True,
+            'samples': int(applied.size),
+            'applied_samples': int(applied.sum()),
+            'applied_fraction': float(applied.mean()) if applied.size else None,
+        }
+        for name, values in (
+            ('requested_station_count', requested),
+            ('available_station_count', available),
+            ('selected_station_count', selected),
+        ):
+            if values is None:
+                continue
+            values = np.asarray(values, dtype=np.int64).reshape(-1)
+            active_values = values[applied] if values.size == applied.size else values
+            if active_values.size:
+                unique, counts = np.unique(active_values, return_counts=True)
+                geometry[f'{name}_histogram'] = {
+                    str(int(key)): int(count)
+                    for key, count in zip(unique, counts)
+                }
+                geometry[f'{name}_mean'] = float(np.mean(active_values))
+        metrics['causal_random_input_mask'] = geometry
+
     label_values = labels[valid]
     prediction_values = predictions[valid]
     residuals = prediction_values - label_values
@@ -2153,6 +2206,15 @@ def print_summary(results, split_name, config=None):
                 f'coverage_1sigma={formal_metrics.get("coverage_1sigma")}, '
                 f'coverage_2sigma={formal_metrics.get("coverage_2sigma")}'
             )
+            random_geometry = formal_metrics.get('causal_random_input_mask')
+            if random_geometry:
+                print(
+                    '  Causal random-input mask: '
+                    f'applied={random_geometry.get("applied_samples")}/'
+                    f'{random_geometry.get("samples")}, '
+                    f'selected_mean={random_geometry.get("selected_station_count_mean")}, '
+                    f'available_mean={random_geometry.get("available_station_count_mean")}'
+                )
 
             for i in range(min(len(labels), 4)):
                 l = labels_flat[i]
