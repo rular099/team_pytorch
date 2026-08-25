@@ -1,6 +1,6 @@
 # TEAM PyTorch 项目交接文档
 
-更新时间：2026-08-23（Asia/Shanghai）
+更新时间：2026-08-25（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威入口。先读完本文，再检查超算端状态和 Git
 工作区；不要根据旧聊天记录、文件名或本地旧 checkpoint 猜测当前状态。
@@ -294,11 +294,15 @@ launcher 的旧 Bash 空数组 `resume_args[@]: unbound variable` 已修复：�
 | 文件 | 修改 | 原因 |
 |---|---|---|
 | `gemini_util_light.py` | causal full-event random input mask、非输入 PGA target sampling、诊断字段 | 支持任意因果台站到任意非输入位置 PGA |
-| `train_light.py` | nullable load/transfer path、generator 日志 | weight-only ep32 初始化且保持 rt55 非空路径行为 |
+| `train_light.py` | nullable load/transfer path、generator 日志、继承合并后统一展开环境变量 | weight-only ep32 初始化且避免被子配置覆盖的父占位符提前报错 |
 | `eval_checkpoint.py` | random geometry 元数据收集和 formal metrics | 审计实际随机台站数分布 |
 | `pga_configs/...rt56...json` | ep32 初始化、50/50 mixed train、100% random val | 固定新实验协议 |
 | `tools/run_rt56_random_geometry_slurm.sh` | 双任务、路径/输出/job guard、dry-run | 安全并行提交 zero-shot 和 fine-tune |
 | `tests/test_causal_random_geometry.py` | helper、端到端 generator、rt55/rt56 config 兼容测试 | 防止泄漏和 rt55 回归 |
+
+2026-08-25 首次超算提交暴露了父 rt55 的 `${JAPAN_FULL_WEIGHT_PATH}` 在 child merge 前
+被展开的问题。加载器现已改为完整继承合并后统一展开，rt56 launcher 也显式导出该父级
+占位符以兼容超算上的旧代码副本。失败发生在创建模型和权重目录之前，不是训练中断恢复。
 
 ### 3.4 Hi-net
 

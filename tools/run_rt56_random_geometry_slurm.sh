@@ -25,6 +25,10 @@ JAPAN_FULL_DATA_ROOT=${JAPAN_FULL_DATA_ROOT:-/public/home/test_bigmodel/seismogr
 RT55_WEIGHT_NAME=${RT55_WEIGHT_NAME:-weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42}
 RT55_WEIGHT_DIR=${RT55_WEIGHT_DIR:-$WORKDIR/$RT55_WEIGHT_NAME}
 RT55_EP32_CHECKPOINT=${RT55_EP32_CHECKPOINT:-$RT55_WEIGHT_DIR/full_model_best_ep32.pth}
+# The parent rt55 config references this placeholder.  rt56 overrides its
+# weight_path after inheritance, but exporting it also keeps older config
+# loaders (which expanded parents before merging) operational on the cluster.
+JAPAN_FULL_WEIGHT_PATH=${JAPAN_FULL_WEIGHT_PATH:-$RT55_WEIGHT_NAME}
 RT56_WEIGHT_NAME=${RT56_WEIGHT_NAME:-weights_japan_full_2000_2024_rt56_ep32_mixed_random_geometry_seed42}
 RT56_WEIGHT_PATH=${RT56_WEIGHT_PATH:-$RT56_WEIGHT_NAME}
 ACTION=${ACTION:-all}
@@ -143,10 +147,11 @@ if [[ "$ACTION" == "finetune" || "$ACTION" == "all" ]]; then
     check_active_job "$FINETUNE_JOB_NAME"
 fi
 
-export JAPAN_FULL_DATA_ROOT RT55_EP32_CHECKPOINT RT56_WEIGHT_PATH
+export JAPAN_FULL_DATA_ROOT JAPAN_FULL_WEIGHT_PATH RT55_EP32_CHECKPOINT RT56_WEIGHT_PATH
 
 echo "[INFO] action=$ACTION"
 echo "[INFO] source_checkpoint=$RT55_EP32_CHECKPOINT"
+echo "[INFO] inherited_rt55_weight_path=$JAPAN_FULL_WEIGHT_PATH"
 echo "[INFO] rt56_weight_dir=$RT56_WEIGHT_DIR"
 echo "[INFO] zero_shot_output=$ZERO_SHOT_STEM"
 echo "[INFO] fine_tune_epochs=$EPOCHS_FULL_MODEL"

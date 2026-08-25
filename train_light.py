@@ -65,8 +65,13 @@ def _expand_config_environment(value):
     return value
 
 
-def load_config_file(path, _stack=None):
-    """Load JSON/YAML, optional ``extends``, and environment placeholders."""
+def load_config_file(path, _stack=None, _expand_environment=True):
+    """Load JSON/YAML inheritance, then expand the fully merged config.
+
+    Parent configs may contain environment-backed values that a child replaces.
+    Deferring expansion until the outermost merge prevents those obsolete parent
+    placeholders from failing before the override is applied.
+    """
     path = os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
     stack = [] if _stack is None else list(_stack)
     if path in stack:
@@ -84,8 +89,17 @@ def load_config_file(path, _stack=None):
         parent = os.path.expanduser(os.path.expandvars(str(parent)))
         if not os.path.isabs(parent):
             parent = os.path.join(os.path.dirname(path), parent)
-        config = _deep_merge_config(load_config_file(parent, _stack=stack), config)
-    return _expand_config_environment(config)
+        config = _deep_merge_config(
+            load_config_file(
+                parent,
+                _stack=stack,
+                _expand_environment=False,
+            ),
+            config,
+        )
+    if _expand_environment:
+        return _expand_config_environment(config)
+    return config
 
 
 def expand_partitioned_generator_params(training_params):

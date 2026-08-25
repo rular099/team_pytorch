@@ -272,20 +272,35 @@ class CausalRandomGeometryTests(unittest.TestCase):
             'pga_configs',
             'transformer_japan_full_2000_2024_rt56_ep32_mixed_random_geometry_seed42_chaosuan.json',
         )
-        env = {
+        rt55_env = {
             'JAPAN_FULL_DATA_ROOT': '/tmp/japan-data',
             'JAPAN_FULL_WEIGHT_PATH': 'weights-rt55',
+        }
+        rt56_env = {
+            'JAPAN_FULL_DATA_ROOT': '/tmp/japan-data',
             'RT55_EP32_CHECKPOINT': '/tmp/full_model_best_ep32.pth',
             'RT56_WEIGHT_PATH': 'weights-rt56',
         }
-        with mock.patch.dict(os.environ, env, clear=False):
+        with mock.patch.dict(os.environ, rt55_env, clear=True):
             rt55 = load_config_file(rt55_path)
+        # JAPAN_FULL_WEIGHT_PATH appears only in the rt55 parent and is
+        # replaced by rt56.  Loading the child must not require that obsolete
+        # parent placeholder to be exported.
+        with mock.patch.dict(os.environ, rt56_env, clear=True):
             rt56 = load_config_file(rt56_path)
+        unresolved_rt56_env = dict(rt56_env)
+        unresolved_rt56_env.pop('RT56_WEIGHT_PATH')
+        with mock.patch.dict(os.environ, unresolved_rt56_env, clear=True):
+            with self.assertRaisesRegex(ValueError, 'RT56_WEIGHT_PATH'):
+                load_config_file(rt56_path)
 
         self.assertEqual(rt56['model_params'], rt55['model_params'])
         self.assertNotIn('causal_random_input_mask', rt55['training_params']['generator_params'][0])
         self.assertTrue(rt55['training_params']['transfer_model_path'])
-        self.assertEqual(rt56['training_params']['load_model_path'], env['RT55_EP32_CHECKPOINT'])
+        self.assertEqual(
+            rt56['training_params']['load_model_path'],
+            rt56_env['RT55_EP32_CHECKPOINT'],
+        )
         self.assertIsNone(rt56['training_params']['transfer_model_path'])
         self.assertFalse(rt56['training_params']['reinit_fpn'])
         self.assertEqual(
