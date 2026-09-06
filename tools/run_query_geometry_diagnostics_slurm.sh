@@ -63,6 +63,9 @@ ALLOW_EXISTING_OUTPUT=${ALLOW_EXISTING_OUTPUT:-0}
 ALLOW_ACTIVE_JOB=${ALLOW_ACTIVE_JOB:-0}
 ALLOW_GIT_COMMIT_MISMATCH=${ALLOW_GIT_COMMIT_MISMATCH:-0}
 ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH=${ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH:-0}
+SOURCE_IDENTITY_MODE=${SOURCE_IDENTITY_MODE:-git}
+EXPECTED_DIAGNOSTIC_SHA256=${EXPECTED_DIAGNOSTIC_SHA256:-}
+EXPECTED_LAUNCHER_SHA256=${EXPECTED_LAUNCHER_SHA256:-}
 SMOKE=${SMOKE:-0}
 SEED=${SEED:-42}
 if [[ -z "${MAX_EVENTS+x}" ]]; then
@@ -177,15 +180,50 @@ repository_commit() {
     git -C "$repository" rev-parse HEAD 2>/dev/null || true
 }
 
-SUBMISSION_GIT_COMMIT=$(repository_commit "$WORKDIR")
-if [[ -z "$SUBMISSION_GIT_COMMIT" ]]; then
-    SUBMISSION_GIT_COMMIT=$(repository_commit "$LAUNCHER_REPO_ROOT")
-fi
-EXPECTED_GIT_COMMIT=${EXPECTED_GIT_COMMIT:-$SUBMISSION_GIT_COMMIT}
-if [[ ! "$EXPECTED_GIT_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]; then
-    echo "EXPECTED_GIT_COMMIT must be a full 40-character commit; got: $EXPECTED_GIT_COMMIT" >&2
-    exit 2
-fi
+SCRIPT_PATH=$(resolve_path "$0" "$SUBMIT_DIR")
+
+verify_uploaded_sources() {
+    local diagnostic_sha launcher_sha
+    if [[ ! "$EXPECTED_DIAGNOSTIC_SHA256" =~ ^[0-9a-fA-F]{64}$ || \
+          ! "$EXPECTED_LAUNCHER_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+        echo "uploaded_sha256 mode requires full EXPECTED_DIAGNOSTIC_SHA256 and EXPECTED_LAUNCHER_SHA256 values." >&2
+        exit 2
+    fi
+    require_file "$DIAGNOSTIC_SCRIPT" "Diagnostic tool"
+    require_file "$SCRIPT_PATH" "Diagnostic launcher"
+    diagnostic_sha=$(file_sha256 "$DIAGNOSTIC_SCRIPT")
+    launcher_sha=$(file_sha256 "$SCRIPT_PATH")
+    if [[ "$diagnostic_sha" != "$EXPECTED_DIAGNOSTIC_SHA256" || \
+          "$launcher_sha" != "$EXPECTED_LAUNCHER_SHA256" ]]; then
+        echo "Uploaded source SHA-256 mismatch: diagnostic=$diagnostic_sha launcher=$launcher_sha" >&2
+        exit 1
+    fi
+    echo "[INFO] uploaded diagnostic and launcher SHA-256 identities matched."
+}
+
+case "$SOURCE_IDENTITY_MODE" in
+    git)
+        SUBMISSION_GIT_COMMIT=$(repository_commit "$WORKDIR")
+        if [[ -z "$SUBMISSION_GIT_COMMIT" ]]; then
+            SUBMISSION_GIT_COMMIT=$(repository_commit "$LAUNCHER_REPO_ROOT")
+        fi
+        EXPECTED_GIT_COMMIT=${EXPECTED_GIT_COMMIT:-$SUBMISSION_GIT_COMMIT}
+        if [[ ! "$EXPECTED_GIT_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "EXPECTED_GIT_COMMIT must be a full 40-character commit in git mode; got: $EXPECTED_GIT_COMMIT" >&2
+            exit 2
+        fi
+        ;;
+    uploaded_sha256)
+        SUBMISSION_GIT_COMMIT=$(repository_commit "$WORKDIR")
+        SUBMISSION_GIT_COMMIT=${SUBMISSION_GIT_COMMIT:-unavailable}
+        EXPECTED_GIT_COMMIT=${EXPECTED_GIT_COMMIT:-unavailable}
+        verify_uploaded_sources
+        ;;
+    *)
+        echo "SOURCE_IDENTITY_MODE must be git or uploaded_sha256; got: $SOURCE_IDENTITY_MODE" >&2
+        exit 2
+        ;;
+esac
 
 action_spec() {
     local diagnostic_action=$1
@@ -271,8 +309,13 @@ check_active_job() {
 print_action_identity() {
     local diagnostic_action=$1
     echo "[INFO] action=$diagnostic_action split=val protocol=$SPEC_PROTOCOL"
+    echo "[INFO] source_identity_mode=$SOURCE_IDENTITY_MODE"
     echo "[INFO] expected_git_commit=$EXPECTED_GIT_COMMIT"
     echo "[INFO] submission_git_commit=$SUBMISSION_GIT_COMMIT"
+    echo "[INFO] diagnostic_sha256=$(file_sha256 "$DIAGNOSTIC_SCRIPT")"
+    echo "[INFO] expected_diagnostic_sha256=${EXPECTED_DIAGNOSTIC_SHA256:-not-used}"
+    echo "[INFO] launcher_sha256=$(file_sha256 "$SCRIPT_PATH")"
+    echo "[INFO] expected_launcher_sha256=${EXPECTED_LAUNCHER_SHA256:-not-used}"
     echo "[INFO] config_source_mode=$CONFIG_SOURCE_MODE"
     echo "[INFO] config=$SPEC_CONFIG"
     echo "[INFO] config_sha256=$(file_sha256 "$SPEC_CONFIG")"
@@ -291,7 +334,6 @@ print_action_identity() {
     fi
 }
 
-SCRIPT_PATH=$(resolve_path "$0" "$SUBMIT_DIR")
 if [[ "$ACTION" == "all" ]]; then
     ACTION_LIST=(rt55_normal rt55_random rt56_random rt56_normal)
 else
@@ -309,6 +351,7 @@ export JAPAN_FULL_DATA_ROOT JAPAN_FULL_WEIGHT_PATH RT56_WEIGHT_PATH
 export RT55_CHECKPOINT RT56_CHECKPOINT RT55_EXPECTED_EPOCH RT56_EXPECTED_EPOCH OUT
 export DRY_RUN CONFIRM_QUERY_DIAGNOSTICS ALLOW_ACTIVE_JOB ALLOW_GIT_COMMIT_MISMATCH
 export ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH
+export SOURCE_IDENTITY_MODE EXPECTED_DIAGNOSTIC_SHA256 EXPECTED_LAUNCHER_SHA256
 export EXPECTED_GIT_COMMIT SUBMISSION_GIT_COMMIT SMOKE
 export SEED MAX_EVENTS STATION_COUNTS RADIAL_SCALES PAIR_SAMPLE_LIMIT
 export EQUIVARIANCE_TOLERANCE CHECKPOINT_SHA256 ENCODER_SHA256 ALLOW_EXISTING_OUTPUT
@@ -370,12 +413,16 @@ require_file "$SPEC_CHECKPOINT" "$DIAGNOSTIC_ACTION checkpoint"
 
 cd "$WORKDIR"
 ACTUAL_GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || true)
-if [[ "$ACTUAL_GIT_COMMIT" != "$EXPECTED_GIT_COMMIT" ]]; then
-    if [[ "$ALLOW_GIT_COMMIT_MISMATCH" != "1" ]]; then
-        echo "Worker Git commit mismatch: expected=$EXPECTED_GIT_COMMIT actual=$ACTUAL_GIT_COMMIT" >&2
-        exit 1
+if [[ "$SOURCE_IDENTITY_MODE" == "git" ]]; then
+    if [[ "$ACTUAL_GIT_COMMIT" != "$EXPECTED_GIT_COMMIT" ]]; then
+        if [[ "$ALLOW_GIT_COMMIT_MISMATCH" != "1" ]]; then
+            echo "Worker Git commit mismatch: expected=$EXPECTED_GIT_COMMIT actual=$ACTUAL_GIT_COMMIT" >&2
+            exit 1
+        fi
+        echo "[UNSAFE WARN] ALLOW_GIT_COMMIT_MISMATCH=1 expected=$EXPECTED_GIT_COMMIT actual=$ACTUAL_GIT_COMMIT" >&2
     fi
-    echo "[UNSAFE WARN] ALLOW_GIT_COMMIT_MISMATCH=1 expected=$EXPECTED_GIT_COMMIT actual=$ACTUAL_GIT_COMMIT" >&2
+else
+    verify_uploaded_sources
 fi
 
 state=$(output_state "$SPEC_OUTPUT")
@@ -450,6 +497,7 @@ mkdir -p "$(dirname -- "$SPEC_OUTPUT")"
 DIAGNOSTIC_ARGS=(
     --config "$SPEC_CONFIG"
     --config-source-mode "$CONFIG_SOURCE_MODE"
+    --deployment-source-mode "$SOURCE_IDENTITY_MODE"
     --checkpoint "$SPEC_CHECKPOINT"
     --expected-checkpoint-epoch "$SPEC_EXPECTED_EPOCH"
     --protocol "$SPEC_PROTOCOL"

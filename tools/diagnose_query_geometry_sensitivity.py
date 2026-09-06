@@ -1707,6 +1707,7 @@ def build_provenance(
     diting_args: argparse.Namespace,
     generator_protocol_validation: Mapping[str, Any],
     config_source_mode: str,
+    deployment_source_identity: Mapping[str, Any],
     protocol: str,
     split: str,
     seed: int,
@@ -1733,6 +1734,7 @@ def build_provenance(
         },
         "resolved_run_config": dict(config_identity),
         "config_source_mode": config_source_mode,
+        "deployment_source_identity": dict(deployment_source_identity),
         "checkpoint": checkpoint,
         "diting": {
             "config": dict(diting_config_identity),
@@ -1886,6 +1888,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         default="unspecified",
         help="Identity label for a run-directory resolved config or source config.",
     )
+    parser.add_argument(
+        "--deployment-source-mode",
+        choices=("git", "uploaded_sha256", "unspecified"),
+        default="unspecified",
+        help="How the deployed diagnostic source was authenticated by its launcher.",
+    )
     parser.add_argument("--checkpoint", required=True, help="Full-model checkpoint")
     parser.add_argument("--protocol", required=True, choices=("normal", "random"))
     parser.add_argument("--split", required=True, help="Must be val/validation/dev")
@@ -1989,6 +1997,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     diting_config_identity = file_provenance(
         diting_config_path, compute_sha256=True
     )
+    deployment_source_identity = {
+        "mode": args.deployment_source_mode,
+        **file_provenance(Path(__file__), compute_sha256=True),
+    }
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -2015,6 +2027,11 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     )
 
     print(f"[querydiag] repository={REPO_ROOT}")
+    print(
+        "[querydiag] deployment_source="
+        f"mode={deployment_source_identity['mode']} "
+        f"sha256={deployment_source_identity['sha256']}"
+    )
     print(f"[querydiag] split={split} protocol={args.protocol} device={device}")
     print(f"[querydiag] config={config_path.resolve()}")
     print(f"[querydiag] config_sha256={config_identity['sha256']}")
@@ -2081,6 +2098,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         diting_args=diting_args,
         generator_protocol_validation=summary["resolved_validation_generators"],
         config_source_mode=args.config_source_mode,
+        deployment_source_identity=deployment_source_identity,
         protocol=args.protocol,
         split=split,
         seed=args.seed,

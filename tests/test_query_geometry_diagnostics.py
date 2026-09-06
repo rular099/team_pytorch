@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -354,6 +355,10 @@ class QueryGeometryHelperTests(unittest.TestCase):
                 diting_args=argparse.Namespace(base_width=128, model_depth=24),
                 generator_protocol_validation=generator_validation,
                 config_source_mode="resolved",
+                deployment_source_identity={
+                    "mode": "uploaded_sha256",
+                    "sha256": "abc",
+                },
                 protocol="normal",
                 split="val",
                 seed=17,
@@ -366,6 +371,10 @@ class QueryGeometryHelperTests(unittest.TestCase):
                 invocation_argv=["diagnose", "--split", "val"],
             )
             self.assertEqual(provenance["config_source_mode"], "resolved")
+            self.assertEqual(
+                provenance["deployment_source_identity"]["mode"],
+                "uploaded_sha256",
+            )
             self.assertIsNotNone(provenance["resolved_run_config"]["sha256"])
             self.assertIsNotNone(provenance["checkpoint"]["sha256"])
             self.assertIsNotNone(
@@ -741,6 +750,32 @@ class QueryGeometryLauncherTests(unittest.TestCase):
             )
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("same-name Slurm job", result.stderr)
+
+    def test_uploaded_sha256_mode_does_not_require_git_metadata(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            environment = self._launcher_environment(root)
+            environment["WORKDIR"] = str(root)
+            environment["ALLOW_ACTIVE_JOB"] = "1"
+            environment["SOURCE_IDENTITY_MODE"] = "uploaded_sha256"
+            diagnostic = Path(environment["DIAGNOSTIC_SCRIPT"])
+            environment["EXPECTED_DIAGNOSTIC_SHA256"] = hashlib.sha256(
+                diagnostic.read_bytes()
+            ).hexdigest()
+            environment["EXPECTED_LAUNCHER_SHA256"] = hashlib.sha256(
+                self.launcher.read_bytes()
+            ).hexdigest()
+            result = subprocess.run(
+                ["bash", str(self.launcher)],
+                cwd=self.repo_root,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("source_identity_mode=uploaded_sha256", result.stdout)
+            self.assertIn("SHA-256 identities matched", result.stdout)
 
     def test_worker_rejects_git_commit_mismatch(self):
         with tempfile.TemporaryDirectory() as temp_dir:
