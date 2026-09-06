@@ -1,42 +1,36 @@
 #!/usr/bin/env bash
 
-# Validation-only Slurm launcher for query-geometry diagnostics.
+# Validation-only Slurm launcher for RT55/RT56 query-geometry diagnostics.
 #
-# The four actions keep model/checkpoint and validation protocol explicit:
-#   rt55_normal : RT55 ep32 + RT55 normal validation config
-#   rt55_random : RT55 ep32 + RT56 fixed-random validation config (zero-shot)
-#   rt56_random : RT56 ep6  + RT56 fixed-random validation config
-#   rt56_normal : RT56 ep6  + RT55 normal validation config (retention)
+# Actions:
+#   rt55_normal : RT55 checkpoint + pinned normal validation
+#   rt55_random : RT55 checkpoint + pinned fixed-random validation (zero-shot)
+#   rt56_random : RT56 checkpoint + pinned fixed-random validation
+#   rt56_normal : RT56 checkpoint + pinned normal validation (retention)
 #
-# This launcher never selects or evaluates the held-out test split.  It defaults
-# to a dry run and refuses existing outputs.  Examples from the repository root:
+# Dry run (default; submits nothing):
+#   DRY_RUN=1 ACTION=all bash tools/run_query_geometry_diagnostics_slurm.sh
 #
-#   ACTION=all bash tools/run_query_geometry_diagnostics_slurm.sh
-#   DRY_RUN=0 CONFIRM_QUERY_DIAGNOSTICS=1 ACTION=all \
+# Runtime/correctness smoke test (not evidence for model conclusions):
+#   SMOKE=1 ACTION=rt55_normal DRY_RUN=0 CONFIRM_QUERY_DIAGNOSTICS=1 \
+#     EXPECTED_GIT_COMMIT=<reviewed-full-commit> \
 #     bash tools/run_query_geometry_diagnostics_slurm.sh
 #
-# For a short cluster smoke test before the full run:
-#
-#   MAX_EVENTS=8 OUT=/new/output/path ACTION=rt55_normal \
-#     DRY_RUN=0 CONFIRM_QUERY_DIAGNOSTICS=1 \
-#     bash tools/run_query_geometry_diagnostics_slurm.sh
-#
-# MAX_EVENTS=0 evaluates all validation events.  Query interventions require
-# roughly five forwards per realtime sample with the default radial scales, so
-# choose SLURM_TIME/MAX_EVENTS according to the cluster's effective QoS limit.
+# SMOKE=1 defaults MAX_EVENTS to 8 and requires one action at a time. After the
+# reviewed commit is synchronized to the cluster, measure smoke throughput and
+# memory before any full run. MAX_EVENTS=0 evaluates all validation events.
 
 set -euo pipefail
 
 SUBMIT_DIR=${SLURM_SUBMIT_DIR:-$PWD}
+LAUNCHER_REPO_ROOT=$(cd "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 WORKDIR=${WORKDIR:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team}
 DIAGNOSTIC_SCRIPT=${DIAGNOSTIC_SCRIPT:-$WORKDIR/tools/diagnose_query_geometry_sensitivity.py}
-RT55_CONFIG=${RT55_CONFIG:-$WORKDIR/pga_configs/transformer_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_chaosuan.json}
-RT56_CONFIG=${RT56_CONFIG:-$WORKDIR/pga_configs/transformer_japan_full_2000_2024_rt56_ep32_mixed_random_geometry_seed42_chaosuan.json}
 
 JAPAN_FULL_DATA_ROOT=${JAPAN_FULL_DATA_ROOT:-/public/home/test_bigmodel/seismogram/zb/origin_corrected_diting_vel_acc_vs30}
 RT55_WEIGHT_NAME=${RT55_WEIGHT_NAME:-weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42}
 RT55_WEIGHT_DIR=${RT55_WEIGHT_DIR:-$WORKDIR/$RT55_WEIGHT_NAME}
-RT55_EP32_CHECKPOINT=${RT55_EP32_CHECKPOINT:-$RT55_WEIGHT_DIR/full_model_best_ep32.pth}
+RT55_CHECKPOINT=${RT55_CHECKPOINT:-${RT55_EP32_CHECKPOINT:-$RT55_WEIGHT_DIR/full_model_best_ep32.pth}}
 JAPAN_FULL_WEIGHT_PATH=${JAPAN_FULL_WEIGHT_PATH:-$RT55_WEIGHT_NAME}
 RT56_WEIGHT_NAME=${RT56_WEIGHT_NAME:-weights_japan_full_2000_2024_rt56_ep32_mixed_random_geometry_seed42}
 RT56_WEIGHT_PATH=${RT56_WEIGHT_PATH:-$RT56_WEIGHT_NAME}
@@ -44,20 +38,56 @@ case "$RT56_WEIGHT_PATH" in
     /*) RT56_WEIGHT_DIR=$RT56_WEIGHT_PATH ;;
     *) RT56_WEIGHT_DIR=$WORKDIR/${RT56_WEIGHT_PATH#./} ;;
 esac
-RT56_EP6_CHECKPOINT=${RT56_EP6_CHECKPOINT:-$RT56_WEIGHT_DIR/full_model_best.pth}
+RT56_CHECKPOINT=${RT56_CHECKPOINT:-${RT56_EP6_CHECKPOINT:-$RT56_WEIGHT_DIR/full_model_best.pth}}
 
-OUT=${OUT:-$WORKDIR/logs/query_geometry_diagnostics_20260902}
+CONFIG_SOURCE_MODE=${CONFIG_SOURCE_MODE:-resolved}
+case "$CONFIG_SOURCE_MODE" in
+    resolved)
+        RT55_CONFIG=${RT55_CONFIG:-$RT55_WEIGHT_DIR/config.json}
+        RT56_CONFIG=${RT56_CONFIG:-$RT56_WEIGHT_DIR/config.json}
+        ;;
+    source)
+        RT55_CONFIG=${RT55_CONFIG:-$WORKDIR/pga_configs/transformer_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_chaosuan.json}
+        RT56_CONFIG=${RT56_CONFIG:-$WORKDIR/pga_configs/transformer_japan_full_2000_2024_rt56_ep32_mixed_random_geometry_seed42_chaosuan.json}
+        ;;
+    *)
+        echo "CONFIG_SOURCE_MODE must be resolved or source; got: $CONFIG_SOURCE_MODE" >&2
+        exit 2
+        ;;
+esac
+
 ACTION=${ACTION:-all}
 DRY_RUN=${DRY_RUN:-1}
 CONFIRM_QUERY_DIAGNOSTICS=${CONFIRM_QUERY_DIAGNOSTICS:-0}
 ALLOW_EXISTING_OUTPUT=${ALLOW_EXISTING_OUTPUT:-0}
+ALLOW_ACTIVE_JOB=${ALLOW_ACTIVE_JOB:-0}
+ALLOW_GIT_COMMIT_MISMATCH=${ALLOW_GIT_COMMIT_MISMATCH:-0}
+ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH=${ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH:-0}
+SMOKE=${SMOKE:-0}
 SEED=${SEED:-42}
-MAX_EVENTS=${MAX_EVENTS:-0}
+if [[ -z "${MAX_EVENTS+x}" ]]; then
+    if [[ "$SMOKE" == "1" ]]; then
+        MAX_EVENTS=8
+    else
+        MAX_EVENTS=0
+    fi
+fi
 STATION_COUNTS=${STATION_COUNTS:-1,3,5,8,12,16}
 RADIAL_SCALES=${RADIAL_SCALES:-0,0.5,1,1.5}
 PAIR_SAMPLE_LIMIT=${PAIR_SAMPLE_LIMIT:-4096}
 EQUIVARIANCE_TOLERANCE=${EQUIVARIANCE_TOLERANCE:-1e-5}
 CHECKPOINT_SHA256=${CHECKPOINT_SHA256:-0}
+ENCODER_SHA256=${ENCODER_SHA256:-0}
+RT55_EXPECTED_EPOCH=${RT55_EXPECTED_EPOCH:-32}
+RT56_EXPECTED_EPOCH=${RT56_EXPECTED_EPOCH:-6}
+
+if [[ -z "${OUT+x}" ]]; then
+    if [[ "$SMOKE" == "1" ]]; then
+        OUT=$WORKDIR/logs/query_geometry_diagnostics_smoke
+    else
+        OUT=$WORKDIR/logs/query_geometry_diagnostics_20260902
+    fi
+fi
 
 SLURM_PARTITION=${SLURM_PARTITION:-diting}
 SLURM_GRES_RESOURCE=${SLURM_GRES_RESOURCE:-dcu}
@@ -78,8 +108,19 @@ case "$ACTION" in
         exit 2
         ;;
 esac
-if [[ ! "$MAX_EVENTS" =~ ^[0-9]+$ ]]; then
-    echo "MAX_EVENTS must be zero or a positive integer; got: $MAX_EVENTS" >&2
+for integer_spec in \
+    "MAX_EVENTS:$MAX_EVENTS" \
+    "RT55_EXPECTED_EPOCH:$RT55_EXPECTED_EPOCH" \
+    "RT56_EXPECTED_EPOCH:$RT56_EXPECTED_EPOCH"; do
+    integer_name=${integer_spec%%:*}
+    integer_value=${integer_spec#*:}
+    if [[ ! "$integer_value" =~ ^[0-9]+$ ]]; then
+        echo "$integer_name must be a non-negative integer; got: $integer_value" >&2
+        exit 2
+    fi
+done
+if [[ "$SMOKE" == "1" && "$ACTION" == "all" ]]; then
+    echo "SMOKE=1 requires one ACTION at a time; start with ACTION=rt55_normal." >&2
     exit 2
 fi
 if [[ "$DRY_RUN" != "1" && "$CONFIRM_QUERY_DIAGNOSTICS" != "1" ]]; then
@@ -110,35 +151,75 @@ require_file() {
     exit 1
 }
 
+file_sha256() {
+    local path=$1
+    if [[ ! -f "$path" ]]; then
+        printf '%s\n' unavailable
+    elif command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$path" | awk '{print $1}'
+    else
+        printf '%s\n' sha256sum-unavailable
+    fi
+}
+
+optional_file_sha256() {
+    local enabled=$1
+    local path=$2
+    if [[ "$enabled" == "1" ]]; then
+        file_sha256 "$path"
+    else
+        printf '%s\n' not-requested
+    fi
+}
+
+repository_commit() {
+    local repository=$1
+    git -C "$repository" rev-parse HEAD 2>/dev/null || true
+}
+
+SUBMISSION_GIT_COMMIT=$(repository_commit "$WORKDIR")
+if [[ -z "$SUBMISSION_GIT_COMMIT" ]]; then
+    SUBMISSION_GIT_COMMIT=$(repository_commit "$LAUNCHER_REPO_ROOT")
+fi
+EXPECTED_GIT_COMMIT=${EXPECTED_GIT_COMMIT:-$SUBMISSION_GIT_COMMIT}
+if [[ ! "$EXPECTED_GIT_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]; then
+    echo "EXPECTED_GIT_COMMIT must be a full 40-character commit; got: $EXPECTED_GIT_COMMIT" >&2
+    exit 2
+fi
+
 action_spec() {
     local diagnostic_action=$1
     case "$diagnostic_action" in
         rt55_normal)
             SPEC_CONFIG=$RT55_CONFIG
-            SPEC_CHECKPOINT=$RT55_EP32_CHECKPOINT
+            SPEC_CHECKPOINT=$RT55_CHECKPOINT
+            SPEC_EXPECTED_EPOCH=$RT55_EXPECTED_EPOCH
             SPEC_PROTOCOL=normal
-            SPEC_OUTPUT=$OUT/rt55_ep32_normal_querydiag
+            SPEC_OUTPUT=$OUT/rt55_normal_querydiag
             SPEC_JOB_NAME=team-rt55-normal-qdiag
             ;;
         rt55_random)
             SPEC_CONFIG=$RT56_CONFIG
-            SPEC_CHECKPOINT=$RT55_EP32_CHECKPOINT
+            SPEC_CHECKPOINT=$RT55_CHECKPOINT
+            SPEC_EXPECTED_EPOCH=$RT55_EXPECTED_EPOCH
             SPEC_PROTOCOL=random
-            SPEC_OUTPUT=$OUT/rt55_ep32_random_querydiag
+            SPEC_OUTPUT=$OUT/rt55_random_querydiag
             SPEC_JOB_NAME=team-rt55-random-qdiag
             ;;
         rt56_random)
             SPEC_CONFIG=$RT56_CONFIG
-            SPEC_CHECKPOINT=$RT56_EP6_CHECKPOINT
+            SPEC_CHECKPOINT=$RT56_CHECKPOINT
+            SPEC_EXPECTED_EPOCH=$RT56_EXPECTED_EPOCH
             SPEC_PROTOCOL=random
-            SPEC_OUTPUT=$OUT/rt56_ep6_random_querydiag
+            SPEC_OUTPUT=$OUT/rt56_random_querydiag
             SPEC_JOB_NAME=team-rt56-random-qdiag
             ;;
         rt56_normal)
             SPEC_CONFIG=$RT55_CONFIG
-            SPEC_CHECKPOINT=$RT56_EP6_CHECKPOINT
+            SPEC_CHECKPOINT=$RT56_CHECKPOINT
+            SPEC_EXPECTED_EPOCH=$RT56_EXPECTED_EPOCH
             SPEC_PROTOCOL=normal
-            SPEC_OUTPUT=$OUT/rt56_ep6_normal_querydiag
+            SPEC_OUTPUT=$OUT/rt56_normal_querydiag
             SPEC_JOB_NAME=team-rt56-normal-qdiag
             ;;
         *)
@@ -148,13 +229,69 @@ action_spec() {
     esac
 }
 
-output_exists() {
+output_state() {
     local prefix=$1
-    [[ -e "$prefix.summary.json" || -e "$prefix.samples.npz" || -e "$prefix.resolved_config.json" ]]
+    local present=0
+    local path
+    for path in \
+        "$prefix.summary.json" \
+        "$prefix.samples.npz" \
+        "$prefix.resolved_config.json" \
+        "$prefix.complete.json"; do
+        if [[ -e "$path" ]]; then
+            present=$((present + 1))
+        fi
+    done
+    if ((present == 0)); then
+        printf '%s\n' absent
+    elif ((present == 4)); then
+        printf '%s\n' complete
+    else
+        printf 'partial-%s-of-4\n' "$present"
+    fi
+}
+
+check_active_job() {
+    local job_name=$1
+    if [[ "$ALLOW_ACTIVE_JOB" == "1" ]]; then
+        echo "[UNSAFE WARN] ALLOW_ACTIVE_JOB=1; same-name job guard bypassed for $job_name." >&2
+        return 0
+    fi
+    if ! command -v squeue >/dev/null 2>&1; then
+        return 0
+    fi
+    local active_job
+    active_job=$(squeue --noheader --user "$(id -un)" --name "$job_name" --format='%A %T' 2>/dev/null | awk 'NF {print; exit}' || true)
+    if [[ -n "$active_job" ]]; then
+        echo "A same-name Slurm job is already active: $job_name $active_job" >&2
+        exit 1
+    fi
+}
+
+print_action_identity() {
+    local diagnostic_action=$1
+    echo "[INFO] action=$diagnostic_action split=val protocol=$SPEC_PROTOCOL"
+    echo "[INFO] expected_git_commit=$EXPECTED_GIT_COMMIT"
+    echo "[INFO] submission_git_commit=$SUBMISSION_GIT_COMMIT"
+    echo "[INFO] config_source_mode=$CONFIG_SOURCE_MODE"
+    echo "[INFO] config=$SPEC_CONFIG"
+    echo "[INFO] config_sha256=$(file_sha256 "$SPEC_CONFIG")"
+    echo "[INFO] checkpoint=$SPEC_CHECKPOINT"
+    echo "[INFO] checkpoint_expected_epoch=$SPEC_EXPECTED_EPOCH"
+    echo "[INFO] checkpoint_sha256=$(optional_file_sha256 "$CHECKPOINT_SHA256" "$SPEC_CHECKPOINT")"
+    echo "[INFO] diting_config=$DITING_CONFIG"
+    echo "[INFO] diting_config_sha256=$(file_sha256 "$DITING_CONFIG")"
+    echo "[INFO] diting_pretrained=$DITING_PRETRAINED"
+    echo "[INFO] diting_pretrained_sha256=$(optional_file_sha256 "$ENCODER_SHA256" "$DITING_PRETRAINED")"
+    echo "[INFO] output_prefix=$SPEC_OUTPUT"
+    echo "[INFO] max_events=$MAX_EVENTS station_counts=$STATION_COUNTS radial_scales=$RADIAL_SCALES"
+    echo "[INFO] allow_unsafe_encoder_source_mismatch=$ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH"
+    if [[ "$SMOKE" == "1" ]]; then
+        echo "[WARN] prefix-event smoke output is for runtime/correctness only, not model conclusions."
+    fi
 }
 
 SCRIPT_PATH=$(resolve_path "$0" "$SUBMIT_DIR")
-ACTION_LIST=()
 if [[ "$ACTION" == "all" ]]; then
     ACTION_LIST=(rt55_normal rt55_random rt56_random rt56_normal)
 else
@@ -167,12 +304,14 @@ require_file "$RT56_CONFIG" "RT56 config"
 require_file "$DITING_CONFIG" "DiTing config"
 require_file "$DITING_PRETRAINED" "DiTing pretrained checkpoint"
 
-export WORKDIR DIAGNOSTIC_SCRIPT RT55_CONFIG RT56_CONFIG
+export WORKDIR DIAGNOSTIC_SCRIPT RT55_CONFIG RT56_CONFIG CONFIG_SOURCE_MODE
 export JAPAN_FULL_DATA_ROOT JAPAN_FULL_WEIGHT_PATH RT56_WEIGHT_PATH
-export RT55_EP32_CHECKPOINT RT56_EP6_CHECKPOINT OUT
-export DRY_RUN CONFIRM_QUERY_DIAGNOSTICS
+export RT55_CHECKPOINT RT56_CHECKPOINT RT55_EXPECTED_EPOCH RT56_EXPECTED_EPOCH OUT
+export DRY_RUN CONFIRM_QUERY_DIAGNOSTICS ALLOW_ACTIVE_JOB ALLOW_GIT_COMMIT_MISMATCH
+export ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH
+export EXPECTED_GIT_COMMIT SUBMISSION_GIT_COMMIT SMOKE
 export SEED MAX_EVENTS STATION_COUNTS RADIAL_SCALES PAIR_SAMPLE_LIMIT
-export EQUIVARIANCE_TOLERANCE CHECKPOINT_SHA256 ALLOW_EXISTING_OUTPUT
+export EQUIVARIANCE_TOLERANCE CHECKPOINT_SHA256 ENCODER_SHA256 ALLOW_EXISTING_OUTPUT
 export SLURM_PARTITION SLURM_GRES_RESOURCE SLURM_GPUS SLURM_CPUS_PER_TASK
 export SLURM_TIME SLURM_LOG_DIR CONDA_ENV MODULE_UNLOAD MODULE_LOADS
 export DITING_CONFIG DITING_PRETRAINED
@@ -184,15 +323,14 @@ if [[ -z "${SLURM_JOB_ID:-}" ]]; then
         action_spec "$diagnostic_action"
         require_file "$SPEC_CONFIG" "$diagnostic_action config"
         require_file "$SPEC_CHECKPOINT" "$diagnostic_action checkpoint"
-        if output_exists "$SPEC_OUTPUT" && [[ "$ALLOW_EXISTING_OUTPUT" != "1" ]]; then
-            echo "[INFO] existing output; skip $diagnostic_action: $SPEC_OUTPUT"
+        state=$(output_state "$SPEC_OUTPUT")
+        if [[ "$state" != "absent" && "$ALLOW_EXISTING_OUTPUT" != "1" ]]; then
+            echo "[INFO] existing $state output; skip $diagnostic_action: $SPEC_OUTPUT"
             skipped=$((skipped + 1))
             continue
         fi
-        echo "[INFO] action=$diagnostic_action protocol=$SPEC_PROTOCOL"
-        echo "[INFO] config=$SPEC_CONFIG"
-        echo "[INFO] checkpoint=$SPEC_CHECKPOINT"
-        echo "[INFO] output_prefix=$SPEC_OUTPUT"
+        check_active_job "$SPEC_JOB_NAME"
+        print_action_identity "$diagnostic_action"
         if [[ "$DRY_RUN" == "1" ]]; then
             printf '[DRY-RUN] sbatch --job-name=%q --partition=%q --nodes=1 --ntasks-per-node=1 --cpus-per-task=%q --gres=%q --time=%q --chdir=%q --output=%q --error=%q --export=ALL %q %q\n' \
                 "$SPEC_JOB_NAME" "$SLURM_PARTITION" "$SLURM_CPUS_PER_TASK" \
@@ -229,20 +367,37 @@ DIAGNOSTIC_ACTION=$1
 action_spec "$DIAGNOSTIC_ACTION"
 require_file "$SPEC_CONFIG" "$DIAGNOSTIC_ACTION config"
 require_file "$SPEC_CHECKPOINT" "$DIAGNOSTIC_ACTION checkpoint"
-if output_exists "$SPEC_OUTPUT" && [[ "$ALLOW_EXISTING_OUTPUT" != "1" ]]; then
-    echo "Output already exists; refusing worker overwrite: $SPEC_OUTPUT" >&2
-    exit 1
-fi
 
 cd "$WORKDIR"
+ACTUAL_GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || true)
+if [[ "$ACTUAL_GIT_COMMIT" != "$EXPECTED_GIT_COMMIT" ]]; then
+    if [[ "$ALLOW_GIT_COMMIT_MISMATCH" != "1" ]]; then
+        echo "Worker Git commit mismatch: expected=$EXPECTED_GIT_COMMIT actual=$ACTUAL_GIT_COMMIT" >&2
+        exit 1
+    fi
+    echo "[UNSAFE WARN] ALLOW_GIT_COMMIT_MISMATCH=1 expected=$EXPECTED_GIT_COMMIT actual=$ACTUAL_GIT_COMMIT" >&2
+fi
+
+state=$(output_state "$SPEC_OUTPUT")
+if [[ "$state" != "absent" && "$ALLOW_EXISTING_OUTPUT" != "1" ]]; then
+    echo "Output set is $state; refusing worker overwrite: $SPEC_OUTPUT" >&2
+    exit 1
+fi
+OUTPUT_LOCK=$SPEC_OUTPUT.lock
+mkdir -p "$(dirname -- "$SPEC_OUTPUT")"
+if ! mkdir "$OUTPUT_LOCK" 2>/dev/null; then
+    echo "Another worker already owns output lock: $OUTPUT_LOCK" >&2
+    exit 1
+fi
+cleanup_output_lock() {
+    rmdir "$OUTPUT_LOCK" 2>/dev/null || true
+}
+trap cleanup_output_lock EXIT INT TERM
+
 echo "[INFO] repository=$(pwd)"
 echo "[INFO] branch=$(git branch --show-current 2>/dev/null || true)"
-echo "[INFO] commit=$(git rev-parse HEAD 2>/dev/null || true)"
-echo "[INFO] action=$DIAGNOSTIC_ACTION split=val protocol=$SPEC_PROTOCOL"
-echo "[INFO] config=$SPEC_CONFIG"
-echo "[INFO] checkpoint=$SPEC_CHECKPOINT"
-echo "[INFO] output_prefix=$SPEC_OUTPUT"
-echo "[INFO] max_events=$MAX_EVENTS station_counts=$STATION_COUNTS radial_scales=$RADIAL_SCALES"
+echo "[INFO] actual_git_commit=$ACTUAL_GIT_COMMIT"
+print_action_identity "$DIAGNOSTIC_ACTION"
 
 restore_nounset=0
 if [[ $- == *u* ]]; then
@@ -294,7 +449,9 @@ fi
 mkdir -p "$(dirname -- "$SPEC_OUTPUT")"
 DIAGNOSTIC_ARGS=(
     --config "$SPEC_CONFIG"
+    --config-source-mode "$CONFIG_SOURCE_MODE"
     --checkpoint "$SPEC_CHECKPOINT"
+    --expected-checkpoint-epoch "$SPEC_EXPECTED_EPOCH"
     --protocol "$SPEC_PROTOCOL"
     --split val
     --output-prefix "$SPEC_OUTPUT"
@@ -311,6 +468,12 @@ DIAGNOSTIC_ARGS=(
 if [[ "$CHECKPOINT_SHA256" == "1" ]]; then
     DIAGNOSTIC_ARGS+=(--checkpoint-sha256)
 fi
+if [[ "$ENCODER_SHA256" == "1" ]]; then
+    DIAGNOSTIC_ARGS+=(--encoder-sha256)
+fi
+if [[ "$ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH" == "1" ]]; then
+    DIAGNOSTIC_ARGS+=(--allow-unsafe-encoder-source-mismatch)
+fi
 if [[ "$ALLOW_EXISTING_OUTPUT" == "1" ]]; then
     DIAGNOSTIC_ARGS+=(--force)
 fi
@@ -320,7 +483,8 @@ srun --ntasks=1 python "$DIAGNOSTIC_SCRIPT" "${DIAGNOSTIC_ARGS[@]}"
 for output_path in \
     "$SPEC_OUTPUT.summary.json" \
     "$SPEC_OUTPUT.samples.npz" \
-    "$SPEC_OUTPUT.resolved_config.json"; do
+    "$SPEC_OUTPUT.resolved_config.json" \
+    "$SPEC_OUTPUT.complete.json"; do
     if [[ ! -s "$output_path" ]]; then
         echo "Expected diagnostic output is missing or empty: $output_path" >&2
         exit 1

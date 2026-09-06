@@ -1,7 +1,11 @@
+import argparse
 import json
+import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 import torch
@@ -11,12 +15,41 @@ from tools import diagnose_query_geometry_sensitivity as querydiag
 
 class _SyntheticDataset:
     def __init__(self, *, protocol="normal", samples=None):
+        self.deterministic_sampling_seed = 42
+        self.oversample = 1
+        self.shuffle = False
+        self.realtime_training = {
+            "enabled": True,
+            "mode": "val",
+            "reference": "first_p_pick",
+            "val_times": [1, 3, 5, 10, 20, 40, 90],
+            "train_times": None,
+            "train_time_bins": [[0, 1], [1, 3]],
+            "bins_per_event_per_epoch": 1,
+            "bin_sampling": "without_replacement",
+        }
+        self.realtime_target_sampling = {
+            "enabled": True,
+            "input_ratio": 0.3,
+            "triggered_noninput_ratio": 0.2,
+            "untriggered_ratio": 0.5,
+            "fill_missing": True,
+            "exclude_inputs": False,
+        }
         if protocol == "random":
             self.causal_random_input_mask = {
                 "enabled": True,
                 "apply_probability": 1.0,
-                "station_counts": [1, 3],
-                "target_sampling": {"exclude_inputs": True},
+                "station_counts": [1, 3, 5, 8, 12, 16],
+                "order_selected_by_pick": True,
+                "target_sampling": {
+                    "enabled": True,
+                    "input_ratio": 0.0,
+                    "triggered_noninput_ratio": 0.2,
+                    "untriggered_ratio": 0.5,
+                    "fill_missing": True,
+                    "exclude_inputs": True,
+                },
             }
         else:
             self.causal_random_input_mask = {"enabled": False}
@@ -184,6 +217,169 @@ class QueryGeometryHelperTests(unittest.TestCase):
         self.assertIsNone(report["waveform_scale_gate"]["parameters"])
         self.assertIn("reason", report["waveform_scale_gate"])
 
+    def test_checkpoint_epoch_and_tensor_provenance_are_inspected(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            checkpoint_path = Path(temp_dir) / "checkpoint.pth"
+            torch.save(
+                {
+                    "epoch": 32,
+                    "loss": 0.25,
+                    "checkpoint_format": "non_encoder_v1",
+                    "excluded_prefixes": ["waveform_model.0."],
+                    "excluded_tensor_count": 3,
+                    "saved_tensor_count": 2,
+                    "total_tensor_count": 5,
+                    "encoder_source": "/encoder/source.pt",
+                    "model_state_dict": {"head.weight": torch.ones(1)},
+                },
+                checkpoint_path,
+            )
+            identity = querydiag.inspect_checkpoint_file(checkpoint_path)
+            self.assertEqual(identity["epoch"], 32)
+            self.assertEqual(identity["loss"], 0.25)
+            self.assertEqual(identity["checkpoint_format"], "non_encoder_v1")
+            self.assertEqual(identity["excluded_tensor_count"], 3)
+            self.assertEqual(identity["saved_tensor_count"], 2)
+            self.assertEqual(identity["total_tensor_count"], 5)
+            self.assertTrue(identity["external_encoder_required"])
+            validation = querydiag.validate_checkpoint_epoch(identity, 32)
+            self.assertTrue(validation["verified"])
+            with self.assertRaisesRegex(ValueError, "epoch mismatch"):
+                querydiag.validate_checkpoint_epoch(identity, 6)
+
+    def test_wrong_expected_epoch_fails_before_dataset_construction(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            checkpoint_path = root / "checkpoint.pth"
+            config_path = root / "config.json"
+            diting_path = root / "diting.yml"
+            torch.save(
+                {"epoch": 5, "model_state_dict": {}},
+                checkpoint_path,
+            )
+            config_path.write_text("{}\n", encoding="utf-8")
+            diting_path.write_text("{}\n", encoding="utf-8")
+            with mock.patch.object(
+                querydiag.eval_checkpoint, "build_datasets"
+            ) as build_datasets:
+                with self.assertRaisesRegex(ValueError, "epoch mismatch"):
+                    querydiag.main([
+                        "--config", str(config_path),
+                        "--checkpoint", str(checkpoint_path),
+                        "--expected-checkpoint-epoch", "6",
+                        "--protocol", "normal",
+                        "--split", "val",
+                        "--output-prefix", str(root / "result"),
+                        "--diting-config", str(diting_path),
+                    ])
+                build_datasets.assert_not_called()
+
+    def test_non_encoder_checkpoint_requires_matching_explicit_encoder(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            actual_encoder = root / "actual.pt"
+            expected_encoder = root / "expected.pt"
+            actual_encoder.write_bytes(b"actual")
+            expected_encoder.write_bytes(b"expected")
+            identity = {
+                "external_encoder_required": True,
+                "encoder_source": str(expected_encoder),
+            }
+            with self.assertRaisesRegex(ValueError, "explicit"):
+                querydiag.validate_encoder_source(
+                    identity,
+                    None,
+                    encoder_was_explicit=False,
+                )
+            with self.assertRaisesRegex(ValueError, "mismatch"):
+                querydiag.validate_encoder_source(
+                    identity,
+                    actual_encoder,
+                    encoder_was_explicit=True,
+                )
+            unsafe = querydiag.validate_encoder_source(
+                identity,
+                actual_encoder,
+                encoder_was_explicit=True,
+                allow_unsafe_mismatch=True,
+            )
+            self.assertEqual(unsafe["status"], "mismatch_allowed_unsafe")
+            self.assertTrue(unsafe["unsafe_mismatch_override"])
+            matched = querydiag.validate_encoder_source(
+                identity,
+                expected_encoder,
+                encoder_was_explicit=True,
+            )
+            self.assertEqual(matched["status"], "matched")
+
+    def test_provenance_records_configs_encoder_architecture_and_sampling(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "config.json"
+            checkpoint_path = root / "checkpoint.pth"
+            diting_config_path = root / "diting.yml"
+            encoder_path = root / "encoder.pt"
+            for path, content in (
+                (config_path, b"{}\n"),
+                (checkpoint_path, b"checkpoint"),
+                (diting_config_path, b"base_width: 128\n"),
+                (encoder_path, b"encoder"),
+            ):
+                path.write_bytes(content)
+            generator_validation = {
+                "status": "passed",
+                "generators": [{"deterministic_sampling_seed": 42}],
+            }
+            provenance = querydiag.build_provenance(
+                config_identity=querydiag.file_provenance(
+                    config_path, compute_sha256=True
+                ),
+                checkpoint_identity={
+                    "path": str(checkpoint_path),
+                    "epoch": 32,
+                    "checkpoint_format": "non_encoder_v1",
+                    "excluded_prefixes": ["waveform_model.0."],
+                    "excluded_tensor_count": 1,
+                    "saved_tensor_count": 2,
+                    "total_tensor_count": 3,
+                },
+                checkpoint_epoch_validation={"verified": True},
+                diting_config_identity=querydiag.file_provenance(
+                    diting_config_path, compute_sha256=True
+                ),
+                diting_encoder_identity=querydiag.file_provenance(
+                    encoder_path, compute_sha256=True
+                ),
+                encoder_source_validation={"status": "matched"},
+                diting_args=argparse.Namespace(base_width=128, model_depth=24),
+                generator_protocol_validation=generator_validation,
+                config_source_mode="resolved",
+                protocol="normal",
+                split="val",
+                seed=17,
+                station_counts=[1, 3, 5, 8, 12, 16],
+                radial_scales=[0.0, 0.5, 1.0, 1.5],
+                max_events=8,
+                pair_sample_limit=4096,
+                equivariance_tolerance=1e-5,
+                checkpoint_sha256=True,
+                invocation_argv=["diagnose", "--split", "val"],
+            )
+            self.assertEqual(provenance["config_source_mode"], "resolved")
+            self.assertIsNotNone(provenance["resolved_run_config"]["sha256"])
+            self.assertIsNotNone(provenance["checkpoint"]["sha256"])
+            self.assertIsNotNone(
+                provenance["diting"]["pretrained_encoder"]["sha256"]
+            )
+            self.assertEqual(
+                provenance["diting"]["architecture_arguments"]["base_width"],
+                128,
+            )
+            self.assertEqual(provenance["diagnostic_seed"], 17)
+            self.assertEqual(
+                provenance["generator_sampling"], generator_validation
+            )
+
     def test_output_overwrite_requires_force_and_npz_has_provenance(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = querydiag.diagnostic_output_paths(Path(temp_dir) / "run")
@@ -198,6 +394,12 @@ class QueryGeometryHelperTests(unittest.TestCase):
             )
             with paths["summary"].open(encoding="utf-8") as handle:
                 self.assertEqual(json.load(handle)["provenance"]["split"], "val")
+            with paths["completion"].open(encoding="utf-8") as handle:
+                completion = json.load(handle)
+            self.assertEqual(completion["status"], "complete")
+            self.assertEqual(set(completion["artifacts"]), {
+                "resolved_config", "samples", "summary"
+            })
             with np.load(paths["samples"]) as archive:
                 self.assertEqual(json.loads(str(archive["provenance_json"]))["split"], "val")
                 self.assertEqual(
@@ -212,6 +414,63 @@ class QueryGeometryHelperTests(unittest.TestCase):
                     provenance={},
                     force=False,
                 )
+
+    def test_serialization_failure_leaves_no_final_output(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            paths = querydiag.diagnostic_output_paths(root / "run")
+            with mock.patch.object(
+                querydiag, "_serialize_npz", side_effect=RuntimeError("boom")
+            ):
+                with self.assertRaisesRegex(RuntimeError, "boom"):
+                    querydiag.write_outputs(
+                        paths,
+                        config={},
+                        summary={},
+                        arrays={},
+                        provenance={},
+                        force=False,
+                    )
+            self.assertFalse(any(path.exists() for path in paths.values()))
+            self.assertEqual(list(root.glob(".*.tmp.*")), [])
+
+    def test_partial_publication_is_detected_and_force_can_recover(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = querydiag.diagnostic_output_paths(Path(temp_dir) / "run")
+            real_replace = os.replace
+            calls = 0
+
+            def fail_second_replace(source, destination):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise RuntimeError("publish interrupted")
+                return real_replace(source, destination)
+
+            with mock.patch.object(
+                querydiag.os, "replace", side_effect=fail_second_replace
+            ):
+                with self.assertRaisesRegex(RuntimeError, "publish interrupted"):
+                    querydiag.write_outputs(
+                        paths,
+                        config={},
+                        summary={},
+                        arrays={"x": np.ones(1)},
+                        provenance={},
+                        force=False,
+                    )
+            self.assertFalse(paths["completion"].exists())
+            with self.assertRaisesRegex(FileExistsError, "partial/incomplete"):
+                querydiag.refuse_existing_outputs(paths, force=False)
+            querydiag.write_outputs(
+                paths,
+                config={},
+                summary={},
+                arrays={"x": np.ones(1)},
+                provenance={},
+                force=True,
+            )
+            self.assertTrue(all(path.is_file() for path in paths.values()))
 
 
 class QueryGeometryEndToEndTests(unittest.TestCase):
@@ -239,6 +498,36 @@ class QueryGeometryEndToEndTests(unittest.TestCase):
         self.assertEqual(summary["counts"]["valid_targets"], 6)
         self.assertEqual(summary["counts"]["station_count_histogram"], {"1": 1, "2": 1})
         self.assertEqual(summary["counts"]["target_type_counts"]["input"], 1)
+        for metric_name in ("correlation", "r2", "slope", "intercept"):
+            self.assertIsNotNone(summary["baseline"]["point_metrics"][metric_name])
+        groups = summary["baseline"]["target_groups"]
+        self.assertEqual(
+            set(groups),
+            {"all", "non_input", "triggered_noninput", "untriggered", "input"},
+        )
+        self.assertEqual(groups["all"]["point_metrics"]["targets"], 6)
+        self.assertEqual(groups["non_input"]["point_metrics"]["targets"], 5)
+        self.assertEqual(groups["triggered_noninput"]["point_metrics"]["targets"], 2)
+        self.assertEqual(groups["untriggered"]["point_metrics"]["targets"], 3)
+        self.assertEqual(groups["input"]["point_metrics"]["targets"], 1)
+        self.assertEqual(
+            groups["all"]["spatial_field_metrics"][
+                "valid_target_count_at_least_2"
+            ]["realtime_samples"],
+            2,
+        )
+        self.assertEqual(
+            groups["input"]["spatial_field_metrics"][
+                "valid_target_count_at_least_2"
+            ]["realtime_samples"],
+            0,
+        )
+        self.assertEqual(
+            groups["all"]["spatial_field_metrics"][
+                "valid_target_count_at_least_5"
+            ]["realtime_samples"],
+            0,
+        )
         self.assertGreater(
             summary["radial_interventions"]["0.0"][
                 "mean_abs_prediction_change_from_scale_1"
@@ -260,6 +549,17 @@ class QueryGeometryEndToEndTests(unittest.TestCase):
                 "coordinate_to_wave_embedding_norm_ratio"
             ]["mean"],
             0.5,
+        )
+        radial_groups = summary["radial_interventions"]["0.0"]["target_groups"]
+        self.assertEqual(set(radial_groups), set(groups))
+        self.assertEqual(radial_groups["non_input"]["targets"], 5)
+        self.assertIn("1", radial_groups["non_input"]["by_station_count"])
+        self.assertIn("2", radial_groups["non_input"]["by_station_count"])
+        self.assertEqual(
+            radial_groups["input"]["predicted_p95_p05_range"][
+                "valid_target_count_at_least_2"
+            ]["realtime_samples"],
+            0,
         )
 
     def test_query_invariant_model_has_zero_radial_sensitivity(self):
@@ -306,6 +606,32 @@ class QueryGeometryEndToEndTests(unittest.TestCase):
         self.assertEqual(summary["counts"]["events"], 2)
         np.testing.assert_array_equal(arrays["dataset_source_index"], [0, 1])
 
+    def test_spatial_threshold_at_least_five_includes_only_eligible_samples(self):
+        large_sample = _SyntheticDataset._sample(
+            "event-large",
+            [True, True, False],
+            [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 999.0],
+            [0.1, 1.1, 2.1, 3.1, 4.1, 5.1, -999.0],
+            [0, 1, 2, 1, 2, 2, -1],
+        )
+        summary, _ = self._run(
+            _CoordinateSensitiveModel(),
+            dataset=_SyntheticDataset(samples=[large_sample]),
+        )
+        field = summary["baseline"]["target_groups"]["all"][
+            "spatial_field_metrics"
+        ]
+        self.assertEqual(
+            field["valid_target_count_at_least_5"]["realtime_samples"], 1
+        )
+        radial = summary["radial_interventions"]["0.0"]["target_groups"]["all"]
+        self.assertEqual(
+            radial["predicted_p95_p05_range"][
+                "valid_target_count_at_least_5"
+            ]["realtime_samples"],
+            1,
+        )
+
     def test_protocol_mismatch_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "does not match"):
             self._run(
@@ -319,6 +645,141 @@ class QueryGeometryEndToEndTests(unittest.TestCase):
                 dataset=_SyntheticDataset(protocol="normal"),
                 protocol="random",
             )
+
+    def test_random_protocol_rejects_disabled_or_input_including_targets(self):
+        disabled = _SyntheticDataset(protocol="random")
+        disabled.causal_random_input_mask["target_sampling"]["enabled"] = False
+        with self.assertRaisesRegex(ValueError, "target_sampling.enabled"):
+            self._run(
+                _CoordinateSensitiveModel(), dataset=disabled, protocol="random"
+            )
+
+        includes_input = _SyntheticDataset(protocol="random")
+        includes_input.causal_random_input_mask["target_sampling"][
+            "exclude_inputs"
+        ] = False
+        with self.assertRaisesRegex(ValueError, "exclude_inputs"):
+            self._run(
+                _CoordinateSensitiveModel(),
+                dataset=includes_input,
+                protocol="random",
+            )
+
+    def test_random_protocol_rejects_wrong_station_set(self):
+        dataset = _SyntheticDataset(protocol="random")
+        dataset.causal_random_input_mask["station_counts"] = [1, 3, 5]
+        with self.assertRaisesRegex(ValueError, "station_counts set"):
+            self._run(
+                _CoordinateSensitiveModel(), dataset=dataset, protocol="random"
+            )
+
+    def test_protocol_rejects_wrong_realtime_mode_or_times(self):
+        wrong_mode = _SyntheticDataset(protocol="random")
+        wrong_mode.realtime_training["mode"] = "train"
+        with self.assertRaisesRegex(ValueError, "mode='val'"):
+            self._run(
+                _CoordinateSensitiveModel(), dataset=wrong_mode, protocol="random"
+            )
+
+        wrong_times = _SyntheticDataset(protocol="normal")
+        wrong_times.realtime_training["val_times"] = [1, 3, 5]
+        with self.assertRaisesRegex(ValueError, "pinned validation val_times"):
+            self._run(
+                _CoordinateSensitiveModel(), dataset=wrong_times, protocol="normal"
+            )
+
+    def test_normal_protocol_rejects_active_random_mask(self):
+        dataset = _SyntheticDataset(protocol="random")
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            self._run(
+                _CoordinateSensitiveModel(), dataset=dataset, protocol="normal"
+            )
+
+
+class QueryGeometryLauncherTests(unittest.TestCase):
+    repo_root = Path(__file__).resolve().parents[1]
+    launcher = repo_root / "tools" / "run_query_geometry_diagnostics_slurm.sh"
+
+    def _launcher_environment(self, root):
+        root = Path(root)
+        placeholder = root / "placeholder"
+        placeholder.write_bytes(b"placeholder")
+        environment = os.environ.copy()
+        environment.update({
+            "WORKDIR": str(self.repo_root),
+            "DIAGNOSTIC_SCRIPT": str(placeholder),
+            "RT55_CONFIG": str(placeholder),
+            "RT56_CONFIG": str(placeholder),
+            "RT55_CHECKPOINT": str(placeholder),
+            "RT56_CHECKPOINT": str(placeholder),
+            "DITING_CONFIG": str(placeholder),
+            "DITING_PRETRAINED": str(placeholder),
+            "OUT": str(root / "outputs"),
+            "ACTION": "rt55_normal",
+            "DRY_RUN": "1",
+            "CONFIG_SOURCE_MODE": "resolved",
+        })
+        return environment
+
+    def test_submission_rejects_same_name_active_job(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            squeue = fake_bin / "squeue"
+            squeue.write_text("#!/bin/sh\necho '12345 RUNNING'\n", encoding="utf-8")
+            squeue.chmod(0o755)
+            environment = self._launcher_environment(root)
+            environment["PATH"] = f"{fake_bin}{os.pathsep}{environment['PATH']}"
+            result = subprocess.run(
+                ["bash", str(self.launcher)],
+                cwd=self.repo_root,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("same-name Slurm job", result.stderr)
+
+    def test_worker_rejects_git_commit_mismatch(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            environment = self._launcher_environment(temp_dir)
+            environment["SLURM_JOB_ID"] = "999"
+            environment["EXPECTED_GIT_COMMIT"] = "0" * 40
+            result = subprocess.run(
+                ["bash", str(self.launcher), "rt55_normal"],
+                cwd=self.repo_root,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Worker Git commit mismatch", result.stderr)
+
+    def test_worker_rejects_existing_output_lock(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            environment = self._launcher_environment(root)
+            environment["SLURM_JOB_ID"] = "999"
+            environment["EXPECTED_GIT_COMMIT"] = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=self.repo_root,
+                text=True,
+            ).strip()
+            lock = root / "outputs" / "rt55_normal_querydiag.lock"
+            lock.mkdir(parents=True)
+            result = subprocess.run(
+                ["bash", str(self.launcher), "rt55_normal"],
+                cwd=self.repo_root,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("already owns output lock", result.stderr)
 
 
 if __name__ == "__main__":

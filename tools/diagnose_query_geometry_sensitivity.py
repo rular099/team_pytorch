@@ -24,9 +24,11 @@ Outputs are written only after inference succeeds:
     <output-prefix>.summary.json
     <output-prefix>.samples.npz
     <output-prefix>.resolved_config.json
+    <output-prefix>.complete.json
 
-Existing outputs are refused unless ``--force`` is supplied.  Only validation
-is accepted by design.
+The completion manifest is published last. Existing complete or partial output
+sets are refused unless ``--force`` is supplied. Only validation is accepted by
+design.
 """
 
 from __future__ import annotations
@@ -40,7 +42,9 @@ import os
 import random
 import subprocess
 import sys
+import uuid
 from collections import Counter, defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
@@ -53,15 +57,57 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import eval_checkpoint  # noqa: E402
-from train_light import build_diting_args, load_config_file  # noqa: E402
+from train_light import (  # noqa: E402
+    CHECKPOINT_ENCODER_PREFIXES,
+    build_diting_args,
+    load_config_file,
+)
 
 
 PGA_COORDINATE = "log10(m/s^2)"
+PINNED_VALIDATION_TIMES = (1.0, 3.0, 5.0, 10.0, 20.0, 40.0, 90.0)
+PINNED_RANDOM_STATION_COUNTS = (1, 3, 5, 8, 12, 16)
 TARGET_TYPE_NAMES = {
     0: "input",
     1: "triggered_noninput",
     2: "untriggered",
 }
+DITING_ARCHITECTURE_KEYS = (
+    "base_width",
+    "target_width",
+    "model_depth",
+    "in_samples",
+    "patch_size",
+    "num_interactions",
+    "interaction_indexes",
+    "out_channels",
+    "diting_frontend",
+    "attn_pool_hidden_dim",
+    "attn_pool_temperature",
+    "attn_pool_topk",
+    "pale_size",
+    "stem_convKs",
+    "cpe_kernel_size",
+    "ffn_convKS",
+    "fpn_convKS",
+    "aggregate_convKS",
+    "head_convKS",
+    "inter_mode",
+    "add_vit_feature",
+    "use_extra_extractor",
+    "norm_layer",
+    "xattn",
+    "drop_path",
+    "head_drop_rate",
+    "init_std",
+    "input_mult",
+    "attn_mult",
+    "output_mult",
+    "eval_type",
+    "pretrain_method",
+    "pretrained_load_mode",
+    "hps",
+)
 
 
 def parse_numeric_list(
@@ -111,6 +157,7 @@ def diagnostic_output_paths(
         "summary": Path(str(prefix) + ".summary.json"),
         "samples": Path(str(prefix) + ".samples.npz"),
         "resolved_config": Path(str(prefix) + ".resolved_config.json"),
+        "completion": Path(str(prefix) + ".complete.json"),
     }
 
 
@@ -122,8 +169,15 @@ def refuse_existing_outputs(
     existing = [str(path) for path in paths.values() if path.exists()]
     if existing and not force:
         formatted = "\n  ".join(existing)
+        core_names = {"summary", "samples", "resolved_config"}
+        complete = (
+            "completion" in paths
+            and paths["completion"].is_file()
+            and all(paths[name].is_file() for name in core_names)
+        )
+        state = "completed" if complete else "partial/incomplete"
         raise FileExistsError(
-            "Refusing to overwrite existing diagnostic output(s):\n  "
+            f"Detected a {state} diagnostic output set; refusing to overwrite:\n  "
             f"{formatted}\nUse --force only after preserving prior results."
         )
 
@@ -144,28 +198,16 @@ def _json_safe(value: Any) -> Any:
     return value
 
 
-def _atomic_json(path: Path, payload: Mapping[str, Any]) -> None:
+def _serialize_json(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
-    try:
-        with temporary.open("w", encoding="utf-8") as handle:
-            json.dump(_json_safe(payload), handle, indent=2, sort_keys=True)
-            handle.write("\n")
-        os.replace(temporary, path)
-    finally:
-        if temporary.exists():
-            temporary.unlink()
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(_json_safe(payload), handle, indent=2, sort_keys=True)
+        handle.write("\n")
 
 
-def _atomic_npz(path: Path, arrays: Mapping[str, np.ndarray]) -> None:
+def _serialize_npz(path: Path, arrays: Mapping[str, np.ndarray]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}.npz")
-    try:
-        np.savez_compressed(temporary, **arrays)
-        os.replace(temporary, path)
-    finally:
-        if temporary.exists():
-            temporary.unlink()
+    np.savez_compressed(path, **arrays)
 
 
 def _run_git(args: Sequence[str], repo_root: Path) -> Optional[str]:
@@ -201,6 +243,199 @@ def sha256_file(path: Path, chunk_size: int = 8 * 1024 * 1024) -> str:
         for chunk in iter(lambda: handle.read(chunk_size), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _load_torch_checkpoint(path: Path) -> Any:
+    """Load checkpoint metadata compatibly with pre-2.0 PyTorch releases."""
+    try:
+        return torch.load(str(path), map_location="cpu", weights_only=False)
+    except TypeError:
+        return torch.load(str(path), map_location="cpu")
+
+
+def inspect_checkpoint_file(checkpoint_path: Path) -> Dict[str, Any]:
+    """Read result-identity metadata without trusting the checkpoint filename."""
+    checkpoint_path = checkpoint_path.expanduser()
+    if not checkpoint_path.is_file():
+        raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
+    checkpoint = _load_torch_checkpoint(checkpoint_path)
+    if not isinstance(checkpoint, Mapping) or "model_state_dict" not in checkpoint:
+        raise ValueError(
+            "Query diagnostics require a full-model checkpoint mapping with "
+            f"model_state_dict: {checkpoint_path}"
+        )
+    state_dict = checkpoint["model_state_dict"]
+    if not isinstance(state_dict, Mapping):
+        raise ValueError(f"Checkpoint model_state_dict is not a mapping: {checkpoint_path}")
+
+    checkpoint_format = checkpoint.get("checkpoint_format")
+    excluded_prefixes = checkpoint.get("excluded_prefixes")
+    excluded_prefixes_source = "checkpoint_metadata"
+    if excluded_prefixes is None and checkpoint_format == "non_encoder_v1":
+        excluded_prefixes = list(CHECKPOINT_ENCODER_PREFIXES)
+        excluded_prefixes_source = "non_encoder_v1_compatibility_default"
+    elif excluded_prefixes is None:
+        excluded_prefixes = []
+        excluded_prefixes_source = "not_recorded"
+    elif isinstance(excluded_prefixes, str):
+        excluded_prefixes = [excluded_prefixes]
+    else:
+        excluded_prefixes = [str(value) for value in excluded_prefixes]
+    saved_tensor_count = checkpoint.get("saved_tensor_count")
+    if saved_tensor_count is None:
+        saved_tensor_count = len(state_dict)
+    excluded_tensor_count = checkpoint.get("excluded_tensor_count")
+    total_tensor_count = checkpoint.get("total_tensor_count")
+    if total_tensor_count is None and excluded_tensor_count is not None:
+        total_tensor_count = int(saved_tensor_count) + int(excluded_tensor_count)
+
+    external_encoder_required = bool(
+        checkpoint_format == "non_encoder_v1"
+        or excluded_prefixes
+        or (excluded_tensor_count is not None and int(excluded_tensor_count) > 0)
+    )
+    identity = {
+        "path": str(checkpoint_path.resolve()),
+        "file_size_bytes": int(checkpoint_path.stat().st_size),
+        "epoch": checkpoint.get("epoch"),
+        "loss": checkpoint.get("loss"),
+        "checkpoint_format": checkpoint_format,
+        "encoder_source": checkpoint.get("encoder_source"),
+        "excluded_prefixes": excluded_prefixes,
+        "excluded_prefixes_source": excluded_prefixes_source,
+        "excluded_tensor_count": (
+            None if excluded_tensor_count is None else int(excluded_tensor_count)
+        ),
+        "saved_tensor_count": int(saved_tensor_count),
+        "total_tensor_count": (
+            None if total_tensor_count is None else int(total_tensor_count)
+        ),
+        "external_encoder_required": external_encoder_required,
+    }
+    del checkpoint
+    return _json_safe(identity)
+
+
+def validate_checkpoint_epoch(
+    checkpoint_identity: Mapping[str, Any],
+    expected_epoch: Optional[int],
+) -> Dict[str, Any]:
+    observed = checkpoint_identity.get("epoch")
+    result = {
+        "expected_epoch": expected_epoch,
+        "observed_epoch": observed,
+        "verified": False,
+    }
+    if expected_epoch is None:
+        result["status"] = "observed_not_asserted"
+        return result
+    if observed is None:
+        raise ValueError(
+            f"Expected checkpoint epoch {expected_epoch}, but checkpoint metadata has no epoch."
+        )
+    try:
+        observed_int = int(observed)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Checkpoint epoch is not an integer: {observed!r}") from exc
+    if observed_int != int(expected_epoch):
+        raise ValueError(
+            f"Checkpoint epoch mismatch: expected {int(expected_epoch)}, observed {observed_int}."
+        )
+    result.update({
+        "observed_epoch": observed_int,
+        "verified": True,
+        "status": "matched",
+    })
+    return result
+
+
+def _normalized_identity_path(value: Union[os.PathLike, str]) -> str:
+    return os.path.realpath(os.path.abspath(os.path.expanduser(str(value))))
+
+
+def validate_encoder_source(
+    checkpoint_identity: Mapping[str, Any],
+    encoder_path: Optional[Path],
+    *,
+    encoder_was_explicit: bool,
+    allow_unsafe_mismatch: bool = False,
+) -> Dict[str, Any]:
+    """Require and compare the external encoder used by non-encoder checkpoints."""
+    required = bool(checkpoint_identity.get("external_encoder_required", False))
+    checkpoint_source = checkpoint_identity.get("encoder_source")
+    if required and (not encoder_was_explicit or encoder_path is None):
+        raise ValueError(
+            "This checkpoint excludes encoder tensors and therefore requires an explicit "
+            "--diting-pretrained encoder source."
+        )
+    if encoder_path is None:
+        return {
+            "required": required,
+            "explicit": bool(encoder_was_explicit),
+            "checkpoint_encoder_source": checkpoint_source,
+            "actual_encoder_source": None,
+            "matched": None,
+            "unsafe_mismatch_override": bool(allow_unsafe_mismatch),
+            "status": "not_used",
+        }
+    encoder_path = encoder_path.expanduser()
+    if not encoder_path.is_file():
+        raise FileNotFoundError(f"DiTing pretrained encoder not found: {encoder_path}")
+
+    actual_normalized = _normalized_identity_path(encoder_path)
+    checkpoint_normalized = (
+        _normalized_identity_path(checkpoint_source) if checkpoint_source else None
+    )
+    matched = (
+        None if checkpoint_normalized is None
+        else actual_normalized == checkpoint_normalized
+    )
+    if required and matched is False and not allow_unsafe_mismatch:
+        raise ValueError(
+            "External encoder source mismatch for non-encoder checkpoint: "
+            f"checkpoint={checkpoint_source!r}, actual={str(encoder_path.resolve())!r}. "
+            "Use --allow-unsafe-encoder-source-mismatch only for an explicitly "
+            "reviewed diagnostic and preserve that unsafe provenance."
+        )
+    if matched is True:
+        status = "matched"
+    elif matched is False:
+        status = "mismatch_allowed_unsafe"
+    elif required:
+        status = "checkpoint_source_unavailable_explicit_encoder_recorded"
+    else:
+        status = "not_comparable"
+    return {
+        "required": required,
+        "explicit": bool(encoder_was_explicit),
+        "checkpoint_encoder_source": checkpoint_source,
+        "checkpoint_encoder_source_normalized": checkpoint_normalized,
+        "actual_encoder_source": str(encoder_path.resolve()),
+        "actual_encoder_source_normalized": actual_normalized,
+        "matched": matched,
+        "unsafe_mismatch_override": bool(allow_unsafe_mismatch),
+        "status": status,
+    }
+
+
+def file_provenance(path: Path, *, compute_sha256: bool) -> Dict[str, Any]:
+    path = path.expanduser()
+    if not path.is_file():
+        raise FileNotFoundError(f"Provenance input not found: {path}")
+    return {
+        "path": str(path.resolve()),
+        "file_size_bytes": int(path.stat().st_size),
+        "sha256": sha256_file(path) if compute_sha256 else None,
+        "sha256_computed": bool(compute_sha256),
+    }
+
+
+def diting_architecture_provenance(diting_args: argparse.Namespace) -> Dict[str, Any]:
+    return {
+        key: _json_safe(getattr(diting_args, key))
+        for key in DITING_ARCHITECTURE_KEYS
+        if hasattr(diting_args, key)
+    }
 
 
 def clone_inputs(inputs: Sequence[Any]) -> List[Any]:
@@ -649,36 +884,167 @@ def _leaf_generators(dataset: Any) -> List[Any]:
     return leaves
 
 
-def validate_dataset_protocol(dataset: Any, requested_protocol: str) -> List[Dict[str, Any]]:
+def _generator_sampling_snapshot(generator: Any, index: int) -> Dict[str, Any]:
+    realtime = copy.deepcopy(getattr(generator, "realtime_training", None) or {})
+    realtime_target = copy.deepcopy(
+        getattr(generator, "realtime_target_sampling", None) or {}
+    )
+    mask = copy.deepcopy(
+        getattr(generator, "causal_random_input_mask", None) or {"enabled": False}
+    )
+    target_sampling = copy.deepcopy(mask.get("target_sampling") or {})
+    return _json_safe({
+        "generator_index": int(index),
+        "generator_class": type(generator).__name__,
+        "deterministic_sampling_seed": getattr(
+            generator, "deterministic_sampling_seed", None
+        ),
+        "oversample": getattr(generator, "oversample", None),
+        "shuffle": getattr(generator, "shuffle", None),
+        "realtime_training": {
+            "enabled": bool(realtime.get("enabled", False)),
+            "mode": realtime.get("mode"),
+            "reference": realtime.get("reference"),
+            "val_times": list(realtime.get("val_times") or []),
+            "train_times": list(realtime.get("train_times") or []),
+            "train_time_bins": copy.deepcopy(realtime.get("train_time_bins") or []),
+            "bins_per_event_per_epoch": realtime.get("bins_per_event_per_epoch"),
+            "bin_sampling": realtime.get("bin_sampling"),
+        },
+        "realtime_target_sampling": {
+            "enabled": bool(realtime_target.get("enabled", False)),
+            "input_ratio": realtime_target.get("input_ratio"),
+            "triggered_noninput_ratio": realtime_target.get(
+                "triggered_noninput_ratio"
+            ),
+            "untriggered_ratio": realtime_target.get("untriggered_ratio"),
+            "fill_missing": realtime_target.get("fill_missing"),
+            "exclude_inputs": bool(realtime_target.get("exclude_inputs", False)),
+        },
+        "causal_random_input_mask": {
+            "enabled": bool(mask.get("enabled", False)),
+            "apply_probability": float(
+                mask.get(
+                    "apply_probability",
+                    1.0 if mask.get("enabled", False) else 0.0,
+                )
+            ),
+            "station_counts": list(mask.get("station_counts", [])),
+            "order_selected_by_pick": mask.get("order_selected_by_pick"),
+            "target_sampling": {
+                "enabled": bool(target_sampling.get("enabled", False)),
+                "input_ratio": target_sampling.get("input_ratio"),
+                "triggered_noninput_ratio": target_sampling.get(
+                    "triggered_noninput_ratio"
+                ),
+                "untriggered_ratio": target_sampling.get("untriggered_ratio"),
+                "fill_missing": target_sampling.get("fill_missing"),
+                "exclude_inputs": bool(target_sampling.get("exclude_inputs", False)),
+            },
+        },
+    })
+
+
+def _same_numeric_sequence(actual: Sequence[Any], expected: Sequence[Any]) -> bool:
+    try:
+        actual_values = [float(value) for value in actual]
+        expected_values = [float(value) for value in expected]
+    except (TypeError, ValueError):
+        return False
+    return len(actual_values) == len(expected_values) and all(
+        math.isclose(left, right, rel_tol=0.0, abs_tol=1e-9)
+        for left, right in zip(actual_values, expected_values)
+    )
+
+
+def validate_dataset_protocol(
+    dataset: Any,
+    requested_protocol: str,
+    *,
+    expected_station_counts: Sequence[int] = PINNED_RANDOM_STATION_COUNTS,
+    expected_val_times: Sequence[float] = PINNED_VALIDATION_TIMES,
+) -> Dict[str, Any]:
     requested_protocol = str(requested_protocol).strip().lower()
     if requested_protocol not in {"normal", "random"}:
         raise ValueError(f"Unknown protocol {requested_protocol!r}; expected normal or random")
+    expected_station_set = sorted({int(value) for value in expected_station_counts})
+    expected_times = [float(value) for value in expected_val_times]
     details: List[Dict[str, Any]] = []
     for index, generator in enumerate(_leaf_generators(dataset)):
-        mask = getattr(generator, "causal_random_input_mask", None) or {"enabled": False}
-        enabled = bool(mask.get("enabled", False))
-        probability = float(mask.get("apply_probability", 1.0 if enabled else 0.0))
-        target_sampling = mask.get("target_sampling") or {}
-        detail = {
-            "generator_index": index,
-            "enabled": enabled,
-            "apply_probability": probability,
-            "station_counts": list(mask.get("station_counts", [])),
-            "targets_exclude_inputs": bool(target_sampling.get("exclude_inputs", False)),
-        }
+        detail = _generator_sampling_snapshot(generator, index)
         details.append(detail)
+        mask = detail["causal_random_input_mask"]
+        realtime = detail["realtime_training"]
+        enabled = bool(mask["enabled"])
+        probability = float(mask["apply_probability"])
+        target_sampling = mask["target_sampling"]
+        if not realtime["enabled"] or realtime["mode"] != "val":
+            raise ValueError(
+                f"--protocol {requested_protocol} requires realtime_training.enabled=true "
+                f"and mode='val'; generator {index} has enabled={realtime['enabled']}, "
+                f"mode={realtime['mode']!r}."
+            )
+        if not _same_numeric_sequence(realtime["val_times"], expected_times):
+            raise ValueError(
+                f"--protocol {requested_protocol} requires pinned validation val_times "
+                f"{expected_times}; generator {index} has {realtime['val_times']}."
+            )
+        if detail["oversample"] is None or float(detail["oversample"]) != 1.0:
+            raise ValueError(
+                f"Validation generator {index} must use oversample=1; "
+                f"got {detail['oversample']!r}."
+            )
+        if detail["shuffle"] is not False:
+            raise ValueError(
+                f"Validation generator {index} must use shuffle=false; "
+                f"got {detail['shuffle']!r}."
+            )
         if requested_protocol == "normal" and enabled and probability > 0.0:
             raise ValueError(
                 "--protocol normal does not match the resolved validation generator: "
                 f"causal random masking is enabled with probability {probability}."
             )
-        if requested_protocol == "random" and (not enabled or probability != 1.0):
-            raise ValueError(
-                "--protocol random requires the resolved validation generator to use "
-                "causal random masking with apply_probability=1.0; got "
-                f"enabled={enabled}, probability={probability}."
-            )
-    return details
+        if requested_protocol == "random":
+            if not enabled or not math.isclose(
+                probability, 1.0, rel_tol=0.0, abs_tol=1e-12
+            ):
+                raise ValueError(
+                    "--protocol random requires the resolved validation generator to use "
+                    "causal random masking with apply_probability=1.0; got "
+                    f"enabled={enabled}, probability={probability}."
+                )
+            actual_station_set = sorted({int(value) for value in mask["station_counts"]})
+            if actual_station_set != expected_station_set:
+                raise ValueError(
+                    "--protocol random requires station_counts set "
+                    f"{expected_station_set}; generator {index} has {actual_station_set}."
+                )
+            if not target_sampling["enabled"]:
+                raise ValueError(
+                    "--protocol random requires target_sampling.enabled=true; "
+                    f"generator {index} has false."
+                )
+            if not target_sampling["exclude_inputs"]:
+                raise ValueError(
+                    "--protocol random requires target_sampling.exclude_inputs=true; "
+                    f"generator {index} has false."
+                )
+    return {
+        "status": "passed",
+        "requested_protocol": requested_protocol,
+        "expected": {
+            "validation_realtime_mode": "val",
+            "validation_times": expected_times,
+            "oversample": 1,
+            "shuffle": False,
+            "random_station_count_set": expected_station_set,
+            "random_apply_probability": 1.0,
+            "random_target_sampling_enabled": True,
+            "random_targets_exclude_inputs": True,
+            "normal_random_mask_effective_probability": 0.0,
+        },
+        "generators": details,
+    }
 
 
 def _point_error_summary(
@@ -695,6 +1061,10 @@ def _point_error_summary(
         "mae": None,
         "rmse": None,
         "bias": None,
+        "correlation": None,
+        "r2": None,
+        "slope": None,
+        "intercept": None,
         "predictive_sigma_mean": None,
         "predictive_sigma_median": None,
         "coverage_1sigma": None,
@@ -708,6 +1078,19 @@ def _point_error_summary(
         "rmse": float(np.sqrt(np.mean(residual ** 2))),
         "bias": float(np.mean(residual)),
     })
+    truth_v = truth[valid]
+    prediction_v = prediction[valid]
+    if truth_v.size > 1:
+        truth_std = float(np.std(truth_v))
+        prediction_std = float(np.std(prediction_v))
+        if truth_std > 0.0 and prediction_std > 0.0:
+            result["correlation"] = float(np.corrcoef(truth_v, prediction_v)[0, 1])
+        ss_tot = float(np.sum((truth_v - np.mean(truth_v)) ** 2))
+        if ss_tot > 0.0:
+            result["r2"] = float(1.0 - np.sum(residual ** 2) / ss_tot)
+            slope, intercept = np.polyfit(truth_v, prediction_v, 1)
+            result["slope"] = float(slope)
+            result["intercept"] = float(intercept)
     if sigma is not None:
         sigma = np.asarray(sigma, dtype=np.float64)
         sigma_valid = valid & np.isfinite(sigma) & (sigma >= 0)
@@ -748,11 +1131,153 @@ def _group_point_summary(
     return result
 
 
+def _target_population_masks(
+    valid: np.ndarray,
+    target_type: np.ndarray,
+) -> Dict[str, np.ndarray]:
+    valid = np.asarray(valid, dtype=bool)
+    target_type = np.asarray(target_type)
+    return {
+        "all": valid,
+        "non_input": valid & np.isin(target_type, (1, 2)),
+        "triggered_noninput": valid & (target_type == 1),
+        "untriggered": valid & (target_type == 2),
+        "input": valid & (target_type == 0),
+    }
+
+
+def _compute_spatial_metric_arrays(
+    truth: np.ndarray,
+    prediction: np.ndarray,
+    valid: np.ndarray,
+    sigma: np.ndarray,
+    *,
+    pair_sample_limit: int,
+    seed: int,
+) -> Dict[str, np.ndarray]:
+    records: Dict[str, List[float]] = defaultdict(list)
+    for sample_index in range(int(truth.shape[0])):
+        metrics = compute_spatial_field_metrics(
+            truth[sample_index],
+            prediction[sample_index],
+            valid[sample_index],
+            sigma=sigma[sample_index],
+            pair_sample_limit=pair_sample_limit,
+            seed=int(seed) + sample_index * 1009,
+        )
+        for key, value in metrics.items():
+            records[key].append(value)
+    return {key: np.asarray(values) for key, values in records.items()}
+
+
+def _summarize_spatial_metric_arrays(
+    metrics: Mapping[str, np.ndarray],
+) -> Dict[str, Any]:
+    counts = np.asarray(metrics["valid_target_count"], dtype=np.int64)
+    result: Dict[str, Any] = {
+        "aggregation": "unweighted_across_realtime_samples",
+        "realtime_samples_total": int(counts.size),
+        "realtime_samples_with_valid_targets": int((counts >= 1).sum()),
+    }
+    for threshold in (1, 2, 5):
+        sample_mask = counts >= threshold
+        key = f"valid_target_count_at_least_{threshold}"
+        result[key] = {
+            "realtime_samples": int(sample_mask.sum()),
+            "metrics": {
+                metric_name: _finite_summary(np.asarray(values)[sample_mask])
+                for metric_name, values in metrics.items()
+            },
+        }
+    return result
+
+
+def _per_sample_prediction_range(
+    prediction: np.ndarray,
+    valid: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    prediction = np.asarray(prediction, dtype=np.float64)
+    valid = np.asarray(valid, dtype=bool) & np.isfinite(prediction)
+    counts = valid.sum(axis=1).astype(np.int64, copy=False)
+    ranges = np.full(prediction.shape[0], np.nan, dtype=np.float64)
+    for sample_index in range(prediction.shape[0]):
+        values = prediction[sample_index, valid[sample_index]]
+        if values.size:
+            ranges[sample_index] = float(
+                np.percentile(values, 95) - np.percentile(values, 5)
+            )
+    return ranges, counts
+
+
+def _radial_population_summary(
+    prediction: np.ndarray,
+    baseline: np.ndarray,
+    sigma_scaled: np.ndarray,
+    sigma_baseline: np.ndarray,
+    group_valid: np.ndarray,
+    actual_station_count: np.ndarray,
+    ordered_station_counts: Sequence[int],
+) -> Dict[str, Any]:
+    prediction_change = np.asarray(prediction) - np.asarray(baseline)
+    sigma_change = np.asarray(sigma_scaled) - np.asarray(sigma_baseline)
+    group_valid = np.asarray(group_valid, dtype=bool)
+    valid_change = group_valid & np.isfinite(prediction_change)
+    valid_sigma_change = group_valid & np.isfinite(sigma_change)
+    spatial_ranges, spatial_counts = _per_sample_prediction_range(
+        prediction, group_valid
+    )
+
+    def summarize(sample_mask: np.ndarray) -> Dict[str, Any]:
+        sample_mask = np.asarray(sample_mask, dtype=bool)
+        target_mask = valid_change & sample_mask[:, None]
+        sigma_mask = valid_sigma_change & sample_mask[:, None]
+        result = {
+            "realtime_samples": int(sample_mask.sum()),
+            "targets": int(target_mask.sum()),
+            "mean_abs_prediction_change_from_scale_1": (
+                float(np.mean(np.abs(prediction_change[target_mask])))
+                if np.any(target_mask) else None
+            ),
+            "median_abs_prediction_change_from_scale_1": (
+                float(np.median(np.abs(prediction_change[target_mask])))
+                if np.any(target_mask) else None
+            ),
+            "mean_abs_predictive_sigma_change_from_scale_1": (
+                float(np.mean(np.abs(sigma_change[sigma_mask])))
+                if np.any(sigma_mask) else None
+            ),
+            "predicted_p95_p05_range": {},
+        }
+        for threshold in (1, 2, 5):
+            field_mask = sample_mask & (spatial_counts >= threshold)
+            result["predicted_p95_p05_range"][
+                f"valid_target_count_at_least_{threshold}"
+            ] = {
+                "realtime_samples": int(field_mask.sum()),
+                **_finite_summary(spatial_ranges[field_mask]),
+            }
+        return result
+
+    result = summarize(np.ones(group_valid.shape[0], dtype=bool))
+    result["aggregation"] = {
+        "point_changes": "target_weighted",
+        "predicted_p95_p05_range": "unweighted_across_realtime_samples",
+    }
+    result["by_station_count"] = {
+        str(int(count)): summarize(actual_station_count == int(count))
+        for count in ordered_station_counts
+    }
+    return result
+
+
 def _summarize_run(
     arrays: Mapping[str, np.ndarray],
     radial_scales: Sequence[float],
     station_counts: Sequence[int],
     equivariance_tolerance: float,
+    *,
+    pair_sample_limit: int,
+    seed: int,
 ) -> Dict[str, Any]:
     truth = arrays["pga_truth"]
     baseline = arrays["baseline_prediction"]
@@ -769,6 +1294,11 @@ def _summarize_run(
             for key, value in arrays.items()
             if key.startswith("field_")
         },
+        "aggregation": {
+            "point_metrics": "target_weighted",
+            "spatial_field_metrics": "unweighted_across_realtime_samples",
+        },
+        "target_groups": {},
         "by_station_count": {},
         "by_target_type": {},
     }
@@ -779,6 +1309,38 @@ def _summarize_run(
         for key, value in arrays.items()
         if key.startswith("field_")
     }
+    target_population_masks = _target_population_masks(valid, target_type)
+    for group_name, group_valid in target_population_masks.items():
+        group_fields = _compute_spatial_metric_arrays(
+            truth,
+            baseline,
+            group_valid,
+            sigma,
+            pair_sample_limit=pair_sample_limit,
+            seed=seed,
+        )
+        group_summary: Dict[str, Any] = {
+            "point_metrics": _point_error_summary(
+                truth, baseline, group_valid, sigma
+            ),
+            "spatial_field_metrics": _summarize_spatial_metric_arrays(group_fields),
+            "by_station_count": {},
+        }
+        for count in ordered_counts:
+            sample_mask = actual_station_count == int(count)
+            group_summary["by_station_count"][str(int(count))] = {
+                "point_metrics": _point_error_summary(
+                    truth,
+                    baseline,
+                    group_valid & sample_mask[:, None],
+                    sigma,
+                ),
+                "spatial_field_metrics": _summarize_spatial_metric_arrays({
+                    key: value[sample_mask]
+                    for key, value in group_fields.items()
+                }),
+            }
+        baseline_summary["target_groups"][group_name] = group_summary
     for count in ordered_counts:
         mask = actual_station_count == int(count)
         group_summary = _group_point_summary(truth, baseline, valid, sigma, mask)
@@ -827,6 +1389,11 @@ def _summarize_run(
             "predicted_p95_p05_range": _finite_summary(
                 arrays["radial_predicted_p95_p05_range"][:, scale_index]
             ),
+            "aggregation": {
+                "point_changes": "target_weighted",
+                "predicted_p95_p05_range": "unweighted_across_realtime_samples",
+            },
+            "target_groups": {},
             "by_station_count": {},
         }
         for count in ordered_counts:
@@ -848,6 +1415,16 @@ def _summarize_run(
                     arrays["radial_predicted_p95_p05_range"][sample_mask, scale_index]
                 ),
             }
+        for group_name, group_valid in target_population_masks.items():
+            scale_summary["target_groups"][group_name] = _radial_population_summary(
+                prediction,
+                baseline,
+                sigma_scaled,
+                sigma,
+                group_valid,
+                actual_station_count,
+                ordered_counts,
+            )
         interventions[str(float(scale))] = scale_summary
 
     diagnostic_summary = {
@@ -1099,6 +1676,8 @@ def run_query_geometry_diagnostics(
         requested_scales,
         station_counts,
         equivariance_tolerance,
+        pair_sample_limit=pair_sample_limit,
+        seed=seed,
     )
     summary["selection"] = {
         "dataset_realtime_samples": int(len(dataset)),
@@ -1119,41 +1698,60 @@ def run_query_geometry_diagnostics(
 
 def build_provenance(
     *,
-    config_path: Path,
-    checkpoint_path: Path,
-    model: torch.nn.Module,
+    config_identity: Mapping[str, Any],
+    checkpoint_identity: Mapping[str, Any],
+    checkpoint_epoch_validation: Mapping[str, Any],
+    diting_config_identity: Mapping[str, Any],
+    diting_encoder_identity: Optional[Mapping[str, Any]],
+    encoder_source_validation: Mapping[str, Any],
+    diting_args: argparse.Namespace,
+    generator_protocol_validation: Mapping[str, Any],
+    config_source_mode: str,
     protocol: str,
     split: str,
     seed: int,
     station_counts: Sequence[int],
     radial_scales: Sequence[float],
     max_events: int,
+    pair_sample_limit: int,
+    equivariance_tolerance: float,
     checkpoint_sha256: bool,
+    invocation_argv: Sequence[str],
 ) -> Dict[str, Any]:
-    raw_model = model.module if hasattr(model, "module") else model
-    checkpoint_stat = checkpoint_path.stat()
-    loaded_metadata = getattr(raw_model, "_eval_checkpoint_metadata", {})
-    checkpoint_metadata = {
-        key: loaded_metadata.get(key)
-        for key in ("epoch", "loss", "checkpoint_format", "encoder_source")
-    }
-    checkpoint = {
-        "path": str(checkpoint_path.resolve()),
-        "file_size_bytes": int(checkpoint_stat.st_size),
-        "metadata": checkpoint_metadata,
-        "sha256": sha256_file(checkpoint_path) if checkpoint_sha256 else None,
-        "sha256_computed": bool(checkpoint_sha256),
-    }
+    checkpoint = dict(checkpoint_identity)
+    checkpoint_path = Path(str(checkpoint["path"]))
+    checkpoint["sha256"] = (
+        sha256_file(checkpoint_path) if checkpoint_sha256 else None
+    )
+    checkpoint["sha256_computed"] = bool(checkpoint_sha256)
+    checkpoint["epoch_validation"] = dict(checkpoint_epoch_validation)
     return {
         "repository": git_provenance(REPO_ROOT),
-        "config_path": str(config_path.resolve()),
+        "invocation": {
+            "argv": [str(value) for value in invocation_argv],
+            "cwd": str(Path.cwd().resolve()),
+        },
+        "resolved_run_config": dict(config_identity),
+        "config_source_mode": config_source_mode,
         "checkpoint": checkpoint,
+        "diting": {
+            "config": dict(diting_config_identity),
+            "pretrained_encoder": (
+                None if diting_encoder_identity is None
+                else dict(diting_encoder_identity)
+            ),
+            "encoder_source_validation": dict(encoder_source_validation),
+            "architecture_arguments": diting_architecture_provenance(diting_args),
+        },
         "protocol": protocol,
         "split": split,
-        "seed": int(seed),
+        "diagnostic_seed": int(seed),
+        "generator_sampling": dict(generator_protocol_validation),
         "station_counts": [int(value) for value in station_counts],
         "radial_scales": [float(value) for value in radial_scales],
         "max_events": int(max_events),
+        "pair_sample_limit": int(pair_sample_limit),
+        "equivariance_tolerance": float(equivariance_tolerance),
         "pga_coordinate": PGA_COORDINATE,
         "point_estimate": "predictive_mixture_mean",
         "geometry_coordinate_convention": (
@@ -1175,7 +1773,7 @@ def write_outputs(
 ) -> None:
     refuse_existing_outputs(paths, force=force)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "provenance": provenance,
         "metric_definitions": {
             "radial_intervention": (
@@ -1198,6 +1796,18 @@ def write_outputs(
                 "Permute query-aligned inputs, run inference, inverse-permute predictions, "
                 "then compare with the unmodified baseline over valid targets"
             ),
+            "aggregation": (
+                "Point metrics and pointwise radial changes are target-weighted. "
+                "Spatial-field metrics and within-sample predicted ranges are first "
+                "computed per realtime sample, then summarized without sample weights."
+            ),
+            "target_groups": {
+                "all": "all valid PGA targets",
+                "non_input": "valid targets with realtime_target_type in {1, 2}",
+                "triggered_noninput": "valid targets with realtime_target_type == 1",
+                "untriggered": "valid targets with realtime_target_type == 2",
+                "input": "valid targets with realtime_target_type == 0",
+            },
         },
         **summary,
     }
@@ -1211,13 +1821,58 @@ def write_outputs(
     npz_arrays["resolved_config_json"] = np.asarray(
         json.dumps(_json_safe(config), sort_keys=True), dtype=str
     )
-    # Write temporary files and publish final names only after all serialization
-    # succeeds.  Existing final files were checked before the expensive run and
-    # are checked again here to catch concurrent writers.
-    refuse_existing_outputs(paths, force=force)
-    _atomic_json(paths["resolved_config"], config)
-    _atomic_npz(paths["samples"], npz_arrays)
-    _atomic_json(paths["summary"], payload)
+    core_names = ("resolved_config", "samples", "summary")
+    required_names = {*core_names, "completion"}
+    missing_names = required_names - set(paths)
+    if missing_names:
+        raise ValueError(f"Missing diagnostic output paths: {sorted(missing_names)}")
+
+    run_id = uuid.uuid4().hex
+    temp_paths: Dict[str, Path] = {}
+    for name in required_names:
+        final_path = paths[name]
+        suffix = final_path.suffix
+        temp_paths[name] = final_path.parent / (
+            f".{final_path.stem}.{run_id}.tmp{suffix}"
+        )
+
+    try:
+        # Serialization is isolated from all final names. If any serializer
+        # fails, a previously complete result remains complete and a new run
+        # leaves no misleading final output set.
+        _serialize_json(temp_paths["resolved_config"], config)
+        _serialize_npz(temp_paths["samples"], npz_arrays)
+        _serialize_json(temp_paths["summary"], payload)
+        completion = {
+            "schema_version": 1,
+            "status": "complete",
+            "run_id": run_id,
+            "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+            "artifacts": {
+                name: {
+                    "path": str(paths[name].resolve()),
+                    "file_size_bytes": int(temp_paths[name].stat().st_size),
+                    "sha256": sha256_file(temp_paths[name]),
+                }
+                for name in core_names
+            },
+        }
+        _serialize_json(temp_paths["completion"], completion)
+
+        # Recheck immediately before publication. Under --force, remove an old
+        # completion marker first so a crash cannot make mixed files look done.
+        refuse_existing_outputs(paths, force=force)
+        if force and paths["completion"].exists():
+            paths["completion"].unlink()
+        for name in core_names:
+            os.replace(temp_paths[name], paths[name])
+        os.replace(temp_paths["completion"], paths["completion"])
+    finally:
+        for temp_path in temp_paths.values():
+            try:
+                temp_path.unlink()
+            except FileNotFoundError:
+                pass
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
@@ -1225,6 +1880,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         description="Validation-only RT55/RT56 query-geometry sensitivity diagnostics"
     )
     parser.add_argument("--config", required=True, help="Resolved evaluation config JSON")
+    parser.add_argument(
+        "--config-source-mode",
+        choices=("resolved", "source", "unspecified"),
+        default="unspecified",
+        help="Identity label for a run-directory resolved config or source config.",
+    )
     parser.add_argument("--checkpoint", required=True, help="Full-model checkpoint")
     parser.add_argument("--protocol", required=True, choices=("normal", "random"))
     parser.add_argument("--split", required=True, help="Must be val/validation/dev")
@@ -1244,7 +1905,29 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--radial-scales", default="0,0.5,1,1.5")
     parser.add_argument("--pair-sample-limit", type=int, default=4096)
     parser.add_argument("--equivariance-tolerance", type=float, default=1e-5)
+    parser.add_argument(
+        "--expected-checkpoint-epoch",
+        type=int,
+        default=None,
+        help=(
+            "Assert checkpoint metadata epoch before model/dataset inference. "
+            "Omit only when using epoch-neutral result naming."
+        ),
+    )
     parser.add_argument("--checkpoint-sha256", action="store_true")
+    parser.add_argument(
+        "--encoder-sha256",
+        action="store_true",
+        help="Compute SHA-256 for the external DiTing pretrained encoder.",
+    )
+    parser.add_argument(
+        "--allow-unsafe-encoder-source-mismatch",
+        action="store_true",
+        help=(
+            "Allow a non-encoder checkpoint to use an encoder path different from "
+            "checkpoint encoder_source metadata; the unsafe override is recorded."
+        ),
+    )
     parser.add_argument("--force", action="store_true")
     parser.add_argument(
         "--diting-config",
@@ -1262,6 +1945,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
+    invocation_argv = (
+        list(sys.argv)
+        if argv is None
+        else [str(Path(__file__).resolve()), *[str(value) for value in argv]]
+    )
     args = parse_args(argv)
     split = require_validation_split(args.split)
     station_counts = parse_numeric_list(
@@ -1284,10 +1972,23 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     refuse_existing_outputs(paths, force=args.force)
     config_path = Path(args.config).expanduser()
     checkpoint_path = Path(args.checkpoint).expanduser()
+    diting_config_path = Path(args.diting_config).expanduser()
     if not config_path.is_file():
         raise FileNotFoundError(f"Config not found: {config_path}")
     if not checkpoint_path.is_file():
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
+    if not diting_config_path.is_file():
+        raise FileNotFoundError(f"DiTing config not found: {diting_config_path}")
+
+    checkpoint_identity = inspect_checkpoint_file(checkpoint_path)
+    checkpoint_epoch_validation = validate_checkpoint_epoch(
+        checkpoint_identity,
+        args.expected_checkpoint_epoch,
+    )
+    config_identity = file_provenance(config_path, compute_sha256=True)
+    diting_config_identity = file_provenance(
+        diting_config_path, compute_sha256=True
+    )
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -1295,15 +1996,47 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     device = torch.device(args.device)
     config = load_config_file(str(config_path))
     diting_args = build_diting_args(
-        args.diting_config,
+        str(diting_config_path),
         device=str(device),
         pretrained_override=args.diting_pretrained,
+    )
+    encoder_value = getattr(diting_args, "pretrained", None)
+    encoder_path = Path(encoder_value) if encoder_value else None
+    encoder_source_validation = validate_encoder_source(
+        checkpoint_identity,
+        encoder_path,
+        encoder_was_explicit=bool(args.diting_pretrained),
+        allow_unsafe_mismatch=args.allow_unsafe_encoder_source_mismatch,
+    )
+    diting_encoder_identity = (
+        file_provenance(encoder_path, compute_sha256=args.encoder_sha256)
+        if encoder_path is not None
+        else None
     )
 
     print(f"[querydiag] repository={REPO_ROOT}")
     print(f"[querydiag] split={split} protocol={args.protocol} device={device}")
     print(f"[querydiag] config={config_path.resolve()}")
+    print(f"[querydiag] config_sha256={config_identity['sha256']}")
     print(f"[querydiag] checkpoint={checkpoint_path.resolve()}")
+    print(
+        "[querydiag] checkpoint_epoch="
+        f"expected={args.expected_checkpoint_epoch} "
+        f"observed={checkpoint_identity.get('epoch')} "
+        f"status={checkpoint_epoch_validation['status']}"
+    )
+    print(f"[querydiag] checkpoint_format={checkpoint_identity.get('checkpoint_format')}")
+    print(f"[querydiag] diting_config={diting_config_path.resolve()}")
+    print(f"[querydiag] diting_config_sha256={diting_config_identity['sha256']}")
+    print(f"[querydiag] diting_pretrained={encoder_path}")
+    print(
+        "[querydiag] diting_pretrained_sha256="
+        f"{None if diting_encoder_identity is None else diting_encoder_identity['sha256']}"
+    )
+    print(
+        "[querydiag] encoder_source_validation="
+        f"{encoder_source_validation['status']}"
+    )
     print(f"[querydiag] radial_scales={radial_scales}")
     print(f"[querydiag] requested_station_count_breakdown={station_counts}")
     model = eval_checkpoint.build_model_and_load(
@@ -1312,6 +2045,17 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         str(checkpoint_path),
         device,
     )
+    raw_model = model.module if hasattr(model, "module") else model
+    loaded_metadata = getattr(raw_model, "_eval_checkpoint_metadata", {})
+    loaded_epoch = loaded_metadata.get("epoch")
+    if loaded_epoch != checkpoint_identity.get("epoch"):
+        raise RuntimeError(
+            "Checkpoint epoch metadata changed between identity inspection and model "
+            f"loading: inspected={checkpoint_identity.get('epoch')!r}, "
+            f"loaded={loaded_epoch!r}."
+        )
+    checkpoint_epoch_validation["loaded_model_metadata_epoch"] = loaded_epoch
+    checkpoint_epoch_validation["loaded_model_metadata_matched"] = True
     datasets = eval_checkpoint.build_datasets(config, splits=[split])
     dataset = datasets[split]
     summary, arrays = run_query_geometry_diagnostics(
@@ -1328,16 +2072,25 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         equivariance_tolerance=args.equivariance_tolerance,
     )
     provenance = build_provenance(
-        config_path=config_path,
-        checkpoint_path=checkpoint_path,
-        model=model,
+        config_identity=config_identity,
+        checkpoint_identity=checkpoint_identity,
+        checkpoint_epoch_validation=checkpoint_epoch_validation,
+        diting_config_identity=diting_config_identity,
+        diting_encoder_identity=diting_encoder_identity,
+        encoder_source_validation=encoder_source_validation,
+        diting_args=diting_args,
+        generator_protocol_validation=summary["resolved_validation_generators"],
+        config_source_mode=args.config_source_mode,
         protocol=args.protocol,
         split=split,
         seed=args.seed,
         station_counts=station_counts,
         radial_scales=radial_scales,
         max_events=args.max_events,
+        pair_sample_limit=args.pair_sample_limit,
+        equivariance_tolerance=args.equivariance_tolerance,
         checkpoint_sha256=args.checkpoint_sha256,
+        invocation_argv=invocation_argv,
     )
     write_outputs(
         paths,
