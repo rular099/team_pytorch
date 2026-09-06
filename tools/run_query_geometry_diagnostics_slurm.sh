@@ -19,6 +19,8 @@
 # SMOKE=1 defaults MAX_EVENTS to 8 and requires one action at a time. After the
 # reviewed commit is synchronized to the cluster, measure smoke throughput and
 # memory before any full run. MAX_EVENTS=0 evaluates all validation events.
+# Full runs can use deterministic whole-event arrays, for example:
+#   NUM_EVENT_SHARDS=8 QUERYDIAG_SHARD_CONCURRENCY=4 ACTION=rt55_normal ...
 
 set -euo pipefail
 
@@ -68,6 +70,8 @@ EXPECTED_DIAGNOSTIC_SHA256=${EXPECTED_DIAGNOSTIC_SHA256:-}
 EXPECTED_LAUNCHER_SHA256=${EXPECTED_LAUNCHER_SHA256:-}
 SMOKE=${SMOKE:-0}
 SEED=${SEED:-42}
+NUM_EVENT_SHARDS=${NUM_EVENT_SHARDS:-1}
+QUERYDIAG_SHARD_CONCURRENCY=${QUERYDIAG_SHARD_CONCURRENCY:-4}
 if [[ -z "${MAX_EVENTS+x}" ]]; then
     if [[ "$SMOKE" == "1" ]]; then
         MAX_EVENTS=8
@@ -113,6 +117,8 @@ case "$ACTION" in
 esac
 for integer_spec in \
     "MAX_EVENTS:$MAX_EVENTS" \
+    "NUM_EVENT_SHARDS:$NUM_EVENT_SHARDS" \
+    "QUERYDIAG_SHARD_CONCURRENCY:$QUERYDIAG_SHARD_CONCURRENCY" \
     "RT55_EXPECTED_EPOCH:$RT55_EXPECTED_EPOCH" \
     "RT56_EXPECTED_EPOCH:$RT56_EXPECTED_EPOCH"; do
     integer_name=${integer_spec%%:*}
@@ -122,6 +128,22 @@ for integer_spec in \
         exit 2
     fi
 done
+if ((NUM_EVENT_SHARDS < 1)); then
+    echo "NUM_EVENT_SHARDS must be at least 1; got: $NUM_EVENT_SHARDS" >&2
+    exit 2
+fi
+if ((QUERYDIAG_SHARD_CONCURRENCY < 1)); then
+    echo "QUERYDIAG_SHARD_CONCURRENCY must be at least 1; got: $QUERYDIAG_SHARD_CONCURRENCY" >&2
+    exit 2
+fi
+if ((NUM_EVENT_SHARDS > 1 && MAX_EVENTS != 0)); then
+    echo "Event sharding requires MAX_EVENTS=0; got: $MAX_EVENTS" >&2
+    exit 2
+fi
+if [[ "$SMOKE" == "1" && "$NUM_EVENT_SHARDS" != "1" ]]; then
+    echo "SMOKE=1 requires NUM_EVENT_SHARDS=1." >&2
+    exit 2
+fi
 if [[ "$SMOKE" == "1" && "$ACTION" == "all" ]]; then
     echo "SMOKE=1 requires one ACTION at a time; start with ACTION=rt55_normal." >&2
     exit 2
@@ -233,7 +255,7 @@ action_spec() {
             SPEC_CHECKPOINT=$RT55_CHECKPOINT
             SPEC_EXPECTED_EPOCH=$RT55_EXPECTED_EPOCH
             SPEC_PROTOCOL=normal
-            SPEC_OUTPUT=$OUT/rt55_normal_querydiag
+            SPEC_OUTPUT_BASE=$OUT/rt55_normal_querydiag
             SPEC_JOB_NAME=team-rt55-normal-qdiag
             ;;
         rt55_random)
@@ -241,7 +263,7 @@ action_spec() {
             SPEC_CHECKPOINT=$RT55_CHECKPOINT
             SPEC_EXPECTED_EPOCH=$RT55_EXPECTED_EPOCH
             SPEC_PROTOCOL=random
-            SPEC_OUTPUT=$OUT/rt55_random_querydiag
+            SPEC_OUTPUT_BASE=$OUT/rt55_random_querydiag
             SPEC_JOB_NAME=team-rt55-random-qdiag
             ;;
         rt56_random)
@@ -249,7 +271,7 @@ action_spec() {
             SPEC_CHECKPOINT=$RT56_CHECKPOINT
             SPEC_EXPECTED_EPOCH=$RT56_EXPECTED_EPOCH
             SPEC_PROTOCOL=random
-            SPEC_OUTPUT=$OUT/rt56_random_querydiag
+            SPEC_OUTPUT_BASE=$OUT/rt56_random_querydiag
             SPEC_JOB_NAME=team-rt56-random-qdiag
             ;;
         rt56_normal)
@@ -257,7 +279,7 @@ action_spec() {
             SPEC_CHECKPOINT=$RT56_CHECKPOINT
             SPEC_EXPECTED_EPOCH=$RT56_EXPECTED_EPOCH
             SPEC_PROTOCOL=normal
-            SPEC_OUTPUT=$OUT/rt56_normal_querydiag
+            SPEC_OUTPUT_BASE=$OUT/rt56_normal_querydiag
             SPEC_JOB_NAME=team-rt56-normal-qdiag
             ;;
         *)
@@ -265,6 +287,17 @@ action_spec() {
             exit 2
             ;;
     esac
+}
+
+shard_output_prefix() {
+    local base=$1
+    local shard_id=$2
+    if ((NUM_EVENT_SHARDS == 1)); then
+        printf '%s\n' "$base"
+    else
+        printf '%s.shard-%05d-of-%05d\n' \
+            "$base" "$shard_id" "$NUM_EVENT_SHARDS"
+    fi
 }
 
 output_state() {
@@ -287,6 +320,20 @@ output_state() {
     else
         printf 'partial-%s-of-4\n' "$present"
     fi
+}
+
+action_output_state() {
+    local base=$1
+    local shard_id prefix state
+    for ((shard_id = 0; shard_id < NUM_EVENT_SHARDS; shard_id++)); do
+        prefix=$(shard_output_prefix "$base" "$shard_id")
+        state=$(output_state "$prefix")
+        if [[ "$state" != "absent" ]]; then
+            printf '%s:%s\n' "$state" "$prefix"
+            return 0
+        fi
+    done
+    printf '%s\n' absent
 }
 
 check_active_job() {
@@ -326,7 +373,8 @@ print_action_identity() {
     echo "[INFO] diting_config_sha256=$(file_sha256 "$DITING_CONFIG")"
     echo "[INFO] diting_pretrained=$DITING_PRETRAINED"
     echo "[INFO] diting_pretrained_sha256=$(optional_file_sha256 "$ENCODER_SHA256" "$DITING_PRETRAINED")"
-    echo "[INFO] output_prefix=$SPEC_OUTPUT"
+    echo "[INFO] output_prefix_base=$SPEC_OUTPUT_BASE"
+    echo "[INFO] event_shards=$NUM_EVENT_SHARDS shard_concurrency=$QUERYDIAG_SHARD_CONCURRENCY"
     echo "[INFO] max_events=$MAX_EVENTS station_counts=$STATION_COUNTS radial_scales=$RADIAL_SCALES"
     echo "[INFO] allow_unsafe_encoder_source_mismatch=$ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH"
     if [[ "$SMOKE" == "1" ]]; then
@@ -353,7 +401,8 @@ export DRY_RUN CONFIRM_QUERY_DIAGNOSTICS ALLOW_ACTIVE_JOB ALLOW_GIT_COMMIT_MISMA
 export ALLOW_UNSAFE_ENCODER_SOURCE_MISMATCH
 export SOURCE_IDENTITY_MODE EXPECTED_DIAGNOSTIC_SHA256 EXPECTED_LAUNCHER_SHA256
 export EXPECTED_GIT_COMMIT SUBMISSION_GIT_COMMIT SMOKE
-export SEED MAX_EVENTS STATION_COUNTS RADIAL_SCALES PAIR_SAMPLE_LIMIT
+export SEED MAX_EVENTS NUM_EVENT_SHARDS QUERYDIAG_SHARD_CONCURRENCY
+export STATION_COUNTS RADIAL_SCALES PAIR_SAMPLE_LIMIT
 export EQUIVARIANCE_TOLERANCE CHECKPOINT_SHA256 ENCODER_SHA256 ALLOW_EXISTING_OUTPUT
 export SLURM_PARTITION QUERYDIAG_GRES_RESOURCE QUERYDIAG_GRES_COUNT
 export SLURM_CPUS_PER_TASK
@@ -367,22 +416,43 @@ if [[ -z "${SLURM_JOB_ID:-}" ]]; then
         action_spec "$diagnostic_action"
         require_file "$SPEC_CONFIG" "$diagnostic_action config"
         require_file "$SPEC_CHECKPOINT" "$diagnostic_action checkpoint"
-        state=$(output_state "$SPEC_OUTPUT")
+        state=$(action_output_state "$SPEC_OUTPUT_BASE")
         if [[ "$state" != "absent" && "$ALLOW_EXISTING_OUTPUT" != "1" ]]; then
-            echo "[INFO] existing $state output; skip $diagnostic_action: $SPEC_OUTPUT"
+            echo "[INFO] existing output; skip $diagnostic_action: $state"
             skipped=$((skipped + 1))
             continue
         fi
         check_active_job "$SPEC_JOB_NAME"
         print_action_identity "$diagnostic_action"
+        ARRAY_ARGS=()
+        LOG_JOB_ID='%j'
+        if ((NUM_EVENT_SHARDS > 1)); then
+            ARRAY_ARGS=(--array="0-$((NUM_EVENT_SHARDS - 1))%$QUERYDIAG_SHARD_CONCURRENCY")
+            LOG_JOB_ID='%A_%a'
+        fi
         if [[ "$DRY_RUN" == "1" ]]; then
-            printf '[DRY-RUN] sbatch --job-name=%q --partition=%q --nodes=1 --ntasks-per-node=1 --cpus-per-task=%q --gres=%q --time=%q --chdir=%q --output=%q --error=%q --export=ALL %q %q\n' \
-                "$SPEC_JOB_NAME" "$SLURM_PARTITION" "$SLURM_CPUS_PER_TASK" \
-                "$QUERYDIAG_GRES_RESOURCE:$QUERYDIAG_GRES_COUNT" "$SLURM_TIME" "$WORKDIR" \
-                "$SLURM_LOG_DIR/%x-%j.out" "$SLURM_LOG_DIR/%x-%j.err" \
-                "$SCRIPT_PATH" "$diagnostic_action"
+            SBATCH_COMMAND=(
+                sbatch
+                --job-name="$SPEC_JOB_NAME"
+                --partition="$SLURM_PARTITION"
+                --nodes=1
+                --ntasks-per-node=1
+                --cpus-per-task="$SLURM_CPUS_PER_TASK"
+                --gres="$QUERYDIAG_GRES_RESOURCE:$QUERYDIAG_GRES_COUNT"
+                --time="$SLURM_TIME"
+                "${ARRAY_ARGS[@]}"
+                --chdir="$WORKDIR"
+                --output="$SLURM_LOG_DIR/%x-$LOG_JOB_ID.out"
+                --error="$SLURM_LOG_DIR/%x-$LOG_JOB_ID.err"
+                --export=ALL
+                "$SCRIPT_PATH"
+                "$diagnostic_action"
+            )
+            printf '[DRY-RUN]'
+            printf ' %q' "${SBATCH_COMMAND[@]}"
+            printf '\n'
         else
-            mkdir -p "$SLURM_LOG_DIR" "$(dirname -- "$SPEC_OUTPUT")"
+            mkdir -p "$SLURM_LOG_DIR" "$(dirname -- "$SPEC_OUTPUT_BASE")"
             sbatch \
                 --job-name="$SPEC_JOB_NAME" \
                 --partition="$SLURM_PARTITION" \
@@ -391,9 +461,10 @@ if [[ -z "${SLURM_JOB_ID:-}" ]]; then
                 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
                 --gres="$QUERYDIAG_GRES_RESOURCE:$QUERYDIAG_GRES_COUNT" \
                 --time="$SLURM_TIME" \
+                "${ARRAY_ARGS[@]}" \
                 --chdir="$WORKDIR" \
-                --output="$SLURM_LOG_DIR/%x-%j.out" \
-                --error="$SLURM_LOG_DIR/%x-%j.err" \
+                --output="$SLURM_LOG_DIR/%x-$LOG_JOB_ID.out" \
+                --error="$SLURM_LOG_DIR/%x-$LOG_JOB_ID.err" \
                 --export=ALL \
                 "$SCRIPT_PATH" "$diagnostic_action"
         fi
@@ -409,6 +480,17 @@ if (($# != 1)); then
 fi
 DIAGNOSTIC_ACTION=$1
 action_spec "$DIAGNOSTIC_ACTION"
+if ((NUM_EVENT_SHARDS > 1)); then
+    EVENT_SHARD_ID=${SLURM_ARRAY_TASK_ID:-}
+    if [[ ! "$EVENT_SHARD_ID" =~ ^[0-9]+$ ]] || \
+       ((EVENT_SHARD_ID >= NUM_EVENT_SHARDS)); then
+        echo "Sharded worker requires a valid SLURM_ARRAY_TASK_ID; got: ${EVENT_SHARD_ID:-unset}" >&2
+        exit 2
+    fi
+else
+    EVENT_SHARD_ID=0
+fi
+SPEC_OUTPUT=$(shard_output_prefix "$SPEC_OUTPUT_BASE" "$EVENT_SHARD_ID")
 require_file "$SPEC_CONFIG" "$DIAGNOSTIC_ACTION config"
 require_file "$SPEC_CHECKPOINT" "$DIAGNOSTIC_ACTION checkpoint"
 
@@ -507,6 +589,8 @@ DIAGNOSTIC_ARGS=(
     --device cuda:0
     --seed "$SEED"
     --max-events "$MAX_EVENTS"
+    --num-event-shards "$NUM_EVENT_SHARDS"
+    --event-shard-id "$EVENT_SHARD_ID"
     --station-counts "$STATION_COUNTS"
     --radial-scales "$RADIAL_SCALES"
     --pair-sample-limit "$PAIR_SAMPLE_LIMIT"

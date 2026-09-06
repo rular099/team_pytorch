@@ -12,6 +12,7 @@ import numpy as np
 import torch
 
 from tools import diagnose_query_geometry_sensitivity as querydiag
+from tools import merge_query_geometry_diagnostics_shards as querymerge
 
 
 class _SyntheticDataset:
@@ -484,7 +485,15 @@ class QueryGeometryHelperTests(unittest.TestCase):
 
 class QueryGeometryEndToEndTests(unittest.TestCase):
     @staticmethod
-    def _run(model, dataset=None, *, protocol="normal", max_events=0):
+    def _run(
+        model,
+        dataset=None,
+        *,
+        protocol="normal",
+        max_events=0,
+        num_event_shards=1,
+        event_shard_id=0,
+    ):
         return querydiag.run_query_geometry_diagnostics(
             model,
             dataset or _SyntheticDataset(protocol=protocol),
@@ -495,9 +504,27 @@ class QueryGeometryEndToEndTests(unittest.TestCase):
             radial_scales=[0.0, 0.5, 1.0, 1.5],
             seed=17,
             max_events=max_events,
+            num_event_shards=num_event_shards,
+            event_shard_id=event_shard_id,
             pair_sample_limit=100,
             equivariance_tolerance=1e-7,
         )
+
+    @staticmethod
+    def _event_block_dataset(event_count=5, *, protocol="normal"):
+        samples = []
+        for event_ordinal in range(event_count):
+            for elapsed_time in querydiag.PINNED_VALIDATION_TIMES:
+                sample = _SyntheticDataset._sample(
+                    f"event-{event_ordinal}",
+                    [True, False, False],
+                    [0.0, 1.0, 2.0, 999.0],
+                    [0.1, 1.1, 2.1, -999.0],
+                    [0, 1, 2, -1],
+                )
+                sample[2]["realtime_elapsed_time"] = torch.tensor(elapsed_time)
+                samples.append(sample)
+        return _SyntheticDataset(protocol=protocol, samples=samples)
 
     def test_coordinate_sensitive_model_has_nonzero_radial_sensitivity(self):
         summary, arrays = self._run(_CoordinateSensitiveModel())
@@ -599,6 +626,142 @@ class QueryGeometryEndToEndTests(unittest.TestCase):
         self.assertEqual(summary["counts"]["events"], 1)
         self.assertEqual(summary["counts"]["realtime_samples"], 2)
         self.assertEqual(summary["selection"]["examined_realtime_samples"], 2)
+
+    def test_event_shards_are_disjoint_complete_and_keep_whole_events(self):
+        dataset = self._event_block_dataset(event_count=5)
+        shard_arrays = []
+        for shard_id in range(3):
+            summary, arrays = self._run(
+                _CoordinateSensitiveModel(),
+                dataset=dataset,
+                num_event_shards=3,
+                event_shard_id=shard_id,
+            )
+            shard_arrays.append(arrays)
+            sharding = summary["selection"]["event_sharding"]
+            self.assertEqual(sharding["mode"], "shard")
+            self.assertEqual(sharding["event_shard_id"], shard_id)
+            self.assertTrue(np.all(arrays["event_ordinal"] % 3 == shard_id))
+            for ordinal in np.unique(arrays["event_ordinal"]):
+                self.assertEqual(np.sum(arrays["event_ordinal"] == ordinal), 7)
+        concatenated = np.concatenate(
+            [arrays["event_index"] for arrays in shard_arrays]
+        )
+        np.testing.assert_array_equal(
+            np.sort(concatenated), np.arange(len(dataset))
+        )
+        self.assertEqual(np.unique(concatenated).size, len(dataset))
+
+    def test_event_sharding_rejects_max_events_and_noncontiguous_blocks(self):
+        dataset = self._event_block_dataset(event_count=2)
+        with self.assertRaisesRegex(ValueError, "max_events must be 0"):
+            self._run(
+                _CoordinateSensitiveModel(),
+                dataset=dataset,
+                max_events=1,
+                num_event_shards=2,
+            )
+        dataset.samples[3] = _SyntheticDataset._sample(
+            "wrong-event",
+            [True, False, False],
+            [0.0, 1.0, 2.0, 999.0],
+            [0.1, 1.1, 2.1, -999.0],
+            [0, 1, 2, -1],
+        )
+        with self.assertRaisesRegex(ValueError, "not event-contiguous"):
+            self._run(
+                _CoordinateSensitiveModel(),
+                dataset=dataset,
+                num_event_shards=2,
+                event_shard_id=0,
+            )
+
+    def test_verified_merge_reconstructs_global_sample_order(self):
+        dataset = self._event_block_dataset(event_count=4)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            input_base = root / "run"
+            for shard_id in range(2):
+                summary, arrays = self._run(
+                    _CoordinateSensitiveModel(),
+                    dataset=dataset,
+                    num_event_shards=2,
+                    event_shard_id=shard_id,
+                )
+                provenance = {
+                    "protocol": "normal",
+                    "split": "val",
+                    "diagnostic_seed": 17,
+                    "station_counts": [1, 3, 5],
+                    "radial_scales": [0.0, 0.5, 1.0, 1.5],
+                    "max_events": 0,
+                    "pair_sample_limit": 100,
+                    "equivariance_tolerance": 1e-7,
+                    "event_sharding": summary["selection"]["event_sharding"],
+                }
+                prefix = querymerge.shard_prefix(input_base, shard_id, 2)
+                querydiag.write_outputs(
+                    querydiag.diagnostic_output_paths(prefix),
+                    config={"model": "synthetic"},
+                    summary=summary,
+                    arrays=arrays,
+                    provenance=provenance,
+                    force=False,
+                )
+            output = root / "merged"
+            querymerge.merge_shards(input_base, 2, output)
+            paths = querydiag.diagnostic_output_paths(output)
+            with np.load(paths["samples"], allow_pickle=False) as archive:
+                np.testing.assert_array_equal(
+                    archive["event_index"], np.arange(len(dataset))
+                )
+                np.testing.assert_array_equal(
+                    archive["event_ordinal"], np.arange(len(dataset)) // 7
+                )
+            with paths["summary"].open(encoding="utf-8") as handle:
+                merged_summary = json.load(handle)
+            self.assertEqual(merged_summary["counts"]["events"], 4)
+            self.assertEqual(merged_summary["counts"]["realtime_samples"], 28)
+            self.assertEqual(
+                merged_summary["provenance"]["event_sharding"]["mode"],
+                "merged",
+            )
+            self.assertEqual(len(merged_summary["provenance"]["merge"]["source_shards"]), 2)
+
+    def test_merge_rejects_artifact_changed_after_completion(self):
+        dataset = self._event_block_dataset(event_count=2)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            input_base = root / "run"
+            for shard_id in range(2):
+                summary, arrays = self._run(
+                    _CoordinateSensitiveModel(),
+                    dataset=dataset,
+                    num_event_shards=2,
+                    event_shard_id=shard_id,
+                )
+                provenance = {
+                    "diagnostic_seed": 17,
+                    "pair_sample_limit": 100,
+                    "equivariance_tolerance": 1e-7,
+                    "event_sharding": summary["selection"]["event_sharding"],
+                }
+                prefix = querymerge.shard_prefix(input_base, shard_id, 2)
+                querydiag.write_outputs(
+                    querydiag.diagnostic_output_paths(prefix),
+                    config={},
+                    summary=summary,
+                    arrays=arrays,
+                    provenance=provenance,
+                    force=False,
+                )
+            changed = querydiag.diagnostic_output_paths(
+                querymerge.shard_prefix(input_base, 1, 2)
+            )["summary"]
+            with changed.open("a", encoding="utf-8") as handle:
+                handle.write(" ")
+            with self.assertRaisesRegex(ValueError, "size mismatch"):
+                querymerge.merge_shards(input_base, 2, root / "merged")
 
     def test_event_counts_include_joint_generator_source_identity(self):
         sample_a = _SyntheticDataset._default_samples()[0]
@@ -776,6 +939,54 @@ class QueryGeometryLauncherTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("source_identity_mode=uploaded_sha256", result.stdout)
             self.assertIn("SHA-256 identities matched", result.stdout)
+
+    def test_sharded_submission_uses_bounded_slurm_array(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            environment = self._launcher_environment(temp_dir)
+            environment["ALLOW_ACTIVE_JOB"] = "1"
+            environment["NUM_EVENT_SHARDS"] = "8"
+            environment["QUERYDIAG_SHARD_CONCURRENCY"] = "4"
+            environment["MAX_EVENTS"] = "0"
+            result = subprocess.run(
+                ["bash", str(self.launcher)],
+                cwd=self.repo_root,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("--array=0-7%4", result.stdout)
+            self.assertIn("%A_%a", result.stdout)
+            self.assertIn("event_shards=8", result.stdout)
+
+    def test_sharded_worker_uses_task_specific_output_lock(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            environment = self._launcher_environment(root)
+            environment["SLURM_JOB_ID"] = "999"
+            environment["SLURM_ARRAY_TASK_ID"] = "3"
+            environment["NUM_EVENT_SHARDS"] = "8"
+            environment["MAX_EVENTS"] = "0"
+            environment["EXPECTED_GIT_COMMIT"] = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=self.repo_root,
+                text=True,
+            ).strip()
+            lock = root / "outputs" / (
+                "rt55_normal_querydiag.shard-00003-of-00008.lock"
+            )
+            lock.mkdir(parents=True)
+            result = subprocess.run(
+                ["bash", str(self.launcher), "rt55_normal"],
+                cwd=self.repo_root,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("already owns output lock", result.stderr)
 
     def test_submission_does_not_export_reserved_slurm_gpus_option(self):
         with tempfile.TemporaryDirectory() as temp_dir:

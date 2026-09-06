@@ -67,6 +67,7 @@ from train_light import (  # noqa: E402
 PGA_COORDINATE = "log10(m/s^2)"
 PINNED_VALIDATION_TIMES = (1.0, 3.0, 5.0, 10.0, 20.0, 40.0, 90.0)
 PINNED_RANDOM_STATION_COUNTS = (1, 3, 5, 8, 12, 16)
+EVENT_SHARDING_ALGORITHM = "global_realtime_block_round_robin_v1"
 TARGET_TYPE_NAMES = {
     0: "input",
     1: "triggered_noninput",
@@ -1485,6 +1486,8 @@ def run_query_geometry_diagnostics(
     radial_scales: Sequence[float],
     seed: int = 42,
     max_events: int = 0,
+    num_event_shards: int = 1,
+    event_shard_id: int = 0,
     pair_sample_limit: int = 4096,
     equivariance_tolerance: float = 1e-5,
 ) -> Tuple[Dict[str, Any], Dict[str, np.ndarray]]:
@@ -1493,6 +1496,14 @@ def run_query_geometry_diagnostics(
     model.eval()
     if max_events < 0:
         raise ValueError("max_events must be zero (all) or a positive integer")
+    if num_event_shards < 1:
+        raise ValueError("num_event_shards must be a positive integer")
+    if event_shard_id < 0 or event_shard_id >= num_event_shards:
+        raise ValueError(
+            "event_shard_id must satisfy 0 <= event_shard_id < num_event_shards"
+        )
+    if num_event_shards > 1 and max_events:
+        raise ValueError("max_events must be 0 when event sharding is enabled")
     if pair_sample_limit < 0:
         raise ValueError("pair_sample_limit must be zero or positive")
 
@@ -1506,8 +1517,39 @@ def run_query_geometry_diagnostics(
     selected_event_ids: List[str] = []
     selected_event_set: Set[str] = set()
     examined_samples = 0
+    samples_per_event: Optional[int] = None
+    dataset_event_count: Optional[int] = None
+    if num_event_shards > 1:
+        samples_per_event = len(PINNED_VALIDATION_TIMES)
+        if len(dataset) % samples_per_event:
+            raise ValueError(
+                "Event sharding requires the pinned validation dataset length to be "
+                f"divisible by {samples_per_event}; got {len(dataset)}"
+            )
+        dataset_event_count = len(dataset) // samples_per_event
+        selected_event_ordinals = [
+            event_ordinal
+            for event_ordinal in range(dataset_event_count)
+            if event_ordinal % num_event_shards == event_shard_id
+        ]
+        if not selected_event_ordinals:
+            raise ValueError(
+                f"Event shard {event_shard_id} of {num_event_shards} is empty for "
+                f"{dataset_event_count} validation events"
+            )
+        sample_plan = [
+            (event_ordinal * samples_per_event + offset, event_ordinal)
+            for event_ordinal in selected_event_ordinals
+            for offset in range(samples_per_event)
+        ]
+    else:
+        selected_event_ordinals = []
+        sample_plan = [(sample_index, None) for sample_index in range(len(dataset))]
 
-    for sample_index in range(len(dataset)):
+    event_key_by_ordinal: Dict[int, str] = {}
+    samples_by_ordinal: Counter = Counter()
+    encountered_event_ordinal: Dict[str, int] = {}
+    for sample_index, planned_event_ordinal in sample_plan:
         inputs, labels, info = dataset[sample_index]
         event_id = _event_id(info, sample_index)
         dataset_source_index = _dataset_source_index(dataset, sample_index)
@@ -1517,6 +1559,19 @@ def run_query_geometry_diagnostics(
                 break
             selected_event_ids.append(event_key)
             selected_event_set.add(event_key)
+            encountered_event_ordinal[event_key] = len(encountered_event_ordinal)
+        if planned_event_ordinal is None:
+            event_ordinal = encountered_event_ordinal[event_key]
+        else:
+            event_ordinal = int(planned_event_ordinal)
+            previous_key = event_key_by_ordinal.setdefault(event_ordinal, event_key)
+            if previous_key != event_key:
+                raise ValueError(
+                    "Pinned validation event block is not event-contiguous: "
+                    f"ordinal={event_ordinal} first={previous_key!r} "
+                    f"sample={sample_index} observed={event_key!r}"
+                )
+            samples_by_ordinal[event_ordinal] += 1
         examined_samples += 1
 
         if len(inputs) < 5:
@@ -1619,6 +1674,7 @@ def run_query_geometry_diagnostics(
         records["event_key"].append(event_key)
         records["dataset_source_index"].append(dataset_source_index)
         records["event_index"].append(int(sample_index))
+        records["event_ordinal"].append(int(event_ordinal))
         records["realtime_elapsed_time"].append(
             _info_scalar(info, "realtime_elapsed_time")
         )
@@ -1654,6 +1710,17 @@ def run_query_geometry_diagnostics(
 
     if not records["event_id"]:
         raise RuntimeError("No validation samples were processed")
+    if num_event_shards > 1:
+        incomplete = {
+            int(event_ordinal): int(samples_by_ordinal[event_ordinal])
+            for event_ordinal in selected_event_ordinals
+            if samples_by_ordinal[event_ordinal] != samples_per_event
+        }
+        if incomplete:
+            raise ValueError(
+                "Event sharding did not retain every pinned realtime sample for "
+                f"each selected event: {incomplete}"
+            )
 
     sample_count = len(records["event_id"])
     for key in known_diag_keys:
@@ -1684,6 +1751,15 @@ def run_query_geometry_diagnostics(
         "examined_realtime_samples": int(examined_samples),
         "max_events": int(max_events),
         "selected_events": int(len(selected_event_ids)),
+        "event_sharding": {
+            "mode": "shard" if num_event_shards > 1 else "single",
+            "algorithm": EVENT_SHARDING_ALGORITHM,
+            "num_event_shards": int(num_event_shards),
+            "event_shard_id": int(event_shard_id),
+            "samples_per_event": samples_per_event,
+            "dataset_event_count": dataset_event_count,
+            "selected_event_count": int(len(selected_event_ids)),
+        },
         "requested_station_count_breakdown": [int(value) for value in station_counts],
         "note": (
             "All encountered station counts are evaluated. --station-counts controls "
@@ -1718,6 +1794,7 @@ def build_provenance(
     equivariance_tolerance: float,
     checkpoint_sha256: bool,
     invocation_argv: Sequence[str],
+    event_sharding: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     checkpoint = dict(checkpoint_identity)
     checkpoint_path = Path(str(checkpoint["path"]))
@@ -1752,6 +1829,12 @@ def build_provenance(
         "station_counts": [int(value) for value in station_counts],
         "radial_scales": [float(value) for value in radial_scales],
         "max_events": int(max_events),
+        "event_sharding": dict(event_sharding or {
+            "mode": "single",
+            "algorithm": EVENT_SHARDING_ALGORITHM,
+            "num_event_shards": 1,
+            "event_shard_id": 0,
+        }),
         "pair_sample_limit": int(pair_sample_limit),
         "equivariance_tolerance": float(equivariance_tolerance),
         "pga_coordinate": PGA_COORDINATE,
@@ -1909,6 +1992,21 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         default=0,
         help="Deterministically stop after this many event IDs; 0 evaluates all validation events.",
     )
+    parser.add_argument(
+        "--num-event-shards",
+        type=int,
+        default=1,
+        help=(
+            "Split the complete pinned validation set into this many deterministic "
+            "whole-event shards; requires --max-events=0."
+        ),
+    )
+    parser.add_argument(
+        "--event-shard-id",
+        type=int,
+        default=0,
+        help="Zero-based deterministic event shard to evaluate.",
+    )
     parser.add_argument("--station-counts", default="1,3,5,8,12,16")
     parser.add_argument("--radial-scales", default="0,0.5,1,1.5")
     parser.add_argument("--pair-sample-limit", type=int, default=4096)
@@ -1975,6 +2073,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         raise ValueError("--radial-scales must include 1")
     if not math.isfinite(args.equivariance_tolerance) or args.equivariance_tolerance < 0:
         raise ValueError("--equivariance-tolerance must be finite and non-negative")
+    if args.num_event_shards < 1:
+        raise ValueError("--num-event-shards must be a positive integer")
+    if args.event_shard_id < 0 or args.event_shard_id >= args.num_event_shards:
+        raise ValueError(
+            "--event-shard-id must satisfy 0 <= id < --num-event-shards"
+        )
+    if args.num_event_shards > 1 and args.max_events:
+        raise ValueError("--max-events must be 0 when event sharding is enabled")
 
     paths = diagnostic_output_paths(args.output_prefix)
     refuse_existing_outputs(paths, force=args.force)
@@ -2056,6 +2162,11 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     )
     print(f"[querydiag] radial_scales={radial_scales}")
     print(f"[querydiag] requested_station_count_breakdown={station_counts}")
+    print(
+        "[querydiag] event_shard="
+        f"{args.event_shard_id}/{args.num_event_shards} "
+        f"algorithm={EVENT_SHARDING_ALGORITHM}"
+    )
     model = eval_checkpoint.build_model_and_load(
         config,
         diting_args,
@@ -2085,6 +2196,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         radial_scales=radial_scales,
         seed=args.seed,
         max_events=args.max_events,
+        num_event_shards=args.num_event_shards,
+        event_shard_id=args.event_shard_id,
         pair_sample_limit=args.pair_sample_limit,
         equivariance_tolerance=args.equivariance_tolerance,
     )
@@ -2109,6 +2222,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         equivariance_tolerance=args.equivariance_tolerance,
         checkpoint_sha256=args.checkpoint_sha256,
         invocation_argv=invocation_argv,
+        event_sharding=summary["selection"]["event_sharding"],
     )
     write_outputs(
         paths,
