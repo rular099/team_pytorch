@@ -93,8 +93,8 @@ if [[ -z "${OUT+x}" ]]; then
 fi
 
 SLURM_PARTITION=${SLURM_PARTITION:-diting}
-SLURM_GRES_RESOURCE=${SLURM_GRES_RESOURCE:-dcu}
-SLURM_GPUS=${SLURM_GPUS:-1}
+QUERYDIAG_GRES_RESOURCE=${QUERYDIAG_GRES_RESOURCE:-dcu}
+QUERYDIAG_GRES_COUNT=${QUERYDIAG_GRES_COUNT:-1}
 SLURM_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK:-8}
 SLURM_TIME=${SLURM_TIME:-23:50:00}
 SLURM_LOG_DIR=${SLURM_LOG_DIR:-$OUT/slurm}
@@ -355,7 +355,8 @@ export SOURCE_IDENTITY_MODE EXPECTED_DIAGNOSTIC_SHA256 EXPECTED_LAUNCHER_SHA256
 export EXPECTED_GIT_COMMIT SUBMISSION_GIT_COMMIT SMOKE
 export SEED MAX_EVENTS STATION_COUNTS RADIAL_SCALES PAIR_SAMPLE_LIMIT
 export EQUIVARIANCE_TOLERANCE CHECKPOINT_SHA256 ENCODER_SHA256 ALLOW_EXISTING_OUTPUT
-export SLURM_PARTITION SLURM_GRES_RESOURCE SLURM_GPUS SLURM_CPUS_PER_TASK
+export SLURM_PARTITION QUERYDIAG_GRES_RESOURCE QUERYDIAG_GRES_COUNT
+export SLURM_CPUS_PER_TASK
 export SLURM_TIME SLURM_LOG_DIR CONDA_ENV MODULE_UNLOAD MODULE_LOADS
 export DITING_CONFIG DITING_PRETRAINED
 
@@ -377,7 +378,7 @@ if [[ -z "${SLURM_JOB_ID:-}" ]]; then
         if [[ "$DRY_RUN" == "1" ]]; then
             printf '[DRY-RUN] sbatch --job-name=%q --partition=%q --nodes=1 --ntasks-per-node=1 --cpus-per-task=%q --gres=%q --time=%q --chdir=%q --output=%q --error=%q --export=ALL %q %q\n' \
                 "$SPEC_JOB_NAME" "$SLURM_PARTITION" "$SLURM_CPUS_PER_TASK" \
-                "$SLURM_GRES_RESOURCE:$SLURM_GPUS" "$SLURM_TIME" "$WORKDIR" \
+                "$QUERYDIAG_GRES_RESOURCE:$QUERYDIAG_GRES_COUNT" "$SLURM_TIME" "$WORKDIR" \
                 "$SLURM_LOG_DIR/%x-%j.out" "$SLURM_LOG_DIR/%x-%j.err" \
                 "$SCRIPT_PATH" "$diagnostic_action"
         else
@@ -388,7 +389,7 @@ if [[ -z "${SLURM_JOB_ID:-}" ]]; then
                 --nodes=1 \
                 --ntasks-per-node=1 \
                 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
-                --gres="$SLURM_GRES_RESOURCE:$SLURM_GPUS" \
+                --gres="$QUERYDIAG_GRES_RESOURCE:$QUERYDIAG_GRES_COUNT" \
                 --time="$SLURM_TIME" \
                 --chdir="$WORKDIR" \
                 --output="$SLURM_LOG_DIR/%x-%j.out" \
@@ -526,7 +527,12 @@ if [[ "$ALLOW_EXISTING_OUTPUT" == "1" ]]; then
     DIAGNOSTIC_ARGS+=(--force)
 fi
 
-srun --ntasks=1 python "$DIAGNOSTIC_SCRIPT" "${DIAGNOSTIC_ARGS[@]}"
+# SLURM_GPUS is an srun input option equivalent to --gpus.  Never pass a
+# request-side counter under that reserved name: this cluster allocates the
+# non-GPU-named GRES dcu, and mixing --gpus=1 with dcu:1 makes step creation
+# fail with "Invalid generic resource (gres) specification".
+env -u SLURM_GPUS srun --ntasks=1 \
+    python "$DIAGNOSTIC_SCRIPT" "${DIAGNOSTIC_ARGS[@]}"
 
 for output_path in \
     "$SPEC_OUTPUT.summary.json" \

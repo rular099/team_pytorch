@@ -32,7 +32,7 @@ DITING_PRETRAINED=${DITING_PRETRAINED:-/public/home/test_bigmodel/seismogram/mx/
 # These default hashes identify the reviewed upload-mode runtime files. They
 # work even when the cluster tree has no Git metadata or cannot contact GitHub.
 EXPECTED_DIAGNOSTIC_SHA256=${EXPECTED_DIAGNOSTIC_SHA256:-8e84b1f5b191e32beb614c2b662be57037549518dc36c711d895719222ba6258}
-EXPECTED_LAUNCHER_SHA256=${EXPECTED_LAUNCHER_SHA256:-19f51f3b2dab25fb0d1a92e2630e7aeb36a595722ee73442676b02f566efed84}
+EXPECTED_LAUNCHER_SHA256=${EXPECTED_LAUNCHER_SHA256:-8f012ef37e42cdf6ca3b8949b15e31d696992e83a8120d04b6fa73c03f4e4382}
 ALLOW_SOURCE_HASH_MISMATCH=${ALLOW_SOURCE_HASH_MISMATCH:-0}
 
 OUT=${OUT:-$WORKDIR/logs/query_geometry_diagnostics_input_check}
@@ -46,8 +46,8 @@ ENCODER_SHA256=${ENCODER_SHA256:-0}
 
 JOB_NAME=${JOB_NAME:-team-qdiag-inspect}
 SLURM_PARTITION=${SLURM_PARTITION:-diting}
-SLURM_GRES_RESOURCE=${SLURM_GRES_RESOURCE:-dcu}
-SLURM_GPUS=${SLURM_GPUS:-1}
+QUERYDIAG_GRES_RESOURCE=${QUERYDIAG_GRES_RESOURCE:-dcu}
+QUERYDIAG_GRES_COUNT=${QUERYDIAG_GRES_COUNT:-1}
 SLURM_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK:-2}
 SLURM_TIME=${SLURM_TIME:-00:20:00}
 CONDA_ENV=${CONDA_ENV:-lsm_env}
@@ -169,7 +169,7 @@ if [[ -z "${SLURM_JOB_ID:-}" ]]; then
     if [[ "$DRY_RUN" == "1" ]]; then
         printf '[DRY-RUN] sbatch --job-name=%q --partition=%q --nodes=1 --ntasks=1 --cpus-per-task=%q --gres=%q --time=%q --chdir=%q --output=%q --error=%q --export=ALL %q\n' \
             "$JOB_NAME" "$SLURM_PARTITION" "$SLURM_CPUS_PER_TASK" \
-            "$SLURM_GRES_RESOURCE:$SLURM_GPUS" "$SLURM_TIME" "$WORKDIR" \
+            "$QUERYDIAG_GRES_RESOURCE:$QUERYDIAG_GRES_COUNT" "$SLURM_TIME" "$WORKDIR" \
             "$OUT/inspect-%j.out" "$OUT/inspect-%j.err" "$SCRIPT_PATH"
         echo "[OK] inspection dry run passed; no job submitted."
         exit 0
@@ -182,7 +182,7 @@ if [[ -z "${SLURM_JOB_ID:-}" ]]; then
         --nodes=1 \
         --ntasks=1 \
         --cpus-per-task="$SLURM_CPUS_PER_TASK" \
-        --gres="$SLURM_GRES_RESOURCE:$SLURM_GPUS" \
+        --gres="$QUERYDIAG_GRES_RESOURCE:$QUERYDIAG_GRES_COUNT" \
         --time="$SLURM_TIME" \
         --chdir="$WORKDIR" \
         --output="$OUT/inspect-%j.out" \

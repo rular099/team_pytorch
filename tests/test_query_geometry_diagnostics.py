@@ -777,6 +777,42 @@ class QueryGeometryLauncherTests(unittest.TestCase):
             self.assertIn("source_identity_mode=uploaded_sha256", result.stdout)
             self.assertIn("SHA-256 identities matched", result.stdout)
 
+    def test_submission_does_not_export_reserved_slurm_gpus_option(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            sbatch = fake_bin / "sbatch"
+            sbatch.write_text(
+                "#!/bin/sh\n"
+                "if env | grep -q '^SLURM_GPUS='; then\n"
+                "  echo 'reserved SLURM_GPUS leaked into sbatch' >&2\n"
+                "  exit 44\n"
+                "fi\n"
+                "printf '%s\\n' \"$*\"\n",
+                encoding="utf-8",
+            )
+            sbatch.chmod(0o755)
+            environment = self._launcher_environment(root)
+            environment.pop("SLURM_GPUS", None)
+            environment["PATH"] = (
+                f"{fake_bin}{os.pathsep}{environment['PATH']}"
+            )
+            environment["DRY_RUN"] = "0"
+            environment["CONFIRM_QUERY_DIAGNOSTICS"] = "1"
+            environment["ALLOW_ACTIVE_JOB"] = "1"
+            result = subprocess.run(
+                ["bash", str(self.launcher)],
+                cwd=self.repo_root,
+                env=environment,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("--gres=dcu:1", result.stdout)
+            self.assertNotIn("reserved SLURM_GPUS", result.stderr)
+
     def test_worker_rejects_git_commit_mismatch(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             environment = self._launcher_environment(temp_dir)
