@@ -19,7 +19,7 @@
 # SMOKE=1 defaults MAX_EVENTS to 8 and requires one action at a time. After the
 # reviewed commit is synchronized to the cluster, measure smoke throughput and
 # memory before any full run. MAX_EVENTS=0 evaluates all validation events.
-# Full runs can use deterministic whole-event arrays, for example:
+# Full runs can use deterministic whole-event-occurrence arrays, for example:
 #   NUM_EVENT_SHARDS=8 QUERYDIAG_SHARD_CONCURRENCY=4 ACTION=rt55_normal ...
 
 set -euo pipefail

@@ -678,6 +678,11 @@ class QueryGeometryEndToEndTests(unittest.TestCase):
 
     def test_verified_merge_reconstructs_global_sample_order(self):
         dataset = self._event_block_dataset(event_count=4)
+        # Resampling can repeat one physical event ID as multiple complete
+        # seven-time occurrences. Occurrences may land in different shards,
+        # while merged unique-event counts must remain based on event_key.
+        for sample in dataset.samples[14:21]:
+            sample[2]["event_id"] = "event-1"
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             input_base = root / "run"
@@ -720,8 +725,17 @@ class QueryGeometryEndToEndTests(unittest.TestCase):
                 )
             with paths["summary"].open(encoding="utf-8") as handle:
                 merged_summary = json.load(handle)
-            self.assertEqual(merged_summary["counts"]["events"], 4)
+            self.assertEqual(merged_summary["counts"]["events"], 3)
             self.assertEqual(merged_summary["counts"]["realtime_samples"], 28)
+            self.assertEqual(
+                merged_summary["selection"]["selected_event_occurrences"], 4
+            )
+            self.assertEqual(
+                merged_summary["provenance"]["event_sharding"][
+                    "selected_unique_event_keys"
+                ],
+                3,
+            )
             self.assertEqual(
                 merged_summary["provenance"]["event_sharding"]["mode"],
                 "merged",

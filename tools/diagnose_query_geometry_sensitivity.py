@@ -1518,7 +1518,7 @@ def run_query_geometry_diagnostics(
     selected_event_set: Set[str] = set()
     examined_samples = 0
     samples_per_event: Optional[int] = None
-    dataset_event_count: Optional[int] = None
+    dataset_event_occurrence_count: Optional[int] = None
     if num_event_shards > 1:
         samples_per_event = len(PINNED_VALIDATION_TIMES)
         if len(dataset) % samples_per_event:
@@ -1526,16 +1526,16 @@ def run_query_geometry_diagnostics(
                 "Event sharding requires the pinned validation dataset length to be "
                 f"divisible by {samples_per_event}; got {len(dataset)}"
             )
-        dataset_event_count = len(dataset) // samples_per_event
+        dataset_event_occurrence_count = len(dataset) // samples_per_event
         selected_event_ordinals = [
             event_ordinal
-            for event_ordinal in range(dataset_event_count)
+            for event_ordinal in range(dataset_event_occurrence_count)
             if event_ordinal % num_event_shards == event_shard_id
         ]
         if not selected_event_ordinals:
             raise ValueError(
                 f"Event shard {event_shard_id} of {num_event_shards} is empty for "
-                f"{dataset_event_count} validation events"
+                f"{dataset_event_occurrence_count} validation event occurrences"
             )
         sample_plan = [
             (event_ordinal * samples_per_event + offset, event_ordinal)
@@ -1751,14 +1751,21 @@ def run_query_geometry_diagnostics(
         "examined_realtime_samples": int(examined_samples),
         "max_events": int(max_events),
         "selected_events": int(len(selected_event_ids)),
+        "selected_event_occurrences": (
+            int(len(selected_event_ordinals)) if num_event_shards > 1 else None
+        ),
         "event_sharding": {
             "mode": "shard" if num_event_shards > 1 else "single",
             "algorithm": EVENT_SHARDING_ALGORITHM,
             "num_event_shards": int(num_event_shards),
             "event_shard_id": int(event_shard_id),
             "samples_per_event": samples_per_event,
-            "dataset_event_count": dataset_event_count,
-            "selected_event_count": int(len(selected_event_ids)),
+            "dataset_event_occurrences": dataset_event_occurrence_count,
+            "selected_event_occurrences": (
+                int(len(selected_event_ordinals))
+                if num_event_shards > 1 else None
+            ),
+            "selected_unique_event_keys": int(len(selected_event_ids)),
         },
         "requested_station_count_breakdown": [int(value) for value in station_counts],
         "note": (
@@ -1834,6 +1841,9 @@ def build_provenance(
             "algorithm": EVENT_SHARDING_ALGORITHM,
             "num_event_shards": 1,
             "event_shard_id": 0,
+            "samples_per_event": None,
+            "dataset_event_occurrences": None,
+            "selected_event_occurrences": None,
         }),
         "pair_sample_limit": int(pair_sample_limit),
         "equivariance_tolerance": float(equivariance_tolerance),
@@ -1998,7 +2008,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         default=1,
         help=(
             "Split the complete pinned validation set into this many deterministic "
-            "whole-event shards; requires --max-events=0."
+            "whole-event-occurrence shards; requires --max-events=0."
         ),
     )
     parser.add_argument(

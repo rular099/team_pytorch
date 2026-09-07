@@ -2,10 +2,11 @@
 """Verify and merge deterministic query-geometry event shards.
 
 Every input shard must have a valid completion manifest, matching run identity,
-the expected round-robin event assignment, and a disjoint part of the complete
-pinned validation index space.  The merged metrics are recomputed from the
-globally ordered raw sample arrays; shard-level summary statistics are never
-averaged.
+the expected round-robin event-occurrence assignment, and a disjoint part of
+the complete pinned validation index space. A resampled physical event ID may
+have multiple occurrences; every occurrence keeps all seven validation times.
+The merged metrics are recomputed from the globally ordered raw sample arrays;
+shard-level summary statistics are never averaged.
 """
 
 from __future__ import annotations
@@ -172,11 +173,14 @@ def _load_verified_shard(
     event_ordinal = arrays["event_ordinal"].astype(np.int64)
     selection = summary.get("selection", {})
     dataset_samples = selection.get("dataset_realtime_samples")
-    dataset_events = provenance_sharding.get("dataset_event_count")
+    dataset_event_occurrences = provenance_sharding.get(
+        "dataset_event_occurrences"
+    )
     if (
         dataset_samples is None
-        or dataset_events is None
-        or int(dataset_events) * samples_per_event != int(dataset_samples)
+        or dataset_event_occurrences is None
+        or int(dataset_event_occurrences) * samples_per_event
+        != int(dataset_samples)
     ):
         raise ValueError(
             f"Shard {expected_shard_id} has inconsistent full-dataset counts"
@@ -209,12 +213,32 @@ def _load_verified_shard(
                 f"Shard {expected_shard_id} event ordinal {int(ordinal)} has "
                 "multiple event keys"
             )
-    selected_event_count = int(np.unique(event_ordinal).size)
-    if provenance_sharding.get("selected_event_count") != selected_event_count:
-        raise ValueError(f"Shard {expected_shard_id} selected_event_count mismatch")
-    if selection.get("selected_events") != selected_event_count:
+    selected_event_occurrences = int(np.unique(event_ordinal).size)
+    if (
+        provenance_sharding.get("selected_event_occurrences")
+        != selected_event_occurrences
+    ):
+        raise ValueError(
+            f"Shard {expected_shard_id} selected_event_occurrences mismatch"
+        )
+    selected_unique_event_keys = int(np.unique(arrays["event_key"]).size)
+    if (
+        provenance_sharding.get("selected_unique_event_keys")
+        != selected_unique_event_keys
+    ):
+        raise ValueError(
+            f"Shard {expected_shard_id} selected_unique_event_keys mismatch"
+        )
+    if selection.get("selected_events") != selected_unique_event_keys:
         raise ValueError(f"Shard {expected_shard_id} selected_events mismatch")
-    if summary.get("counts", {}).get("events") != np.unique(arrays["event_key"]).size:
+    if (
+        selection.get("selected_event_occurrences")
+        != selected_event_occurrences
+    ):
+        raise ValueError(
+            f"Shard {expected_shard_id} selection occurrence count mismatch"
+        )
+    if summary.get("counts", {}).get("events") != selected_unique_event_keys:
         raise ValueError(f"Shard {expected_shard_id} event count mismatch")
     return {
         "prefix": prefix,
@@ -290,9 +314,12 @@ def merge_shards(
 
     sharding = reference["provenance"]["event_sharding"]
     dataset_samples = int(reference["summary"]["selection"]["dataset_realtime_samples"])
-    dataset_events = sharding.get("dataset_event_count")
+    dataset_event_occurrences = sharding.get("dataset_event_occurrences")
     samples_per_event = int(sharding["samples_per_event"])
-    if dataset_events is None or int(dataset_events) * samples_per_event != dataset_samples:
+    if (
+        dataset_event_occurrences is None
+        or int(dataset_event_occurrences) * samples_per_event != dataset_samples
+    ):
         raise ValueError("Shard metadata has an inconsistent full dataset size")
     expected_indices = np.arange(dataset_samples, dtype=np.int64)
     if not np.array_equal(merged_arrays["event_index"], expected_indices):
@@ -314,8 +341,11 @@ def merge_shards(
         "num_event_shards": int(num_shards),
         "event_shard_id": None,
         "samples_per_event": samples_per_event,
-        "dataset_event_count": int(dataset_events),
-        "selected_event_count": int(dataset_events),
+        "dataset_event_occurrences": int(dataset_event_occurrences),
+        "selected_event_occurrences": int(dataset_event_occurrences),
+        "selected_unique_event_keys": int(
+            np.unique(merged_arrays["event_key"]).size
+        ),
     }
     provenance["merge"] = {
         "tool": querydiag.file_provenance(Path(__file__), compute_sha256=True),
@@ -356,7 +386,8 @@ def merge_shards(
     summary["selection"].update({
         "examined_realtime_samples": dataset_samples,
         "max_events": 0,
-        "selected_events": int(dataset_events),
+        "selected_events": int(np.unique(merged_arrays["event_key"]).size),
+        "selected_event_occurrences": int(dataset_event_occurrences),
         "event_sharding": copy.deepcopy(provenance["event_sharding"]),
     })
     summary["resolved_validation_generators"] = copy.deepcopy(reference_protocol)
