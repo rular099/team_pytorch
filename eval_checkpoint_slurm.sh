@@ -29,6 +29,9 @@
 #   EVAL_OUTPUT_TXT    Optional stdout/stderr path; only valid with EVAL_CHECKPOINT
 #   EVAL_OUTPUT_NPZ    Optional npz path; only valid with EVAL_CHECKPOINT
 #   EVAL_OUTPUT_SUFFIX Optional suffix for default eval_results_<label> outputs
+#   EVAL_PREFER_REQUESTED_CONFIG Use the requested config even if weight_dir/config.json exists
+#   EXPECTED_CHECKPOINT_EPOCH Optional integer; abort if checkpoint epoch differs
+#   SLURM_DEPENDENCY   Optional Slurm dependency, e.g. afterok:12345
 #   CONDA_ENV          Conda env name to activate after module loading
 #   MODULE_UNLOAD      Optional module to unload
 #   MODULE_LOADS       Space-separated modules to load
@@ -56,6 +59,14 @@ DITING_PRETRAINED=${DITING_PRETRAINED:-/public/home/test_bigmodel/seismogram/mx/
 CONDA_ENV=${CONDA_ENV:-lsm_env}
 MODULE_UNLOAD=${MODULE_UNLOAD:-compiler/rocm/2.9}
 MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04 apps/miniconda/3"}
+EXPECTED_CHECKPOINT_EPOCH=${EXPECTED_CHECKPOINT_EPOCH:-}
+SLURM_DEPENDENCY=${SLURM_DEPENDENCY:-}
+EVAL_PREFER_REQUESTED_CONFIG=${EVAL_PREFER_REQUESTED_CONFIG:-0}
+
+if [[ -n "$EXPECTED_CHECKPOINT_EPOCH" && ! "$EXPECTED_CHECKPOINT_EPOCH" =~ ^[0-9]+$ ]]; then
+    echo "EXPECTED_CHECKPOINT_EPOCH must be a non-negative integer; got: $EXPECTED_CHECKPOINT_EPOCH" >&2
+    exit 2
+fi
 
 resolve_path() {
     local p=$1
@@ -132,6 +143,12 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
     if [[ -n "${EVAL_OUTPUT_SUFFIX:-}" ]]; then
         EXPORT_VARS+=("EVAL_OUTPUT_SUFFIX=$EVAL_OUTPUT_SUFFIX")
     fi
+    if [[ -n "$EXPECTED_CHECKPOINT_EPOCH" ]]; then
+        EXPORT_VARS+=("EXPECTED_CHECKPOINT_EPOCH=$EXPECTED_CHECKPOINT_EPOCH")
+    fi
+    if [[ "$EVAL_PREFER_REQUESTED_CONFIG" == "1" ]]; then
+        EXPORT_VARS+=("EVAL_PREFER_REQUESTED_CONFIG=1")
+    fi
     SBATCH_CMD=(
         sbatch
         --job-name="$JOB_NAME"
@@ -145,9 +162,11 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
         --output="$SLURM_LOG_DIR/%x-%j.out"
         --error="$SLURM_LOG_DIR/%x-%j.err"
         --export="$(IFS=,; echo "ALL,${EXPORT_VARS[*]}")"
-        "$SCRIPT_PATH"
-        "$CONFIG"
     )
+    if [[ -n "$SLURM_DEPENDENCY" ]]; then
+        SBATCH_CMD+=(--dependency="$SLURM_DEPENDENCY")
+    fi
+    SBATCH_CMD+=("$SCRIPT_PATH" "$CONFIG")
     if ((EXTRA_ARG_COUNT > 0)); then
         SBATCH_CMD+=("${EXTRA_ARGS[@]}")
     fi
@@ -214,7 +233,37 @@ if [[ -n "${CONDA_ENV:-}" ]]; then
     fi
 fi
 
-WEIGHT_PATH=$(python -c 'import json, sys; print(json.load(open(sys.argv[1]))["training_params"]["weight_path"])' "$CONFIG")
+if [[ -n "$EXPECTED_CHECKPOINT_EPOCH" ]]; then
+    if [[ -z "${EVAL_CHECKPOINT:-}" || ! -f "$EVAL_CHECKPOINT" ]]; then
+        echo "EXPECTED_CHECKPOINT_EPOCH requires an existing EVAL_CHECKPOINT: ${EVAL_CHECKPOINT:-<unset>}" >&2
+        exit 1
+    fi
+    python - "$EVAL_CHECKPOINT" "$EXPECTED_CHECKPOINT_EPOCH" <<'PY'
+import sys
+import torch
+
+checkpoint_path, expected_text = sys.argv[1:]
+checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
+if not isinstance(checkpoint, dict) or 'epoch' not in checkpoint:
+    raise SystemExit(f'Checkpoint has no epoch metadata: {checkpoint_path}')
+actual = int(checkpoint['epoch'])
+expected = int(expected_text)
+if actual != expected:
+    raise SystemExit(
+        f'Checkpoint epoch mismatch: expected {expected}, got {actual}: {checkpoint_path}'
+    )
+print(f'[OK] checkpoint epoch verified: {actual}')
+PY
+fi
+
+WEIGHT_PATH=$(python -c '
+import json, os, sys
+value = json.load(open(sys.argv[1]))["training_params"]["weight_path"]
+value = os.path.expanduser(os.path.expandvars(value))
+if "$" in value:
+    raise SystemExit("Unresolved environment variable in weight_path: " + value)
+print(value)
+' "$CONFIG")
 if [[ -z "$WEIGHT_PATH" || "$WEIGHT_PATH" == "/" || "$WEIGHT_PATH" == "." || "$WEIGHT_PATH" == ".." ]]; then
     echo "Unsafe weight_path in config: '$WEIGHT_PATH'" >&2
     exit 1
@@ -231,7 +280,7 @@ RUN_LOG_DIR=${RUN_LOG_DIR:-"$WORKDIR/logs/$WEIGHT_LOG_NAME"}
 
 mkdir -p "$RUN_LOG_DIR"
 RUN_CONFIG="$CONFIG"
-if [[ -f "$WEIGHT_DIR/config.json" ]]; then
+if [[ "$EVAL_PREFER_REQUESTED_CONFIG" != "1" && -f "$WEIGHT_DIR/config.json" ]]; then
     RUN_CONFIG="$WEIGHT_DIR/config.json"
 fi
 cp "$RUN_CONFIG" "$RUN_LOG_DIR/config.json"
@@ -254,7 +303,7 @@ if [[ -z "${EVAL_SINGLE_STATION_CHECKPOINT:-}" && "$SINGLE_STATION_ENABLED" == "
 fi
 
 EVAL_CONFIG="$CONFIG"
-if [[ -f "$WEIGHT_DIR/config.json" ]]; then
+if [[ "$EVAL_PREFER_REQUESTED_CONFIG" != "1" && -f "$WEIGHT_DIR/config.json" ]]; then
     EVAL_CONFIG="$WEIGHT_DIR/config.json"
 fi
 

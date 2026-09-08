@@ -1047,14 +1047,167 @@ class TargetConditionedTemporalPool(nn.Module):
         return self.out_proj(pooled)
 
 
+class StationDistinctiveTokenAdapter(nn.Module):
+    """Build station-specific representations from temporal tokens and raw scale cues."""
+
+    def __init__(self, token_dim, station_dim=256, attention_queries=4,
+                 temporal_dilations=(1, 4), amplitude_feature_dim=11,
+                 duration_feature_dim=2, hidden_dim=512, detach_event_mean=True,
+                 use_amplitude_features=True, use_duration_features=True,
+                 common_residual_decomposition=True):
+        super().__init__()
+        self.token_dim = int(token_dim)
+        self.station_dim = int(station_dim)
+        self.amplitude_feature_dim = int(amplitude_feature_dim)
+        self.duration_feature_dim = int(duration_feature_dim)
+        self.detach_event_mean = bool(detach_event_mean)
+        self.use_amplitude_features = bool(use_amplitude_features)
+        self.use_duration_features = bool(use_duration_features)
+        self.common_residual_decomposition = bool(common_residual_decomposition)
+        self.input_norm = nn.LayerNorm(self.token_dim)
+        self.temporal_blocks = nn.ModuleList([
+            MaskedDepthwiseSeparableBlock1d(
+                self.token_dim,
+                kernel_size=3,
+                dilation=int(dilation),
+            )
+            for dilation in temporal_dilations
+        ])
+        for block in self.temporal_blocks:
+            block.reset_parameters()
+        self.attention_pool = AttentionPool1d(
+            self.token_dim,
+            num_queries=int(attention_queries),
+        )
+        summary_dim = (
+            (2 + int(attention_queries)) * self.token_dim
+            + self.amplitude_feature_dim
+            + self.duration_feature_dim
+        )
+        self.summary_mlp = nn.Sequential(
+            nn.Linear(summary_dim, int(hidden_dim)),
+            nn.GELU(),
+            nn.Linear(int(hidden_dim), self.station_dim),
+            nn.LayerNorm(self.station_dim),
+        )
+        self.local_residual_head = nn.Sequential(
+            nn.Linear(self.station_dim, self.station_dim // 2),
+            nn.GELU(),
+            nn.Linear(self.station_dim // 2, 1),
+        )
+        self.local_absolute_head = nn.Sequential(
+            nn.Linear(self.station_dim, self.station_dim // 2),
+            nn.GELU(),
+            nn.Linear(self.station_dim // 2, 1),
+        )
+        for module in (self.summary_mlp, self.local_residual_head, self.local_absolute_head):
+            for layer in module.modules():
+                if isinstance(layer, nn.Linear):
+                    nn.init.zeros_(layer.bias)
+
+    @staticmethod
+    def _station_token_mask(station_tokens, station_valid, station_token_mask):
+        bsz, n_station, token_len, _ = station_tokens.shape
+        if station_token_mask is None:
+            return station_valid.bool().unsqueeze(-1).expand(bsz, n_station, token_len)
+        flat_mask = station_token_mask.reshape(bsz * n_station, -1)
+        flat_mask = AttentionPool1d._coerce_token_mask(
+            flat_mask,
+            token_len,
+            station_tokens.device,
+        )
+        return flat_mask.reshape(bsz, n_station, token_len) & station_valid.bool().unsqueeze(-1)
+
+    def forward(self, station_tokens, station_valid, amplitude_features=None,
+                duration_features=None, station_token_mask=None):
+        bsz, n_station, token_len, token_dim = station_tokens.shape
+        if token_dim != self.token_dim:
+            raise ValueError(
+                f'Expected station token dim {self.token_dim}, got {token_dim}.'
+            )
+        station_valid = station_valid.bool()
+        token_mask = self._station_token_mask(
+            station_tokens,
+            station_valid,
+            station_token_mask,
+        )
+        flat_mask = token_mask.reshape(bsz * n_station, token_len)
+        tokens = self.input_norm(station_tokens.float())
+        temporal = tokens.reshape(bsz * n_station, token_len, token_dim).transpose(1, 2).contiguous()
+        temporal = temporal * flat_mask.unsqueeze(1).to(temporal.dtype)
+        for block in self.temporal_blocks:
+            temporal = block(temporal, token_mask=flat_mask)
+        mean, std = _masked_temporal_mean_std(temporal, flat_mask)
+        attended = self.attention_pool(temporal, token_mask=flat_mask)
+
+        if amplitude_features is None:
+            amplitude_features = temporal.new_zeros(
+                bsz, n_station, self.amplitude_feature_dim
+            )
+        if duration_features is None:
+            duration_features = temporal.new_zeros(
+                bsz, n_station, self.duration_feature_dim
+            )
+        amplitude_features = amplitude_features.to(temporal.dtype)
+        duration_features = duration_features.to(temporal.dtype)
+        if amplitude_features.shape[-1] != self.amplitude_feature_dim:
+            raise ValueError(
+                f'Expected amplitude feature dim {self.amplitude_feature_dim}, '
+                f'got {amplitude_features.shape[-1]}.'
+            )
+        if duration_features.shape[-1] != self.duration_feature_dim:
+            raise ValueError(
+                f'Expected duration feature dim {self.duration_feature_dim}, '
+                f'got {duration_features.shape[-1]}.'
+            )
+        if not self.use_amplitude_features:
+            amplitude_features = torch.zeros_like(amplitude_features)
+        if not self.use_duration_features:
+            duration_features = torch.zeros_like(duration_features)
+        summary = torch.cat([
+            mean.reshape(bsz, n_station, -1),
+            std.reshape(bsz, n_station, -1),
+            attended.reshape(bsz, n_station, -1),
+            amplitude_features,
+            duration_features,
+        ], dim=-1)
+        u = self.summary_mlp(summary)
+        u = u * station_valid.unsqueeze(-1).to(u.dtype)
+        valid_f = station_valid.unsqueeze(-1).to(u.dtype)
+        event_u = (u * valid_f).sum(dim=1) / valid_f.sum(dim=1).clamp_min(1.0)
+        if self.common_residual_decomposition:
+            residual_mean = event_u.detach() if self.detach_event_mean else event_u
+            d = (u - residual_mean.unsqueeze(1)) * valid_f
+        else:
+            d = u
+        local_residual = self.local_residual_head(d).squeeze(-1) * station_valid.to(u.dtype)
+        local_absolute = self.local_absolute_head(u).squeeze(-1) * station_valid.to(u.dtype)
+        processed_tokens = temporal.transpose(1, 2).reshape(
+            bsz, n_station, token_len, token_dim
+        )
+        return u, d, event_u, processed_tokens, token_mask, local_residual, local_absolute
+
+
 class PGATemporalResidualHead(nn.Module):
     """Residual PGA correction from target-conditioned pooling over raw time tokens."""
 
     def __init__(self, token_dim, emb_dim, output_mlp_dims, activation='relu',
                  hidden_dim=256, geom_hidden_dim=128, time_basis=32,
                  temporal_token_dim=None, zero_init=True, token_weight_floor=1e-6,
-                 token_weight_scale=1.0):
+                 token_weight_scale=1.0, station_distinctive_adapter=False,
+                 station_distinctive_dim=256, station_distinctive_attention_queries=4,
+                 station_distinctive_temporal_dilations=(1, 4),
+                 station_distinctive_amplitude_feature_dim=11,
+                 station_distinctive_duration_feature_dim=2,
+                 station_distinctive_hidden_dim=512,
+                 station_distinctive_detach_event_mean=True,
+                 station_distinctive_use_amplitude_features=True,
+                 station_distinctive_use_duration_features=True,
+                 station_distinctive_common_residual_decomposition=True,
+                 pair_value_enabled=True, pair_value_gate_init=0.0):
         super().__init__()
+        self.station_distinctive_enabled = bool(station_distinctive_adapter)
+        self.pair_value_enabled = bool(pair_value_enabled)
         self.temporal_pool = TargetConditionedTemporalPool(
             token_dim=token_dim,
             emb_dim=emb_dim,
@@ -1065,30 +1218,208 @@ class PGATemporalResidualHead(nn.Module):
             token_weight_floor=token_weight_floor,
             token_weight_scale=token_weight_scale,
         )
+        self.station_distinctive_adapter = None
+        if self.station_distinctive_enabled:
+            temporal_dim = self.temporal_pool.token_dim
+            station_dim = int(station_distinctive_dim)
+            pair_hidden_dim = int(hidden_dim)
+            self.station_distinctive_adapter = StationDistinctiveTokenAdapter(
+                token_dim=temporal_dim,
+                station_dim=station_dim,
+                attention_queries=station_distinctive_attention_queries,
+                temporal_dilations=station_distinctive_temporal_dilations,
+                amplitude_feature_dim=station_distinctive_amplitude_feature_dim,
+                duration_feature_dim=station_distinctive_duration_feature_dim,
+                hidden_dim=station_distinctive_hidden_dim,
+                detach_event_mean=station_distinctive_detach_event_mean,
+                use_amplitude_features=station_distinctive_use_amplitude_features,
+                use_duration_features=station_distinctive_use_duration_features,
+                common_residual_decomposition=(
+                    station_distinctive_common_residual_decomposition
+                ),
+            )
+            self.distinctive_geom_proj = nn.Sequential(
+                nn.Linear(10, int(geom_hidden_dim)),
+                nn.GELU(),
+                nn.Linear(int(geom_hidden_dim), int(geom_hidden_dim)),
+            )
+            pair_input_dim = 2 * int(emb_dim) + 2 * station_dim + int(geom_hidden_dim)
+            self.distinctive_pair_mlp = nn.Sequential(
+                nn.Linear(pair_input_dim, pair_hidden_dim),
+                nn.GELU(),
+                nn.Linear(pair_hidden_dim, pair_hidden_dim),
+                nn.LayerNorm(pair_hidden_dim),
+            )
+            self.distinctive_temporal_key = nn.Linear(temporal_dim, pair_hidden_dim)
+            self.distinctive_temporal_value = nn.Linear(temporal_dim, pair_hidden_dim)
+            self.distinctive_temporal_query = nn.Linear(pair_hidden_dim, pair_hidden_dim)
+            self.distinctive_time_query = nn.Linear(pair_hidden_dim, int(time_basis))
+            self.distinctive_pair_value = nn.Sequential(
+                nn.Linear(pair_hidden_dim, pair_hidden_dim),
+                nn.GELU(),
+                nn.Linear(pair_hidden_dim, pair_hidden_dim),
+            )
+            self.distinctive_pair_value_gate = nn.Parameter(
+                torch.tensor(float(pair_value_gate_init))
+            )
+            self.distinctive_station_scorer = nn.Sequential(
+                nn.Linear(pair_hidden_dim, pair_hidden_dim // 2),
+                nn.GELU(),
+                nn.Linear(pair_hidden_dim // 2, 1),
+            )
+            self.distinctive_out_proj = nn.Linear(pair_hidden_dim, emb_dim)
         self.mlp = MLP((emb_dim,), output_mlp_dims, activation=activation)
         self.output_model = PointOutput((output_mlp_dims[-1],), d=1, bias_mu=0, activation=None)
         if zero_init:
             nn.init.zeros_(self.output_model.mu.weight)
             nn.init.zeros_(self.output_model.mu.bias)
         self._last_delta = None
+        self._last_station_u = None
+        self._last_station_d = None
+        self._last_station_local_residual_pred = None
+        self._last_station_local_absolute_pred = None
+        self._last_diag = {}
 
     def compress_tokens(self, station_tokens):
         return self.temporal_pool.compress_tokens(station_tokens, normalize=False)
 
     def forward(self, query, station_tokens, station_emb, station_valid,
                 query_coords, station_coords, event_emb=None, station_attn=None,
-                station_token_weights=None):
-        context = self.temporal_pool(
-            query,
-            station_tokens,
-            station_emb,
-            station_valid,
-            query_coords,
-            station_coords,
-            event_emb,
-            station_attn=station_attn,
-            station_token_weights=station_token_weights,
-        )
+                station_token_weights=None, station_token_mask=None,
+                amplitude_features=None, duration_features=None):
+        if self.station_distinctive_adapter is None:
+            context = self.temporal_pool(
+                query,
+                station_tokens,
+                station_emb,
+                station_valid,
+                query_coords,
+                station_coords,
+                event_emb,
+                station_attn=station_attn,
+                station_token_weights=station_token_weights,
+            )
+            self._last_station_u = None
+            self._last_station_d = None
+            self._last_station_local_residual_pred = None
+            self._last_station_local_absolute_pred = None
+            self._last_diag = {}
+        else:
+            if event_emb is None:
+                event_emb = query.new_zeros(query.shape[0], self.temporal_pool.emb_dim)
+            (
+                station_u,
+                station_d,
+                _station_event_u,
+                processed_tokens,
+                token_mask,
+                local_residual,
+                local_absolute,
+            ) = self.station_distinctive_adapter(
+                station_tokens,
+                station_valid,
+                amplitude_features=amplitude_features,
+                duration_features=duration_features,
+                station_token_mask=station_token_mask,
+            )
+            geometry = TargetConditionedTemporalPool._geometry_features(
+                query_coords.float(),
+                station_coords.float(),
+            )
+            bsz, n_target, n_station, _ = geometry.shape
+            pair_input = torch.cat([
+                query.float()[:, :, None, :].expand(-1, -1, n_station, -1),
+                event_emb.float()[:, None, None, :].expand(-1, n_target, n_station, -1),
+                station_u[:, None, :, :].expand(-1, n_target, -1, -1),
+                station_d[:, None, :, :].expand(-1, n_target, -1, -1),
+                self.distinctive_geom_proj(geometry),
+            ], dim=-1)
+            pair = self.distinctive_pair_mlp(pair_input)
+            temporal_key = self.distinctive_temporal_key(processed_tokens)
+            temporal_value = self.distinctive_temporal_value(processed_tokens)
+            temporal_query = self.distinctive_temporal_query(pair)
+            temporal_scores = torch.einsum(
+                'bnsh,bsth->bnst', temporal_query, temporal_key
+            ) / math.sqrt(temporal_key.shape[-1])
+            time_features = self.temporal_pool._time_features(
+                processed_tokens.shape[2],
+                temporal_scores.device,
+                temporal_scores.dtype,
+            )
+            temporal_scores = temporal_scores + torch.einsum(
+                'bnsr,tr->bnst',
+                self.distinctive_time_query(pair).to(temporal_scores.dtype),
+                time_features,
+            )
+            safe_token_mask = token_mask.clone()
+            empty_token_rows = ~safe_token_mask.any(dim=-1)
+            if empty_token_rows.any():
+                safe_token_mask[empty_token_rows, 0] = True
+            temporal_scores = temporal_scores.masked_fill(
+                ~safe_token_mask[:, None, :, :],
+                torch.finfo(temporal_scores.dtype).min,
+            )
+            temporal_weights = torch.softmax(temporal_scores, dim=-1)
+            temporal_context = torch.einsum(
+                'bnst,bsth->bnsh', temporal_weights, temporal_value
+            )
+            temporal_context = temporal_context * station_valid[:, None, :, None].to(
+                temporal_context.dtype
+            )
+            pair_value = self.distinctive_pair_value(pair)
+            pair_gate = (
+                torch.sigmoid(self.distinctive_pair_value_gate)
+                if self.pair_value_enabled
+                else pair.new_tensor(0.0)
+            )
+            station_message = temporal_context + pair_gate * pair_value
+            station_scores = self.distinctive_station_scorer(pair).squeeze(-1)
+            safe_station_valid = station_valid.bool().clone()
+            empty_station_rows = ~safe_station_valid.any(dim=-1)
+            if empty_station_rows.any():
+                safe_station_valid[empty_station_rows, 0] = True
+            station_scores = station_scores.masked_fill(
+                ~safe_station_valid[:, None, :],
+                torch.finfo(station_scores.dtype).min,
+            )
+            station_weights = torch.softmax(station_scores, dim=-1)
+            station_weights = station_weights * station_valid[:, None, :].to(station_weights.dtype)
+            station_weights = station_weights / station_weights.sum(
+                dim=-1, keepdim=True
+            ).clamp_min(1e-8)
+            context = self.distinctive_out_proj(
+                torch.einsum('bns,bnsh->bnh', station_weights, station_message)
+            )
+            self._last_station_u = station_u
+            self._last_station_d = station_d
+            self._last_station_local_residual_pred = local_residual
+            self._last_station_local_absolute_pred = local_absolute
+            valid = station_valid.bool()
+            temporal_norm = temporal_context[valid[:, None, :].expand(-1, n_target, -1)].norm(
+                dim=-1
+            ).mean() if valid.any() else temporal_context.new_tensor(0.0)
+            pair_norm = pair_value[valid[:, None, :].expand(-1, n_target, -1)].norm(
+                dim=-1
+            ).mean() if valid.any() else pair_value.new_tensor(0.0)
+            entropy = -(
+                station_weights.clamp_min(1e-8)
+                * station_weights.clamp_min(1e-8).log()
+            ).sum(dim=-1).mean()
+            self._last_diag = {
+                'station_distinctive_temporal_value_norm': temporal_norm.detach(),
+                'station_distinctive_pair_value_norm': pair_norm.detach(),
+                'station_distinctive_pair_temporal_norm_ratio': (
+                    pair_norm / (temporal_norm + 1e-8)
+                ).detach(),
+                'station_distinctive_pair_value_gate': pair_gate.detach(),
+                'station_distinctive_station_weight_entropy': entropy.detach(),
+                'station_distinctive_temporal_effective_token_count': torch.exp(
+                    -(
+                        temporal_weights.clamp_min(1e-8)
+                        * temporal_weights.clamp_min(1e-8).log()
+                    ).sum(dim=-1)
+                ).mean().detach(),
+            }
         delta = self.output_model(self.mlp(context))
         self._last_delta = delta
         return delta
@@ -3354,6 +3685,10 @@ class FullModel(nn.Module):
         self._last_wave_station_emb = None
         self._last_station_residual_emb = None
         self._last_station_local_pga_pred = None
+        self._last_station_distinctive_u = None
+        self._last_station_distinctive_d = None
+        self._last_station_distinctive_local_residual_pred = None
+        self._last_station_distinctive_local_absolute_pred = None
         self.pga_use_event_context = bool(pga_use_event_context)
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
@@ -3425,10 +3760,19 @@ class FullModel(nn.Module):
                 "pga_temporal_residual_query_source must be 'readout' or 'target_query', "
                 f"got {self.pga_temporal_residual_query_source!r}."
             )
-        if self.pga_temporal_residual_station_weighting not in ('attention', 'uniform'):
+        if self.pga_temporal_residual_station_weighting not in ('attention', 'uniform', 'learned_pair'):
             raise ValueError(
-                "pga_temporal_residual_station_weighting must be 'attention' or 'uniform', "
+                "pga_temporal_residual_station_weighting must be 'attention', 'uniform', or "
+                "'learned_pair', "
                 f"got {self.pga_temporal_residual_station_weighting!r}."
+            )
+        if (
+            self.pga_temporal_residual_station_weighting == 'learned_pair'
+            and not getattr(self.pga_temporal_residual_head, 'station_distinctive_enabled', False)
+        ):
+            raise ValueError(
+                'pga_temporal_residual_station_weighting=learned_pair requires '
+                'station_distinctive_adapter=true.'
             )
         if self.pga_temporal_residual_mode not in ('residual', 'absolute'):
             raise ValueError(
@@ -3680,6 +4024,29 @@ class FullModel(nn.Module):
         if not vals:
             return x.new_tensor(float('nan'))
         return torch.stack(vals).mean()
+
+    @staticmethod
+    def _masked_station_effective_rank(x, mask):
+        """Participation-ratio rank from the station Gram matrix."""
+        ranks = []
+        with torch.no_grad():
+            for sample, valid in zip(x.detach().float(), mask.bool()):
+                vectors = sample[valid]
+                if vectors.shape[0] < 2:
+                    continue
+                centered = vectors - vectors.mean(dim=0, keepdim=True)
+                gram = centered @ centered.T
+                spectral_sum = torch.diagonal(gram).sum()
+                spectral_square_sum = gram.square().sum()
+                if spectral_square_sum <= 0:
+                    ranks.append(gram.new_tensor(0.0))
+                    continue
+                ranks.append(
+                    spectral_sum.square() / spectral_square_sum.clamp_min(1e-12)
+                )
+        if not ranks:
+            return x.new_tensor(float('nan'))
+        return torch.stack(ranks).mean().to(x.device)
 
     @staticmethod
     def _masked_event_residual(x, mask):
@@ -4335,6 +4702,19 @@ class FullModel(nn.Module):
         # by retaining channel-wise std/rms/peak plus station-level summaries.
         return extract_waveform_scale_features(waveform)
 
+    @staticmethod
+    def _waveform_duration_features(waveform_padding_mask, station_valid,
+                                    waveform_length, dtype):
+        station_valid = station_valid.bool()
+        if waveform_padding_mask is None:
+            valid_count = station_valid.to(dtype) * float(waveform_length)
+        else:
+            valid_count = waveform_padding_mask.to(dtype).sum(dim=-1)
+        valid_fraction = valid_count / max(float(waveform_length), 1.0)
+        log_duration = torch.log1p(valid_count) / math.log1p(max(int(waveform_length), 1))
+        features = torch.stack([valid_fraction, log_duration], dim=-1)
+        return features * station_valid.unsqueeze(-1).to(dtype)
+
     def _compress_station_temporal_tokens(self, tokens):
         if self.pga_temporal_residual_head is not None:
             return self.pga_temporal_residual_head.compress_tokens(tokens)
@@ -4590,8 +4970,15 @@ class FullModel(nn.Module):
         preln_wave_emb = raw_station_emb
         waveforms_emb = self.layernorm(preln_wave_emb)
         base_waveforms_emb = waveforms_emb
-        if self.waveform_scale_proj is not None and self.use_amplitude_info:
+        distinctive_inputs_required = bool(
+            self.pga_temporal_residual_head is not None
+            and getattr(self.pga_temporal_residual_head, 'station_distinctive_enabled', False)
+        )
+        if (self.waveform_scale_proj is not None and self.use_amplitude_info) or distinctive_inputs_required:
             scale_features = self._extract_scale_features(raw_waveform)
+        else:
+            scale_features = None
+        if self.waveform_scale_proj is not None and self.use_amplitude_info:
             scale_emb = self.waveform_scale_proj(scale_features)
             gain_scale_emb = (
                 self.waveform_scale_gain
@@ -4601,7 +4988,6 @@ class FullModel(nn.Module):
             )
             waveforms_emb = waveforms_emb + gain_scale_emb
         else:
-            scale_features = None
             gain_scale_emb = None
 
         residual_source_emb = raw_station_emb if self.station_residual_source == 'raw' else waveforms_emb
@@ -5011,6 +5397,30 @@ class FullModel(nn.Module):
                     temporal_event_emb,
                     station_attn=station_attn,
                     station_token_weights=station_temporal_token_weights,
+                    station_token_mask=waveform_padding_mask,
+                    amplitude_features=scale_features,
+                    duration_features=self._waveform_duration_features(
+                        waveform_padding_mask,
+                        sv,
+                        waveform_inp.shape[-1],
+                        station_temporal_tokens.dtype,
+                    ),
+                )
+                self._last_station_distinctive_u = getattr(
+                    self.pga_temporal_residual_head, '_last_station_u', None
+                )
+                self._last_station_distinctive_d = getattr(
+                    self.pga_temporal_residual_head, '_last_station_d', None
+                )
+                self._last_station_distinctive_local_residual_pred = getattr(
+                    self.pga_temporal_residual_head,
+                    '_last_station_local_residual_pred',
+                    None,
+                )
+                self._last_station_distinctive_local_absolute_pred = getattr(
+                    self.pga_temporal_residual_head,
+                    '_last_station_local_absolute_pred',
+                    None,
                 )
                 base_point = self._pga_point_mean_from_output(output_pga)
                 self._last_pga_temporal_base = base_point
@@ -5029,6 +5439,20 @@ class FullModel(nn.Module):
                 base_abs = self._last_pga_temporal_base.abs().mean()
                 self._last_diag['pga_temporal_delta_abs_mean'] = delta_abs.detach()
                 self._last_diag['pga_temporal_delta_std'] = temporal_delta.std(unbiased=False).detach()
+                delta_valid = temporal_delta.squeeze(-1)
+                if pga_target_valid is not None:
+                    delta_valid = delta_valid[pga_target_valid.bool()]
+                else:
+                    delta_valid = delta_valid.reshape(-1)
+                if delta_valid.numel():
+                    self._last_diag['pga_temporal_delta_mean'] = delta_valid.mean().detach()
+                    self._last_diag['pga_temporal_delta_valid_std'] = (
+                        delta_valid.std(unbiased=False).detach()
+                    )
+                    self._last_diag['pga_temporal_delta_p95_p05_range'] = (
+                        torch.quantile(delta_valid.float(), 0.95)
+                        - torch.quantile(delta_valid.float(), 0.05)
+                    ).detach()
                 self._last_diag['pga_temporal_delta_base_abs_ratio'] = (
                     delta_abs / (base_abs + 1e-8)
                 ).detach()
@@ -5036,7 +5460,11 @@ class FullModel(nn.Module):
                     0.0 if self.pga_temporal_residual_query_source == 'readout' else 1.0
                 ).detach()
                 self._last_diag['pga_temporal_station_weighting'] = output_pga.new_tensor(
-                    0.0 if self.pga_temporal_residual_station_weighting == 'attention' else 1.0
+                    {
+                        'attention': 0.0,
+                        'uniform': 1.0,
+                        'learned_pair': 2.0,
+                    }[self.pga_temporal_residual_station_weighting]
                 ).detach()
                 self._last_diag['pga_temporal_event_context_enabled'] = output_pga.new_tensor(
                     1.0 if self.pga_temporal_residual_use_event_context else 0.0
@@ -5073,6 +5501,31 @@ class FullModel(nn.Module):
                     self._last_diag['pga_temporal_station_weight_entropy'] = (
                         temporal_pool._last_station_weight_entropy
                     )
+                for key, value in getattr(self.pga_temporal_residual_head, '_last_diag', {}).items():
+                    if torch.is_tensor(value):
+                        self._last_diag[key] = value.detach()
+                if self._last_station_distinctive_u is not None:
+                    station_u = self._last_station_distinctive_u
+                    station_d = self._last_station_distinctive_d
+                    self._last_diag['station_distinctive_u_cosine_mean'] = (
+                        self._masked_pairwise_cosine_mean(station_u, sv).detach()
+                    )
+                    self._last_diag['station_distinctive_d_cosine_mean'] = (
+                        self._masked_pairwise_cosine_mean(station_d, sv).detach()
+                    )
+                    self._last_diag['station_distinctive_u_effective_rank'] = (
+                        self._masked_station_effective_rank(station_u, sv).detach()
+                    )
+                    self._last_diag['station_distinctive_d_effective_rank'] = (
+                        self._masked_station_effective_rank(station_d, sv).detach()
+                    )
+                    u_norm = station_u[sv].norm(dim=-1).mean() if sv.any() else station_u.new_tensor(0.0)
+                    d_norm = station_d[sv].norm(dim=-1).mean() if sv.any() else station_d.new_tensor(0.0)
+                    self._last_diag['station_distinctive_u_norm'] = u_norm.detach()
+                    self._last_diag['station_distinctive_d_norm'] = d_norm.detach()
+                    self._last_diag['station_distinctive_d_u_norm_ratio'] = (
+                        d_norm / (u_norm + 1e-8)
+                    ).detach()
             output_pga = self._apply_pga_vs30_site_affine(
                 output_pga,
                 pga_readout_emb,
@@ -5094,6 +5547,10 @@ class FullModel(nn.Module):
         # added to output_layout, so normal mag/loc/PGA parsing is unchanged.
         if self._last_station_local_pga_pred is not None:
             outputs.append(self._last_station_local_pga_pred)
+        if self._last_station_distinctive_local_residual_pred is not None:
+            outputs.append(self._last_station_distinctive_local_residual_pred)
+        if self._last_station_distinctive_local_absolute_pred is not None:
+            outputs.append(self._last_station_distinctive_local_absolute_pred)
 
         return outputs
 
@@ -5388,6 +5845,19 @@ def build_transformer_model(max_stations,
                             pga_temporal_residual_use_event_context=True,
                             pga_temporal_residual_mode='residual',
                             pga_temporal_residual_token_control='none',
+                            station_distinctive_adapter=False,
+                            station_distinctive_use_amplitude_features=True,
+                            station_distinctive_use_duration_features=True,
+                            station_distinctive_common_residual_decomposition=True,
+                            temporal_pool_pair_value_enabled=True,
+                            pga_temporal_residual_station_distinctive_dim=256,
+                            pga_temporal_residual_station_distinctive_attention_queries=4,
+                            pga_temporal_residual_station_distinctive_temporal_dilations=(1, 4),
+                            pga_temporal_residual_station_distinctive_amplitude_feature_dim=11,
+                            pga_temporal_residual_station_distinctive_duration_feature_dim=2,
+                            pga_temporal_residual_station_distinctive_hidden_dim=512,
+                            pga_temporal_residual_station_distinctive_detach_event_mean=True,
+                            pga_temporal_residual_pair_value_gate_init=0.0,
                             station_token_weight_mode='none',
                             temporal_token_weight_mode='none',
                             token_weight_floor=1e-6,
@@ -5606,6 +6076,37 @@ def build_transformer_model(max_stations,
             zero_init=pga_temporal_residual_zero_init,
             token_weight_floor=token_weight_floor,
             token_weight_scale=token_weight_scale,
+            station_distinctive_adapter=station_distinctive_adapter,
+            station_distinctive_dim=pga_temporal_residual_station_distinctive_dim,
+            station_distinctive_attention_queries=(
+                pga_temporal_residual_station_distinctive_attention_queries
+            ),
+            station_distinctive_temporal_dilations=(
+                pga_temporal_residual_station_distinctive_temporal_dilations
+            ),
+            station_distinctive_amplitude_feature_dim=(
+                pga_temporal_residual_station_distinctive_amplitude_feature_dim
+            ),
+            station_distinctive_duration_feature_dim=(
+                pga_temporal_residual_station_distinctive_duration_feature_dim
+            ),
+            station_distinctive_hidden_dim=(
+                pga_temporal_residual_station_distinctive_hidden_dim
+            ),
+            station_distinctive_detach_event_mean=(
+                pga_temporal_residual_station_distinctive_detach_event_mean
+            ),
+            station_distinctive_use_amplitude_features=(
+                station_distinctive_use_amplitude_features
+            ),
+            station_distinctive_use_duration_features=(
+                station_distinctive_use_duration_features
+            ),
+            station_distinctive_common_residual_decomposition=(
+                station_distinctive_common_residual_decomposition
+            ),
+            pair_value_enabled=temporal_pool_pair_value_enabled,
+            pair_value_gate_init=pga_temporal_residual_pair_value_gate_init,
         )
 
     pga_station_target_readout = None

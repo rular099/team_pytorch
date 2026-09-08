@@ -282,14 +282,23 @@ def apply_full_model_trainability(model, training_params, is_dist=False, rank=0)
     mode = training_params.get('freeze_mode', None)
     if mode in (None, '', 'none', 'default'):
         return
-    if mode != 'temporal_residual_only':
+    if mode not in ('temporal_residual_only', 'station_distinctive_residual_only'):
         raise ValueError(
             "training_params.freeze_mode must be one of 'none' or "
-            f"'temporal_residual_only', got {mode!r}."
+            "'temporal_residual_only' or 'station_distinctive_residual_only', "
+            f"got {mode!r}."
         )
     head = getattr(raw_model, 'pga_temporal_residual_head', None)
     if head is None:
-        raise ValueError('freeze_mode=temporal_residual_only requires use_pga_temporal_residual=true.')
+        raise ValueError(f'freeze_mode={mode} requires use_pga_temporal_residual=true.')
+    if (
+        mode == 'station_distinctive_residual_only'
+        and not getattr(head, 'station_distinctive_enabled', False)
+    ):
+        raise ValueError(
+            'freeze_mode=station_distinctive_residual_only requires '
+            'station_distinctive_adapter=true.'
+        )
     for param in raw_model.parameters():
         param.requires_grad = False
     for param in head.parameters():
@@ -1425,6 +1434,63 @@ def distribution_mean_aux_loss(outputs, labels, output_layout, res_comps, res_we
     )
 
 
+def pga_within_event_difference_aux_loss(outputs, labels, output_layout, pga_target_valid,
+                                         cfg, pga_target_normalization=None):
+    """Huber loss on all valid within-event target PGA differences."""
+    if not cfg or not cfg.get('enabled', False):
+        return None
+    weight = float(cfg.get('weight', 0.0))
+    if weight == 0.0 or 'pga' not in output_layout:
+        return None
+    selected_pred, selected_true = models.select_loss_components(
+        outputs,
+        labels,
+        output_layout,
+        ['pga'],
+    )
+    pred = models.mixture_mean_outputs(selected_pred, res_comps=['pga'])[0]
+    target = models._point_target_for_loss(selected_true[0], pred, d=1).to(
+        pred.device, dtype=pred.dtype
+    )
+    if _pga_norm_enabled(pga_target_normalization):
+        mean, std = _pga_norm_values(pga_target_normalization)
+        target = (target - mean) / std
+    pred = pred.squeeze(-1)
+    target = target.squeeze(-1)
+    if pga_target_valid is None:
+        valid_mask = torch.ones_like(pred, dtype=torch.bool)
+    else:
+        valid_mask = pga_target_valid.to(pred.device).bool()
+    max_pairs = int(cfg.get('max_pairs', 105))
+    beta = float(cfg.get('huber_delta', 1.0))
+    pair_losses = []
+    for event_pred, event_target, event_valid in zip(pred, target, valid_mask):
+        valid_idx = torch.nonzero(event_valid, as_tuple=False).squeeze(-1)
+        if valid_idx.numel() < 2:
+            continue
+        pair_idx = torch.triu_indices(
+            valid_idx.numel(),
+            valid_idx.numel(),
+            offset=1,
+            device=pred.device,
+        )
+        if max_pairs > 0 and pair_idx.shape[1] > max_pairs:
+            pair_idx = pair_idx[:, :max_pairs]
+        left = valid_idx[pair_idx[0]]
+        right = valid_idx[pair_idx[1]]
+        pred_diff = event_pred[left] - event_pred[right]
+        target_diff = event_target[left] - event_target[right]
+        pair_losses.append(F.smooth_l1_loss(
+            pred_diff,
+            target_diff,
+            beta=beta,
+            reduction='none',
+        ))
+    if not pair_losses:
+        return None
+    return weight * torch.cat(pair_losses).mean()
+
+
 def station_residual_decorrelation_aux_loss(model, cfg):
     if not cfg or not cfg.get('enabled', False):
         return None
@@ -1458,6 +1524,94 @@ def station_local_pga_aux_loss(model, labels, output_layout, pga_target_valid, p
                                pga_target_normalization=None):
     if not cfg or not cfg.get('enabled', False):
         return None
+    distinctive_residual = getattr(
+        model, '_last_station_distinctive_local_residual_pred', None
+    )
+    distinctive_absolute = getattr(
+        model, '_last_station_distinctive_local_absolute_pred', None
+    )
+    if distinctive_residual is not None or distinctive_absolute is not None:
+        if not (
+            isinstance(p_picks, dict)
+            and 'input_pga_values' in p_picks
+            and 'input_pga_valid' in p_picks
+        ):
+            return None
+        reference = distinctive_residual if distinctive_residual is not None else distinctive_absolute
+        device = reference.device
+        dtype = reference.dtype
+        target = p_picks['input_pga_values'].to(device=device, dtype=dtype)
+        mask = p_picks['input_pga_valid'].to(device=device).bool()
+        station_valid = getattr(model, '_last_station_valid', None)
+        if station_valid is not None:
+            mask = mask & station_valid.to(device).bool()
+        station_count = mask.sum(dim=1)
+        multi_event = station_count >= 2
+        single_event = station_count == 1
+        mean, std = (0.0, 1.0)
+        if _pga_norm_enabled(pga_target_normalization):
+            mean, std = _pga_norm_values(pga_target_normalization)
+
+        def masked_loss(prediction, regression_target, regression_mask):
+            if prediction is None or not regression_mask.any():
+                return None
+            if loss_type == 'huber':
+                per_elem = F.smooth_l1_loss(
+                    prediction,
+                    regression_target,
+                    beta=huber_delta,
+                    reduction='none',
+                )
+            elif loss_type == 'l1':
+                per_elem = torch.abs(prediction - regression_target)
+            elif loss_type == 'mse':
+                per_elem = (prediction - regression_target) ** 2
+            else:
+                raise ValueError(f"Unsupported station local PGA aux loss {loss_type!r}")
+            mask_f = regression_mask.to(per_elem.dtype)
+            return (per_elem * mask_f).sum() / mask_f.sum().clamp_min(1.0)
+
+        mask_f = mask.to(dtype)
+        event_mean = (target * mask_f).sum(dim=1, keepdim=True) / mask_f.sum(
+            dim=1, keepdim=True
+        ).clamp_min(1.0)
+        residual_target = (target - event_mean) / std
+        absolute_target = (target - mean) / std
+        multi_mask = mask & multi_event.unsqueeze(-1)
+        single_mask = mask & single_event.unsqueeze(-1)
+        multi_loss = masked_loss(distinctive_residual, residual_target, multi_mask)
+        single_loss = masked_loss(distinctive_absolute, absolute_target, single_mask)
+        total = None
+        if multi_loss is not None:
+            total = float(cfg.get('multi_station_weight', 0.1)) * multi_loss
+        if single_loss is not None:
+            weighted_single = float(cfg.get('single_station_weight', 0.02)) * single_loss
+            total = weighted_single if total is None else total + weighted_single
+
+        diag = getattr(model, '_last_diag', None)
+        if isinstance(diag, dict):
+            for prefix, prediction, regression_target, regression_mask in (
+                ('station_distinctive_local_residual', distinctive_residual, residual_target, multi_mask),
+                ('station_distinctive_local_absolute', distinctive_absolute, absolute_target, single_mask),
+            ):
+                if prediction is None or not regression_mask.any():
+                    continue
+                pred_values = prediction[regression_mask]
+                target_values = regression_target[regression_mask]
+                diag[f'{prefix}_mae'] = torch.abs(pred_values - target_values).mean().detach()
+                pred_centered = pred_values - pred_values.mean()
+                target_centered = target_values - target_values.mean()
+                denom = pred_centered.square().sum().sqrt() * target_centered.square().sum().sqrt()
+                if pred_values.numel() >= 2 and denom > 0:
+                    diag[f'{prefix}_corr'] = (
+                        (pred_centered * target_centered).sum() / denom.clamp_min(1e-8)
+                    ).detach()
+            if multi_loss is not None:
+                diag['station_distinctive_local_residual_loss'] = multi_loss.detach()
+            if single_loss is not None:
+                diag['station_distinctive_local_absolute_loss'] = single_loss.detach()
+        return total
+
     pred = getattr(model, '_last_station_local_pga_pred', None)
     if pred is None:
         return None
@@ -1915,6 +2069,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 pga_target_normalization=None, station_decorrelation_weight=0.0,
                 pga_loss_weighting=None, layerwise_pga_loss=None,
                 pga_temporal_residual_loss=None, distribution_mean_loss=None,
+                pga_within_event_difference_loss=None,
                 station_residual_decorrelation_loss=None,
                 station_local_pga_loss=None,
                 freeze_mode=None, start_epoch=0, best_val_init=None):
@@ -1947,7 +2102,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             if is_dist and train_sampler is not None:
                 train_sampler.set_epoch(epoch)
             model.train()
-            if freeze_mode == 'temporal_residual_only':
+            if freeze_mode in ('temporal_residual_only', 'station_distinctive_residual_only'):
                 set_temporal_residual_only_train_mode(model)
             running_loss = 0.0
             num_train_batches = 0
@@ -2012,19 +2167,29 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     )
                     if aux_loss is not None:
                         loss = loss + aux_loss
-                    temporal_residual_loss = pga_temporal_residual_aux_loss(
-                        eval_model,
-                        labels,
-                        eval_model.output_layout,
-                        pga_target_valid,
-                        pga_temporal_residual_loss,
-                        loss_type=loss_type,
-                        huber_delta=huber_delta,
-                        pga_target_normalization=pga_target_normalization,
-                        pga_loss_weighting=pga_loss_weighting,
-                    )
-                    if temporal_residual_loss is not None:
-                        loss = loss + temporal_residual_loss
+                temporal_residual_loss = pga_temporal_residual_aux_loss(
+                    eval_model,
+                    labels,
+                    eval_model.output_layout,
+                    pga_target_valid,
+                    pga_temporal_residual_loss,
+                    loss_type='huber' if loss_type in ('mdn', 'nll', 'gaussian', 'gaussian_nll') else loss_type,
+                    huber_delta=huber_delta,
+                    pga_target_normalization=pga_target_normalization,
+                    pga_loss_weighting=pga_loss_weighting,
+                )
+                if temporal_residual_loss is not None:
+                    loss = loss + temporal_residual_loss
+                difference_loss = pga_within_event_difference_aux_loss(
+                    outputs,
+                    labels,
+                    eval_model.output_layout,
+                    pga_target_valid,
+                    pga_within_event_difference_loss,
+                    pga_target_normalization=pga_target_normalization,
+                )
+                if difference_loss is not None:
+                    loss = loss + difference_loss
                 station_local_aux = station_local_pga_aux_loss(
                     eval_model,
                     labels,
@@ -2081,6 +2246,14 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         diag_scalars['diag/station_residual_decorrelation_loss'] = residual_decor_loss.detach()
                     if station_local_aux is not None and not torch.isnan(station_local_aux).any():
                         diag_scalars['diag/station_local_pga_aux_loss'] = station_local_aux.detach()
+                    if temporal_residual_loss is not None and not torch.isnan(temporal_residual_loss).any():
+                        diag_scalars['diag/pga_temporal_residual_aux_loss'] = (
+                            temporal_residual_loss.detach()
+                        )
+                    if difference_loss is not None and not torch.isnan(difference_loss).any():
+                        diag_scalars['diag/pga_within_event_difference_loss'] = (
+                            difference_loss.detach()
+                        )
 
                     grad_targets = {
                         'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
@@ -2212,19 +2385,29 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         )
                         if aux_loss is not None:
                             loss = loss + aux_loss
-                        temporal_residual_loss = pga_temporal_residual_aux_loss(
-                            eval_model,
-                            labels,
-                            eval_model.output_layout,
-                            pga_target_valid,
-                            pga_temporal_residual_loss,
-                            loss_type=loss_type,
-                            huber_delta=huber_delta,
-                            pga_target_normalization=pga_target_normalization,
-                            pga_loss_weighting=pga_loss_weighting,
-                        )
-                        if temporal_residual_loss is not None:
-                            loss = loss + temporal_residual_loss
+                    temporal_residual_loss = pga_temporal_residual_aux_loss(
+                        eval_model,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        pga_temporal_residual_loss,
+                        loss_type='huber' if loss_type in ('mdn', 'nll', 'gaussian', 'gaussian_nll') else loss_type,
+                        huber_delta=huber_delta,
+                        pga_target_normalization=pga_target_normalization,
+                        pga_loss_weighting=pga_loss_weighting,
+                    )
+                    if temporal_residual_loss is not None:
+                        loss = loss + temporal_residual_loss
+                    difference_loss = pga_within_event_difference_aux_loss(
+                        outputs,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        pga_within_event_difference_loss,
+                        pga_target_normalization=pga_target_normalization,
+                    )
+                    if difference_loss is not None:
+                        loss = loss + difference_loss
                     station_local_aux = station_local_pga_aux_loss(
                         eval_model,
                         labels,
@@ -3165,15 +3348,22 @@ if __name__ == '__main__':
             ckpt = torch.load(training_params['load_model_path'], map_location=device)
             state_dict = ckpt['model_state_dict'] if isinstance(ckpt, dict) and 'model_state_dict' in ckpt else ckpt
             load_target = full_model.module if is_dist else full_model
+            checkpoint_missing_prefixes = (
+                ckpt.get('excluded_prefixes', CHECKPOINT_ENCODER_PREFIXES)
+                if isinstance(ckpt, dict) else CHECKPOINT_ENCODER_PREFIXES
+            )
+            configured_missing_prefixes = training_params.get(
+                'load_model_additional_allowed_missing_prefixes', []
+            )
+            allowed_missing_prefixes = tuple(dict.fromkeys(
+                list(checkpoint_missing_prefixes) + list(configured_missing_prefixes)
+            ))
             load_model_state_dict_compatible(
                 load_target,
                 state_dict,
                 strict=True,
                 context=training_params['load_model_path'],
-                allowed_missing_prefixes=tuple(
-                    ckpt.get('excluded_prefixes', CHECKPOINT_ENCODER_PREFIXES)
-                    if isinstance(ckpt, dict) else CHECKPOINT_ENCODER_PREFIXES
-                ),
+                allowed_missing_prefixes=allowed_missing_prefixes,
             )
 
         if training_params.get('transfer_model_path'):
@@ -3479,6 +3669,9 @@ if __name__ == '__main__':
         layerwise_pga_loss_cfg = training_params.get('layerwise_pga_loss', None)
         pga_temporal_residual_loss_cfg = training_params.get('pga_temporal_residual_loss', None)
         distribution_mean_loss_cfg = training_params.get('distribution_mean_loss', None)
+        pga_within_event_difference_loss_cfg = training_params.get(
+            'pga_within_event_difference_loss', None
+        )
         station_residual_decorrelation_loss_cfg = training_params.get('station_residual_decorrelation_loss', None)
         station_local_pga_loss_cfg = training_params.get('station_local_pga_aux_loss', None)
         if (not is_dist) or rank == 0:
@@ -3502,6 +3695,14 @@ if __name__ == '__main__':
                 print(f'[loss] pga_temporal_residual_loss={pga_temporal_residual_loss_cfg}')
             if distribution_mean_loss_cfg and distribution_mean_loss_cfg.get('enabled', False):
                 print(f'[loss] distribution_mean_loss={distribution_mean_loss_cfg}')
+            if (
+                pga_within_event_difference_loss_cfg
+                and pga_within_event_difference_loss_cfg.get('enabled', False)
+            ):
+                print(
+                    '[loss] pga_within_event_difference_loss='
+                    f'{pga_within_event_difference_loss_cfg}'
+                )
             if station_residual_decorrelation_loss_cfg and station_residual_decorrelation_loss_cfg.get('enabled', False):
                 print(f'[loss] station_residual_decorrelation_loss={station_residual_decorrelation_loss_cfg}')
             if station_local_pga_loss_cfg and station_local_pga_loss_cfg.get('enabled', False):
@@ -3537,6 +3738,7 @@ if __name__ == '__main__':
             layerwise_pga_loss=layerwise_pga_loss_cfg,
             pga_temporal_residual_loss=pga_temporal_residual_loss_cfg,
             distribution_mean_loss=distribution_mean_loss_cfg,
+            pga_within_event_difference_loss=pga_within_event_difference_loss_cfg,
             station_residual_decorrelation_loss=station_residual_decorrelation_loss_cfg,
             station_local_pga_loss=station_local_pga_loss_cfg,
             freeze_mode=training_params.get('freeze_mode', None),

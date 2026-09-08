@@ -1,0 +1,124 @@
+{
+    "extends": "transformer_japan_full_2000_2024_rt56_ep32_mixed_random_geometry_seed42_chaosuan.json",
+    "model_params": {
+        "use_pga_temporal_residual": true,
+        "pga_temporal_residual_zero_init": true,
+        "pga_temporal_residual_query_source": "readout",
+        "pga_temporal_residual_station_weighting": "learned_pair",
+        "pga_temporal_residual_use_event_context": true,
+        "pga_temporal_residual_mode": "residual",
+        "pga_temporal_residual_token_control": "none",
+        "station_distinctive_adapter": true,
+        "station_distinctive_use_amplitude_features": true,
+        "station_distinctive_use_duration_features": true,
+        "station_distinctive_common_residual_decomposition": true,
+        "temporal_pool_pair_value_enabled": true,
+        "pga_temporal_residual_station_distinctive_dim": 256,
+        "pga_temporal_residual_station_distinctive_attention_queries": 4,
+        "pga_temporal_residual_station_distinctive_temporal_dilations": [
+            1,
+            4
+        ],
+        "pga_temporal_residual_station_distinctive_amplitude_feature_dim": 11,
+        "pga_temporal_residual_station_distinctive_duration_feature_dim": 2,
+        "pga_temporal_residual_station_distinctive_hidden_dim": 512,
+        "pga_temporal_residual_station_distinctive_detach_event_mean": true,
+        "pga_temporal_residual_pair_value_gate_init": 0.0,
+        "temporal_token_dim": 256,
+        "temporal_pool_dim": 256,
+        "temporal_pool_geom_hidden_dim": 128,
+        "station_local_pga_aux": false
+    },
+    "training_params": {
+        "epochs_full_model": 6,
+        "weight_path": "${RT57_WEIGHT_PATH}",
+        "load_model_path": "${RT56_BASE_CHECKPOINT}",
+        "load_model_additional_allowed_missing_prefixes": [
+            "pga_temporal_residual_head."
+        ],
+        "transfer_model_path": null,
+        "reinit_fpn": false,
+        "freeze_mode": "station_distinctive_residual_only",
+        "lr": 0.0001,
+        "lr_adapter": 0.0001,
+        "lr_team": 0.0001,
+        "lr_pga_temporal_residual": 0.0005,
+        "res_comps": [
+            "pga"
+        ],
+        "res_weight": [
+            1.0
+        ],
+        "full_model_loss": "nll",
+        "distribution_mean_loss": {
+            "enabled": true,
+            "weight": 0.1,
+            "loss_type": "huber",
+            "huber_delta": 1.0
+        },
+        "pga_temporal_residual_loss": {
+            "enabled": true,
+            "weight": 0.2,
+            "stop_base": true
+        },
+        "pga_within_event_difference_loss": {
+            "enabled": true,
+            "weight": 0.2,
+            "huber_delta": 1.0,
+            "max_pairs": 105
+        },
+        "station_local_pga_aux_loss": {
+            "enabled": true,
+            "mode": "station_distinctive_dual",
+            "multi_station_weight": 0.1,
+            "single_station_weight": 0.02
+        },
+        "train_generator_overrides": {
+            "causal_random_input_mask": {
+                "enabled": true,
+                "apply_probability": 0.75,
+                "station_counts": [
+                    1,
+                    3,
+                    5,
+                    8,
+                    12,
+                    16
+                ],
+                "order_selected_by_pick": true,
+                "target_sampling": {
+                    "enabled": true,
+                    "input_ratio": 0.0,
+                    "triggered_noninput_ratio": 0.2,
+                    "untriggered_ratio": 0.5,
+                    "fill_missing": true,
+                    "exclude_inputs": true
+                }
+            }
+        },
+        "validation_generator_overrides": {
+            "causal_random_input_mask": {
+                "enabled": true,
+                "apply_probability": 1.0,
+                "station_counts": [
+                    1,
+                    3,
+                    5,
+                    8,
+                    12,
+                    16
+                ],
+                "order_selected_by_pick": true,
+                "target_sampling": {
+                    "enabled": true,
+                    "input_ratio": 0.0,
+                    "triggered_noninput_ratio": 0.2,
+                    "untriggered_ratio": 0.5,
+                    "fill_missing": true,
+                    "exclude_inputs": true
+                }
+            }
+        }
+    },
+    "experiment_note": "RT57 GTNP v2 freezes the complete selected RT56 checkpoint and trains only pga_temporal_residual_head.*. The new station-distinctive adapter uses final pre-pooling DiTing temporal tokens, explicit waveform-valid masks and durations, and uncompressed raw-amplitude scale features. It decomposes each input station representation into event-common u mean and stop-gradient station residual d, then uses target-conditioned temporal values, learned station-query pair values, and learned pair scoring to shift only all MDN PGA component means. Training is 75% causal random geometry plus 25% RT56 normal replay; validation is deterministic causal random geometry. No test split is used."
+}

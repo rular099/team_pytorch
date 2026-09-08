@@ -180,6 +180,12 @@ def append_pga_temporal_residual_outputs(results, raw_model, config):
         'pga_temporal_delta': getattr(raw_model, '_last_pga_temporal_delta', None),
         'pga_temporal_pred': getattr(raw_model, '_last_pga_temporal_pred', None),
         'pga_temporal_final': getattr(raw_model, '_last_pga_temporal_final', None),
+        'station_distinctive_local_residual_pred': getattr(
+            raw_model, '_last_station_distinctive_local_residual_pred', None
+        ),
+        'station_distinctive_local_absolute_pred': getattr(
+            raw_model, '_last_station_distinctive_local_absolute_pred', None
+        ),
     }
     for key, value in tensors.items():
         if value is None:
@@ -187,6 +193,10 @@ def append_pga_temporal_residual_outputs(results, raw_model, config):
         arr = value.detach().cpu().numpy().squeeze(0)
         if key == 'pga_temporal_delta':
             arr = _maybe_unnormalize_pga_delta(arr, config)
+        elif key == 'station_distinctive_local_residual_pred':
+            arr = _maybe_unnormalize_pga_delta(arr, config)
+        elif key == 'station_distinctive_local_absolute_pred':
+            arr = _maybe_unnormalize_pga('pga', arr, config)
         elif key == 'pga_temporal_pred':
             mode = getattr(raw_model, 'pga_temporal_residual_mode', 'residual')
             if mode == 'absolute':
@@ -1246,6 +1256,8 @@ def run_inference(
                 'waveform_post_p_valid_seconds',
                 'selected_input_indices',
                 'selected_original_input_indices',
+                'input_pga_values',
+                'input_pga_valid',
                 'causal_random_mask_applied',
                 'causal_random_available_station_count',
                 'causal_random_requested_station_count',

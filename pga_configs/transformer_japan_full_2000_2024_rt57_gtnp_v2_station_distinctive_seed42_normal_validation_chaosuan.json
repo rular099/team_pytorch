@@ -1,0 +1,12 @@
+{
+    "extends": "transformer_japan_full_2000_2024_rt57_gtnp_v2_station_distinctive_seed42_chaosuan.json",
+    "training_params": {
+        "weight_path": "${RT57_WEIGHT_PATH}",
+        "validation_generator_overrides": {
+            "causal_random_input_mask": {
+                "enabled": false
+            }
+        }
+    },
+    "experiment_note": "Evaluation-only companion for the fixed RT57 epoch-6 checkpoint. It keeps the RT57 architecture and restores the inherited RT55/RT56 normal validation geometry by disabling causal_random_input_mask. No test split is used."
+}
