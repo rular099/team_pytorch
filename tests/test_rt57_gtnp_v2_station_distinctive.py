@@ -153,6 +153,36 @@ class RT57StationDistinctiveTests(unittest.TestCase):
             head._last_station_d[1, 0], torch.zeros_like(head._last_station_d[1, 0]), atol=1e-6
         ))
 
+    def test_empty_token_rows_are_safe_with_many_stations(self):
+        """Regression for PyTorch 1.13 batch/station boolean indexing."""
+        head = _head().eval()
+        torch.manual_seed(23)
+        batch, stations, tokens, targets = 8, 25, 200, 3
+        station_valid = torch.zeros(batch, stations, dtype=torch.bool)
+        station_valid[:, :4] = True
+        station_token_mask = torch.zeros(batch, stations, tokens, dtype=torch.bool)
+        station_token_mask[:, 0, :37] = True
+        station_token_mask[:, 1, :91] = True
+        station_token_mask[:, 2, :1] = True
+        # Station 3 is marked valid but deliberately has an empty token row;
+        # stations 4: are padding and therefore empty as well.
+        args = {
+            'query': torch.randn(batch, targets, 12),
+            'station_tokens': torch.randn(batch, stations, tokens, 16),
+            'station_emb': torch.randn(batch, stations, 12),
+            'station_valid': station_valid,
+            'query_coords': torch.randn(batch, targets, 3),
+            'station_coords': torch.randn(batch, stations, 3),
+            'event_emb': torch.randn(batch, 12),
+            'station_token_mask': station_token_mask,
+            'amplitude_features': torch.randn(batch, stations, 11),
+            'duration_features': torch.rand(batch, stations, 2),
+        }
+        with torch.no_grad():
+            output = head(**args)
+        self.assertEqual(output.shape, (batch, targets, 1))
+        self.assertTrue(torch.isfinite(output).all())
+
     def test_six_required_controls_are_functional_and_finite(self):
         head = _head(zero_init=False).eval()
         full_args = _head_inputs()

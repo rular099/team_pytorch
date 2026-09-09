@@ -1354,7 +1354,12 @@ class PGATemporalResidualHead(nn.Module):
             safe_token_mask = token_mask.clone()
             empty_token_rows = ~safe_token_mask.any(dim=-1)
             if empty_token_rows.any():
-                safe_token_mask[empty_token_rows, 0] = True
+                # ``empty_token_rows`` spans the batch and station axes.  Do
+                # not use it as an advanced index together with a scalar time
+                # index: PyTorch 1.13 interprets that combination against the
+                # wrong axes for [batch, station, time] tensors.  Updating the
+                # explicit time slice is unambiguous on both CPU/CUDA and DCU.
+                safe_token_mask[:, :, 0] |= empty_token_rows
             temporal_scores = temporal_scores.masked_fill(
                 ~safe_token_mask[:, None, :, :],
                 torch.finfo(temporal_scores.dtype).min,
