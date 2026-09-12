@@ -4,7 +4,7 @@ task_id: `20260912-rt58-waveform-anchor-transfer-field`
 
 base_commit: `143b63af5d0a477ac388d310dc470eb7349b5c90`
 
-result_commit: `none` (implementation is intentionally awaiting review and push approval)
+result_commit: `7ff060806609b9c3d0425b939e7c75dd447ba20c`
 
 branch: `rt58-waveform-anchor-transfer-field`
 
