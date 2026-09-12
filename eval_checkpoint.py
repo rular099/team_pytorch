@@ -186,6 +186,18 @@ def append_pga_temporal_residual_outputs(results, raw_model, config):
         'station_distinctive_local_absolute_pred': getattr(
             raw_model, '_last_station_distinctive_local_absolute_pred', None
         ),
+        'pga_anchor_pred': getattr(raw_model, '_last_pga_anchor_pred', None),
+        'pga_anchor_transfer': getattr(raw_model, '_last_pga_anchor_transfer', None),
+        'pga_anchor_candidate': getattr(raw_model, '_last_pga_anchor_candidate', None),
+        'pga_anchor_station_weights': getattr(
+            raw_model, '_last_pga_anchor_station_weights', None
+        ),
+        'pga_anchor_field_mean': getattr(
+            raw_model, '_last_pga_anchor_field_mean', None
+        ),
+        'pga_anchor_applied_delta': getattr(
+            raw_model, '_last_pga_anchor_applied_delta', None
+        ),
     }
     for key, value in tensors.items():
         if value is None:
@@ -197,6 +209,12 @@ def append_pga_temporal_residual_outputs(results, raw_model, config):
             arr = _maybe_unnormalize_pga_delta(arr, config)
         elif key == 'station_distinctive_local_absolute_pred':
             arr = _maybe_unnormalize_pga('pga', arr, config)
+        elif key in ('pga_anchor_transfer', 'pga_anchor_applied_delta'):
+            arr = _maybe_unnormalize_pga_delta(arr, config)
+        elif key in ('pga_anchor_pred', 'pga_anchor_candidate', 'pga_anchor_field_mean'):
+            arr = _maybe_unnormalize_pga('pga', arr, config)
+        elif key == 'pga_anchor_station_weights':
+            pass
         elif key == 'pga_temporal_pred':
             mode = getattr(raw_model, 'pga_temporal_residual_mode', 'residual')
             if mode == 'absolute':

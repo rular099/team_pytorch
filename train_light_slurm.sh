@@ -30,6 +30,8 @@
 #   EVAL_OUTPUT_NPZ    Optional eval npz path; only valid with EVAL_CHECKPOINT
 #   DISTRIBUTED_LAUNCHER slurm_direct or torchrun; slurm_direct avoids torch elastic rendezvous
 #   TORCHRUN_RDZV_MODE static or c10d; static avoids dynamic rendezvous teardown issues on fixed Slurm allocations
+#   EXPECTED_LOAD_CHECKPOINT / EXPECTED_LOAD_CHECKPOINT_EPOCH Optional compute-node
+#                      metadata guard for the checkpoint loaded by the config
 
 set -euo pipefail
 
@@ -59,6 +61,13 @@ ALLOW_DELETE_CHECKPOINTS=${ALLOW_DELETE_CHECKPOINTS:-0}
 RUN_EVAL=${RUN_EVAL:-1}
 DISTRIBUTED_LAUNCHER=${DISTRIBUTED_LAUNCHER:-slurm_direct}
 TORCHRUN_RDZV_MODE=${TORCHRUN_RDZV_MODE:-static}
+EXPECTED_LOAD_CHECKPOINT=${EXPECTED_LOAD_CHECKPOINT:-}
+EXPECTED_LOAD_CHECKPOINT_EPOCH=${EXPECTED_LOAD_CHECKPOINT_EPOCH:-}
+
+if [[ -n "$EXPECTED_LOAD_CHECKPOINT_EPOCH" && ! "$EXPECTED_LOAD_CHECKPOINT_EPOCH" =~ ^[0-9]+$ ]]; then
+    echo "EXPECTED_LOAD_CHECKPOINT_EPOCH must be a non-negative integer; got: $EXPECTED_LOAD_CHECKPOINT_EPOCH" >&2
+    exit 2
+fi
 
 resolve_path() {
     local p=$1
@@ -120,6 +129,12 @@ if [[ -z "${SLURM_JOB_ID:-}" && "${AUTO_SBATCH:-1}" != "0" ]]; then
     )
     if [[ -n "${DITING_PRETRAINED:-}" ]]; then
         EXPORT_VARS+=("DITING_PRETRAINED=$DITING_PRETRAINED")
+    fi
+    if [[ -n "$EXPECTED_LOAD_CHECKPOINT" ]]; then
+        EXPORT_VARS+=("EXPECTED_LOAD_CHECKPOINT=$EXPECTED_LOAD_CHECKPOINT")
+    fi
+    if [[ -n "$EXPECTED_LOAD_CHECKPOINT_EPOCH" ]]; then
+        EXPORT_VARS+=("EXPECTED_LOAD_CHECKPOINT_EPOCH=$EXPECTED_LOAD_CHECKPOINT_EPOCH")
     fi
     SBATCH_CMD=(
         sbatch
@@ -204,6 +219,32 @@ if [[ -n "${CONDA_ENV:-}" ]]; then
     if [[ "$restore_nounset" -eq 1 ]]; then
         set -u
     fi
+fi
+
+if [[ -n "$EXPECTED_LOAD_CHECKPOINT_EPOCH" ]]; then
+    if [[ -z "$EXPECTED_LOAD_CHECKPOINT" || ! -f "$EXPECTED_LOAD_CHECKPOINT" ]]; then
+        echo "EXPECTED_LOAD_CHECKPOINT_EPOCH requires an existing EXPECTED_LOAD_CHECKPOINT: ${EXPECTED_LOAD_CHECKPOINT:-<unset>}" >&2
+        exit 1
+    fi
+    python - "$EXPECTED_LOAD_CHECKPOINT" "$EXPECTED_LOAD_CHECKPOINT_EPOCH" <<'PY'
+import sys
+import torch
+
+checkpoint_path, expected_text = sys.argv[1:]
+try:
+    checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
+except TypeError:
+    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+if not isinstance(checkpoint, dict) or 'epoch' not in checkpoint:
+    raise SystemExit(f'Checkpoint has no epoch metadata: {checkpoint_path}')
+actual = int(checkpoint['epoch'])
+expected = int(expected_text)
+if actual != expected:
+    raise SystemExit(
+        f'Checkpoint epoch mismatch: expected {expected}, got {actual}: {checkpoint_path}'
+    )
+print(f'[OK] load checkpoint epoch verified: {actual}')
+PY
 fi
 
 if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then

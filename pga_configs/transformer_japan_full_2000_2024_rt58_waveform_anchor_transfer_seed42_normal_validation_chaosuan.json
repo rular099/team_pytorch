@@ -1,0 +1,12 @@
+{
+    "extends": "transformer_japan_full_2000_2024_rt58_waveform_anchor_transfer_seed42_chaosuan.json",
+    "training_params": {
+        "weight_path": "${RT58_WEIGHT_PATH}",
+        "validation_generator_overrides": {
+            "causal_random_input_mask": {
+                "enabled": false
+            }
+        }
+    },
+    "experiment_note": "Evaluation-only companion for the fixed RT58 epoch-8 full_model_last.pth. It retains the RT58 architecture and restores normal validation geometry by disabling causal_random_input_mask. No held-out test split is used."
+}

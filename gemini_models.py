@@ -1430,6 +1430,222 @@ class PGATemporalResidualHead(nn.Module):
         return delta
 
 
+class AnchorTransferSetBlock(nn.Module):
+    """Permutation-equivariant pre-norm block for valid input stations."""
+
+    def __init__(self, hidden_dim, heads):
+        super().__init__()
+        self.attn_norm = nn.LayerNorm(hidden_dim)
+        self.attn = nn.MultiheadAttention(
+            hidden_dim,
+            heads,
+            dropout=0.0,
+            batch_first=True,
+        )
+        self.ffn_norm = nn.LayerNorm(hidden_dim)
+        self.ffn = nn.Sequential(
+            nn.Linear(hidden_dim, 2 * hidden_dim),
+            nn.GELU(),
+            nn.Linear(2 * hidden_dim, hidden_dim),
+        )
+
+    def forward(self, station_state, station_valid):
+        valid = station_valid.bool()
+        safe_valid = valid.clone()
+        empty_rows = ~safe_valid.any(dim=-1)
+        if empty_rows.any():
+            safe_valid[empty_rows, 0] = True
+        normed = self.attn_norm(station_state)
+        attended, _ = self.attn(
+            normed,
+            normed,
+            normed,
+            key_padding_mask=~safe_valid,
+            need_weights=False,
+        )
+        station_state = station_state + attended
+        station_state = station_state + self.ffn(self.ffn_norm(station_state))
+        return station_state * valid.unsqueeze(-1).to(station_state.dtype)
+
+
+class PGAAnchorTransferHead(nn.Module):
+    """Waveform-derived station anchors transferred to arbitrary PGA queries."""
+
+    def __init__(self, station_dim, emb_dim, hidden_dim=256, set_layers=2,
+                 heads=4, distance_scale=0.05, zero_init=True):
+        super().__init__()
+        self.station_dim = int(station_dim)
+        self.emb_dim = int(emb_dim)
+        self.hidden_dim = int(hidden_dim)
+        self.distance_scale = float(distance_scale)
+        if self.station_dim <= 0 or self.emb_dim <= 0 or self.hidden_dim <= 0:
+            raise ValueError('station_dim, emb_dim and hidden_dim must be positive.')
+        if int(set_layers) < 0:
+            raise ValueError('set_layers must be non-negative.')
+        if int(heads) <= 0 or self.hidden_dim % int(heads) != 0:
+            raise ValueError('heads must be positive and divide hidden_dim.')
+        if self.distance_scale <= 0:
+            raise ValueError('distance_scale must be positive.')
+
+        self.anchor_head = nn.Sequential(
+            nn.LayerNorm(2 * self.station_dim + self.emb_dim),
+            nn.Linear(2 * self.station_dim + self.emb_dim, self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, 1),
+        )
+        self.set_input = nn.Sequential(
+            nn.LayerNorm(2 * self.station_dim + 3),
+            nn.Linear(2 * self.station_dim + 3, self.hidden_dim),
+            nn.GELU(),
+        )
+        self.set_blocks = nn.ModuleList([
+            AnchorTransferSetBlock(self.hidden_dim, int(heads))
+            for _ in range(int(set_layers))
+        ])
+        pair_dim = (
+            2 * self.station_dim
+            + 2 * self.emb_dim
+            + self.hidden_dim
+            + 10
+        )
+        self.pair_encoder = nn.Sequential(
+            nn.LayerNorm(pair_dim),
+            nn.Linear(pair_dim, self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim),
+            nn.GELU(),
+        )
+        self.transfer_head = nn.Linear(self.hidden_dim, 1)
+        self.score_head = nn.Linear(self.hidden_dim, 1)
+        self.output_gate = nn.Sequential(
+            nn.LayerNorm(2 * self.emb_dim + self.hidden_dim),
+            nn.Linear(2 * self.emb_dim + self.hidden_dim, self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, 1),
+        )
+        if zero_init:
+            nn.init.zeros_(self.output_gate[-1].weight)
+            nn.init.zeros_(self.output_gate[-1].bias)
+
+        self._last_anchor_pred = None
+        self._last_transfer = None
+        self._last_candidate = None
+        self._last_station_weights = None
+        self._last_field_mean = None
+        self._last_applied_delta = None
+        self._last_gate = None
+
+    def forward(self, station_u, station_d, event_emb, query_emb,
+                station_coords, query_coords, station_valid,
+                query_valid, frozen_rt57_mean):
+        if station_u is None or station_d is None:
+            raise ValueError(
+                'PGAAnchorTransferHead requires RT57 station-distinctive u/d states.'
+            )
+        if event_emb is None or query_emb is None:
+            raise ValueError(
+                'PGAAnchorTransferHead requires frozen RT57 event/query representations.'
+            )
+        if station_u.shape[-1] != self.station_dim or station_d.shape[-1] != self.station_dim:
+            raise ValueError(
+                f'Expected station u/d dim {self.station_dim}, got '
+                f'{station_u.shape[-1]}/{station_d.shape[-1]}.'
+            )
+        station_valid = station_valid.bool()
+        query_valid = query_valid.bool()
+        station_mask = station_valid.unsqueeze(-1)
+        query_mask = query_valid.unsqueeze(-1)
+        _, n_station, _ = station_u.shape
+        n_query = query_emb.shape[1]
+
+        event_station = event_emb[:, None, :].expand(-1, n_station, -1)
+        anchor_input = torch.cat([station_u, station_d, event_station], dim=-1)
+        anchor = self.anchor_head(anchor_input).squeeze(-1)
+        anchor = anchor * station_valid.to(anchor.dtype)
+
+        set_input = torch.cat(
+            [station_u, station_d, station_coords.float()],
+            dim=-1,
+        )
+        station_set_state = self.set_input(set_input) * station_mask.to(station_u.dtype)
+        for block in self.set_blocks:
+            station_set_state = block(station_set_state, station_valid)
+        valid_f = station_mask.to(station_set_state.dtype)
+        event_refinement = (station_set_state * valid_f).sum(dim=1) / valid_f.sum(
+            dim=1
+        ).clamp_min(1.0)
+
+        geometry = TargetConditionedTemporalPool._geometry_features(
+            query_coords.float(),
+            station_coords.float(),
+        )
+        event_pair = event_emb[:, None, None, :].expand(
+            -1, n_query, n_station, -1
+        )
+        refinement_pair = event_refinement[:, None, None, :].expand(
+            -1, n_query, n_station, -1
+        )
+        query_pair = query_emb[:, :, None, :].expand(-1, -1, n_station, -1)
+        station_u_pair = station_u[:, None, :, :].expand(-1, n_query, -1, -1)
+        station_d_pair = station_d[:, None, :, :].expand(-1, n_query, -1, -1)
+        pair_state = self.pair_encoder(torch.cat([
+            station_u_pair,
+            station_d_pair,
+            event_pair,
+            refinement_pair,
+            query_pair,
+            geometry,
+        ], dim=-1))
+
+        raw_transfer = self.transfer_head(pair_state).squeeze(-1)
+        distance = torch.linalg.norm(
+            query_coords.float()[:, :, None, :] - station_coords.float()[:, None, :, :],
+            dim=-1,
+        )
+        distance_gate = torch.tanh(distance / self.distance_scale)
+        pair_valid = query_valid[:, :, None] & station_valid[:, None, :]
+        transfer = raw_transfer * distance_gate
+        transfer = transfer * pair_valid.to(transfer.dtype)
+        candidate = anchor[:, None, :] + transfer
+        candidate = candidate * pair_valid.to(candidate.dtype)
+
+        station_scores = self.score_head(pair_state).squeeze(-1)
+        safe_station_valid = station_valid.clone()
+        empty_station_rows = ~safe_station_valid.any(dim=-1)
+        if empty_station_rows.any():
+            safe_station_valid[empty_station_rows, 0] = True
+        station_scores = station_scores.masked_fill(
+            ~safe_station_valid[:, None, :],
+            torch.finfo(station_scores.dtype).min,
+        )
+        station_weights = torch.softmax(station_scores, dim=-1)
+        station_weights = station_weights * pair_valid.to(station_weights.dtype)
+        station_weights = station_weights / station_weights.sum(
+            dim=-1, keepdim=True
+        ).clamp_min(1e-8)
+        field_mean = torch.sum(station_weights * candidate, dim=-1, keepdim=True)
+        field_mean = field_mean * query_mask.to(field_mean.dtype)
+
+        gate_input = torch.cat([
+            query_emb,
+            event_emb[:, None, :].expand(-1, n_query, -1),
+            event_refinement[:, None, :].expand(-1, n_query, -1),
+        ], dim=-1)
+        gate = torch.tanh(self.output_gate(gate_input))
+        gate = gate * query_mask.to(gate.dtype)
+        applied_delta = gate * (field_mean - frozen_rt57_mean.detach())
+        applied_delta = applied_delta * query_mask.to(applied_delta.dtype)
+
+        self._last_anchor_pred = anchor
+        self._last_transfer = transfer
+        self._last_candidate = candidate
+        self._last_station_weights = station_weights
+        self._last_field_mean = field_mean
+        self._last_applied_delta = applied_delta
+        self._last_gate = gate
+        return applied_delta
+
+
 class LayerwiseStationTargetReadout(nn.Module):
     """Target-first station/target evolution with residual station updates."""
 
@@ -3586,6 +3802,8 @@ class FullModel(nn.Module):
                  pga_temporal_residual_use_event_context=True,
                  pga_temporal_residual_mode='residual',
                  pga_temporal_residual_token_control='none',
+                 pga_temporal_residual_scale=1.0,
+                 pga_anchor_transfer_head=None,
                  station_residual_mode='off',
                  station_residual_source='wave',
                  station_residual_init_gate=0.1,
@@ -3661,6 +3879,8 @@ class FullModel(nn.Module):
         self.pga_temporal_residual_use_event_context = bool(pga_temporal_residual_use_event_context)
         self.pga_temporal_residual_mode = pga_temporal_residual_mode
         self.pga_temporal_residual_token_control = pga_temporal_residual_token_control
+        self.pga_temporal_residual_scale = float(pga_temporal_residual_scale)
+        self.pga_anchor_transfer_head = pga_anchor_transfer_head
         self.station_residual_mode = station_residual_mode or 'off'
         self.station_residual_source = station_residual_source or 'wave'
         self.station_local_pga_aux_enabled = bool(station_local_pga_aux)
@@ -3686,6 +3906,13 @@ class FullModel(nn.Module):
         self._last_pga_temporal_delta = None
         self._last_pga_temporal_pred = None
         self._last_pga_temporal_final = None
+        self._last_pga_anchor_pred = None
+        self._last_pga_anchor_transfer = None
+        self._last_pga_anchor_candidate = None
+        self._last_pga_anchor_station_weights = None
+        self._last_pga_anchor_field_mean = None
+        self._last_pga_anchor_applied_delta = None
+        self._last_pga_anchor_base_mean = None
         self._last_raw_station_emb = None
         self._last_wave_station_emb = None
         self._last_station_residual_emb = None
@@ -5349,6 +5576,13 @@ class FullModel(nn.Module):
             self._last_pga_temporal_delta = None
             self._last_pga_temporal_pred = None
             self._last_pga_temporal_final = None
+            self._last_pga_anchor_pred = None
+            self._last_pga_anchor_transfer = None
+            self._last_pga_anchor_candidate = None
+            self._last_pga_anchor_station_weights = None
+            self._last_pga_anchor_field_mean = None
+            self._last_pga_anchor_applied_delta = None
+            self._last_pga_anchor_base_mean = None
             layer_outputs = []
             if self.pga_readout_mode == 'target_cross_attention':
                 readout_module = (
@@ -5431,13 +5665,23 @@ class FullModel(nn.Module):
                 self._last_pga_temporal_base = base_point
                 self._last_pga_temporal_pred = temporal_pred
                 if self.pga_temporal_residual_mode == 'residual':
-                    temporal_delta = temporal_pred
+                    temporal_delta = (
+                        temporal_pred
+                        if self.pga_temporal_residual_scale == 1.0
+                        else self.pga_temporal_residual_scale * temporal_pred
+                    )
                     output_pga = self._shift_pga_output_by_delta(output_pga, temporal_delta)
                     final_point = base_point + temporal_delta
                 else:
-                    temporal_delta = temporal_pred - base_point.detach()
+                    if self.pga_temporal_residual_scale == 1.0:
+                        temporal_delta = temporal_pred - base_point.detach()
+                        final_point = temporal_pred
+                    else:
+                        temporal_delta = self.pga_temporal_residual_scale * (
+                            temporal_pred - base_point.detach()
+                        )
+                        final_point = base_point + temporal_delta
                     output_pga = self._shift_pga_output_by_delta(output_pga, temporal_delta)
-                    final_point = temporal_pred
                 self._last_pga_temporal_delta = temporal_delta
                 self._last_pga_temporal_final = final_point
                 delta_abs = temporal_delta.abs().mean()
@@ -5531,6 +5775,39 @@ class FullModel(nn.Module):
                     self._last_diag['station_distinctive_d_u_norm_ratio'] = (
                         d_norm / (u_norm + 1e-8)
                     ).detach()
+            if self.pga_anchor_transfer_head is not None:
+                frozen_rt57_mean = self._pga_point_mean_from_output(output_pga)
+                self._last_pga_anchor_base_mean = frozen_rt57_mean.detach()
+                anchor_delta = self.pga_anchor_transfer_head(
+                    self._last_station_distinctive_u,
+                    self._last_station_distinctive_d,
+                    event_emb,
+                    pga_readout_emb,
+                    coords_abs,
+                    pga_targets_abs,
+                    sv,
+                    ptv,
+                    frozen_rt57_mean,
+                )
+                output_pga = self._shift_pga_output_by_delta(output_pga, anchor_delta)
+                anchor_head = self.pga_anchor_transfer_head
+                self._last_pga_anchor_pred = anchor_head._last_anchor_pred
+                self._last_pga_anchor_transfer = anchor_head._last_transfer
+                self._last_pga_anchor_candidate = anchor_head._last_candidate
+                self._last_pga_anchor_station_weights = anchor_head._last_station_weights
+                self._last_pga_anchor_field_mean = anchor_head._last_field_mean
+                self._last_pga_anchor_applied_delta = anchor_head._last_applied_delta
+                valid_gate = anchor_head._last_gate[ptv]
+                self._last_diag['pga_anchor_gate_abs_mean'] = (
+                    valid_gate.abs().mean().detach()
+                    if valid_gate.numel()
+                    else output_pga.new_tensor(0.0).detach()
+                )
+                self._last_diag['pga_anchor_delta_abs_mean'] = (
+                    anchor_delta[ptv].abs().mean().detach()
+                    if ptv.any()
+                    else output_pga.new_tensor(0.0).detach()
+                )
             output_pga = self._apply_pga_vs30_site_affine(
                 output_pga,
                 pga_readout_emb,
@@ -5556,6 +5833,12 @@ class FullModel(nn.Module):
             outputs.append(self._last_station_distinctive_local_residual_pred)
         if self._last_station_distinctive_local_absolute_pred is not None:
             outputs.append(self._last_station_distinctive_local_absolute_pred)
+        if self._last_pga_anchor_pred is not None:
+            outputs.extend([
+                self._last_pga_anchor_pred,
+                self._last_pga_anchor_candidate,
+                self._last_pga_anchor_field_mean,
+            ])
 
         return outputs
 
@@ -5850,6 +6133,14 @@ def build_transformer_model(max_stations,
                             pga_temporal_residual_use_event_context=True,
                             pga_temporal_residual_mode='residual',
                             pga_temporal_residual_token_control='none',
+                            pga_temporal_residual_scale=1.0,
+                            use_pga_anchor_transfer=False,
+                            anchor_transfer_station_dim=256,
+                            anchor_transfer_hidden_dim=256,
+                            anchor_transfer_set_layers=2,
+                            anchor_transfer_heads=4,
+                            anchor_transfer_distance_scale=0.05,
+                            anchor_transfer_zero_init=True,
                             station_distinctive_adapter=False,
                             station_distinctive_use_amplitude_features=True,
                             station_distinctive_use_duration_features=True,
@@ -6114,6 +6405,33 @@ def build_transformer_model(max_stations,
             pair_value_gate_init=pga_temporal_residual_pair_value_gate_init,
         )
 
+    pga_anchor_transfer_head = None
+    if use_pga_anchor_transfer:
+        if pga_temporal_residual_head is None:
+            raise ValueError(
+                'use_pga_anchor_transfer=true requires use_pga_temporal_residual=true.'
+            )
+        if not getattr(pga_temporal_residual_head, 'station_distinctive_enabled', False):
+            raise ValueError(
+                'use_pga_anchor_transfer=true requires station_distinctive_adapter=true.'
+            )
+        if int(anchor_transfer_station_dim) != int(
+            pga_temporal_residual_station_distinctive_dim
+        ):
+            raise ValueError(
+                'anchor_transfer_station_dim must match '
+                'pga_temporal_residual_station_distinctive_dim.'
+            )
+        pga_anchor_transfer_head = PGAAnchorTransferHead(
+            station_dim=anchor_transfer_station_dim,
+            emb_dim=emb_dim,
+            hidden_dim=anchor_transfer_hidden_dim,
+            set_layers=anchor_transfer_set_layers,
+            heads=anchor_transfer_heads,
+            distance_scale=anchor_transfer_distance_scale,
+            zero_init=anchor_transfer_zero_init,
+        )
+
     pga_station_target_readout = None
     if station_context_mode == 'synchronous_station_target':
         pga_station_target_readout = SynchronousStationTargetReadout(
@@ -6243,6 +6561,8 @@ def build_transformer_model(max_stations,
                              pga_temporal_residual_use_event_context=pga_temporal_residual_use_event_context,
                              pga_temporal_residual_mode=pga_temporal_residual_mode,
                              pga_temporal_residual_token_control=pga_temporal_residual_token_control,
+                             pga_temporal_residual_scale=pga_temporal_residual_scale,
+                             pga_anchor_transfer_head=pga_anchor_transfer_head,
                              station_token_weight_mode=station_token_weight_mode,
                              temporal_token_weight_mode=temporal_token_weight_mode,
                              token_weight_floor=token_weight_floor,

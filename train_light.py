@@ -209,6 +209,7 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
     team_lr = training_params.get('lr_team', base_lr)
     encoder_lr = training_params.get('lr_encoder', None)
     temporal_residual_lr = training_params.get('lr_pga_temporal_residual', None)
+    anchor_transfer_lr = training_params.get('lr_pga_anchor_transfer', None)
 
     encoder_params = list(_iter_trainable_params(raw_model.waveform_model[0]))
     adapter_params = list(_iter_trainable_params(raw_model.waveform_model[1]))
@@ -218,9 +219,16 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
         if temporal_residual_module is not None and temporal_residual_lr is not None
         else []
     )
+    anchor_transfer_module = getattr(raw_model, 'pga_anchor_transfer_head', None)
+    anchor_transfer_params = (
+        list(_iter_trainable_params(anchor_transfer_module))
+        if anchor_transfer_module is not None and anchor_transfer_lr is not None
+        else []
+    )
     adapter_param_ids = {id(p) for p in adapter_params}
     encoder_param_ids = {id(p) for p in encoder_params}
     temporal_residual_param_ids = {id(p) for p in temporal_residual_params}
+    anchor_transfer_param_ids = {id(p) for p in anchor_transfer_params}
 
     team_params = []
     for param in _iter_trainable_params(raw_model):
@@ -229,6 +237,7 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
             pid in adapter_param_ids
             or pid in encoder_param_ids
             or pid in temporal_residual_param_ids
+            or pid in anchor_transfer_param_ids
         ):
             continue
         team_params.append(param)
@@ -251,6 +260,12 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
             'params': temporal_residual_params,
             'lr': temporal_residual_lr,
             'name': 'pga_temporal_residual',
+        })
+    if anchor_transfer_params:
+        param_groups.append({
+            'params': anchor_transfer_params,
+            'lr': anchor_transfer_lr,
+            'name': 'pga_anchor_transfer',
         })
     if encoder_params:
         if encoder_lr is None:
@@ -282,12 +297,56 @@ def apply_full_model_trainability(model, training_params, is_dist=False, rank=0)
     mode = training_params.get('freeze_mode', None)
     if mode in (None, '', 'none', 'default'):
         return
-    if mode not in ('temporal_residual_only', 'station_distinctive_residual_only'):
+    if mode not in (
+        'temporal_residual_only',
+        'station_distinctive_residual_only',
+        'anchor_transfer_only',
+    ):
         raise ValueError(
             "training_params.freeze_mode must be one of 'none' or "
-            "'temporal_residual_only' or 'station_distinctive_residual_only', "
+            "'temporal_residual_only', 'station_distinctive_residual_only', "
+            "or 'anchor_transfer_only', "
             f"got {mode!r}."
         )
+    if mode == 'anchor_transfer_only':
+        anchor_head = getattr(raw_model, 'pga_anchor_transfer_head', None)
+        if anchor_head is None:
+            raise ValueError(
+                'freeze_mode=anchor_transfer_only requires use_pga_anchor_transfer=true.'
+            )
+        for param in raw_model.parameters():
+            param.requires_grad = False
+        for param in anchor_head.parameters():
+            param.requires_grad = True
+        trainable_names = [
+            name for name, param in raw_model.named_parameters()
+            if param.requires_grad
+        ]
+        invalid_names = [
+            name for name in trainable_names
+            if not name.startswith('pga_anchor_transfer_head.')
+        ]
+        if invalid_names:
+            raise RuntimeError(
+                'anchor_transfer_only exposed parameters outside '
+                f'pga_anchor_transfer_head.*: {invalid_names}'
+            )
+        if not trainable_names:
+            raise RuntimeError('anchor_transfer_only found no trainable parameters.')
+        if rank == 0:
+            for name in trainable_names:
+                parameter = dict(raw_model.named_parameters())[name]
+                print(f'[trainability] trainable {name}: {parameter.numel()} parameters')
+            trainable = sum(
+                p.numel() for p in raw_model.parameters() if p.requires_grad
+            )
+            total = sum(p.numel() for p in raw_model.parameters())
+            print(
+                '[trainability] freeze_mode=anchor_transfer_only: '
+                f'prefix=pga_anchor_transfer_head., tensors={len(trainable_names)}, '
+                f'trainable={trainable}/{total} parameters'
+            )
+        return
     head = getattr(raw_model, 'pga_temporal_residual_head', None)
     if head is None:
         raise ValueError(f'freeze_mode={mode} requires use_pga_temporal_residual=true.')
@@ -316,6 +375,15 @@ def set_temporal_residual_only_train_mode(model):
     raw_model = model.module if hasattr(model, 'module') else model
     for name, child in raw_model.named_children():
         if name == 'pga_temporal_residual_head':
+            child.train()
+        else:
+            child.eval()
+
+
+def set_anchor_transfer_only_train_mode(model):
+    raw_model = model.module if hasattr(model, 'module') else model
+    for name, child in raw_model.named_children():
+        if name == 'pga_anchor_transfer_head':
             child.train()
         else:
             child.eval()
@@ -1434,6 +1502,173 @@ def distribution_mean_aux_loss(outputs, labels, output_layout, res_comps, res_we
     )
 
 
+def pga_huber_delta_model_units(cfg, pga_target_normalization, fallback=1.0):
+    """Resolve a Huber transition specified in raw dex or legacy model units."""
+    if cfg is None:
+        return float(fallback)
+    if 'huber_delta_dex' not in cfg:
+        return float(cfg.get('huber_delta', fallback))
+    delta_dex = float(cfg['huber_delta_dex'])
+    if delta_dex <= 0:
+        raise ValueError('huber_delta_dex must be positive.')
+    if _pga_norm_enabled(pga_target_normalization):
+        _, std = _pga_norm_values(pga_target_normalization)
+        return delta_dex / std
+    return delta_dex
+
+
+def _masked_huber_mean(prediction, target, mask, beta):
+    mask = mask.to(prediction.device).bool()
+    if not mask.any():
+        return None
+    per_elem = F.smooth_l1_loss(
+        prediction,
+        target.to(prediction.device, dtype=prediction.dtype),
+        beta=float(beta),
+        reduction='none',
+    )
+    mask_f = mask.to(per_elem.dtype)
+    return (per_elem * mask_f).sum() / mask_f.sum().clamp_min(1.0)
+
+
+def pga_anchor_absolute_aux_loss(model, p_picks, cfg,
+                                 pga_target_normalization=None):
+    """Supervise inferred station anchors without exposing labels to forward()."""
+    if not cfg or not cfg.get('enabled', False):
+        return None
+    prediction = getattr(model, '_last_pga_anchor_pred', None)
+    if prediction is None or not isinstance(p_picks, dict):
+        return None
+    if 'input_pga_values' not in p_picks or 'input_pga_valid' not in p_picks:
+        return None
+    target = p_picks['input_pga_values'].to(
+        prediction.device, dtype=prediction.dtype
+    )
+    mask = p_picks['input_pga_valid'].to(prediction.device).bool()
+    station_valid = getattr(model, '_last_station_valid', None)
+    if station_valid is not None:
+        mask = mask & station_valid.to(prediction.device).bool()
+    if _pga_norm_enabled(pga_target_normalization):
+        mean, std = _pga_norm_values(pga_target_normalization)
+        target = (target - mean) / std
+    loss = _masked_huber_mean(
+        prediction,
+        target,
+        mask,
+        pga_huber_delta_model_units(cfg, pga_target_normalization),
+    )
+    if loss is None:
+        return None
+    return float(cfg.get('weight', 0.0)) * loss
+
+
+def pga_anchor_pair_candidate_aux_loss(model, labels, output_layout,
+                                       pga_target_valid, cfg,
+                                       pga_target_normalization=None):
+    """Supervise every valid input-station/query anchor-transfer candidate."""
+    if not cfg or not cfg.get('enabled', False):
+        return None
+    candidate = getattr(model, '_last_pga_anchor_candidate', None)
+    station_valid = getattr(model, '_last_station_valid', None)
+    if candidate is None or station_valid is None:
+        return None
+    label_layout = [name for name in output_layout if name in ('mag', 'loc', 'pga')]
+    if 'pga' not in label_layout:
+        return None
+    target = labels[label_layout.index('pga')].to(
+        candidate.device, dtype=candidate.dtype
+    )
+    target = models._point_target_for_loss(
+        target,
+        candidate[..., :1],
+        d=1,
+    ).squeeze(-1)
+    if _pga_norm_enabled(pga_target_normalization):
+        mean, std = _pga_norm_values(pga_target_normalization)
+        target = (target - mean) / std
+    if pga_target_valid is None:
+        query_valid = torch.ones_like(target, dtype=torch.bool)
+    else:
+        query_valid = pga_target_valid.to(candidate.device).bool()
+    pair_mask = query_valid[:, :, None] & station_valid.to(candidate.device).bool()[:, None, :]
+    pair_target = target[:, :, None].expand_as(candidate)
+    loss = _masked_huber_mean(
+        candidate,
+        pair_target,
+        pair_mask,
+        pga_huber_delta_model_units(cfg, pga_target_normalization),
+    )
+    if loss is None:
+        return None
+    return float(cfg.get('weight', 0.0)) * loss
+
+
+def normal_replay_distillation_aux_loss(model, outputs, output_layout,
+                                        pga_target_valid, p_picks, cfg,
+                                        pga_target_normalization=None):
+    """Penalize anchor correction only for normal-replay rows."""
+    if not cfg or not cfg.get('enabled', False) or 'pga' not in output_layout:
+        return None
+    base_mean = getattr(model, '_last_pga_anchor_base_mean', None)
+    if base_mean is None:
+        return None
+    pga_output = outputs[output_layout.index('pga')]
+    final_mean = model._pga_point_mean_from_output(pga_output)
+    batch_size, n_query = final_mean.shape[:2]
+    if bool(cfg.get('apply_to_random', False)):
+        replay_rows = torch.ones(batch_size, dtype=torch.bool, device=final_mean.device)
+    elif isinstance(p_picks, dict) and 'causal_random_mask_applied' in p_picks:
+        applied = p_picks['causal_random_mask_applied'].to(final_mean.device).bool()
+        replay_rows = ~applied.reshape(batch_size)
+    else:
+        replay_rows = torch.ones(batch_size, dtype=torch.bool, device=final_mean.device)
+    if pga_target_valid is None:
+        query_valid = torch.ones(
+            batch_size, n_query, dtype=torch.bool, device=final_mean.device
+        )
+    else:
+        query_valid = pga_target_valid.to(final_mean.device).bool()
+    mask = query_valid.unsqueeze(-1) & replay_rows[:, None, None]
+    beta = pga_huber_delta_model_units(cfg, pga_target_normalization, fallback=0.15)
+    loss = _masked_huber_mean(final_mean, base_mean, mask, beta)
+    if loss is None:
+        return None
+    return float(cfg.get('weight', 0.0)) * loss
+
+
+def pga_anchor_transfer_aux_losses(model, outputs, labels, output_layout,
+                                   pga_target_valid, p_picks,
+                                   anchor_cfg=None, pair_cfg=None,
+                                   distillation_cfg=None,
+                                   pga_target_normalization=None):
+    losses = {
+        'pga_anchor_absolute_loss': pga_anchor_absolute_aux_loss(
+            model,
+            p_picks,
+            anchor_cfg,
+            pga_target_normalization=pga_target_normalization,
+        ),
+        'pga_anchor_pair_candidate_loss': pga_anchor_pair_candidate_aux_loss(
+            model,
+            labels,
+            output_layout,
+            pga_target_valid,
+            pair_cfg,
+            pga_target_normalization=pga_target_normalization,
+        ),
+        'normal_replay_distillation_loss': normal_replay_distillation_aux_loss(
+            model,
+            outputs,
+            output_layout,
+            pga_target_valid,
+            p_picks,
+            distillation_cfg,
+            pga_target_normalization=pga_target_normalization,
+        ),
+    }
+    return {name: loss for name, loss in losses.items() if loss is not None}
+
+
 def pga_within_event_difference_aux_loss(outputs, labels, output_layout, pga_target_valid,
                                          cfg, pga_target_normalization=None):
     """Huber loss on all valid within-event target PGA differences."""
@@ -1462,7 +1697,11 @@ def pga_within_event_difference_aux_loss(outputs, labels, output_layout, pga_tar
     else:
         valid_mask = pga_target_valid.to(pred.device).bool()
     max_pairs = int(cfg.get('max_pairs', 105))
-    beta = float(cfg.get('huber_delta', 1.0))
+    beta = pga_huber_delta_model_units(
+        cfg,
+        pga_target_normalization,
+        fallback=1.0,
+    )
     pair_losses = []
     for event_pred, event_target, event_valid in zip(pred, target, valid_mask):
         valid_idx = torch.nonzero(event_valid, as_tuple=False).squeeze(-1)
@@ -2070,6 +2309,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 pga_loss_weighting=None, layerwise_pga_loss=None,
                 pga_temporal_residual_loss=None, distribution_mean_loss=None,
                 pga_within_event_difference_loss=None,
+                pga_anchor_absolute_loss=None,
+                pga_anchor_pair_candidate_loss=None,
+                normal_replay_distillation_loss=None,
                 station_residual_decorrelation_loss=None,
                 station_local_pga_loss=None,
                 freeze_mode=None, start_epoch=0, best_val_init=None):
@@ -2104,6 +2346,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             model.train()
             if freeze_mode in ('temporal_residual_only', 'station_distinctive_residual_only'):
                 set_temporal_residual_only_train_mode(model)
+            elif freeze_mode == 'anchor_transfer_only':
+                set_anchor_transfer_only_train_mode(model)
             running_loss = 0.0
             num_train_batches = 0
             first_batch_logged = False
@@ -2190,6 +2434,20 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 )
                 if difference_loss is not None:
                     loss = loss + difference_loss
+                anchor_transfer_losses = pga_anchor_transfer_aux_losses(
+                    eval_model,
+                    outputs,
+                    labels,
+                    eval_model.output_layout,
+                    pga_target_valid,
+                    p_picks,
+                    anchor_cfg=pga_anchor_absolute_loss,
+                    pair_cfg=pga_anchor_pair_candidate_loss,
+                    distillation_cfg=normal_replay_distillation_loss,
+                    pga_target_normalization=pga_target_normalization,
+                )
+                for anchor_transfer_loss in anchor_transfer_losses.values():
+                    loss = loss + anchor_transfer_loss
                 station_local_aux = station_local_pga_aux_loss(
                     eval_model,
                     labels,
@@ -2254,6 +2512,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         diag_scalars['diag/pga_within_event_difference_loss'] = (
                             difference_loss.detach()
                         )
+                    for name, anchor_transfer_loss in anchor_transfer_losses.items():
+                        if not torch.isnan(anchor_transfer_loss).any():
+                            diag_scalars[f'diag/{name}'] = anchor_transfer_loss.detach()
 
                     grad_targets = {
                         'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
@@ -2276,6 +2537,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     if getattr(eval_model, 'pga_temporal_residual_head', None) is not None:
                         grad_targets['grad/pga_temporal_residual_head'] = module_grad_norm(eval_model.pga_temporal_residual_head)
                         grad_targets['grad_rms/pga_temporal_residual_head'] = module_grad_rms(eval_model.pga_temporal_residual_head)
+                    if getattr(eval_model, 'pga_anchor_transfer_head', None) is not None:
+                        grad_targets['grad/pga_anchor_transfer_head'] = module_grad_norm(eval_model.pga_anchor_transfer_head)
+                        grad_targets['grad_rms/pga_anchor_transfer_head'] = module_grad_rms(eval_model.pga_anchor_transfer_head)
                     if getattr(eval_model, 'station_residual_proj', None) is not None:
                         grad_targets['grad/station_residual_proj'] = module_grad_norm(eval_model.station_residual_proj)
                         grad_targets['grad_rms/station_residual_proj'] = module_grad_rms(eval_model.station_residual_proj)
@@ -2408,6 +2672,20 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     )
                     if difference_loss is not None:
                         loss = loss + difference_loss
+                    anchor_transfer_losses = pga_anchor_transfer_aux_losses(
+                        eval_model,
+                        outputs,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        p_picks,
+                        anchor_cfg=pga_anchor_absolute_loss,
+                        pair_cfg=pga_anchor_pair_candidate_loss,
+                        distillation_cfg=normal_replay_distillation_loss,
+                        pga_target_normalization=pga_target_normalization,
+                    )
+                    for anchor_transfer_loss in anchor_transfer_losses.values():
+                        loss = loss + anchor_transfer_loss
                     station_local_aux = station_local_pga_aux_loss(
                         eval_model,
                         labels,
@@ -3672,6 +3950,15 @@ if __name__ == '__main__':
         pga_within_event_difference_loss_cfg = training_params.get(
             'pga_within_event_difference_loss', None
         )
+        pga_anchor_absolute_loss_cfg = training_params.get(
+            'pga_anchor_absolute_loss', None
+        )
+        pga_anchor_pair_candidate_loss_cfg = training_params.get(
+            'pga_anchor_pair_candidate_loss', None
+        )
+        normal_replay_distillation_loss_cfg = training_params.get(
+            'normal_replay_distillation_loss', None
+        )
         station_residual_decorrelation_loss_cfg = training_params.get('station_residual_decorrelation_loss', None)
         station_local_pga_loss_cfg = training_params.get('station_local_pga_aux_loss', None)
         if (not is_dist) or rank == 0:
@@ -3703,6 +3990,13 @@ if __name__ == '__main__':
                     '[loss] pga_within_event_difference_loss='
                     f'{pga_within_event_difference_loss_cfg}'
                 )
+            for loss_name, loss_cfg in (
+                ('pga_anchor_absolute_loss', pga_anchor_absolute_loss_cfg),
+                ('pga_anchor_pair_candidate_loss', pga_anchor_pair_candidate_loss_cfg),
+                ('normal_replay_distillation_loss', normal_replay_distillation_loss_cfg),
+            ):
+                if loss_cfg and loss_cfg.get('enabled', False):
+                    print(f'[loss] {loss_name}={loss_cfg}')
             if station_residual_decorrelation_loss_cfg and station_residual_decorrelation_loss_cfg.get('enabled', False):
                 print(f'[loss] station_residual_decorrelation_loss={station_residual_decorrelation_loss_cfg}')
             if station_local_pga_loss_cfg and station_local_pga_loss_cfg.get('enabled', False):
@@ -3739,6 +4033,9 @@ if __name__ == '__main__':
             pga_temporal_residual_loss=pga_temporal_residual_loss_cfg,
             distribution_mean_loss=distribution_mean_loss_cfg,
             pga_within_event_difference_loss=pga_within_event_difference_loss_cfg,
+            pga_anchor_absolute_loss=pga_anchor_absolute_loss_cfg,
+            pga_anchor_pair_candidate_loss=pga_anchor_pair_candidate_loss_cfg,
+            normal_replay_distillation_loss=normal_replay_distillation_loss_cfg,
             station_residual_decorrelation_loss=station_residual_decorrelation_loss_cfg,
             station_local_pga_loss=station_local_pga_loss_cfg,
             freeze_mode=training_params.get('freeze_mode', None),

@@ -1,0 +1,82 @@
+{
+    "extends": "transformer_japan_full_2000_2024_rt57_gtnp_v2_station_distinctive_seed42_chaosuan.json",
+    "model_params": {
+        "use_pga_anchor_transfer": true,
+        "pga_temporal_residual_scale": 1.66,
+        "anchor_transfer_station_dim": 256,
+        "anchor_transfer_hidden_dim": 256,
+        "anchor_transfer_set_layers": 2,
+        "anchor_transfer_heads": 4,
+        "anchor_transfer_distance_scale": 0.05,
+        "anchor_transfer_zero_init": true
+    },
+    "training_params": {
+        "epochs_full_model": 8,
+        "weight_path": "${RT58_WEIGHT_PATH}",
+        "load_model_path": "${RT57_BASE_CHECKPOINT}",
+        "load_model_additional_allowed_missing_prefixes": [
+            "pga_anchor_transfer_head."
+        ],
+        "transfer_model_path": null,
+        "reinit_fpn": false,
+        "freeze_mode": "anchor_transfer_only",
+        "lr_pga_anchor_transfer": 0.0005,
+        "distribution_mean_loss": {
+            "enabled": true,
+            "weight": 0.1,
+            "loss_type": "huber",
+            "huber_delta": 1.0
+        },
+        "pga_temporal_residual_loss": {
+            "enabled": false
+        },
+        "station_local_pga_aux_loss": {
+            "enabled": false
+        },
+        "pga_anchor_absolute_loss": {
+            "enabled": true,
+            "weight": 0.2,
+            "huber_delta_dex": 0.15
+        },
+        "pga_anchor_pair_candidate_loss": {
+            "enabled": true,
+            "weight": 0.05,
+            "huber_delta_dex": 0.2
+        },
+        "pga_within_event_difference_loss": {
+            "enabled": true,
+            "weight": 0.4,
+            "huber_delta_dex": 0.15,
+            "max_pairs": 105
+        },
+        "normal_replay_distillation_loss": {
+            "enabled": true,
+            "weight": 0.05,
+            "apply_to_random": false
+        },
+        "train_generator_overrides": {
+            "causal_random_input_mask": {
+                "enabled": true,
+                "apply_probability": 0.8,
+                "station_counts": [
+                    1,
+                    3,
+                    5,
+                    8,
+                    12,
+                    16
+                ],
+                "order_selected_by_pick": true,
+                "target_sampling": {
+                    "enabled": true,
+                    "input_ratio": 0.0,
+                    "triggered_noninput_ratio": 0.2,
+                    "untriggered_ratio": 0.5,
+                    "fill_missing": true,
+                    "exclude_inputs": true
+                }
+            }
+        }
+    },
+    "experiment_note": "RT58 Waveform-Anchor Transfer Field loads the fixed RT57 epoch-6 checkpoint, applies the development residual scale 1.66, freezes every RT57 parameter, and trains only pga_anchor_transfer_head.* for eight fixed epochs. The head infers input-station PGA anchors from frozen waveform-derived u/d states and transfers them to query coordinates using observable station/query geometry; input PGA values are loss targets only and never forward inputs. Validation remains deterministic random geometry, with a separate normal-validation companion. No test split is used."
+}
