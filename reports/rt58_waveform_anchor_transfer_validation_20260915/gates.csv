@@ -1,0 +1,11 @@
+criterion_id,criterion,threshold,observed,result,note
+1,random_mae,<=0.242,0.24603582821088568,FAIL,75654 non-input validation targets
+2,random_slope,>=0.45,0.39726961025063334,FAIL,predictive mixture mean
+3,random_r2,>=0.39,0.369565717088048,FAIL,predictive mixture mean
+4,at_least_5_target_mean_per_field_range_ratio,>=0.55,0.49225403285610164,FAIL,5762 realtime fields
+5,actual_one_station_mean_per_field_range_ratio,>=0.25,0.18333999334629333,FAIL,1494 realtime fields with at least 5 targets
+6,actual_one_station_pairwise_delta_mae,<=0.330,0.3367127353773407,FAIL,1494 realtime fields with at least 5 targets
+7,requested_1s_mae,<=0.253,0.25289103602199925,PASS,margin 0.00010896397800075
+8,random_nll_and_calibration,<=0.22,0.21466288046177337,PROVISIONAL_PASS,Brier +0.000509 and coverage1 -0.003423 versus gamma1.66 base
+9,normal_all_target_mae,<=0.136,0.13160984770342787,PASS,89770 validation targets
+10,normal_non_input_mae,<=0.218,0.21082612453012067,PASS,26119 validation targets
