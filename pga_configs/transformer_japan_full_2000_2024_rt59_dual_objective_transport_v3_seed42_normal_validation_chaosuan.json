@@ -1,0 +1,12 @@
+{
+    "extends": "transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json",
+    "training_params": {
+        "weight_path": "${RT59_WEIGHT_PATH}",
+        "validation_generator_overrides": {
+            "causal_random_input_mask": {
+                "enabled": false
+            }
+        }
+    },
+    "experiment_note": "Evaluation-only normal-geometry companion for the fixed RT59-v3 epoch-8 full_model_last.pth. It retains the RT59 architecture and disables causal random masking only for validation. No test split is used."
+}

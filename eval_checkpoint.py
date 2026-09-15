@@ -114,6 +114,17 @@ def _maybe_unnormalize_pga_sigma(name, arr, config):
     return arr * std
 
 
+def _maybe_unnormalize_pga_mdn(arr, config):
+    arr = np.asarray(arr).copy()
+    norm = _pga_norm_config(config)
+    if norm is None:
+        return arr
+    mean, std = norm
+    arr[..., 1] = arr[..., 1] * std + mean
+    arr[..., 2] = arr[..., 2] * std
+    return arr
+
+
 def _softmax_np(logits, axis=-1):
     logits = np.asarray(logits)
     shifted = logits - np.max(logits, axis=axis, keepdims=True)
@@ -223,6 +234,48 @@ def append_pga_temporal_residual_outputs(results, raw_model, config):
                 arr = _maybe_unnormalize_pga_delta(arr, config)
         else:
             arr = _maybe_unnormalize_pga('pga', arr, config)
+        results[key].append(arr)
+
+    rt59_tensors = {
+        'rt59_base_mdn': getattr(raw_model, '_last_rt59_base_mdn', None),
+        'rt59_base_mean': getattr(raw_model, '_last_rt59_base_mean', None),
+        'rt59_input_base_mean': getattr(raw_model, '_last_rt59_input_base_mean', None),
+        'rt59_input_base_sigma': getattr(raw_model, '_last_rt59_input_base_sigma', None),
+        'rt59_frozen_anchor': getattr(raw_model, '_last_rt59_anchor', None),
+        'rt59_local_delta': getattr(raw_model, '_last_rt59_local_delta', None),
+        'rt59_level': getattr(raw_model, '_last_rt59_level', None),
+        'rt59_relative_transfer': getattr(raw_model, '_last_rt59_relative_transfer', None),
+        'rt59_candidate': getattr(raw_model, '_last_rt59_candidate', None),
+        'rt59_station_weights': getattr(raw_model, '_last_rt59_station_weights', None),
+        'rt59_applied_delta': getattr(raw_model, '_last_rt59_applied_delta', None),
+        'rt59_route_observed': getattr(raw_model, '_last_rt59_route_observed', None),
+        'rt59_route_ambiguous': getattr(raw_model, '_last_rt59_route_ambiguous', None),
+        'rt59_fixed_context_rolled_delta': getattr(
+            raw_model, '_last_rt59_fixed_context_rolled_delta', None
+        ),
+    }
+    for key, value in rt59_tensors.items():
+        if value is None:
+            continue
+        arr = value.detach().cpu().numpy().squeeze(0)
+        if key == 'rt59_base_mdn':
+            arr = _maybe_unnormalize_pga_mdn(arr, config)
+        elif key in (
+            'rt59_base_mean',
+            'rt59_input_base_mean',
+            'rt59_frozen_anchor',
+            'rt59_candidate',
+        ):
+            arr = _maybe_unnormalize_pga('pga', arr, config)
+        elif key == 'rt59_input_base_sigma':
+            arr = _maybe_unnormalize_pga_sigma('pga', arr, config)
+        elif key in (
+            'rt59_local_delta',
+            'rt59_relative_transfer',
+            'rt59_applied_delta',
+            'rt59_fixed_context_rolled_delta',
+        ):
+            arr = _maybe_unnormalize_pga_delta(arr, config)
         results[key].append(arr)
 
 

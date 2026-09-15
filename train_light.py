@@ -29,6 +29,7 @@ from torch.utils.tensorboard import SummaryWriter
 import gemini_util_light as util
 import loader_light as loader
 import gemini_models as models
+from tools.rt59_dual_objective import GROUP_NAMES, rt59_grouped_objective
 
 from dtbench.training.modeling import build_interaction_indexes, parse_hps
 
@@ -210,6 +211,8 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
     encoder_lr = training_params.get('lr_encoder', None)
     temporal_residual_lr = training_params.get('lr_pga_temporal_residual', None)
     anchor_transfer_lr = training_params.get('lr_pga_anchor_transfer', None)
+    rt59_local_lr = training_params.get('lr_rt59_local', None)
+    rt59_transport_lr = training_params.get('lr_rt59_transport', None)
 
     encoder_params = list(_iter_trainable_params(raw_model.waveform_model[0]))
     adapter_params = list(_iter_trainable_params(raw_model.waveform_model[1]))
@@ -225,10 +228,21 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
         if anchor_transfer_module is not None and anchor_transfer_lr is not None
         else []
     )
+    rt59_module = getattr(raw_model, 'pga_anchor_residual_transport_head', None)
+    rt59_local_params = (
+        list(_iter_trainable_params(rt59_module.local))
+        if rt59_module is not None and rt59_local_lr is not None else []
+    )
+    rt59_transport_params = (
+        list(_iter_trainable_params(rt59_module.transport))
+        if rt59_module is not None and rt59_transport_lr is not None else []
+    )
     adapter_param_ids = {id(p) for p in adapter_params}
     encoder_param_ids = {id(p) for p in encoder_params}
     temporal_residual_param_ids = {id(p) for p in temporal_residual_params}
     anchor_transfer_param_ids = {id(p) for p in anchor_transfer_params}
+    rt59_local_param_ids = {id(p) for p in rt59_local_params}
+    rt59_transport_param_ids = {id(p) for p in rt59_transport_params}
 
     team_params = []
     for param in _iter_trainable_params(raw_model):
@@ -238,6 +252,8 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
             or pid in encoder_param_ids
             or pid in temporal_residual_param_ids
             or pid in anchor_transfer_param_ids
+            or pid in rt59_local_param_ids
+            or pid in rt59_transport_param_ids
         ):
             continue
         team_params.append(param)
@@ -267,6 +283,18 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
             'lr': anchor_transfer_lr,
             'name': 'pga_anchor_transfer',
         })
+    if rt59_local_params:
+        param_groups.append({
+            'params': rt59_local_params,
+            'lr': rt59_local_lr,
+            'name': 'rt59_local',
+        })
+    if rt59_transport_params:
+        param_groups.append({
+            'params': rt59_transport_params,
+            'lr': rt59_transport_lr,
+            'name': 'rt59_transport',
+        })
     if encoder_params:
         if encoder_lr is None:
             raise ValueError(
@@ -281,7 +309,20 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
     if not param_groups:
         raise ValueError('No trainable parameters found for optimizer.')
 
-    optimizer = optim.Adam(param_groups)
+    optimizer_name = str(training_params.get('optimizer', 'adam')).strip().lower()
+    betas = tuple(training_params.get('adam_betas', (0.9, 0.999)))
+    eps = float(training_params.get('adam_eps', 1e-8))
+    weight_decay = float(training_params.get('weight_decay', 0.0))
+    if optimizer_name != 'adam':
+        raise ValueError(
+            f'Full-model optimizer must be adam for this training path, got {optimizer_name!r}.'
+        )
+    optimizer = optim.Adam(
+        param_groups,
+        betas=betas,
+        eps=eps,
+        weight_decay=weight_decay,
+    )
     group_summary = {
         group['name']: {
             'lr': group['lr'],
@@ -301,22 +342,30 @@ def apply_full_model_trainability(model, training_params, is_dist=False, rank=0)
         'temporal_residual_only',
         'station_distinctive_residual_only',
         'anchor_transfer_only',
+        'dual_anchor_residual_only',
     ):
         raise ValueError(
             "training_params.freeze_mode must be one of 'none' or "
             "'temporal_residual_only', 'station_distinctive_residual_only', "
-            "or 'anchor_transfer_only', "
+            "'anchor_transfer_only', or 'dual_anchor_residual_only', "
             f"got {mode!r}."
         )
-    if mode == 'anchor_transfer_only':
-        anchor_head = getattr(raw_model, 'pga_anchor_transfer_head', None)
-        if anchor_head is None:
+    if mode in ('anchor_transfer_only', 'dual_anchor_residual_only'):
+        if mode == 'dual_anchor_residual_only':
+            train_head = getattr(raw_model, 'pga_anchor_residual_transport_head', None)
+            expected_prefix = 'pga_anchor_residual_transport_head.'
+            requirement = 'use_pga_anchor_residual_transport=true'
+        else:
+            train_head = getattr(raw_model, 'pga_anchor_transfer_head', None)
+            expected_prefix = 'pga_anchor_transfer_head.'
+            requirement = 'use_pga_anchor_transfer=true'
+        if train_head is None:
             raise ValueError(
-                'freeze_mode=anchor_transfer_only requires use_pga_anchor_transfer=true.'
+                f'freeze_mode={mode} requires {requirement}.'
             )
         for param in raw_model.parameters():
             param.requires_grad = False
-        for param in anchor_head.parameters():
+        for param in train_head.parameters():
             param.requires_grad = True
         trainable_names = [
             name for name, param in raw_model.named_parameters()
@@ -324,15 +373,14 @@ def apply_full_model_trainability(model, training_params, is_dist=False, rank=0)
         ]
         invalid_names = [
             name for name in trainable_names
-            if not name.startswith('pga_anchor_transfer_head.')
+            if not name.startswith(expected_prefix)
         ]
         if invalid_names:
             raise RuntimeError(
-                'anchor_transfer_only exposed parameters outside '
-                f'pga_anchor_transfer_head.*: {invalid_names}'
+                f'{mode} exposed parameters outside {expected_prefix}*: {invalid_names}'
             )
         if not trainable_names:
-            raise RuntimeError('anchor_transfer_only found no trainable parameters.')
+            raise RuntimeError(f'{mode} found no trainable parameters.')
         if rank == 0:
             for name in trainable_names:
                 parameter = dict(raw_model.named_parameters())[name]
@@ -342,8 +390,8 @@ def apply_full_model_trainability(model, training_params, is_dist=False, rank=0)
             )
             total = sum(p.numel() for p in raw_model.parameters())
             print(
-                '[trainability] freeze_mode=anchor_transfer_only: '
-                f'prefix=pga_anchor_transfer_head., tensors={len(trainable_names)}, '
+                f'[trainability] freeze_mode={mode}: '
+                f'prefix={expected_prefix}, tensors={len(trainable_names)}, '
                 f'trainable={trainable}/{total} parameters'
             )
         return
@@ -387,6 +435,52 @@ def set_anchor_transfer_only_train_mode(model):
             child.train()
         else:
             child.eval()
+
+
+def set_rt59_only_train_mode(model):
+    raw_model = model.module if hasattr(model, 'module') else model
+    for name, child in raw_model.named_children():
+        if name == 'pga_anchor_residual_transport_head':
+            child.train()
+        else:
+            child.eval()
+
+
+def initialize_rt59_from_rt58(model, rank=0):
+    """Warm-copy only the specified RT58 transport trunk on a fresh RT59 run."""
+    raw_model = model.module if hasattr(model, 'module') else model
+    old_head = getattr(raw_model, 'pga_anchor_transfer_head', None)
+    new_head = getattr(raw_model, 'pga_anchor_residual_transport_head', None)
+    if old_head is None or new_head is None:
+        raise ValueError('RT59 warm initialization requires old and new transfer heads.')
+    if bool(new_head._warm_copy_complete.item()):
+        raise RuntimeError('RT59 transport warm-copy was already completed.')
+    for name in ('set_input', 'set_blocks', 'pair_encoder', 'score_head'):
+        getattr(new_head.transport, name).load_state_dict(
+            getattr(old_head, name).state_dict(), strict=True
+        )
+    new_head._warm_copy_complete.fill_(True)
+    if rank == 0:
+        print(
+            '[rt59] warm-copied RT58 set_input/set_blocks/pair_encoder/score_head; '
+            'new local/level/residual outputs retain zero initialization'
+        )
+
+
+def _rt59_batch_event_ids(p_picks, batch_size):
+    if not isinstance(p_picks, dict) or 'event_id' not in p_picks:
+        return None
+    values = p_picks['event_id']
+    if torch.is_tensor(values):
+        values = values.detach().cpu().reshape(-1).tolist()
+    elif isinstance(values, np.ndarray):
+        values = values.reshape(-1).tolist()
+    elif not isinstance(values, (list, tuple)):
+        values = [values]
+    values = [str(value) for value in values]
+    if len(values) != batch_size:
+        return None
+    return values
 
 
 class SingleStationTaskDataset(torch.utils.data.Dataset):
@@ -829,6 +923,13 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
             running_loss = 0.0
             num_train_batches = 0
             first_batch_logged = False
+            rt59_epoch_target_counts = torch.zeros(3, dtype=torch.long, device=device)
+            rt59_epoch_row_counts = torch.zeros(3, dtype=torch.long, device=device)
+            rt59_epoch_aux_counts = torch.zeros(9, dtype=torch.long, device=device)
+            rt59_epoch_loss_sums = torch.zeros(9, dtype=torch.float64, device=device)
+            rt59_epoch_grad_sums = torch.zeros(4, dtype=torch.float64, device=device)
+            rt59_epoch_stat_batches = 0
+            rt59_epoch_event_ids = [set(), set(), set()]
             for batch_idx, (waveforms, targets, _) in enumerate(train_loader):
                 waveforms = waveforms.to(device)
                 targets = {key: value.to(device) for key, value in targets.items() if torch.is_tensor(value)}
@@ -2314,6 +2415,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 normal_replay_distillation_loss=None,
                 station_residual_decorrelation_loss=None,
                 station_local_pga_loss=None,
+                rt59_dual_objective_cfg=None,
+                rt59_fixed_lr_schedule=None,
                 freeze_mode=None, start_epoch=0, best_val_init=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
@@ -2340,6 +2443,22 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
     last_path = os.path.join(training_params['weight_path'], f'{save_name}_last.pth')
     try:
         for epoch in range(start_epoch, num_epochs):
+            if rt59_fixed_lr_schedule:
+                boundaries = tuple(rt59_fixed_lr_schedule.get(
+                    'completed_epoch_boundaries', (0, 4, 6)
+                ))
+                values = tuple(rt59_fixed_lr_schedule.get(
+                    'lr_values', (5e-4, 2.5e-4, 1.25e-4)
+                ))
+                if len(boundaries) != len(values):
+                    raise ValueError('RT59 fixed LR boundaries/values length mismatch.')
+                active_lr = values[0]
+                for boundary, value in zip(boundaries, values):
+                    if epoch >= int(boundary):
+                        active_lr = float(value)
+                for group in optimizer.param_groups:
+                    if group.get('name') in ('rt59_local', 'rt59_transport'):
+                        group['lr'] = active_lr
             refresh_training_dataset_epoch(train_loader.dataset, epoch)
             if is_dist and train_sampler is not None:
                 train_sampler.set_epoch(epoch)
@@ -2348,6 +2467,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 set_temporal_residual_only_train_mode(model)
             elif freeze_mode == 'anchor_transfer_only':
                 set_anchor_transfer_only_train_mode(model)
+            elif freeze_mode == 'dual_anchor_residual_only':
+                set_rt59_only_train_mode(model)
             running_loss = 0.0
             num_train_batches = 0
             first_batch_logged = False
@@ -2474,8 +2595,28 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 )
                 if residual_decor_loss is not None:
                     loss = loss + residual_decor_loss
+                rt59_stats = None
+                if rt59_dual_objective_cfg and rt59_dual_objective_cfg.get('enabled', False):
+                    loss, rt59_stats = rt59_grouped_objective(
+                        eval_model,
+                        outputs,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        p_picks,
+                        rt59_dual_objective_cfg,
+                        pga_target_normalization=pga_target_normalization,
+                    )
                 loss.backward()
                 pre_clip_global_grad = global_grad_norm(model.parameters())
+                rt59_local_pre_clip = None
+                rt59_transport_pre_clip = None
+                rt59_local_post_clip = None
+                rt59_transport_post_clip = None
+                if freeze_mode == 'dual_anchor_residual_only':
+                    rt59_head = eval_model.pga_anchor_residual_transport_head
+                    rt59_local_pre_clip = module_grad_norm(rt59_head.local)
+                    rt59_transport_pre_clip = module_grad_norm(rt59_head.transport)
                 if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
                     diag_scalars = {}
                     forward_diag = getattr(eval_model, '_last_diag', {})
@@ -2515,6 +2656,19 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     for name, anchor_transfer_loss in anchor_transfer_losses.items():
                         if not torch.isnan(anchor_transfer_loss).any():
                             diag_scalars[f'diag/{name}'] = anchor_transfer_loss.detach()
+                    if rt59_stats is not None:
+                        for name in (
+                            'main', 'nll', 'smooth', 'mse', 'regret',
+                            'relative', 'candidate', 'difference', 'total',
+                        ):
+                            diag_scalars[f'rt59/loss_{name}'] = rt59_stats[name]
+                        for group_index, group_name in enumerate(GROUP_NAMES):
+                            diag_scalars[f'rt59/targets_{group_name}'] = (
+                                rt59_stats['target_counts'][group_index].float()
+                            )
+                            diag_scalars[f'rt59/realtime_rows_{group_name}'] = (
+                                rt59_stats['local_row_counts'][group_index].float()
+                            )
 
                     grad_targets = {
                         'grad/station_adapter': module_grad_norm(eval_model.waveform_model[1]),
@@ -2555,12 +2709,57 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     _record_scalar(writer, scalar_history, 'train/loss', loss.item(), global_step)
                     step_in_ep = global_step - steps_per_epoch * epoch
                     print(f'Step/Epoch {step_in_ep}/{epoch}, Loss: {loss.item():.4f}')
-                if clipnorm is not None:
+                if freeze_mode == 'dual_anchor_residual_only':
+                    rt59_head = eval_model.pga_anchor_residual_transport_head
+                    torch.nn.utils.clip_grad_norm_(rt59_head.local.parameters(), max_norm=1.0)
+                    torch.nn.utils.clip_grad_norm_(rt59_head.transport.parameters(), max_norm=1.0)
+                    rt59_local_post_clip = module_grad_norm(rt59_head.local)
+                    rt59_transport_post_clip = module_grad_norm(rt59_head.transport)
+                elif clipnorm is not None:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
                 post_clip_global_grad = global_grad_norm(model.parameters())
+                if rt59_stats is not None:
+                    rt59_epoch_target_counts += rt59_stats['target_counts'].to(device)
+                    rt59_epoch_row_counts += rt59_stats['local_row_counts'].to(device)
+                    rt59_epoch_aux_counts += torch.cat([
+                        rt59_stats['relative_query_counts'],
+                        rt59_stats['candidate_query_counts'],
+                        rt59_stats['difference_field_counts'],
+                    ]).to(device)
+                    rt59_epoch_loss_sums += torch.stack([
+                        rt59_stats[name].double() for name in (
+                            'main', 'nll', 'smooth', 'mse', 'regret',
+                            'relative', 'candidate', 'difference', 'total',
+                        )
+                    ]).to(device)
+                    for grad_index, grad_value in enumerate((
+                        rt59_local_pre_clip,
+                        rt59_transport_pre_clip,
+                        rt59_local_post_clip,
+                        rt59_transport_post_clip,
+                    )):
+                        if grad_value is not None and torch.isfinite(grad_value):
+                            rt59_epoch_grad_sums[grad_index] += grad_value.detach().double()
+                    rt59_epoch_stat_batches += 1
+                    event_ids = _rt59_batch_event_ids(
+                        p_picks, rt59_stats['groups'].shape[0]
+                    )
+                    if event_ids is not None:
+                        for row_index, event_id in enumerate(event_ids):
+                            for group_index in range(3):
+                                if (rt59_stats['groups'][row_index] == group_index).any():
+                                    rt59_epoch_event_ids[group_index].add(event_id)
                 if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
                     if post_clip_global_grad is not None and not torch.isnan(post_clip_global_grad).any():
                         diag_scalars['grad/global_post_clip_norm'] = post_clip_global_grad.detach()
+                    for name, value in (
+                        ('rt59/local_pre_clip_norm', rt59_local_pre_clip),
+                        ('rt59/transport_pre_clip_norm', rt59_transport_pre_clip),
+                        ('rt59/local_post_clip_norm', rt59_local_post_clip),
+                        ('rt59/transport_post_clip_norm', rt59_transport_post_clip),
+                    ):
+                        if value is not None and not torch.isnan(value).any():
+                            diag_scalars[name] = value.detach()
                     for key, value in diag_scalars.items():
                         _record_scalar(writer, scalar_history, key, value, epoch)
                     first_batch_logged = True
@@ -2583,6 +2782,63 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 epoch_loss = running_loss / max(num_train_batches, 1)
             if steps_per_epoch == 0:
                 steps_per_epoch = global_step
+            if rt59_epoch_stat_batches:
+                if is_dist:
+                    dist.all_reduce(rt59_epoch_row_counts, op=dist.ReduceOp.SUM)
+                    loss_and_grad = torch.cat([
+                        rt59_epoch_loss_sums,
+                        rt59_epoch_grad_sums,
+                    ])
+                    dist.all_reduce(loss_and_grad, op=dist.ReduceOp.SUM)
+                    loss_and_grad /= dist.get_world_size()
+                    rt59_epoch_loss_sums = loss_and_grad[:9]
+                    rt59_epoch_grad_sums = loss_and_grad[9:]
+                    gathered_event_ids = [None for _ in range(dist.get_world_size())]
+                    dist.all_gather_object(
+                        gathered_event_ids,
+                        [sorted(values) for values in rt59_epoch_event_ids],
+                    )
+                    merged_event_ids = [set(), set(), set()]
+                    for rank_values in gathered_event_ids:
+                        for group_index in range(3):
+                            merged_event_ids[group_index].update(rank_values[group_index])
+                    rt59_epoch_event_ids = merged_event_ids
+                if (not is_dist) or rank == 0:
+                    denom = max(rt59_epoch_stat_batches, 1)
+                    loss_names = (
+                        'main', 'nll', 'smooth', 'mse', 'regret',
+                        'relative', 'candidate', 'difference', 'total',
+                    )
+                    for index, name in enumerate(loss_names):
+                        _record_scalar(
+                            writer,
+                            scalar_history,
+                            f'rt59_epoch/loss_{name}',
+                            rt59_epoch_loss_sums[index] / denom,
+                            epoch,
+                        )
+                    grad_names = (
+                        'local_pre_clip_norm', 'transport_pre_clip_norm',
+                        'local_post_clip_norm', 'transport_post_clip_norm',
+                    )
+                    for index, name in enumerate(grad_names):
+                        _record_scalar(
+                            writer,
+                            scalar_history,
+                            f'rt59_epoch/{name}',
+                            rt59_epoch_grad_sums[index] / denom,
+                            epoch,
+                        )
+                    for group_index, group_name in enumerate(GROUP_NAMES):
+                        _record_scalar(writer, scalar_history, f'rt59_epoch/targets_{group_name}', rt59_epoch_target_counts[group_index], epoch)
+                        _record_scalar(writer, scalar_history, f'rt59_epoch/realtime_rows_{group_name}', rt59_epoch_row_counts[group_index], epoch)
+                        _record_scalar(writer, scalar_history, f'rt59_epoch/events_{group_name}', len(rt59_epoch_event_ids[group_index]), epoch)
+                        _record_scalar(writer, scalar_history, f'rt59_epoch/relative_queries_{group_name}', rt59_epoch_aux_counts[group_index], epoch)
+                        _record_scalar(writer, scalar_history, f'rt59_epoch/candidate_queries_{group_name}', rt59_epoch_aux_counts[3 + group_index], epoch)
+                        _record_scalar(writer, scalar_history, f'rt59_epoch/difference_fields_{group_name}', rt59_epoch_aux_counts[6 + group_index], epoch)
+                    for group in optimizer.param_groups:
+                        if group.get('name') in ('rt59_local', 'rt59_transport'):
+                            _record_scalar(writer, scalar_history, f'rt59_epoch/lr_{group["name"]}', group['lr'], epoch)
             if (not is_dist) or (is_dist and (rank == 0)):
                 _record_scalar(writer, scalar_history, 'train/epoch_loss', epoch_loss, epoch)
                 print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}')
@@ -2699,6 +2955,17 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     )
                     if station_local_aux is not None:
                         loss = loss + station_local_aux
+                    if rt59_dual_objective_cfg and rt59_dual_objective_cfg.get('enabled', False):
+                        loss, _ = rt59_grouped_objective(
+                            eval_model,
+                            outputs,
+                            labels,
+                            eval_model.output_layout,
+                            pga_target_valid,
+                            p_picks,
+                            rt59_dual_objective_cfg,
+                            pga_target_normalization=pga_target_normalization,
+                        )
                     val_running_loss += loss.item()
                     num_val_batches += 1
 
@@ -2718,9 +2985,11 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 print(f'Validation Loss: {val_loss:.4f}')
 
             monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
-            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            if rt59_fixed_lr_schedule:
+                pass
+            elif isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                 scheduler.step(monitor_loss)
-            else:
+            elif scheduler is not None:
                 scheduler.step()
 
             # Checkpoints must contain the scheduler state *after* consuming
@@ -2739,6 +3008,14 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         scheduler_step_completed=True,
                         scheduler_monitor=lr_monitor,
                         scheduler_monitor_loss=monitor_loss,
+                        extra={
+                            'rt59_schedule_completed_epochs': epoch + 1,
+                            'rt59_next_lr': (
+                                5e-4 if epoch + 1 < 4 else
+                                2.5e-4 if epoch + 1 < 6 else
+                                1.25e-4
+                            ),
+                        } if rt59_fixed_lr_schedule else None,
                     )
                 save_model_checkpoint(
                     last_path,
@@ -2751,6 +3028,14 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     scheduler_step_completed=True,
                     scheduler_monitor=lr_monitor,
                     scheduler_monitor_loss=monitor_loss,
+                    extra={
+                        'rt59_schedule_completed_epochs': epoch + 1,
+                        'rt59_next_lr': (
+                            5e-4 if epoch + 1 < 4 else
+                            2.5e-4 if epoch + 1 < 6 else
+                            1.25e-4
+                        ),
+                    } if rt59_fixed_lr_schedule else None,
                 )
             if is_dist:
                 dist.barrier()
@@ -2809,6 +3094,18 @@ def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device,
 
     start_epoch = checkpoint.get('epoch', 0)
     val_loss = checkpoint.get('val_loss', checkpoint.get('loss', None))
+    raw_model = model.module if hasattr(model, 'module') else model
+    rt59_head = getattr(raw_model, 'pga_anchor_residual_transport_head', None)
+    if rt59_head is not None:
+        if not bool(rt59_head._warm_copy_complete.item()):
+            raise RuntimeError('RT59 resume checkpoint is missing completed warm-copy state.')
+        saved_completed = checkpoint.get('rt59_schedule_completed_epochs', None)
+        if saved_completed is None or int(saved_completed) != int(start_epoch):
+            raise RuntimeError(
+                'RT59 resume schedule metadata mismatch: '
+                f'checkpoint epoch={start_epoch}, '
+                f'completed={saved_completed!r}.'
+            )
 
     # Until scheduler timing metadata was added, full-model checkpoints were
     # written immediately before scheduler.step().  Replaying the missing
@@ -3643,6 +3940,12 @@ if __name__ == '__main__':
                 context=training_params['load_model_path'],
                 allowed_missing_prefixes=allowed_missing_prefixes,
             )
+            rt59_cfg = training_params.get('rt59_dual_objective', None)
+            resume_requested = resolve_full_model_resume_path(
+                training_params, args.resume_full_model
+            )
+            if rt59_cfg and rt59_cfg.get('enabled', False) and not resume_requested:
+                initialize_rt59_from_rt58(full_model, rank=rank)
 
         if training_params.get('transfer_model_path'):
             print('Transfering model weights')
@@ -3709,6 +4012,12 @@ if __name__ == '__main__':
             full_model, training_params, is_dist=is_dist
         )
         if rank == 0:
+            print(
+                '[optimizer] algorithm=Adam, '
+                f'betas={tuple(training_params.get("adam_betas", (0.9, 0.999)))}, '
+                f'eps={float(training_params.get("adam_eps", 1e-8)):g}, '
+                f'weight_decay={float(training_params.get("weight_decay", 0.0)):g}'
+            )
             for group_name, info in optimizer_group_summary.items():
                 print(
                     f'Optimizer group {group_name}: '
@@ -3862,14 +4171,21 @@ if __name__ == '__main__':
         lr_decay_factor = float(training_params.get('lr_decay_factor', 0.3))
         min_lr = float(training_params.get('min_lr', 0.0))
 #        lr_decay = ReduceLROnPlateau(monitor='val_loss', mode='min', patience=patience, factor=0.3, verbose=1) # need modify
-        lr_decay = ReduceLROnPlateau(
-            optimizer,
-            mode='min',
-            factor=lr_decay_factor,
-            patience=patience,
-            min_lr=min_lr,
-            verbose=1,
-        )
+        rt59_dual_objective_cfg = training_params.get('rt59_dual_objective', None)
+        rt59_fixed_lr_schedule = training_params.get('rt59_fixed_lr_schedule', None)
+        if rt59_dual_objective_cfg and rt59_dual_objective_cfg.get('enabled', False):
+            if not rt59_fixed_lr_schedule:
+                raise ValueError('RT59 requires rt59_fixed_lr_schedule.')
+            lr_decay = None
+        else:
+            lr_decay = ReduceLROnPlateau(
+                optimizer,
+                mode='min',
+                factor=lr_decay_factor,
+                patience=patience,
+                min_lr=min_lr,
+                verbose=1,
+            )
         resume_full_model_path = resolve_full_model_resume_path(training_params, args.resume_full_model)
         resume_start_epoch = 0
         resume_best_val = None
@@ -3923,6 +4239,17 @@ if __name__ == '__main__':
                     eval_model,
                     epoch=0,
                     training_params=training_params,
+                    extra={
+                        'rt59_schedule_completed_epochs': 0,
+                        'rt59_next_lr': 5e-4,
+                        'rt59_warm_copy_complete': bool(
+                            getattr(
+                                getattr(eval_model, 'pga_anchor_residual_transport_head', None),
+                                '_warm_copy_complete',
+                                torch.tensor(False),
+                            ).item()
+                        ),
+                    } if rt59_fixed_lr_schedule else None,
                 )
             else:
                 print(f'[resume] skipping full_model_init.pth overwrite at epoch {resume_start_epoch}')
@@ -4001,10 +4328,13 @@ if __name__ == '__main__':
                 print(f'[loss] station_residual_decorrelation_loss={station_residual_decorrelation_loss_cfg}')
             if station_local_pga_loss_cfg and station_local_pga_loss_cfg.get('enabled', False):
                 print(f'[loss] station_local_pga_aux_loss={station_local_pga_loss_cfg}')
-            print(
-                f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss '
-                f'(patience={patience}, factor={lr_decay_factor:g}, min_lr={min_lr:g})'
-            )
+            if rt59_fixed_lr_schedule:
+                print(f'[lr] RT59 fixed schedule={rt59_fixed_lr_schedule}')
+            else:
+                print(
+                    f'[lr] ReduceLROnPlateau monitors {lr_monitor} loss '
+                    f'(patience={patience}, factor={lr_decay_factor:g}, min_lr={min_lr:g})'
+                )
         train_model(
             full_model,
             train_loader,
@@ -4038,6 +4368,8 @@ if __name__ == '__main__':
             normal_replay_distillation_loss=normal_replay_distillation_loss_cfg,
             station_residual_decorrelation_loss=station_residual_decorrelation_loss_cfg,
             station_local_pga_loss=station_local_pga_loss_cfg,
+            rt59_dual_objective_cfg=rt59_dual_objective_cfg,
+            rt59_fixed_lr_schedule=rt59_fixed_lr_schedule,
             freeze_mode=training_params.get('freeze_mode', None),
             start_epoch=resume_start_epoch,
             best_val_init=resume_best_val,

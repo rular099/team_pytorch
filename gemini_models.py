@@ -5,6 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 from argparse import Namespace
+from dataclasses import dataclass
+
+from tools.rt59_dual_objective import route_correction, unique_observed_match
 
 from mup import MuReadout, set_base_shapes
 
@@ -1535,6 +1538,16 @@ class PGAAnchorTransferHead(nn.Module):
         self._last_applied_delta = None
         self._last_gate = None
 
+    def compute_anchor(self, station_u, station_d, event_emb, station_valid):
+        """Decode the frozen RT58 station anchor without running its field head."""
+        if station_u is None or station_d is None or event_emb is None:
+            raise ValueError('RT58 anchor decoding requires u/d/event tensors.')
+        station_valid = station_valid.bool()
+        event_station = event_emb[:, None, :].expand(-1, station_u.shape[1], -1)
+        anchor_input = torch.cat([station_u, station_d, event_station], dim=-1)
+        anchor = self.anchor_head(anchor_input).squeeze(-1)
+        return anchor * station_valid.to(anchor.dtype)
+
     def forward(self, station_u, station_d, event_emb, query_emb,
                 station_coords, query_coords, station_valid,
                 query_valid, frozen_rt57_mean):
@@ -1558,10 +1571,7 @@ class PGAAnchorTransferHead(nn.Module):
         _, n_station, _ = station_u.shape
         n_query = query_emb.shape[1]
 
-        event_station = event_emb[:, None, :].expand(-1, n_station, -1)
-        anchor_input = torch.cat([station_u, station_d, event_station], dim=-1)
-        anchor = self.anchor_head(anchor_input).squeeze(-1)
-        anchor = anchor * station_valid.to(anchor.dtype)
+        anchor = self.compute_anchor(station_u, station_d, event_emb, station_valid)
 
         set_input = torch.cat(
             [station_u, station_d, station_coords.float()],
@@ -1644,6 +1654,301 @@ class PGAAnchorTransferHead(nn.Module):
         self._last_applied_delta = applied_delta
         self._last_gate = gate
         return applied_delta
+
+
+class RT59LocalResidualHead(nn.Module):
+    """Independent correction for a uniquely observed query location."""
+
+    def __init__(self, station_dim, event_dim, hidden_dim=128):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.LayerNorm(2 * int(station_dim) + int(event_dim)),
+            nn.Linear(2 * int(station_dim) + int(event_dim), int(hidden_dim)),
+            nn.GELU(),
+        )
+        self.readout = nn.Sequential(
+            nn.Linear(int(hidden_dim) + 3, int(hidden_dim)),
+            nn.GELU(),
+            nn.Linear(int(hidden_dim), 1),
+        )
+        nn.init.zeros_(self.readout[-1].weight)
+        nn.init.zeros_(self.readout[-1].bias)
+
+    def forward(self, station_u, station_d, event_emb, anchor, base_mean,
+                predictive_sigma, station_valid):
+        station_valid = station_valid.bool()
+        station_mask = station_valid[..., None]
+        frozen_u = torch.where(station_mask, station_u.detach(), torch.zeros_like(station_u))
+        frozen_d = torch.where(station_mask, station_d.detach(), torch.zeros_like(station_d))
+        frozen_event = event_emb.detach()[:, None, :].expand(-1, station_u.shape[1], -1)
+        safe_anchor = torch.where(station_valid, anchor.detach(), torch.zeros_like(anchor))
+        safe_base = torch.where(station_valid, base_mean.detach(), torch.zeros_like(base_mean))
+        safe_sigma = torch.where(
+            station_valid,
+            predictive_sigma.detach(),
+            torch.ones_like(predictive_sigma),
+        )
+        scalars = torch.stack([
+            safe_anchor - safe_base,
+            safe_base,
+            safe_sigma.clamp_min(1e-6).log(),
+        ], dim=-1)
+        scalars = torch.where(station_mask, scalars, torch.zeros_like(scalars))
+        features = self.features(torch.cat([frozen_u, frozen_d, frozen_event], dim=-1))
+        delta = self.readout(torch.cat([features, scalars], dim=-1)).squeeze(-1)
+        return torch.where(station_valid, delta, torch.zeros_like(delta))
+
+
+class RT59ResidualTransportHead(nn.Module):
+    """Base-relative spatial transport path with query-independent station level."""
+
+    def __init__(self, station_dim, emb_dim, hidden_dim=256, set_layers=2,
+                 heads=4, distance_scale=0.05):
+        super().__init__()
+        self.station_dim = int(station_dim)
+        self.emb_dim = int(emb_dim)
+        self.hidden_dim = int(hidden_dim)
+        self.distance_scale = float(distance_scale)
+        self.set_input = nn.Sequential(
+            nn.LayerNorm(2 * self.station_dim + 3),
+            nn.Linear(2 * self.station_dim + 3, self.hidden_dim),
+            nn.GELU(),
+        )
+        self.set_blocks = nn.ModuleList([
+            AnchorTransferSetBlock(self.hidden_dim, int(heads))
+            for _ in range(int(set_layers))
+        ])
+        pair_dim = 2 * self.station_dim + 2 * self.emb_dim + self.hidden_dim + 10
+        self.pair_encoder = nn.Sequential(
+            nn.LayerNorm(pair_dim),
+            nn.Linear(pair_dim, self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim),
+            nn.GELU(),
+        )
+        self.score_head = nn.Linear(self.hidden_dim, 1)
+        self.level_head = nn.Sequential(
+            nn.LayerNorm(2 * self.station_dim + self.emb_dim),
+            nn.Linear(2 * self.station_dim + self.emb_dim, self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, 1),
+        )
+        self.residual_head = nn.Sequential(
+            nn.LayerNorm(self.hidden_dim + 2),
+            nn.Linear(self.hidden_dim + 2, self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, 1),
+        )
+        nn.init.zeros_(self.level_head[-1].weight)
+        nn.init.zeros_(self.level_head[-1].bias)
+        nn.init.zeros_(self.residual_head[-1].weight)
+        nn.init.zeros_(self.residual_head[-1].bias)
+
+    def forward(self, station_u, station_d, event_emb, query_emb,
+                station_coords, query_coords, station_valid, query_valid,
+                anchor, input_base_mean, public_base_mean):
+        station_valid = station_valid.bool()
+        query_valid = query_valid.bool()
+        _, n_station = station_valid.shape
+        n_query = query_valid.shape[1]
+        station_mask = station_valid[..., None]
+        pair_valid = query_valid[:, :, None] & station_valid[:, None, :]
+
+        frozen_u = torch.where(
+            station_mask, station_u.detach(), torch.zeros_like(station_u)
+        )
+        frozen_d = torch.where(
+            station_mask, station_d.detach(), torch.zeros_like(station_d)
+        )
+        frozen_event = event_emb.detach()
+        frozen_query = torch.where(
+            query_valid[..., None], query_emb.detach(), torch.zeros_like(query_emb)
+        )
+        safe_station_coords = torch.where(
+            station_mask,
+            station_coords.float().detach(),
+            torch.zeros_like(station_coords.float()),
+        )
+        safe_query_coords = torch.where(
+            query_valid[..., None],
+            query_coords.float().detach(),
+            torch.zeros_like(query_coords.float()),
+        )
+        frozen_anchor = torch.where(
+            station_valid, anchor.detach(), torch.zeros_like(anchor)
+        )
+        frozen_input_base = torch.where(
+            station_valid,
+            input_base_mean.detach().squeeze(-1),
+            torch.zeros_like(input_base_mean.squeeze(-1)),
+        )
+        frozen_public_base = torch.where(
+            query_valid,
+            public_base_mean.detach().squeeze(-1),
+            torch.zeros_like(public_base_mean.squeeze(-1)),
+        )
+
+        set_state = self.set_input(torch.cat([
+            frozen_u,
+            frozen_d,
+            safe_station_coords,
+        ], dim=-1)) * station_mask.to(station_u.dtype)
+        for block in self.set_blocks:
+            set_state = block(set_state, station_valid)
+        valid_f = station_mask.to(set_state.dtype)
+        refinement = (set_state * valid_f).sum(dim=1) / valid_f.sum(dim=1).clamp_min(1.0)
+
+        event_station = frozen_event[:, None, :].expand(-1, n_station, -1)
+        level = torch.tanh(self.level_head(torch.cat([
+            frozen_u, frozen_d, event_station,
+        ], dim=-1)).squeeze(-1))
+        level = level * station_valid.to(level.dtype)
+        anchor_residual = frozen_anchor - frozen_input_base
+
+        geometry = TargetConditionedTemporalPool._geometry_features(
+            safe_query_coords,
+            safe_station_coords,
+        )
+        pair_state = self.pair_encoder(torch.cat([
+            frozen_u[:, None, :, :].expand(-1, n_query, -1, -1),
+            frozen_d[:, None, :, :].expand(-1, n_query, -1, -1),
+            frozen_event[:, None, None, :].expand(-1, n_query, n_station, -1),
+            refinement[:, None, None, :].expand(-1, n_query, n_station, -1),
+            frozen_query[:, :, None, :].expand(-1, -1, n_station, -1),
+            geometry,
+        ], dim=-1))
+        base_difference = (
+            frozen_public_base[:, :, None]
+            - frozen_input_base[:, None, :]
+        )
+        residual_input = torch.cat([
+            pair_state,
+            anchor_residual[:, None, :, None].expand(-1, n_query, -1, -1),
+            base_difference[..., None],
+        ], dim=-1)
+        relative = self.residual_head(residual_input).squeeze(-1)
+        distance = torch.linalg.norm(
+            safe_query_coords[:, :, None, :] - safe_station_coords[:, None, :, :],
+            dim=-1,
+        )
+        relative = relative * torch.tanh(distance / self.distance_scale)
+        relative = relative * pair_valid.to(relative.dtype)
+        delta_candidate = level[:, None, :] * anchor_residual[:, None, :] + relative
+        delta_candidate = delta_candidate * pair_valid.to(delta_candidate.dtype)
+        absolute_candidate = frozen_public_base[:, :, None] + delta_candidate
+        absolute_candidate = absolute_candidate * pair_valid.to(absolute_candidate.dtype)
+
+        scores = self.score_head(pair_state).squeeze(-1)
+        safe_valid = station_valid.clone()
+        empty_rows = ~safe_valid.any(dim=-1)
+        if empty_rows.any():
+            safe_valid[empty_rows, 0] = True
+        scores = scores.masked_fill(
+            ~safe_valid[:, None, :],
+            torch.finfo(scores.dtype).min,
+        )
+        weights = torch.softmax(scores, dim=-1)
+        weights = weights * pair_valid.to(weights.dtype)
+        weights = weights / weights.sum(dim=-1, keepdim=True).clamp_min(1e-8)
+        remote_delta = (weights * delta_candidate).sum(dim=-1)
+        remote_delta = remote_delta * query_valid.to(remote_delta.dtype)
+        return {
+            'remote_delta': remote_delta,
+            'level': level,
+            'relative': relative,
+            'candidate': absolute_candidate,
+            'weights': weights,
+        }
+
+
+class PGAAnchorResidualTransportHead(nn.Module):
+    """RT59-v3 local/transport correction with observable coordinate routing."""
+
+    def __init__(self, station_dim, emb_dim, local_hidden_dim=128,
+                 transport_hidden_dim=256, set_layers=2, heads=4,
+                 distance_scale=0.05, match_atol=1e-6):
+        super().__init__()
+        self.local = RT59LocalResidualHead(station_dim, emb_dim, local_hidden_dim)
+        self.transport = RT59ResidualTransportHead(
+            station_dim,
+            emb_dim,
+            hidden_dim=transport_hidden_dim,
+            set_layers=set_layers,
+            heads=heads,
+            distance_scale=distance_scale,
+        )
+        self.match_atol = float(match_atol)
+        self.register_buffer('_warm_copy_complete', torch.tensor(False), persistent=True)
+        self._last = None
+
+    def forward(self, station_u, station_d, event_emb, query_emb,
+                station_coords, query_coords, station_valid, query_valid,
+                anchor, input_base_mean, input_predictive_sigma,
+                public_base_mean, record=True):
+        unique_match, observed, ambiguous = unique_observed_match(
+            station_coords,
+            query_coords,
+            station_valid,
+            query_valid,
+            atol=self.match_atol,
+        )
+        local_delta = self.local(
+            station_u,
+            station_d,
+            event_emb,
+            anchor,
+            input_base_mean.squeeze(-1),
+            input_predictive_sigma.squeeze(-1),
+            station_valid,
+        )
+        transport = self.transport(
+            station_u,
+            station_d,
+            event_emb,
+            query_emb,
+            station_coords,
+            query_coords,
+            station_valid,
+            query_valid,
+            anchor,
+            input_base_mean,
+            public_base_mean,
+        )
+        applied = route_correction(
+            local_delta,
+            transport['remote_delta'],
+            unique_match,
+            observed,
+            query_valid,
+        )
+        result = dict(transport)
+        result.update({
+            'local_delta': local_delta,
+            'applied_delta': applied,
+            'observed': observed,
+            'ambiguous': ambiguous,
+            'unique_match': unique_match,
+        })
+        if record:
+            self._last = result
+        return result
+
+
+@dataclass
+class FrozenPGAContext:
+    """Frozen station/event state reused by RT59 internal query decoding."""
+
+    station_memory: torch.Tensor
+    station_features: torch.Tensor
+    temporal_tokens: torch.Tensor
+    temporal_token_weights: object
+    waveform_padding_mask: object
+    amplitude_features: object
+    waveform_length: int
+    station_coords: torch.Tensor
+    coords_center: torch.Tensor
+    station_valid: torch.Tensor
+    event_embedding: torch.Tensor
 
 
 class LayerwiseStationTargetReadout(nn.Module):
@@ -3804,6 +4109,7 @@ class FullModel(nn.Module):
                  pga_temporal_residual_token_control='none',
                  pga_temporal_residual_scale=1.0,
                  pga_anchor_transfer_head=None,
+                 pga_anchor_residual_transport_head=None,
                  station_residual_mode='off',
                  station_residual_source='wave',
                  station_residual_init_gate=0.1,
@@ -3881,6 +4187,7 @@ class FullModel(nn.Module):
         self.pga_temporal_residual_token_control = pga_temporal_residual_token_control
         self.pga_temporal_residual_scale = float(pga_temporal_residual_scale)
         self.pga_anchor_transfer_head = pga_anchor_transfer_head
+        self.pga_anchor_residual_transport_head = pga_anchor_residual_transport_head
         self.station_residual_mode = station_residual_mode or 'off'
         self.station_residual_source = station_residual_source or 'wave'
         self.station_local_pga_aux_enabled = bool(station_local_pga_aux)
@@ -3913,6 +4220,20 @@ class FullModel(nn.Module):
         self._last_pga_anchor_field_mean = None
         self._last_pga_anchor_applied_delta = None
         self._last_pga_anchor_base_mean = None
+        self._last_rt59_base_mdn = None
+        self._last_rt59_base_mean = None
+        self._last_rt59_input_base_mean = None
+        self._last_rt59_input_base_sigma = None
+        self._last_rt59_anchor = None
+        self._last_rt59_local_delta = None
+        self._last_rt59_level = None
+        self._last_rt59_relative_transfer = None
+        self._last_rt59_candidate = None
+        self._last_rt59_station_weights = None
+        self._last_rt59_applied_delta = None
+        self._last_rt59_route_observed = None
+        self._last_rt59_route_ambiguous = None
+        self._last_rt59_fixed_context_rolled_delta = None
         self._last_raw_station_emb = None
         self._last_wave_station_emb = None
         self._last_station_residual_emb = None
@@ -4016,6 +4337,31 @@ class FullModel(nn.Module):
                 "pga_temporal_residual_token_control must be one of 'none', 'zero', "
                 f"'batch_roll', 'station_roll', 'time_reverse', got {self.pga_temporal_residual_token_control!r}."
             )
+        if self.pga_anchor_residual_transport_head is not None:
+            unsupported = []
+            if self.pga_readout_mode != 'target_cross_attention':
+                unsupported.append('pga_readout_mode')
+            if self.event_readout_mode != 'event_cross_attention':
+                unsupported.append('event_readout_mode')
+            if self.station_context_mode != 'off':
+                unsupported.append('station_context_mode')
+            if self.output_distribution not in ('mdn', 'gaussian'):
+                unsupported.append('output_distribution')
+            if self.use_vs30:
+                unsupported.append('use_vs30')
+            if self.dataset_bias:
+                unsupported.append('dataset_bias')
+            if self.pga_layerwise_refinement:
+                unsupported.append('pga_layerwise_refinement')
+            if self.pga_anchor_transfer_head is None:
+                unsupported.append('pga_anchor_transfer_head')
+            if self.pga_temporal_residual_head is None:
+                unsupported.append('pga_temporal_residual_head')
+            if unsupported:
+                raise ValueError(
+                    'RT59 cached query decoding only supports the resolved RT58 '
+                    f'architecture; unsupported settings: {unsupported}'
+                )
         if self.station_residual_mode not in ('off', 'add'):
             raise ValueError(
                 "station_residual_mode must be one of 'off' or 'add', "
@@ -5081,6 +5427,167 @@ class FullModel(nn.Module):
         component_sigma = output_pga[..., 2]
         return torch.stack([alpha_logits, component_mu, component_sigma], dim=-1)
 
+    def _pga_predictive_sigma_from_output(self, output_pga):
+        if self.output_distribution == 'point':
+            return torch.zeros_like(output_pga)
+        logits = output_pga[..., 0]
+        component_mean = output_pga[..., 1]
+        component_sigma = output_pga[..., 2]
+        weights = torch.softmax(logits, dim=-1)
+        mean = (weights * component_mean).sum(dim=-1, keepdim=True)
+        second = (
+            weights * (component_sigma.square() + component_mean.square())
+        ).sum(dim=-1, keepdim=True)
+        return (second - mean.square()).clamp_min(0.0).sqrt()
+
+    @staticmethod
+    def _rt59_snapshot_query_diagnostics(modules):
+        """Snapshot only `_last*` fields on modules used by cached decoding."""
+        snapshots = []
+        seen = set()
+        for root in modules:
+            if root is None:
+                continue
+            for module in root.modules():
+                if id(module) in seen:
+                    continue
+                seen.add(id(module))
+                values = {
+                    name: value
+                    for name, value in vars(module).items()
+                    if name.startswith('_last')
+                }
+                snapshots.append((module, values))
+        return snapshots
+
+    @staticmethod
+    def _rt59_restore_query_diagnostics(snapshots):
+        for module, values in snapshots:
+            current = [name for name in vars(module) if name.startswith('_last')]
+            for name in current:
+                if name not in values:
+                    delattr(module, name)
+            for name, value in values.items():
+                setattr(module, name, value)
+
+    def _decode_rt59_queries(self, context, query_coords, query_valid):
+        """Decode one arbitrary query batch from frozen RT57 cached context."""
+        if self.pga_anchor_residual_transport_head is None:
+            raise RuntimeError('RT59 cached query decoder called while RT59 is disabled.')
+        if (
+            self.pga_readout_mode != 'target_cross_attention'
+            or self.station_context_mode != 'off'
+            or self.event_readout_mode != 'event_cross_attention'
+            or self.output_distribution not in ('mdn', 'gaussian')
+            or self.use_vs30
+            or self.dataset_bias
+        ):
+            raise RuntimeError('Unsupported architecture reached RT59 cached query decoder.')
+        query_valid = query_valid.bool()
+        query_abs = query_coords * query_valid[..., None].to(query_coords.dtype)
+        query_rel = (
+            query_abs - context.coords_center
+        ) * query_valid[..., None].to(query_abs.dtype)
+        coord_emb = self._pga_coord_embedding(query_abs, query_rel, query_valid)
+        query_token = coord_emb + self.pga_query_token
+        readout = self.pga_cross_attention(
+            query_token,
+            context.station_memory,
+            context.station_valid,
+            query_coords=query_abs,
+            station_coords=context.station_coords,
+        )
+        if self.pga_event_context_proj is not None and self.pga_event_context_gate is not None:
+            readout = readout + self.pga_event_context_gate * self.pga_event_context_proj(
+                context.event_embedding
+            ).unsqueeze(1)
+        embedded = torch.stack([
+            self.mlp_pga(readout[:, index, :])
+            for index in range(readout.shape[1])
+        ], dim=1)
+        output_parts = []
+        for index in range(embedded.shape[1]):
+            alpha_logits, component_mean, component_sigma = self.output_model_pga(
+                embedded[:, index, :]
+            )
+            output_parts.append(torch.cat(
+                [alpha_logits, component_mean, component_sigma], dim=-1
+            ))
+        output = torch.stack(output_parts, dim=1)
+        if self.pga_temporal_residual_head is None:
+            raise RuntimeError('RT59 requires the frozen RT57 temporal residual head.')
+        if self.pga_temporal_residual_query_source == 'readout':
+            temporal_query = readout
+        else:
+            temporal_query = query_token
+        station_attention = None
+        if self.pga_temporal_residual_station_weighting == 'attention':
+            station_attention = getattr(self.pga_cross_attention, '_last_attention', None)
+        temporal_event = (
+            context.event_embedding
+            if self.pga_temporal_residual_use_event_context
+            else None
+        )
+        temporal_prediction = self.pga_temporal_residual_head(
+            temporal_query,
+            self._control_pga_temporal_tokens(context.temporal_tokens),
+            context.station_features,
+            context.station_valid,
+            query_abs,
+            context.station_coords,
+            temporal_event,
+            station_attn=station_attention,
+            station_token_weights=context.temporal_token_weights,
+            station_token_mask=context.waveform_padding_mask,
+            amplitude_features=context.amplitude_features,
+            duration_features=self._waveform_duration_features(
+                context.waveform_padding_mask,
+                context.station_valid,
+                context.waveform_length,
+                context.temporal_tokens.dtype,
+            ),
+        )
+        base_mean = self._pga_point_mean_from_output(output)
+        if self.pga_temporal_residual_mode == 'residual':
+            delta = self.pga_temporal_residual_scale * temporal_prediction
+        else:
+            delta = self.pga_temporal_residual_scale * (
+                temporal_prediction - base_mean.detach()
+            )
+        output = self._shift_pga_output_by_delta(output, delta)
+        return {
+            'mdn': output,
+            'mean': self._pga_point_mean_from_output(output),
+            'sigma': self._pga_predictive_sigma_from_output(output),
+            'query_embedding': readout,
+            'temporal_base': base_mean,
+            'temporal_delta': delta,
+        }
+
+    def _decode_rt59_queries_without_public_side_effects(
+            self, context, query_coords, query_valid):
+        modules = [self.pga_cross_attention, self.pga_temporal_residual_head]
+        snapshots = self._rt59_snapshot_query_diagnostics(modules)
+        try:
+            return self._decode_rt59_queries(context, query_coords, query_valid)
+        finally:
+            self._rt59_restore_query_diagnostics(snapshots)
+
+    @staticmethod
+    def _rt59_roll_valid_station_features(station_u, station_d, station_valid):
+        rolled_u = station_u.clone()
+        rolled_d = station_d.clone()
+        for batch_index in range(station_valid.shape[0]):
+            indices = torch.nonzero(
+                station_valid[batch_index].bool(), as_tuple=False
+            ).squeeze(-1)
+            if indices.numel() <= 1:
+                continue
+            source = indices.roll(1)
+            rolled_u[batch_index, indices] = station_u[batch_index, source]
+            rolled_d[batch_index, indices] = station_d[batch_index, source]
+        return rolled_u, rolled_d
+
     def _apply_layerwise_pga_refinement(self, layer_outputs):
         if not layer_outputs:
             raise ValueError('pga_layerwise_refinement requires readout layer outputs.')
@@ -5583,6 +6090,20 @@ class FullModel(nn.Module):
             self._last_pga_anchor_field_mean = None
             self._last_pga_anchor_applied_delta = None
             self._last_pga_anchor_base_mean = None
+            self._last_rt59_base_mdn = None
+            self._last_rt59_base_mean = None
+            self._last_rt59_input_base_mean = None
+            self._last_rt59_input_base_sigma = None
+            self._last_rt59_anchor = None
+            self._last_rt59_local_delta = None
+            self._last_rt59_level = None
+            self._last_rt59_relative_transfer = None
+            self._last_rt59_candidate = None
+            self._last_rt59_station_weights = None
+            self._last_rt59_applied_delta = None
+            self._last_rt59_route_observed = None
+            self._last_rt59_route_ambiguous = None
+            self._last_rt59_fixed_context_rolled_delta = None
             layer_outputs = []
             if self.pga_readout_mode == 'target_cross_attention':
                 readout_module = (
@@ -5775,7 +6296,115 @@ class FullModel(nn.Module):
                     self._last_diag['station_distinctive_d_u_norm_ratio'] = (
                         d_norm / (u_norm + 1e-8)
                     ).detach()
-            if self.pga_anchor_transfer_head is not None:
+            if self.pga_anchor_residual_transport_head is not None:
+                if self._last_station_distinctive_u is None or self._last_station_distinctive_d is None:
+                    raise RuntimeError('RT59 requires frozen RT57 station u/d features.')
+                frozen_base_mdn = output_pga.detach()
+                frozen_public_mean = self._pga_point_mean_from_output(frozen_base_mdn)
+                context = FrozenPGAContext(
+                    station_memory=station_memory_emb.detach(),
+                    station_features=station_feature_emb.detach(),
+                    temporal_tokens=station_temporal_tokens.detach(),
+                    temporal_token_weights=(
+                        station_temporal_token_weights.detach()
+                        if station_temporal_token_weights is not None else None
+                    ),
+                    waveform_padding_mask=(
+                        waveform_padding_mask.detach()
+                        if waveform_padding_mask is not None else None
+                    ),
+                    amplitude_features=(
+                        scale_features.detach() if scale_features is not None else None
+                    ),
+                    waveform_length=waveform_inp.shape[-1],
+                    station_coords=coords_abs.detach(),
+                    coords_center=coords_center.detach(),
+                    station_valid=sv.detach(),
+                    event_embedding=event_emb.detach(),
+                )
+                with torch.no_grad():
+                    input_decoded = self._decode_rt59_queries_without_public_side_effects(
+                        context,
+                        coords_abs.detach(),
+                        sv.detach(),
+                    )
+                    frozen_anchor = self.pga_anchor_transfer_head.compute_anchor(
+                        self._last_station_distinctive_u.detach(),
+                        self._last_station_distinctive_d.detach(),
+                        event_emb.detach(),
+                        sv.detach(),
+                    )
+                rt59 = self.pga_anchor_residual_transport_head(
+                    self._last_station_distinctive_u,
+                    self._last_station_distinctive_d,
+                    event_emb,
+                    pga_readout_emb,
+                    coords_abs,
+                    pga_targets_abs,
+                    sv,
+                    ptv,
+                    frozen_anchor,
+                    input_decoded['mean'],
+                    input_decoded['sigma'],
+                    frozen_public_mean,
+                )
+                output_pga = self._shift_pga_output_by_delta(
+                    frozen_base_mdn,
+                    rt59['applied_delta'].unsqueeze(-1),
+                )
+                self._last_rt59_base_mdn = frozen_base_mdn
+                self._last_rt59_base_mean = frozen_public_mean
+                self._last_rt59_input_base_mean = input_decoded['mean'].detach()
+                self._last_rt59_input_base_sigma = input_decoded['sigma'].detach()
+                self._last_rt59_anchor = frozen_anchor.detach()
+                self._last_rt59_local_delta = rt59['local_delta']
+                self._last_rt59_level = rt59['level']
+                self._last_rt59_relative_transfer = rt59['relative']
+                self._last_rt59_candidate = rt59['candidate']
+                self._last_rt59_station_weights = rt59['weights']
+                self._last_rt59_applied_delta = rt59['applied_delta']
+                self._last_rt59_route_observed = rt59['observed']
+                self._last_rt59_route_ambiguous = rt59['ambiguous']
+                self._last_pga_anchor_base_mean = frozen_public_mean
+                if not self.training:
+                    rolled_u, rolled_d = self._rt59_roll_valid_station_features(
+                        self._last_station_distinctive_u.detach(),
+                        self._last_station_distinctive_d.detach(),
+                        sv,
+                    )
+                    with torch.no_grad():
+                        rolled_anchor = self.pga_anchor_transfer_head.compute_anchor(
+                            rolled_u,
+                            rolled_d,
+                            event_emb.detach(),
+                            sv,
+                        )
+                    rolled = self.pga_anchor_residual_transport_head(
+                        rolled_u,
+                        rolled_d,
+                        event_emb,
+                        pga_readout_emb,
+                        coords_abs,
+                        pga_targets_abs,
+                        sv,
+                        ptv,
+                        rolled_anchor,
+                        input_decoded['mean'],
+                        input_decoded['sigma'],
+                        frozen_public_mean,
+                        record=False,
+                    )
+                    self._last_rt59_fixed_context_rolled_delta = (
+                        rolled['applied_delta'].detach()
+                    )
+                valid_delta = rt59['applied_delta'][ptv]
+                self._last_diag['rt59_applied_delta_abs_mean'] = (
+                    valid_delta.abs().mean().detach()
+                    if valid_delta.numel() else output_pga.new_tensor(0.0)
+                )
+                self._last_diag['rt59_route_observed_count'] = rt59['observed'].sum().detach()
+                self._last_diag['rt59_route_ambiguous_count'] = rt59['ambiguous'].sum().detach()
+            elif self.pga_anchor_transfer_head is not None:
                 frozen_rt57_mean = self._pga_point_mean_from_output(output_pga)
                 self._last_pga_anchor_base_mean = frozen_rt57_mean.detach()
                 anchor_delta = self.pga_anchor_transfer_head(
@@ -5838,6 +6467,16 @@ class FullModel(nn.Module):
                 self._last_pga_anchor_pred,
                 self._last_pga_anchor_candidate,
                 self._last_pga_anchor_field_mean,
+            ])
+        if self._last_rt59_applied_delta is not None:
+            # Keep every trainable RT59 branch reachable from the DDP return.
+            outputs.extend([
+                self._last_rt59_local_delta,
+                self._last_rt59_level,
+                self._last_rt59_relative_transfer,
+                self._last_rt59_candidate,
+                self._last_rt59_station_weights,
+                self._last_rt59_applied_delta,
             ])
 
         return outputs
@@ -6141,6 +6780,13 @@ def build_transformer_model(max_stations,
                             anchor_transfer_heads=4,
                             anchor_transfer_distance_scale=0.05,
                             anchor_transfer_zero_init=True,
+                            use_pga_anchor_residual_transport=False,
+                            anchor_residual_local_hidden_dim=128,
+                            anchor_residual_transport_hidden_dim=256,
+                            anchor_residual_transport_set_layers=2,
+                            anchor_residual_transport_heads=4,
+                            anchor_residual_transport_distance_scale=0.05,
+                            anchor_residual_transport_match_atol=1e-6,
                             station_distinctive_adapter=False,
                             station_distinctive_use_amplitude_features=True,
                             station_distinctive_use_duration_features=True,
@@ -6432,6 +7078,30 @@ def build_transformer_model(max_stations,
             zero_init=anchor_transfer_zero_init,
         )
 
+    pga_anchor_residual_transport_head = None
+    if use_pga_anchor_residual_transport:
+        if not use_pga_anchor_transfer or pga_anchor_transfer_head is None:
+            raise ValueError(
+                'use_pga_anchor_residual_transport=true requires '
+                'use_pga_anchor_transfer=true so the frozen RT58 anchor can load.'
+            )
+        if int(anchor_transfer_station_dim) != int(
+            pga_temporal_residual_station_distinctive_dim
+        ):
+            raise ValueError(
+                'RT59 station dimension must match the RT57 distinctive dimension.'
+            )
+        pga_anchor_residual_transport_head = PGAAnchorResidualTransportHead(
+            station_dim=anchor_transfer_station_dim,
+            emb_dim=emb_dim,
+            local_hidden_dim=anchor_residual_local_hidden_dim,
+            transport_hidden_dim=anchor_residual_transport_hidden_dim,
+            set_layers=anchor_residual_transport_set_layers,
+            heads=anchor_residual_transport_heads,
+            distance_scale=anchor_residual_transport_distance_scale,
+            match_atol=anchor_residual_transport_match_atol,
+        )
+
     pga_station_target_readout = None
     if station_context_mode == 'synchronous_station_target':
         pga_station_target_readout = SynchronousStationTargetReadout(
@@ -6563,6 +7233,7 @@ def build_transformer_model(max_stations,
                              pga_temporal_residual_token_control=pga_temporal_residual_token_control,
                              pga_temporal_residual_scale=pga_temporal_residual_scale,
                              pga_anchor_transfer_head=pga_anchor_transfer_head,
+                             pga_anchor_residual_transport_head=pga_anchor_residual_transport_head,
                              station_token_weight_mode=station_token_weight_mode,
                              temporal_token_weight_mode=temporal_token_weight_mode,
                              token_weight_floor=token_weight_floor,
