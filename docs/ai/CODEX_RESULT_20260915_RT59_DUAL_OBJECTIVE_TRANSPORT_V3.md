@@ -4,7 +4,7 @@
 [CODEX-RESULT]
 task_id: 20260915-rt59-dual-objective-transport-v3
 base_commit: 40830acd475bd40347fef03427b52c4a04432dc3
-result_commit: 54fd63d623ac5837e16a5d175d34041b7488661e
+result_commit: 7e00824b3aab7a15286dfd9bf9a264b03080c1cd
 branch: rt59-dual-objective-transport-v3
 changed_files:
   - gemini_models.py: add the default-off RT59 local/transport head, cached frozen input-coordinate query decoder, observable unique-coordinate routing, mean-only MDN shift, and fixed-context u/d roll export; preserve the old RT58 path when disabled.
@@ -18,13 +18,13 @@ changed_files:
   - tools/analyze_rt59_dual_objective_npz.py: paired base/final metrics, 5000-draw event bootstrap, fixed conjunctive gates, spatial/stratified counts, and common-scale truth/prediction plot.
   - docs/rt59_dual_objective_transport_v3.md: protocol and manual-HPC instructions.
 verification:
-  - python -m unittest discover -s tests -q: PASS, 94 tests.
+  - python -m unittest discover -s tests -q: PASS, 95 tests, including one complete tiny RT59 train/validation epoch through train_model.
   - focused RT59+RT58+RT57+RT55/formal-eval/scheduler tests: PASS, 46 tests.
   - python -m py_compile on modified/new Python modules: PASS.
   - bash -n tools/run_rt59_dual_objective_transport_v3_slurm.sh: PASS.
   - git diff --check: PASS.
   - analyzer synthetic paired random/normal NPZ run: PASS; wrote summary, 29 gates, group/CI/strata CSVs, README, and density figure.
-  - uploaded-source dry run: PASS; source manifest ea66095a2abda4f2364fc0a82c740e2f7bcf65b4513094ba0af4ff1874cc894f.
+  - uploaded-source dry run: PASS; corrected source manifest 3e1164bc4fb0441fb33e5d8cd03aa1708416708d930b01e71c4a82fd3779715e.
   - legacy RT55/RT56/RT57/RT58 config SHA-256 regression: PASS; byte identities unchanged.
   - actual RT58 epoch-8 checkpoint load, real multi-node DDP/DCU, full-data training, and validation: NOT RUN locally; checkpoint/data/DCU are HPC-only.
 compatibility:
@@ -32,7 +32,8 @@ compatibility:
   - Existing RT55/RT56/RT57/RT58 unit regressions pass, including strict compatible checkpoint loading and RT58 output behavior.
   - The four legacy training config files retain their reviewed SHA-256 values.
 hpc_status:
-  - NOT SUBMITTED. User requested a manual submission script; tools/run_rt59_dual_objective_transport_v3_slurm.sh is ready.
+  - FAILED_FIRST_SUBMISSION: job 27589430 stopped on the first batch before optimizer.step because RT59 epoch counters were initialized in the wrong function scope; xFormers/NCCL warnings were not causal.
+  - FIXED_NOT_RESUBMITTED: commit 7e00824b3aab7a15286dfd9bf9a264b03080c1cd corrects the scope and adds the missing real-loop regression. Re-upload and use a new empty weight directory.
   - Fixed action is one fresh full-data eight-epoch train from verified RT58 epoch 8, then random and normal validation with afterok dependencies; no held-out test and no extra smoke/roll job.
 remaining_risks:
   - Real PyTorch 1.13/HCCL multi-node behavior and the real RT58 checkpoint architecture remain to be verified by the launcher's compute-node checks and actual job.

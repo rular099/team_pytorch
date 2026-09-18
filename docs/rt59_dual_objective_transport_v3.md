@@ -69,7 +69,7 @@ Then submit the fixed run using the exact values printed above:
 
 ```bash
 SOURCE_IDENTITY_MODE=uploaded_sha256 \
-EXPECTED_SOURCE_MANIFEST_SHA256=ea66095a2abda4f2364fc0a82c740e2f7bcf65b4513094ba0af4ff1874cc894f \
+EXPECTED_SOURCE_MANIFEST_SHA256=3e1164bc4fb0441fb33e5d8cd03aa1708416708d930b01e71c4a82fd3779715e \
 JAPAN_FULL_DATA_ROOT=/absolute/path/to/origin_corrected_diting_vel_acc_vs30 \
 RT58_BASE_CHECKPOINT=/absolute/path/to/rt58/full_model_last.pth \
 RT58_BASE_CHECKPOINT_SHA256=<64-char-checkpoint-sha256> \
@@ -97,3 +97,14 @@ matplotlib is available), and `README.md`. The strata file reports actual
 event/realtime-row/target/field counts by elapsed time, actual station count,
 formal target type, and observable route. Its decision is conjunctive; missing required
 probability evidence yields `INCOMPLETE_EVIDENCE`, never an implicit pass.
+
+## 2026-09-18 first-submission correction
+
+Job `27589430` exposed a bookkeeping-scope bug after the first backward pass:
+the RT59 epoch accumulators had been initialized in the single-station
+pretraining loop instead of `train_model`. Commit
+`7e00824b3aab7a15286dfd9bf9a264b03080c1cd` moves them into the full-model
+epoch scope and adds a regression that executes one complete tiny RT59 train
+and validation epoch. The failed job reached no optimizer step and is not a
+resumable RT59 run. Re-upload the corrected source and use a new empty
+`RT59_WEIGHT_PATH`; do not resume or overwrite the failed output directory.
