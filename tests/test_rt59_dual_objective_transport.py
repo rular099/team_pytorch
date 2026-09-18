@@ -1,6 +1,7 @@
 import hashlib
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -127,6 +128,18 @@ def _tiny_inputs(observed=True):
         query_valid,
         sample_mask,
     )
+
+
+class _OneBatchLoader:
+    def __init__(self, batch):
+        self.batch = batch
+        self.dataset = self
+
+    def __len__(self):
+        return 1
+
+    def __iter__(self):
+        yield self.batch
 
 
 class RT59DualObjectiveTransportTests(unittest.TestCase):
@@ -357,6 +370,92 @@ class RT59DualObjectiveTransportTests(unittest.TestCase):
         self.assertTrue(resumed.pga_anchor_residual_transport_head._warm_copy_complete.item())
         with self.assertRaises(RuntimeError):
             train_light.initialize_rt59_from_rt58(resumed)
+
+    def test_full_train_loop_initializes_rt59_epoch_accounting(self):
+        """Exercise the real accounting site that failed on the first HPC batch."""
+        with mock.patch.object(
+            models,
+            'get_diting_model',
+            return_value=nn.Sequential(_TinyEncoder(), _TinyStationAdapter()),
+        ):
+            model = _tiny_model(rt59=True)
+        train_light.initialize_rt59_from_rt58(model)
+        train_light.apply_full_model_trainability(
+            model, {'freeze_mode': 'dual_anchor_residual_only'}
+        )
+        optimizer, _ = train_light.build_optimizer_with_groups(model, {
+            'lr': 5e-4,
+            'lr_rt59_local': 5e-4,
+            'lr_rt59_transport': 5e-4,
+            'optimizer': 'adam',
+        })
+        inputs = list(_tiny_inputs(observed=True))
+        labels = [
+            torch.zeros(2, 1, 1),
+            torch.zeros(2, 1, 3),
+            torch.tensor([[[[-1.0]], [[-0.5]]], [[[-1.2]], [[-0.8]]]]),
+        ]
+        p_picks = {
+            'shifted': torch.tensor([[100., 200., 300.], [150., 0., 0.]]),
+            'raw': torch.tensor([[100., 200., 300.], [150., 0., 0.]]),
+            'shift': torch.zeros(2),
+            'causal_random_mask_applied': torch.tensor([False, False]),
+            'input_pga_values': torch.tensor([
+                [-1.0, -0.8, -0.6], [-1.2, 0.0, 0.0],
+            ]),
+            'input_pga_valid': inputs[2],
+            'event_id': ['event-a', 'event-b'],
+        }
+        loader = _OneBatchLoader((inputs, labels, p_picks))
+        objective_cfg = {
+            'enabled': True,
+            'group_weights': [0.5, 0.25, 0.25],
+            'smooth_weight': 0.1,
+            'mse_weight': 0.1,
+            'regret_weight': 0.05,
+            'relative_weight': 0.2,
+            'candidate_weight': 0.05,
+            'difference_weight': 0.4,
+        }
+        schedule = {
+            'completed_epoch_boundaries': [0, 4, 6],
+            'lr_values': [5e-4, 2.5e-4, 1.25e-4],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir, mock.patch.object(
+            train_light,
+            'training_params',
+            {'weight_path': tmpdir},
+            create=True,
+        ), mock.patch.object(
+            train_light, 'SummaryWriter', return_value=mock.MagicMock()
+        ), mock.patch.object(
+            train_light, 'save_model_checkpoint'
+        ) as save_checkpoint, mock.patch.object(
+            train_light,
+            'export_scalar_history',
+            return_value=(tmpdir, os.path.join(tmpdir, 'manifest.json')),
+        ):
+            train_light.train_model(
+                model,
+                loader,
+                loader,
+                optimizer,
+                scheduler=None,
+                num_epochs=1,
+                save_name='rt59-tiny-loop',
+                res_comps=['pga'],
+                res_weight=[1.0],
+                loss_type='mdn',
+                pga_target_normalization={
+                    'enabled': True,
+                    'mean': -1.0,
+                    'std': 0.5,
+                },
+                rt59_dual_objective_cfg=objective_cfg,
+                rt59_fixed_lr_schedule=schedule,
+                freeze_mode='dual_anchor_residual_only',
+            )
+        self.assertTrue(save_checkpoint.called)
 
     def test_branch_routing_gradient_isolation(self):
         head = models.PGAAnchorResidualTransportHead(

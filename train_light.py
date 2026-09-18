@@ -923,13 +923,6 @@ def train_single_station_model(model, train_loader, val_loader, optimizer, sched
             running_loss = 0.0
             num_train_batches = 0
             first_batch_logged = False
-            rt59_epoch_target_counts = torch.zeros(3, dtype=torch.long, device=device)
-            rt59_epoch_row_counts = torch.zeros(3, dtype=torch.long, device=device)
-            rt59_epoch_aux_counts = torch.zeros(9, dtype=torch.long, device=device)
-            rt59_epoch_loss_sums = torch.zeros(9, dtype=torch.float64, device=device)
-            rt59_epoch_grad_sums = torch.zeros(4, dtype=torch.float64, device=device)
-            rt59_epoch_stat_batches = 0
-            rt59_epoch_event_ids = [set(), set(), set()]
             for batch_idx, (waveforms, targets, _) in enumerate(train_loader):
                 waveforms = waveforms.to(device)
                 targets = {key: value.to(device) for key, value in targets.items() if torch.is_tensor(value)}
@@ -2472,6 +2465,29 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             running_loss = 0.0
             num_train_batches = 0
             first_batch_logged = False
+            # These accumulators belong to the full-model RT59 loop.  Keep
+            # them in the epoch scope even when RT59 is disabled so the
+            # conditional accounting block below never depends on a branch-
+            # local assignment.  They were previously (incorrectly) placed
+            # in ``train_single_station_model``, which made the first real
+            # RT59 batch fail after backward with UnboundLocalError.
+            rt59_epoch_target_counts = torch.zeros(
+                3, dtype=torch.long, device=device
+            )
+            rt59_epoch_row_counts = torch.zeros(
+                3, dtype=torch.long, device=device
+            )
+            rt59_epoch_aux_counts = torch.zeros(
+                9, dtype=torch.long, device=device
+            )
+            rt59_epoch_loss_sums = torch.zeros(
+                9, dtype=torch.float64, device=device
+            )
+            rt59_epoch_grad_sums = torch.zeros(
+                4, dtype=torch.float64, device=device
+            )
+            rt59_epoch_stat_batches = 0
+            rt59_epoch_event_ids = [set(), set(), set()]
             for batch_idx, (inputs, labels, p_picks) in enumerate(train_loader):
                 if ((not is_dist) or (is_dist and (rank == 0))) and input_dump_config is not None:
                     maybe_dump_model_batch(
