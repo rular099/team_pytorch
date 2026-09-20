@@ -1,0 +1,12 @@
+{
+    "extends": "transformer_japan_full_2000_2024_rt60_contrast_readout_seed42_chaosuan.json",
+    "training_params": {
+        "weight_path": "${RT60_WEIGHT_PATH}",
+        "validation_generator_overrides": {
+            "causal_random_input_mask": {
+                "enabled": false
+            }
+        }
+    },
+    "experiment_note": "Evaluation-only normal-geometry companion for the fixed RT60 epoch-8 full_model_last.pth. It retains the conditional RT59 teacher export and disables causal random masking only for validation. No held-out test split is used."
+}

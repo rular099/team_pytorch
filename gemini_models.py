@@ -1703,12 +1703,16 @@ class RT59ResidualTransportHead(nn.Module):
     """Base-relative spatial transport path with query-independent station level."""
 
     def __init__(self, station_dim, emb_dim, hidden_dim=256, set_layers=2,
-                 heads=4, distance_scale=0.05):
+                 heads=4, distance_scale=0.05, enable_rt60_reference=False):
         super().__init__()
         self.station_dim = int(station_dim)
         self.emb_dim = int(emb_dim)
         self.hidden_dim = int(hidden_dim)
         self.distance_scale = float(distance_scale)
+        self.enable_rt60_reference = bool(enable_rt60_reference)
+        # Deliberately not a Module, Parameter or buffer: the immutable RT59
+        # teacher is checkpoint metadata and must not change model_state_dict.
+        object.__setattr__(self, '_rt60_reference_state', None)
         self.set_input = nn.Sequential(
             nn.LayerNorm(2 * self.station_dim + 3),
             nn.Linear(2 * self.station_dim + 3, self.hidden_dim),
@@ -1743,6 +1747,60 @@ class RT59ResidualTransportHead(nn.Module):
         nn.init.zeros_(self.level_head[-1].bias)
         nn.init.zeros_(self.residual_head[-1].weight)
         nn.init.zeros_(self.residual_head[-1].bias)
+
+    @staticmethod
+    def _rt60_reference_keys():
+        return (
+            '0.weight', '0.bias', '1.weight', '1.bias', '3.weight', '3.bias'
+        )
+
+    def set_rt60_reference_state(self, state):
+        if not self.enable_rt60_reference:
+            raise RuntimeError('RT60 reference is disabled for this model config.')
+        if not isinstance(state, dict):
+            raise TypeError('RT60 reference state must be a dict.')
+        expected = self.residual_head.state_dict()
+        if set(state) != set(self._rt60_reference_keys()) or set(state) != set(expected):
+            raise ValueError(
+                'RT60 reference state must contain exactly the residual_head state keys.'
+            )
+        copied = {}
+        for key in self._rt60_reference_keys():
+            value = state[key]
+            if not torch.is_tensor(value) or tuple(value.shape) != tuple(expected[key].shape):
+                raise ValueError(f'invalid RT60 reference tensor for {key}.')
+            if not torch.isfinite(value).all():
+                raise ValueError(f'RT60 reference tensor {key} is non-finite.')
+            copied[key] = value.detach().to(
+                device=expected[key].device,
+                dtype=expected[key].dtype,
+            ).clone()
+            copied[key].requires_grad_(False)
+        object.__setattr__(self, '_rt60_reference_state', copied)
+
+    def export_rt60_reference_state(self):
+        state = self._rt60_reference_state
+        if state is None:
+            return None
+        return {key: value.detach().cpu().clone() for key, value in state.items()}
+
+    def _rt60_reference_residual(self, residual_input):
+        state = self._rt60_reference_state
+        if state is None:
+            raise RuntimeError(
+                'RT60 reference mode is enabled but no immutable RT59 readout snapshot is loaded.'
+            )
+        def tensor(key):
+            return state[key].to(device=residual_input.device, dtype=residual_input.dtype)
+        value = F.layer_norm(
+            residual_input,
+            (self.hidden_dim + 2,),
+            weight=tensor('0.weight'),
+            bias=tensor('0.bias'),
+        )
+        value = F.linear(value, tensor('1.weight'), tensor('1.bias'))
+        value = F.gelu(value)
+        return F.linear(value, tensor('3.weight'), tensor('3.bias')).squeeze(-1)
 
     def forward(self, station_u, station_d, event_emb, query_emb,
                 station_coords, query_coords, station_valid, query_valid,
@@ -1852,13 +1910,39 @@ class RT59ResidualTransportHead(nn.Module):
         weights = weights / weights.sum(dim=-1, keepdim=True).clamp_min(1e-8)
         remote_delta = (weights * delta_candidate).sum(dim=-1)
         remote_delta = remote_delta * query_valid.to(remote_delta.dtype)
-        return {
+        result = {
             'remote_delta': remote_delta,
             'level': level,
             'relative': relative,
             'candidate': absolute_candidate,
             'weights': weights,
         }
+        if self.enable_rt60_reference:
+            reference_relative = self._rt60_reference_residual(residual_input)
+            reference_relative = reference_relative * torch.tanh(
+                distance / self.distance_scale
+            )
+            reference_relative = reference_relative * pair_valid.to(
+                reference_relative.dtype
+            )
+            reference_candidate = (
+                level[:, None, :] * anchor_residual[:, None, :]
+                + reference_relative
+            )
+            reference_candidate = reference_candidate * pair_valid.to(
+                reference_candidate.dtype
+            )
+            reference_remote_delta = (
+                weights * reference_candidate
+            ).sum(dim=-1)
+            reference_remote_delta = reference_remote_delta * query_valid.to(
+                reference_remote_delta.dtype
+            )
+            result.update({
+                'reference_relative': reference_relative,
+                'reference_remote_delta': reference_remote_delta,
+            })
+        return result
 
 
 class PGAAnchorResidualTransportHead(nn.Module):
@@ -1866,7 +1950,8 @@ class PGAAnchorResidualTransportHead(nn.Module):
 
     def __init__(self, station_dim, emb_dim, local_hidden_dim=128,
                  transport_hidden_dim=256, set_layers=2, heads=4,
-                 distance_scale=0.05, match_atol=1e-6):
+                 distance_scale=0.05, match_atol=1e-6,
+                 enable_rt60_reference=False):
         super().__init__()
         self.local = RT59LocalResidualHead(station_dim, emb_dim, local_hidden_dim)
         self.transport = RT59ResidualTransportHead(
@@ -1876,6 +1961,7 @@ class PGAAnchorResidualTransportHead(nn.Module):
             set_layers=set_layers,
             heads=heads,
             distance_scale=distance_scale,
+            enable_rt60_reference=enable_rt60_reference,
         )
         self.match_atol = float(match_atol)
         self.register_buffer('_warm_copy_complete', torch.tensor(False), persistent=True)
@@ -1929,6 +2015,18 @@ class PGAAnchorResidualTransportHead(nn.Module):
             'ambiguous': ambiguous,
             'unique_match': unique_match,
         })
+        if self.transport.enable_rt60_reference:
+            reference_applied = route_correction(
+                local_delta,
+                transport['reference_remote_delta'],
+                unique_match,
+                observed,
+                query_valid,
+            )
+            result.update({
+                'reference_applied_delta': reference_applied,
+                'rt60_increment': applied - reference_applied,
+            })
         if record:
             self._last = result
         return result
@@ -4234,6 +4332,9 @@ class FullModel(nn.Module):
         self._last_rt59_route_observed = None
         self._last_rt59_route_ambiguous = None
         self._last_rt59_fixed_context_rolled_delta = None
+        self._last_rt60_reference_mdn = None
+        self._last_rt60_reference_mean = None
+        self._last_rt60_increment = None
         self._last_raw_station_emb = None
         self._last_wave_station_emb = None
         self._last_station_residual_emb = None
@@ -6104,6 +6205,9 @@ class FullModel(nn.Module):
             self._last_rt59_route_observed = None
             self._last_rt59_route_ambiguous = None
             self._last_rt59_fixed_context_rolled_delta = None
+            self._last_rt60_reference_mdn = None
+            self._last_rt60_reference_mean = None
+            self._last_rt60_increment = None
             layer_outputs = []
             if self.pga_readout_mode == 'target_cross_attention':
                 readout_module = (
@@ -6365,6 +6469,16 @@ class FullModel(nn.Module):
                 self._last_rt59_applied_delta = rt59['applied_delta']
                 self._last_rt59_route_observed = rt59['observed']
                 self._last_rt59_route_ambiguous = rt59['ambiguous']
+                if 'reference_applied_delta' in rt59:
+                    reference_mdn = self._shift_pga_output_by_delta(
+                        frozen_base_mdn,
+                        rt59['reference_applied_delta'].unsqueeze(-1),
+                    )
+                    self._last_rt60_reference_mdn = reference_mdn.detach()
+                    self._last_rt60_reference_mean = (
+                        self._pga_point_mean_from_output(reference_mdn).detach()
+                    )
+                    self._last_rt60_increment = rt59['rt60_increment']
                 self._last_pga_anchor_base_mean = frozen_public_mean
                 if not self.training:
                     rolled_u, rolled_d = self._rt59_roll_valid_station_features(
@@ -6781,6 +6895,7 @@ def build_transformer_model(max_stations,
                             anchor_transfer_distance_scale=0.05,
                             anchor_transfer_zero_init=True,
                             use_pga_anchor_residual_transport=False,
+                            use_rt60_contrast_readout=False,
                             anchor_residual_local_hidden_dim=128,
                             anchor_residual_transport_hidden_dim=256,
                             anchor_residual_transport_set_layers=2,
@@ -7079,6 +7194,11 @@ def build_transformer_model(max_stations,
         )
 
     pga_anchor_residual_transport_head = None
+    if use_rt60_contrast_readout and not use_pga_anchor_residual_transport:
+        raise ValueError(
+            'use_rt60_contrast_readout=true requires '
+            'use_pga_anchor_residual_transport=true.'
+        )
     if use_pga_anchor_residual_transport:
         if not use_pga_anchor_transfer or pga_anchor_transfer_head is None:
             raise ValueError(
@@ -7100,6 +7220,7 @@ def build_transformer_model(max_stations,
             heads=anchor_residual_transport_heads,
             distance_scale=anchor_residual_transport_distance_scale,
             match_atol=anchor_residual_transport_match_atol,
+            enable_rt60_reference=use_rt60_contrast_readout,
         )
 
     pga_station_target_readout = None

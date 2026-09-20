@@ -47,6 +47,7 @@ from train_light import (
     metadata_cache_stub_path,
     read_overfit_event_ids,
 )
+from tools.rt60_contrast_objective import restore_reference_payload
 
 
 def shifted_p_picks_array(p_picks):
@@ -278,6 +279,23 @@ def append_pga_temporal_residual_outputs(results, raw_model, config):
             arr = _maybe_unnormalize_pga_delta(arr, config)
         results[key].append(arr)
 
+    rt60_tensors = {
+        'rt60_reference_mdn': getattr(raw_model, '_last_rt60_reference_mdn', None),
+        'rt60_reference_mean': getattr(raw_model, '_last_rt60_reference_mean', None),
+        'rt60_increment': getattr(raw_model, '_last_rt60_increment', None),
+    }
+    for key, value in rt60_tensors.items():
+        if value is None:
+            continue
+        arr = value.detach().cpu().numpy().squeeze(0)
+        if key == 'rt60_reference_mdn':
+            arr = _maybe_unnormalize_pga_mdn(arr, config)
+        elif key == 'rt60_reference_mean':
+            arr = _maybe_unnormalize_pga('pga', arr, config)
+        else:
+            arr = _maybe_unnormalize_pga_delta(arr, config)
+        results[key].append(arr)
+
 
 def build_model_and_load(config, diting_args, checkpoint_path, device):
     """Build model and load checkpoint."""
@@ -294,11 +312,26 @@ def build_model_and_load(config, diting_args, checkpoint_path, device):
         context=checkpoint_path,
         allowed_missing_prefixes=tuple(checkpoint.get('excluded_prefixes', CHECKPOINT_ENCODER_PREFIXES)),
     )
+    rt60_enabled = bool(config.get('model_params', {}).get(
+        'use_rt60_contrast_readout', False
+    ))
+    if rt60_enabled:
+        reference_payload = checkpoint.get('rt60_reference')
+        restore_reference_payload(full_model, reference_payload)
+        object.__setattr__(
+            full_model, '_rt60_reference_identity', dict(reference_payload)
+        )
     full_model._eval_checkpoint_metadata = {
         key: checkpoint.get(key)
         for key in ('epoch', 'loss', 'checkpoint_format', 'encoder_source')
         if checkpoint.get(key) is not None
     }
+    if rt60_enabled:
+        full_model._eval_checkpoint_metadata['task_id'] = checkpoint.get('task_id')
+        full_model._eval_checkpoint_metadata['rt60_reference_identity'] = {
+            key: value for key, value in reference_payload.items()
+            if key != 'readout_state_dict'
+        }
     full_model.eval()
 
     epoch = checkpoint.get('epoch', '?')

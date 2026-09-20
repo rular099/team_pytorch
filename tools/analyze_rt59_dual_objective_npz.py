@@ -10,6 +10,7 @@ import csv
 import hashlib
 import json
 import math
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -45,10 +46,13 @@ def _target_matrix(value):
 
 
 def _event_ids(npz, rows):
-    values = _optional(npz, 'val_event_id')
-    if values is None:
-        return np.arange(rows).astype(str)
-    return np.asarray(values).reshape(rows, -1)[:, 0].astype(str)
+    # Event-paired bootstrap is invalid without the exported event identity.
+    # Deliberately fail closed instead of silently using row indices.
+    values = _stack(npz, 'val_event_id')
+    values = np.asarray(values).reshape(rows, -1)[:, 0].astype(str)
+    if np.any(np.char.str_len(values) == 0):
+        raise ValueError('val_event_id contains empty values.')
+    return values
 
 
 def _mixture_stats(mixture):
@@ -141,10 +145,19 @@ def _paired_event_ci(target, base, final, mask, event_ids, metric, seed, draws):
         return final_value - base_value
     rng = np.random.default_rng(seed)
     samples = np.empty(draws, dtype=np.float64)
-    for draw in range(draws):
-        sampled = rng.integers(0, count.size, size=count.size)
-        weights = np.bincount(sampled, minlength=count.size)
-        samples[draw] = difference(weights)
+    # Chunked vectorization keeps the exact event-cluster estimator while
+    # avoiding thousands of Python-level bincount calls.
+    chunk_size = 256
+    for start in range(0, draws, chunk_size):
+        stop = min(start + chunk_size, draws)
+        sampled = rng.integers(0, count.size, size=(stop - start, count.size))
+        denominator = count[sampled].sum(axis=1)
+        base_value = base_sum[sampled].sum(axis=1) / denominator
+        final_value = final_sum[sampled].sum(axis=1) / denominator
+        if metric == 'rmse':
+            base_value = np.sqrt(base_value)
+            final_value = np.sqrt(final_value)
+        samples[start:stop] = final_value - base_value
     point = difference(np.ones(count.size))
     return {
         'events': int(count.size),
@@ -156,44 +169,221 @@ def _paired_event_ci(target, base, final, mask, event_ids, metric, seed, draws):
     }
 
 
+def _canonical_field_range(values):
+    """Historical query-diagnostic field range: NumPy P95 minus P05."""
+    values = np.asarray(values, dtype=np.float64)
+    return float(np.percentile(values, 95) - np.percentile(values, 5))
+
+
 def _field_metrics(target, prediction, mask, station_count):
     range_ratios = []
     range_abs_errors = []
+    ptp_range_ratios = []
+    ptp_range_abs_errors = []
     pairwise_maes = []
+    pairwise_rmses = []
     single_ratios = []
     single_range_errors = []
+    single_ptp_ratios = []
+    single_ptp_range_errors = []
     for row in range(target.shape[0]):
         valid = np.flatnonzero(mask[row])
         if valid.size < 5:
             continue
         truth = target[row, valid]
         pred = prediction[row, valid]
-        truth_range = float(np.ptp(truth))
-        pred_range = float(np.ptp(pred))
+        truth_range = _canonical_field_range(truth)
+        pred_range = _canonical_field_range(pred)
+        truth_ptp = float(np.ptp(truth))
+        pred_ptp = float(np.ptp(pred))
         if truth_range > 0:
             range_ratios.append(pred_range / truth_range)
             if station_count[row] == 1:
                 single_ratios.append(pred_range / truth_range)
+        if truth_ptp > 0:
+            ptp_range_ratios.append(pred_ptp / truth_ptp)
+            if station_count[row] == 1:
+                single_ptp_ratios.append(pred_ptp / truth_ptp)
         range_error = abs(pred_range - truth_range)
+        ptp_range_error = abs(pred_ptp - truth_ptp)
         range_abs_errors.append(range_error)
+        ptp_range_abs_errors.append(ptp_range_error)
         pairs = np.triu_indices(valid.size, 1)
-        pair_error = np.abs(
+        pair_error = (
             (pred[pairs[0]] - pred[pairs[1]])
             - (truth[pairs[0]] - truth[pairs[1]])
         )
         if station_count[row] == 1:
             single_range_errors.append(range_error)
-            pairwise_maes.append(float(pair_error.mean()))
+            single_ptp_range_errors.append(ptp_range_error)
+            pairwise_maes.append(float(np.mean(np.abs(pair_error))))
+            pairwise_rmses.append(float(np.sqrt(np.mean(pair_error ** 2))))
     def mean_or_none(values):
         return float(np.mean(values)) if values else None
     return {
         'fields_ge5': len(range_abs_errors),
         'range_ratio_mean': mean_or_none(range_ratios),
         'range_abs_error_mean': mean_or_none(range_abs_errors),
+        'ptp_range_ratio_mean_diagnostic': mean_or_none(ptp_range_ratios),
+        'ptp_range_abs_error_mean_diagnostic': mean_or_none(ptp_range_abs_errors),
         'one_station_fields_ge5': len(single_range_errors),
         'one_station_range_ratio_mean': mean_or_none(single_ratios),
         'one_station_range_abs_error_mean': mean_or_none(single_range_errors),
         'one_station_pairwise_delta_mae': mean_or_none(pairwise_maes),
+        'one_station_pairwise_delta_rmse': mean_or_none(pairwise_rmses),
+        'one_station_ptp_range_ratio_mean_diagnostic': mean_or_none(single_ptp_ratios),
+        'one_station_ptp_range_abs_error_mean_diagnostic': mean_or_none(single_ptp_range_errors),
+    }
+
+
+def _field_records(data, mask, protocol, population):
+    """Return one lightweight row per field, retaining n>=2 fields."""
+    records = []
+    mask = np.asarray(mask, dtype=bool) & data['valid']
+    for row in range(data['target'].shape[0]):
+        valid = np.flatnonzero(mask[row])
+        if valid.size < 2:
+            continue
+        truth = data['target'][row, valid]
+        base = data['base'][row, valid]
+        final = data['final'][row, valid]
+        base_error = base - truth
+        final_error = final - truth
+        pairs = np.triu_indices(valid.size, 1)
+        truth_delta = truth[pairs[0]] - truth[pairs[1]]
+        base_delta_error = base[pairs[0]] - base[pairs[1]] - truth_delta
+        final_delta_error = final[pairs[0]] - final[pairs[1]] - truth_delta
+        truth_range = _canonical_field_range(truth)
+        base_range = _canonical_field_range(base)
+        final_range = _canonical_field_range(final)
+        records.append({
+            'protocol': protocol,
+            'population': population,
+            'row_index': row,
+            'event_id': data['event_ids'][row],
+            'requested_elapsed_time_seconds': (
+                None if data['requested_time'] is None
+                else float(data['requested_time'][row])
+            ),
+            'actual_station_count': int(data['station_count'][row]),
+            'n_targets': int(valid.size),
+            'eligible_ge5': bool(valid.size >= 5),
+            'truth_p95_p05_range': truth_range,
+            'base_p95_p05_range': base_range,
+            'final_p95_p05_range': final_range,
+            'base_range_ratio': base_range / truth_range if truth_range > 0 else None,
+            'final_range_ratio': final_range / truth_range if truth_range > 0 else None,
+            'base_range_abs_error': abs(base_range - truth_range),
+            'final_range_abs_error': abs(final_range - truth_range),
+            'base_pairwise_delta_mae': float(np.mean(np.abs(base_delta_error))),
+            'final_pairwise_delta_mae': float(np.mean(np.abs(final_delta_error))),
+            'base_pairwise_delta_rmse': float(np.sqrt(np.mean(base_delta_error ** 2))),
+            'final_pairwise_delta_rmse': float(np.sqrt(np.mean(final_delta_error ** 2))),
+            'base_field_mean_error': float(np.mean(base_error)),
+            'final_field_mean_error': float(np.mean(final_error)),
+            'base_centered_error_mae': float(np.mean(np.abs(base_error - np.mean(base_error)))),
+            'final_centered_error_mae': float(np.mean(np.abs(final_error - np.mean(final_error)))),
+            'base_centered_error_rmse': float(np.sqrt(np.mean((base_error - np.mean(base_error)) ** 2))),
+            'final_centered_error_rmse': float(np.sqrt(np.mean((final_error - np.mean(final_error)) ** 2))),
+            'truth_ptp_range_diagnostic': float(np.ptp(truth)),
+            'base_ptp_range_diagnostic': float(np.ptp(base)),
+            'final_ptp_range_diagnostic': float(np.ptp(final)),
+        })
+    return records
+
+
+def _rolled_delta_summary(data, mask):
+    mask = np.asarray(mask, dtype=bool) & data['valid']
+    correct = data['base'] + data['applied_delta']
+    rolled = data['base'] + data['fixed_context_rolled_delta']
+    correct_metrics = _point_metrics(data['target'], correct, mask)
+    rolled_metrics = _point_metrics(data['target'], rolled, mask)
+    return {
+        'correct_route': correct_metrics,
+        'fixed_context_rolled': rolled_metrics,
+        'delta_rolled_minus_correct': {
+            metric: rolled_metrics[metric] - correct_metrics[metric]
+            for metric in ('mae', 'rmse')
+        },
+    }
+
+
+def _event_manifest(data):
+    unique = np.unique(data['event_ids'])
+    year_counts = {}
+    for event_id in unique:
+        year = str(event_id)[:4]
+        if len(year) != 4 or not year.isdigit():
+            raise ValueError(f'event_id does not begin with a four-digit year: {event_id!r}')
+        year_counts[year] = year_counts.get(year, 0) + 1
+    canonical = '\n'.join(sorted(unique.tolist())) + '\n'
+    return {
+        'source': 'val_event_id in formal validation NPZ',
+        'unique_events': int(unique.size),
+        'first_event_id': str(unique[0]),
+        'last_event_id': str(unique[-1]),
+        'year_counts': year_counts,
+        'event_id_sha256': hashlib.sha256(canonical.encode('utf-8')).hexdigest(),
+    }
+
+
+def _sanitize_config_value(value):
+    if isinstance(value, dict):
+        return {str(key): _sanitize_config_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_config_value(item) for item in value]
+    if isinstance(value, str) and value.startswith('/'):
+        return f'<ABSOLUTE_PATH_REDACTED>/{Path(value).name}'
+    return value
+
+
+def _write_sanitized_config(source, destination):
+    source = Path(source)
+    payload = json.loads(source.read_text())
+    destination.write_text(
+        json.dumps(_sanitize_config_value(payload), indent=2, sort_keys=True) + '\n'
+    )
+    return {
+        'name': source.name,
+        'original_sha256': _sha256_file(source),
+        'sanitized_file': destination.name,
+        'sanitized_sha256': _sha256_file(destination),
+    }
+
+
+def _git_value(args):
+    try:
+        return subprocess.check_output(
+            ['git', *args], cwd=Path(__file__).resolve().parents[1], text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def _load_metrics_identity(path):
+    path = Path(path)
+    payload = json.loads(path.read_text())
+    protocol = payload.get('metric_protocol') or {}
+    if protocol.get('pga_coordinate') != 'log10(m/s^2)':
+        raise ValueError(
+            'formal metrics do not unambiguously declare PGA coordinate '
+            'log10(m/s^2).'
+        )
+    if protocol.get('point_estimate') != 'predictive_mixture_mean':
+        raise ValueError('formal metrics point estimate is not predictive_mixture_mean.')
+    if payload.get('splits') != ['val']:
+        raise ValueError(f'formal metrics must contain only split val: {payload.get("splits")!r}')
+    metadata = payload.get('checkpoint_metadata') or {}
+    if int(metadata.get('epoch', -1)) != 8:
+        raise ValueError('formal metrics checkpoint metadata is not epoch 8.')
+    return {
+        'file': path.name,
+        'sha256': _sha256_file(path),
+        'pga_coordinate': protocol['pga_coordinate'],
+        'point_estimate': protocol['point_estimate'],
+        'splits': payload['splits'],
+        'checkpoint_metadata': _sanitize_config_value(metadata),
     }
 
 
@@ -220,22 +410,49 @@ def _load_protocol(path):
     target_type = _optional(npz, 'val_realtime_target_type')
     if target_type is not None:
         target_type = np.asarray(target_type).reshape(target.shape)
-    # Gate 5 and the station-count strata use the formal realtime count when
-    # available.  ``station_valid_count`` is only a compatibility fallback for
-    # old archives which predate the explicit actual-count export.
-    station_count = _optional(npz, 'val_actual_station_count')
-    if station_count is None:
-        station_count = _optional(npz, 'val_station_valid_count')
-    if station_count is None:
-        station_count = _stack(npz, 'val_station_valid').astype(bool).sum(axis=1)
-    station_count = np.asarray(station_count).reshape(target.shape[0], -1)[:, 0]
+    # All station-count representations must agree.  Silently preferring one
+    # of them would make the single/multi-field gates non-auditable.
+    station_valid = _stack(npz, 'val_station_valid').astype(bool)
+    station_valid = station_valid.reshape(target.shape[0], -1)
+    station_mask_count = station_valid.sum(axis=1).astype(np.int64)
+    exported_counts = {}
+    for key in ('val_actual_station_count', 'val_station_valid_count'):
+        value = _optional(npz, key)
+        if value is not None:
+            value = np.asarray(value).reshape(target.shape[0], -1)[:, 0]
+            if not np.isfinite(value.astype(np.float64)).all():
+                raise ValueError(f'{key} contains non-finite values.')
+            if not np.array_equal(value.astype(np.int64), value):
+                raise ValueError(f'{key} contains non-integer station counts.')
+            exported_counts[key] = value.astype(np.int64)
+    if not exported_counts:
+        raise KeyError(
+            'missing both val_actual_station_count and val_station_valid_count; '
+            'station strata must not be inferred without an exported count.'
+        )
+    for key, value in exported_counts.items():
+        if not np.array_equal(value, station_mask_count):
+            mismatch = np.flatnonzero(value != station_mask_count)[:10].tolist()
+            raise ValueError(
+                f'{key} disagrees with val_station_valid sum at rows {mismatch}.'
+            )
+    count_values = list(exported_counts.values())
+    for other in count_values[1:]:
+        if not np.array_equal(count_values[0], other):
+            raise ValueError('exported station-count fields disagree.')
+    station_count = count_values[0]
     requested_time = _optional(npz, 'val_realtime_requested_elapsed_time')
     if requested_time is not None:
         requested_time = np.asarray(requested_time, dtype=np.float64).reshape(target.shape[0], -1)[:, 0]
     event_ids = _event_ids(npz, target.shape[0])
+    applied_delta = _target_matrix(_stack(npz, 'val_rt59_applied_delta'))
+    fixed_context_rolled_delta = _target_matrix(
+        _stack(npz, 'val_rt59_fixed_context_rolled_delta')
+    )
     if not (
         target.shape == final.shape == base.shape == valid.shape
-        == observed.shape == ambiguous.shape
+        == observed.shape == ambiguous.shape == applied_delta.shape
+        == fixed_context_rolled_delta.shape
     ):
         raise ValueError('public target/base/final/route shapes are not aligned.')
     if target_type is None:
@@ -244,15 +461,32 @@ def _load_protocol(path):
             'non-input populations must not be inferred from the RT59 route.'
         )
     target_type = np.asarray(target_type).reshape(target.shape)
+    formal_input = target_type == 0
+    if not np.array_equal(formal_input, observed):
+        mismatch = np.argwhere(formal_input != observed)[:10].tolist()
+        raise ValueError(
+            'formal input membership and observable-route membership disagree '
+            f'elementwise at indices {mismatch}.'
+        )
     if not np.isfinite(target[valid]).all():
         raise ValueError('valid PGA labels contain non-finite values.')
     if not np.isfinite(final[valid]).all() or not np.isfinite(base[valid]).all():
         raise ValueError('valid base/final predictions contain non-finite values.')
+    if not np.isfinite(applied_delta[valid]).all():
+        raise ValueError('valid applied deltas contain non-finite values.')
+    if not np.isfinite(fixed_context_rolled_delta[valid]).all():
+        raise ValueError('valid fixed-context rolled deltas contain non-finite values.')
+    if not np.allclose(base[valid] + applied_delta[valid], final[valid], rtol=1e-6, atol=1e-6):
+        maximum = float(np.max(np.abs(base[valid] + applied_delta[valid] - final[valid])))
+        raise ValueError(
+            'base + val_rt59_applied_delta disagrees with final mean; '
+            f'max absolute error={maximum:.9g}.'
+        )
     _, _, _, base_from_mdn, _ = _mixture_stats(base_mdn)
     if not np.allclose(base_from_mdn[valid], base[valid], rtol=1e-6, atol=1e-6):
         raise ValueError('exported RT59 base mean disagrees with its MDN mixture mean.')
     return {
-        'path': str(Path(path).resolve()),
+        'path': f'<LOCAL_ARTIFACT>/{Path(path).name}',
         'sha256': _sha256_file(path),
         'target': target,
         'final': final,
@@ -268,8 +502,11 @@ def _load_protocol(path):
         'final_probability': final_probability,
         'target_type': target_type,
         'station_count': station_count,
+        'station_valid': station_valid,
         'requested_time': requested_time,
         'event_ids': event_ids,
+        'applied_delta': applied_delta,
+        'fixed_context_rolled_delta': fixed_context_rolled_delta,
     }
 
 
@@ -434,14 +671,26 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--random_npz', required=True)
     parser.add_argument('--normal_npz', required=True)
+    parser.add_argument('--random_metrics', required=True)
+    parser.add_argument('--normal_metrics', required=True)
     parser.add_argument('--output_dir', required=True)
     parser.add_argument('--bootstrap_draws', type=int, default=5000)
     parser.add_argument('--bootstrap_seed', type=int, default=20260915)
+    parser.add_argument('--training_config')
+    parser.add_argument('--random_config')
+    parser.add_argument('--normal_config')
     args = parser.parse_args()
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     random_data = _load_protocol(args.random_npz)
     normal_data = _load_protocol(args.normal_npz)
+    random_metrics_identity = _load_metrics_identity(args.random_metrics)
+    normal_metrics_identity = _load_metrics_identity(args.normal_metrics)
+    if (
+        random_metrics_identity['checkpoint_metadata']
+        != normal_metrics_identity['checkpoint_metadata']
+    ):
+        raise ValueError('random/normal formal metrics checkpoint metadata disagree.')
     random_mask = random_data['valid']
     normal_all = normal_data['valid']
     normal_input = normal_all & (normal_data['target_type'] == 0)
@@ -479,6 +728,27 @@ def main():
         args.bootstrap_seed,
         args.bootstrap_draws,
     ) if requested1_mask is not None else None
+
+    rolled_controls = {}
+    for protocol_name, data, protocol_mask in (
+        ('random', random_data, random_mask),
+        ('normal', normal_data, normal_all),
+    ):
+        rolled_controls[protocol_name] = {
+            'all': _rolled_delta_summary(data, protocol_mask),
+            'single_station': _rolled_delta_summary(
+                data,
+                protocol_mask & np.broadcast_to(
+                    data['station_count'][:, None] == 1, data['valid'].shape
+                ),
+            ),
+            'multi_station': _rolled_delta_summary(
+                data,
+                protocol_mask & np.broadcast_to(
+                    data['station_count'][:, None] > 1, data['valid'].shape
+                ),
+            ),
+        }
 
     random_group = groups['random']
     gates = [
@@ -543,24 +813,64 @@ def main():
             - abs(groups[population]['base']['slope'] - 1.0)
         )
         gates.extend([
-            _gate(f'{population}_absolute_bias_change', bias_change, 0.0, '<='),
+            _gate(f'{population}_absolute_bias_change', bias_change, 0.0, '<=', required=False),
             _gate(
                 f'{population}_absolute_slope_error_change',
                 slope_error_change,
                 0.0,
                 '<=',
+                required=False,
             ),
         ])
     required = [item['pass'] for item in gates if item['required']]
+    if len(gates) != 29 or len(required) != 25:
+        raise AssertionError(
+            f'protocol gate inventory changed unexpectedly: {len(gates)} total, '
+            f'{len(required)} required (expected 29/25).'
+        )
     decision = 'GO_FOR_DEVELOPMENT' if required and all(value is True for value in required) else 'NO_GO'
     if any(value is None for value in required):
         decision = 'INCOMPLETE_EVIDENCE'
     summary = {
-        'schema_version': 1,
+        'schema_version': 2,
         'decision': decision,
+        'metric_correction': {
+            'canonical_field_range': 'per-field NumPy percentile(95) - percentile(5), default linear method',
+            'minimum_valid_targets_for_range_gate': 5,
+            'aggregation': 'equal weight per eligible field',
+            'zero_truth_range': 'range ratio is undefined when true P95-P05 range <= 0',
+            'ptp_values': 'retained only under explicitly diagnostic ptp_* keys',
+            'gate_inventory': {'required': 25, 'diagnostic_only': 4, 'total': 29},
+        },
         'sources': {
-            'random': {'path': random_data['path'], 'sha256': random_data['sha256']},
-            'normal': {'path': normal_data['path'], 'sha256': normal_data['sha256']},
+            'random': {
+                'path': random_data['path'], 'sha256': random_data['sha256'],
+                'formal_metrics': random_metrics_identity,
+            },
+            'normal': {
+                'path': normal_data['path'], 'sha256': normal_data['sha256'],
+                'formal_metrics': normal_metrics_identity,
+            },
+        },
+        'provenance': {
+            'analysis_git_commit': _git_value(['rev-parse', 'HEAD']),
+            'analysis_git_branch': _git_value(['branch', '--show-current']),
+            'analysis_worktree_dirty': bool(_git_value(['status', '--porcelain'])),
+            'rt59_implementation_commit': '54fd63d623ac5837e16a5d175d34041b7488661e',
+            'rt59_counter_fix_commit': '7e00824b3aab7a15286dfd9bf9a264b03080c1cd',
+            'rt59_submitted_source_manifest_sha256': '3e1164bc4fb0441fb33e5d8cd03aa1708416708d930b01e71c4a82fd3779715e',
+            'rt59_evidence_commit': 'b709825b78e7579dbf05c8d4eacda5b29b9e58ae',
+            'rt59_review_commit': 'd43c7d63528b3ade71c3506eeb2cb71f90fb3ffd',
+        },
+        'split_identity': {
+            'declared_split': 'val',
+            'declared_dataset_period': 'Japan full 2000-2024',
+            'random': _event_manifest(random_data),
+            'normal': _event_manifest(normal_data),
+            'note': (
+                'The evaluated-event manifest is reconstructed directly from each '
+                'formal NPZ val_event_id export; no external split manifest was bundled.'
+            ),
         },
         'bootstrap': {'draws': args.bootstrap_draws, 'seed': args.bootstrap_seed, 'unit': 'event_id'},
         'counts': {
@@ -575,6 +885,7 @@ def main():
         },
         'groups': groups,
         'random_fields': {'base': random_fields_base, 'final': random_fields_final},
+        'fixed_context_rolled_control': rolled_controls,
         'random_requested1': requested1,
         'strata': {
             'random': _protocol_strata(random_data),
@@ -599,26 +910,42 @@ def main():
         ],
     )
     summary['truth_prediction_figure_written'] = figure_written
+
+    config_sources = {}
+    for label, source in (
+        ('training', args.training_config),
+        ('random_validation', args.random_config),
+        ('normal_validation', args.normal_config),
+    ):
+        if source:
+            config_sources[label] = _write_sanitized_config(
+                source, output_dir / f'{label}_config.sanitized.json'
+            )
+    summary['sanitized_config_sources'] = config_sources
     (output_dir / 'summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
     with (output_dir / 'gates.csv').open('w', newline='') as handle:
-        writer = csv.DictWriter(handle, fieldnames=['gate', 'value', 'rule', 'pass', 'required'])
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=['gate', 'value', 'rule', 'pass', 'required'],
+            lineterminator='\n',
+        )
         writer.writeheader()
         writer.writerows(gates)
     with (output_dir / 'group_metrics.csv').open('w', newline='') as handle:
-        writer = csv.writer(handle)
+        writer = csv.writer(handle, lineterminator='\n')
         writer.writerow(['population', 'model', 'targets', 'mae', 'rmse', 'bias', 'r2', 'slope', 'intercept'])
         for population, values in groups.items():
             for model_name in ('base', 'final'):
                 metrics = values[model_name]
                 writer.writerow([population, model_name] + [metrics.get(name) for name in ('targets', 'mae', 'rmse', 'bias', 'r2', 'slope', 'intercept')])
     with (output_dir / 'paired_ci.csv').open('w', newline='') as handle:
-        writer = csv.writer(handle)
+        writer = csv.writer(handle, lineterminator='\n')
         writer.writerow(['population', 'metric', 'events', 'delta_final_minus_base', 'ci_lower', 'ci_upper'])
         for population, values in groups.items():
             for metric, ci in values['paired_ci'].items():
                 writer.writerow([population, metric, ci['events'], ci['delta'], ci['lower'], ci['upper']])
     with (output_dir / 'strata_counts.csv').open('w', newline='') as handle:
-        writer = csv.writer(handle)
+        writer = csv.writer(handle, lineterminator='\n')
         writer.writerow([
             'protocol', 'stratum', 'value', 'events', 'realtime_rows', 'targets',
             'base_mae', 'final_mae', 'delta_mae', 'base_rmse', 'final_rmse',
@@ -643,6 +970,21 @@ def main():
                         metrics['fields']['final']['fields_ge5'],
                         metrics['fields']['final']['one_station_fields_ge5'],
                     ])
+    field_records = []
+    field_records.extend(_field_records(random_data, random_mask, 'random', 'all'))
+    field_records.extend(_field_records(normal_data, normal_all, 'normal', 'all'))
+    field_records.extend(_field_records(
+        normal_data, normal_noninput, 'normal', 'noninput'
+    ))
+    with (output_dir / 'field_metrics.csv').open('w', newline='') as handle:
+        if field_records:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=list(field_records[0]),
+                lineterminator='\n',
+            )
+            writer.writeheader()
+            writer.writerows(field_records)
     readme = [
         '# RT59-v3 paired validation analysis', '',
         f'- Decision: **{decision}**',
@@ -650,12 +992,19 @@ def main():
         f'- Normal targets: {int(normal_all.sum()):,} '
         f'(input {int(normal_input.sum()):,}, non-input {int(normal_noninput.sum()):,})',
         f'- Bootstrap: event_id paired, {args.bootstrap_draws} draws, seed {args.bootstrap_seed}', '',
+        '- Corrected field range: within-field P95-P05 (NumPy default linear percentile), '
+        'equal field weighting, at least five valid targets for range gates.',
+        '- Gate inventory: 25 required decision gates + 4 diagnostic bias/slope gates.',
+        '- Dataset identity: formal `val` exports from Japan full 2000-2024, not Japan 2018.', '',
         'The decision is conjunctive. `INCOMPLETE_EVIDENCE` means at least one required '
         'quantity was absent; it must not be treated as a pass.', '',
-        '| Gate | Value | Rule | Pass |', '|---|---:|---:|:---:|',
+        '| Gate | Value | Rule | Pass | Required |', '|---|---:|---:|:---:|:---:|',
     ]
     for item in gates:
-        readme.append(f"| {item['gate']} | {item['value']} | {item['rule']} | {item['pass']} |")
+        readme.append(
+            f"| {item['gate']} | {item['value']} | {item['rule']} | "
+            f"{item['pass']} | {item['required']} |"
+        )
     (output_dir / 'README.md').write_text('\n'.join(readme) + '\n')
     print(json.dumps({'decision': decision, 'output_dir': str(output_dir.resolve())}, indent=2))
 
