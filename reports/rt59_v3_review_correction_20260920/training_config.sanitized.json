@@ -1,0 +1,2665 @@
+{
+  "ensemble": 1,
+  "experiment_note": "RT59-v3 loads the fixed RT58 epoch-8 checkpoint, keeps RT57 gamma=1.66 and every old parameter frozen, warm-copies only the RT58 set/pair/score transport trunk on fresh initialization, and trains disjoint local/transport residual branches for exactly eight epochs. Observable unique coordinate matches use the local branch; every other valid query uses base-relative transport. The three truth-loss groups R/NI/NO are globally normalized with fixed 0.50/0.25/0.25 weights. No held-out test split is used.",
+  "full_data_manifest": {
+    "all_events": 14153,
+    "all_station_rows": 501956,
+    "expected_split_after_knet_filter": {
+      "dev_events": 1383,
+      "test_events": 2769,
+      "train_events": 9627
+    },
+    "expected_split_before_knet_empty_event_removal": {
+      "dev_events": 1429,
+      "test_events": 2839,
+      "train_events": 9885
+    },
+    "hdf5_shards": 25,
+    "knet_station_rows": 211546,
+    "years": "2000-2024"
+  },
+  "model": "transformer",
+  "model_params": {
+    "activation": "relu",
+    "anchor_residual_local_hidden_dim": 128,
+    "anchor_residual_transport_distance_scale": 0.05,
+    "anchor_residual_transport_heads": 4,
+    "anchor_residual_transport_hidden_dim": 256,
+    "anchor_residual_transport_match_atol": 1e-06,
+    "anchor_residual_transport_set_layers": 2,
+    "anchor_transfer_distance_scale": 0.05,
+    "anchor_transfer_heads": 4,
+    "anchor_transfer_hidden_dim": 256,
+    "anchor_transfer_set_layers": 2,
+    "anchor_transfer_station_dim": 256,
+    "anchor_transfer_zero_init": true,
+    "bias_loc_mu": 0,
+    "bias_loc_sigma": 2,
+    "bias_mag_mu": 5.0,
+    "bias_mag_sigma": 0.5,
+    "borehole": false,
+    "coord_fusion_mode": "add",
+    "coords_abs_weight": 0.1,
+    "disable_waveform_scale": false,
+    "diting_frontend": "vit_adapter",
+    "diting_station_adapter": "legacy",
+    "diting_station_pool_dropout": 0.0,
+    "diting_station_pool_queries": 4,
+    "diting_station_pool_temperature": 1.0,
+    "dpk_checkpoint_path": null,
+    "dpk_compare_encoder": false,
+    "dpk_encoder_policy": "current",
+    "dpk_share_encoder_if_identical": false,
+    "dpk_weight_resample": "max",
+    "dpk_weight_temperature": 1.0,
+    "event_readout_layers": 1,
+    "event_readout_mode": "event_cross_attention",
+    "event_token_init_range": 0.02,
+    "ffn_params": {
+      "hidden_dim": 2000
+    },
+    "hidden_dropout": 0.0,
+    "location_mixture": 3,
+    "mad_params": {
+      "att_dropout": 0.0,
+      "initializer_range": 0.02,
+      "n_heads": 10
+    },
+    "magnitude_mixture": 1,
+    "max_stations": 25,
+    "n_datasets": 25,
+    "n_pga_targets": 15,
+    "no_event_token": false,
+    "output_distribution": "mdn",
+    "output_location_dims": [
+      150,
+      50
+    ],
+    "output_mlp_dims": [
+      64
+    ],
+    "pga_attention_diagnostics": false,
+    "pga_delta_gate_init": 0.001,
+    "pga_layerwise_refinement": false,
+    "pga_mask_sanity_check": false,
+    "pga_mixture": 3,
+    "pga_readout_layers": 4,
+    "pga_readout_mode": "target_cross_attention",
+    "pga_temporal_residual_mode": "residual",
+    "pga_temporal_residual_pair_value_gate_init": 0.0,
+    "pga_temporal_residual_query_source": "readout",
+    "pga_temporal_residual_scale": 1.66,
+    "pga_temporal_residual_station_distinctive_amplitude_feature_dim": 11,
+    "pga_temporal_residual_station_distinctive_attention_queries": 4,
+    "pga_temporal_residual_station_distinctive_detach_event_mean": true,
+    "pga_temporal_residual_station_distinctive_dim": 256,
+    "pga_temporal_residual_station_distinctive_duration_feature_dim": 2,
+    "pga_temporal_residual_station_distinctive_hidden_dim": 512,
+    "pga_temporal_residual_station_distinctive_temporal_dilations": [
+      1,
+      4
+    ],
+    "pga_temporal_residual_station_weighting": "learned_pair",
+    "pga_temporal_residual_token_control": "none",
+    "pga_temporal_residual_use_event_context": true,
+    "pga_temporal_residual_zero_init": true,
+    "pga_use_event_context": false,
+    "query_token_init_range": 0.02,
+    "readout_ffn_gate_init": 0.0,
+    "readout_ffn_hidden_dim": 1000,
+    "readout_first_residual": true,
+    "readout_residual_gate_init": 0.0,
+    "readout_residual_gates": true,
+    "rope_base": 10000.0,
+    "rope_coord_mode": "relative_xy_km",
+    "rope_coord_scale": 100.0,
+    "rope_lat_origin": 37.0,
+    "rotation_anchor": [
+      37,
+      140
+    ],
+    "station_context_gate_init": 0.0,
+    "station_context_mode": "off",
+    "station_delta_ffn_gate_init": 0.001,
+    "station_delta_gate_init": 0.001,
+    "station_distinctive_adapter": true,
+    "station_distinctive_common_residual_decomposition": true,
+    "station_distinctive_use_amplitude_features": true,
+    "station_distinctive_use_duration_features": true,
+    "station_local_pga_aux": false,
+    "station_token_weight_mode": "none",
+    "temporal_pool_dim": 256,
+    "temporal_pool_gate_init": 0.001,
+    "temporal_pool_geom_hidden_dim": 128,
+    "temporal_pool_pair_value_enabled": true,
+    "temporal_pool_time_basis": 32,
+    "temporal_token_dim": 256,
+    "temporal_token_weight_mode": "none",
+    "token_weight_floor": 0.0001,
+    "token_weight_scale": 4.0,
+    "transformer_layers": 2,
+    "use_amplitude_info": true,
+    "use_coords_abs": true,
+    "use_coords_rel": false,
+    "use_coords_rel_abs_fusion": false,
+    "use_pga_anchor_residual_transport": true,
+    "use_pga_anchor_transfer": true,
+    "use_pga_temporal_residual": true,
+    "use_rope": false,
+    "use_target_temporal_pooling": false,
+    "use_vs30": false,
+    "vs30_init_gate": 0.0,
+    "vs30_injection_mode": "additive",
+    "vs30_reference_mps": 760.0,
+    "vs30_site_affine_hidden_dim": 64,
+    "vs30_site_affine_scale": 0.1,
+    "vs30_site_affine_sigma_shift": false,
+    "waveform_model_dims": [
+      1000,
+      1000,
+      1000
+    ],
+    "waveform_scale_gain": 1.0,
+    "waveform_scale_init_gate": 0.1,
+    "waveform_scale_log_divisor": 10.0,
+    "wavelength": [
+      [
+        0.01,
+        15
+      ],
+      [
+        0.01,
+        15
+      ],
+      [
+        0.01,
+        10
+      ]
+    ]
+  },
+  "seed": 42,
+  "station_filter_note": "source_network=knt only. The converted shards already contain corrected origin time/provenance, aligned P picks, log10 PGA in m/s^2, record_start_sample + valid_n_samples, and VS30. No origin-correction or DPK preprocessing is required after upload.",
+  "training_params": {
+    "adam_betas": [
+      0.9,
+      0.999
+    ],
+    "adam_eps": 1e-08,
+    "checkpoint": {
+      "encoder_source": "<ABSOLUTE_PATH_REDACTED>/mp_rank_00_model_states.pt",
+      "exclude_frozen_encoder": true,
+      "save_optimizer_state": true
+    },
+    "clipnorm": 1.0,
+    "data_path": [
+      "<ABSOLUTE_PATH_REDACTED>/japan_2000.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2001.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2002.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2003.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2004.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2005.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2006.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2007.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2008.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2009.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2010.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2011.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2012.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2013.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2014.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2015.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2016.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2017.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2018.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2019.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2020.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2021.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2022.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2023.hdf5",
+      "<ABSOLUTE_PATH_REDACTED>/japan_2024.hdf5"
+    ],
+    "deterministic_sampling": true,
+    "distribution_mean_loss": {
+      "enabled": false,
+      "huber_delta": 1.0,
+      "loss_type": "huber",
+      "weight": 0.1
+    },
+    "dpk_prior_cache": null,
+    "ensemble_rotation": false,
+    "epoch_sanity": true,
+    "epochs_full_model": 8,
+    "freeze_mode": "dual_anchor_residual_only",
+    "full_model_huber_delta": 1.0,
+    "full_model_loss": "nll",
+    "generator_params": [
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      },
+      {
+        "batch_size": 8,
+        "cutout_end": 90,
+        "cutout_start": 0,
+        "disable_station_foreshadowing": true,
+        "emit_waveform_padding_mask": true,
+        "input_station_selection": "p_pick",
+        "integrate": false,
+        "key": "Magnitude",
+        "magnitude_resampling": 1.0,
+        "min_upsample_magnitude": 8,
+        "noise_seconds": 5,
+        "oversample": 1,
+        "pga_from_inactive": true,
+        "pga_key": "pga",
+        "pga_selection_skew": null,
+        "pos_offset": [
+          37,
+          140
+        ],
+        "random_input_station_count": null,
+        "realtime_target_sampling": {
+          "enabled": true,
+          "fill_missing": true,
+          "input_ratio": 0.3,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        },
+        "realtime_training": {
+          "bin_sampling": "without_replacement",
+          "bins_per_event_per_epoch": 3,
+          "enabled": true,
+          "mode": "train",
+          "reference": "first_p_pick",
+          "train_time_bins": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "train_time_mode": "random_bins",
+          "train_times": null,
+          "val_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ]
+        },
+        "scale_metadata": false,
+        "select_first_inputs": true,
+        "select_first_pga_targets": false,
+        "selection_skew": null,
+        "shuffle_train_dev": false,
+        "transform_target_only": false,
+        "translate": false,
+        "trigger_based": true,
+        "waveform_padding_mask_eps": 1e-08
+      }
+    ],
+    "load_model_additional_allowed_missing_prefixes": [
+      "pga_anchor_residual_transport_head."
+    ],
+    "load_model_path": "<ABSOLUTE_PATH_REDACTED>/full_model_last.pth",
+    "lr": 0.0001,
+    "lr_adapter": 0.0001,
+    "lr_decay_factor": 0.5,
+    "lr_decay_patience": 2,
+    "lr_monitor": "val",
+    "lr_pga_anchor_transfer": 0.0005,
+    "lr_pga_temporal_residual": 0.0005,
+    "lr_rt59_local": 0.0005,
+    "lr_rt59_transport": 0.0005,
+    "lr_team": 0.0001,
+    "metadata_cache_columns": [
+      "EVENT",
+      "wave_idx",
+      "Magnitude",
+      "Latitude",
+      "Longitude",
+      "DEPTH",
+      "Origin_Time(JST)",
+      "source_network",
+      "sensor_class",
+      "stalta_ratio_at_pick",
+      "station_code"
+    ],
+    "metadata_cache_dir": "cache/japan_full_2000_2024_station_metadata",
+    "min_lr": 1e-06,
+    "min_stalta_ratio_at_pick": 0.1,
+    "model_input_dump": {
+      "enabled": false,
+      "epochs": [
+        1,
+        2,
+        3
+      ],
+      "include_val": true,
+      "max_batches_per_epoch": null
+    },
+    "normal_replay_distillation_loss": {
+      "apply_to_random": false,
+      "enabled": false,
+      "weight": 0.05
+    },
+    "optimizer": "adam",
+    "overfit_event_ids_path": null,
+    "overfit_n": 0,
+    "pga_anchor_absolute_loss": {
+      "enabled": false,
+      "huber_delta_dex": 0.15,
+      "weight": 0.2
+    },
+    "pga_anchor_pair_candidate_loss": {
+      "enabled": false,
+      "huber_delta_dex": 0.2,
+      "weight": 0.05
+    },
+    "pga_loss_weighting": {
+      "base_weight": 1.0,
+      "enabled": true,
+      "mode": "threshold",
+      "normalize_mean": true,
+      "strong_weight": 2.0,
+      "threshold": -1.2
+    },
+    "pga_target_normalization": {
+      "count": 146842,
+      "enabled": true,
+      "mean": -1.1228067351176172,
+      "source": "2000-2024 default event-level train split, source_network=knt, finite pga_norm_resampled_mps2",
+      "std": 0.4312468402225416
+    },
+    "pga_temporal_residual_loss": {
+      "enabled": false,
+      "stop_base": true,
+      "weight": 0.2
+    },
+    "pga_within_event_difference_loss": {
+      "enabled": false,
+      "huber_delta": 1.0,
+      "huber_delta_dex": 0.15,
+      "max_pairs": 105,
+      "weight": 0.4
+    },
+    "reinit_fpn": false,
+    "res_comps": [
+      "pga"
+    ],
+    "res_weight": [
+      1.0
+    ],
+    "rt59_dual_objective": {
+      "candidate_beta_dex": 0.2,
+      "candidate_weight": 0.05,
+      "difference_beta_dex": 0.15,
+      "difference_max_pairs": 105,
+      "difference_weight": 0.4,
+      "enabled": true,
+      "group_weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "mse_weight": 0.1,
+      "regret_weight": 0.05,
+      "relative_beta_dex": 0.2,
+      "relative_weight": 0.2,
+      "smooth_beta_model": 1.0,
+      "smooth_weight": 0.1
+    },
+    "rt59_fixed_lr_schedule": {
+      "completed_epoch_boundaries": [
+        0,
+        4,
+        6
+      ],
+      "lr_values": [
+        0.0005,
+        0.00025,
+        0.000125
+      ]
+    },
+    "single_station_pretrain": {
+      "batch_size": 64,
+      "clipnorm": 1.0,
+      "enabled": false,
+      "epochs": 80,
+      "freeze_encoder": true,
+      "huber_delta": 1.0,
+      "loss": "huber",
+      "lr": 0.001,
+      "lr_adapter": 0.001,
+      "lr_head": 0.001,
+      "lr_monitor": "train",
+      "reinit_adapter": true,
+      "reuse_note": "rt34: skip single-station pretrain; frozen MAE/DPK DiTing features are used directly. Transfer excludes waveform_model.* because rt30-rt39 force vit_adapter for f2/f3/f4/x diagnostics.",
+      "samples_per_event": 4,
+      "station_sampling": "random",
+      "task_weights": {
+        "epidist": 0.1,
+        "mag": 0.1,
+        "pga": 0.8
+      },
+      "tasks": [
+        "mag",
+        "epidist",
+        "pga"
+      ]
+    },
+    "station_experiment": {
+      "enabled": false,
+      "exclude_input_from_targets": false,
+      "input_station_count": 1,
+      "max_input_stations": 25,
+      "mode": "single_input_same_station_pga",
+      "snr_noise_window_sec": [
+        -5,
+        -1
+      ],
+      "snr_signal_window_sec": [
+        0,
+        5
+      ],
+      "snr_threshold": null,
+      "target_station_count": 1
+    },
+    "station_filter": "knet",
+    "station_local_pga_aux_loss": {
+      "enabled": false,
+      "mode": "station_distinctive_dual",
+      "multi_station_weight": 0.1,
+      "single_station_weight": 0.02
+    },
+    "station_residual_decorrelation_loss": {
+      "enabled": false
+    },
+    "train_generator_overrides": {
+      "causal_random_input_mask": {
+        "apply_probability": 0.8,
+        "enabled": true,
+        "order_selected_by_pick": true,
+        "station_counts": [
+          1,
+          3,
+          5,
+          8,
+          12,
+          16
+        ],
+        "target_sampling": {
+          "enabled": true,
+          "exclude_inputs": true,
+          "fill_missing": true,
+          "input_ratio": 0.0,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        }
+      }
+    },
+    "transfer_exclude_prefixes": [
+      "waveform_model."
+    ],
+    "transfer_model_path": null,
+    "validation_generator_overrides": {
+      "causal_random_input_mask": {
+        "apply_probability": 1.0,
+        "enabled": true,
+        "order_selected_by_pick": true,
+        "station_counts": [
+          1,
+          3,
+          5,
+          8,
+          12,
+          16
+        ],
+        "target_sampling": {
+          "enabled": true,
+          "exclude_inputs": true,
+          "fill_missing": true,
+          "input_ratio": 0.0,
+          "triggered_noninput_ratio": 0.2,
+          "untriggered_ratio": 0.5
+        }
+      },
+      "oversample": 1,
+      "realtime_training": {
+        "bin_sampling": "without_replacement",
+        "bins_per_event_per_epoch": 1,
+        "enabled": true,
+        "mode": "val",
+        "reference": "first_p_pick",
+        "train_time_bins": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            10,
+            20
+          ],
+          [
+            20,
+            40
+          ],
+          [
+            40,
+            90
+          ]
+        ],
+        "val_times": [
+          1,
+          3,
+          5,
+          10,
+          20,
+          40,
+          90
+        ]
+      }
+    },
+    "weight_decay": 0.0,
+    "weight_path": "<ABSOLUTE_PATH_REDACTED>/weights_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_retry1",
+    "workers": 0
+  }
+}

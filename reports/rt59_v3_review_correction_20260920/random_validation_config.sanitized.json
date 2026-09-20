@@ -1,0 +1,88 @@
+{
+  "experiment_note": "RT59-v3 loads the fixed RT58 epoch-8 checkpoint, keeps RT57 gamma=1.66 and every old parameter frozen, warm-copies only the RT58 set/pair/score transport trunk on fresh initialization, and trains disjoint local/transport residual branches for exactly eight epochs. Observable unique coordinate matches use the local branch; every other valid query uses base-relative transport. The three truth-loss groups R/NI/NO are globally normalized with fixed 0.50/0.25/0.25 weights. No held-out test split is used.",
+  "extends": "transformer_japan_full_2000_2024_rt58_waveform_anchor_transfer_seed42_chaosuan.json",
+  "model_params": {
+    "anchor_residual_local_hidden_dim": 128,
+    "anchor_residual_transport_distance_scale": 0.05,
+    "anchor_residual_transport_heads": 4,
+    "anchor_residual_transport_hidden_dim": 256,
+    "anchor_residual_transport_match_atol": 1e-06,
+    "anchor_residual_transport_set_layers": 2,
+    "use_pga_anchor_residual_transport": true
+  },
+  "training_params": {
+    "adam_betas": [
+      0.9,
+      0.999
+    ],
+    "adam_eps": 1e-08,
+    "distribution_mean_loss": {
+      "enabled": false
+    },
+    "epochs_full_model": 8,
+    "freeze_mode": "dual_anchor_residual_only",
+    "load_model_additional_allowed_missing_prefixes": [
+      "pga_anchor_residual_transport_head."
+    ],
+    "load_model_path": "${RT58_BASE_CHECKPOINT}",
+    "lr_rt59_local": 0.0005,
+    "lr_rt59_transport": 0.0005,
+    "normal_replay_distillation_loss": {
+      "enabled": false
+    },
+    "optimizer": "adam",
+    "pga_anchor_absolute_loss": {
+      "enabled": false
+    },
+    "pga_anchor_pair_candidate_loss": {
+      "enabled": false
+    },
+    "pga_temporal_residual_loss": {
+      "enabled": false
+    },
+    "pga_within_event_difference_loss": {
+      "enabled": false
+    },
+    "reinit_fpn": false,
+    "rt59_dual_objective": {
+      "candidate_beta_dex": 0.2,
+      "candidate_weight": 0.05,
+      "difference_beta_dex": 0.15,
+      "difference_max_pairs": 105,
+      "difference_weight": 0.4,
+      "enabled": true,
+      "group_weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "mse_weight": 0.1,
+      "regret_weight": 0.05,
+      "relative_beta_dex": 0.2,
+      "relative_weight": 0.2,
+      "smooth_beta_model": 1.0,
+      "smooth_weight": 0.1
+    },
+    "rt59_fixed_lr_schedule": {
+      "completed_epoch_boundaries": [
+        0,
+        4,
+        6
+      ],
+      "lr_values": [
+        0.0005,
+        0.00025,
+        0.000125
+      ]
+    },
+    "station_local_pga_aux_loss": {
+      "enabled": false
+    },
+    "station_residual_decorrelation_loss": {
+      "enabled": false
+    },
+    "transfer_model_path": null,
+    "weight_decay": 0.0,
+    "weight_path": "${RT59_WEIGHT_PATH}"
+  }
+}

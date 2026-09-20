@@ -1,0 +1,44 @@
+# RT59-v3 paired validation analysis
+
+- Decision: **NO_GO**
+- Random targets: 75,654
+- Normal targets: 89,770 (input 63,651, non-input 26,119)
+- Bootstrap: event_id paired, 5000 draws, seed 20260915
+
+- Corrected field range: within-field P95-P05 (NumPy default linear percentile), equal field weighting, at least five valid targets for range gates.
+- Gate inventory: 25 required decision gates + 4 diagnostic bias/slope gates.
+- Dataset identity: formal `val` exports from Japan full 2000-2024, not Japan 2018.
+
+The decision is conjunctive. `INCOMPLETE_EVIDENCE` means at least one required quantity was absent; it must not be treated as a pass.
+
+| Gate | Value | Rule | Pass | Required |
+|---|---:|---:|:---:|:---:|
+| random_mae | 0.23782827292020176 | <= 0.242 | True | True |
+| random_slope | 0.40245343115082327 | >= 0.45 | False | True |
+| random_r2 | 0.39499520226406926 | >= 0.39 | True | True |
+| random_range_ratio_ge5 | 0.4753358939236284 | >= 0.55 | False | True |
+| random_one_station_range_ratio_ge5 | 0.17861861673705595 | >= 0.25 | False | True |
+| random_one_station_pairwise_delta_mae | 0.336201596663309 | <= 0.33 | False | True |
+| random_requested1_mae | 0.24339119931581682 | <= 0.253 | True | True |
+| random_nll | 0.19901795601251107 | <= 0.22 | True | True |
+| random_delta_mae_ci_upper | -0.006700927930248778 | < 0.0 | True | True |
+| random_delta_brier_ci_upper | -0.00492981868907158 | <= 0.0 | True | True |
+| random_coverage1_absolute_change | 0.020712718428635646 | <= 0.01 | False | True |
+| random_coverage2_absolute_change | 0.00155973246622787 | <= 0.01 | True | True |
+| normal_all_delta_mae_ci_upper | -0.005522173295425348 | < 0.0 | True | True |
+| normal_all_delta_rmse_ci_upper | -0.008499416753756322 | < 0.0 | True | True |
+| normal_noninput_delta_mae_ci_upper | -0.009911931927171479 | < 0.0 | True | True |
+| normal_noninput_delta_rmse_ci_upper | -0.012490213955583172 | < 0.0 | True | True |
+| normal_input_mae_delta | -0.0039322662074091075 | <= 0.0 | True | True |
+| normal_input_rmse_delta | -0.006774727740309711 | <= 0.0 | True | True |
+| normal_all_mae_historical_redline | 0.12500635570447707 | <= 0.136 | True | True |
+| normal_noninput_mae_historical_redline | 0.19930054193565463 | <= 0.218 | True | True |
+| normal_nll_delta | -0.02591293810548101 | <= 0.0 | True | True |
+| normal_brier_delta | -0.005552949034443033 | <= 0.0 | True | True |
+| one_station_range_abs_error_delta | 0.022213090138342717 | <= 0.0 | False | True |
+| normal_coverage1_absolute_change | 0.0148601982845048 | <= 0.01 | False | True |
+| normal_coverage2_absolute_change | 0.003408711150718502 | <= 0.01 | True | True |
+| normal_all_absolute_bias_change | -0.012094614830316673 | <= 0.0 | True | False |
+| normal_all_absolute_slope_error_change | -0.0065948597850304935 | <= 0.0 | True | False |
+| normal_noninput_absolute_bias_change | -0.02098947094120189 | <= 0.0 | True | False |
+| normal_noninput_absolute_slope_error_change | -0.009469914642014299 | <= 0.0 | True | False |
