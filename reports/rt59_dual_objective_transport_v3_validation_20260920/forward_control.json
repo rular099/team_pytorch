@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "description": "RT59 same-forward route, correction identity, and fixed-context station-feature roll control recomputed from the submitted epoch-8 NPZ files.",
+  "normal": {
+    "rows": 9681,
+    "valid_targets": 89770,
+    "observed_targets": 63651,
+    "ambiguous_targets": 0,
+    "applied_delta_abs_mean_dex": 0.020149429336727056,
+    "applied_delta_std_dex": 0.0334385443522262,
+    "final_minus_base_minus_delta_max_abs_dex": 3.427267074584961e-07,
+    "single_station_targets": 3736,
+    "multi_station_targets": 86034,
+    "rolled_delta_difference_abs_mean_multi_dex": 0.010293656503666185,
+    "rolled_delta_difference_nonzero_fraction_multi": 1.0,
+    "rolled_delta_difference_max_abs_single_dex": 0.0
+  },
+  "random": {
+    "rows": 9681,
+    "valid_targets": 75654,
+    "observed_targets": 0,
+    "ambiguous_targets": 0,
+    "applied_delta_abs_mean_dex": 0.047279265509248325,
+    "applied_delta_std_dex": 0.05778421764806853,
+    "final_minus_base_minus_delta_max_abs_dex": 3.166496753692627e-07,
+    "single_station_targets": 19861,
+    "multi_station_targets": 55793,
+    "rolled_delta_difference_abs_mean_multi_dex": 0.011350085303014495,
+    "rolled_delta_difference_nonzero_fraction_multi": 1.0,
+    "rolled_delta_difference_max_abs_single_dex": 0.0
+  }
+}
