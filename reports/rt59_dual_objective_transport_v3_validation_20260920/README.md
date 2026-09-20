@@ -1,5 +1,9 @@
 # RT59-v3 paired validation analysis
 
+> **Archived result with a known metric-definition error.** The formal P95-P05
+> correction and 25-required/4-diagnostic gate inventory are in
+> [`../rt59_v3_review_correction_20260920/`](../rt59_v3_review_correction_20260920/).
+
 - Decision: **NO_GO**
 - Random targets: 75,654
 - Normal targets: 89,770 (input 63,651, non-input 26,119)

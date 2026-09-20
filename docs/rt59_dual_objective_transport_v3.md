@@ -88,6 +88,11 @@ After both NPZ files are available:
 python tools/analyze_rt59_dual_objective_npz.py \
   --random_npz logs/<rt59-run>/epoch8_random_validation/eval_validation_epoch8_random.npz \
   --normal_npz logs/<rt59-run>/epoch8_normal_validation/eval_validation_epoch8_normal.npz \
+  --random_metrics logs/<rt59-run>/epoch8_random_validation/eval_validation_epoch8_random.metrics.json \
+  --normal_metrics logs/<rt59-run>/epoch8_normal_validation/eval_validation_epoch8_normal.metrics.json \
+  --training_config <rt59-run>/config.json \
+  --random_config pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json \
+  --normal_config pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_normal_validation_chaosuan.json \
   --output_dir reports/rt59_dual_objective_transport_v3_validation_20260915
 ```
 

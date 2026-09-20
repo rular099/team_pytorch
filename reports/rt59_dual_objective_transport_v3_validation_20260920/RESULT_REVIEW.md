@@ -1,5 +1,10 @@
 # RT59-v3 dual-objective transport：epoch-8 validation 结果审阅
 
+> **勘误（2026-09-20）：** 本报告错误地用 peak-to-peak 代替正式的 P95−P05 field
+> range，并把 4 个 diagnostic 项写成 required。请以追加归档
+> [`../rt59_v3_review_correction_20260920/RESULT_REVIEW.md`](../rt59_v3_review_correction_20260920/RESULT_REVIEW.md)
+> 为准；原文件仅保留用于审计，不再代表正式判定。
+
 更新日期：2026-09-20（Asia/Shanghai）
 
 本目录汇总 RT59-v3 seed42 固定 8 epoch 训练及同一 epoch-8 checkpoint 的
