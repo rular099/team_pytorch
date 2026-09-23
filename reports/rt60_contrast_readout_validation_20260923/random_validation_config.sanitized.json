@@ -1,0 +1,76 @@
+{
+  "experiment_note": "RT60 final-contrast-readout loads the exact RT59-v3 epoch-8 weight-only parent, freezes every parameter and buffer except the six tensors in pga_anchor_residual_transport_head.transport.residual_head, and trains those 67,077 scalars for exactly eight new epochs. The immutable same-forward RT59 readout is stored in checkpoint metadata; the old RT57 gamma=1.66 val_rt59_base_* meaning is unchanged. The objective replaces all RT59 auxiliaries with grouped point loss, remote-only parent regret and final-field contrast. No held-out test split is used.",
+  "extends": "transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json",
+  "model_params": {
+    "use_rt60_contrast_readout": true
+  },
+  "training_params": {
+    "adam_betas": [
+      0.9,
+      0.999
+    ],
+    "adam_eps": 1e-08,
+    "epochs_full_model": 8,
+    "freeze_mode": "rt60_contrast_readout_only",
+    "load_model_additional_allowed_missing_prefixes": [],
+    "load_model_path": "${RT59_PARENT_CHECKPOINT}",
+    "lr_rt59_local": null,
+    "lr_rt59_transport": null,
+    "lr_rt60_readout": 0.0001,
+    "optimizer": "adam",
+    "reinit_fpn": false,
+    "rt59_dual_objective": {
+      "candidate_weight": 0.0,
+      "difference_weight": 0.0,
+      "enabled": false,
+      "relative_weight": 0.0
+    },
+    "rt59_fixed_lr_schedule": null,
+    "rt60_contrast_objective": {
+      "contrast_weight": 0.4,
+      "enabled": true,
+      "field_bucket_weights": [
+        0.25,
+        0.25,
+        0.125,
+        0.125
+      ],
+      "group_weights": [
+        0.5,
+        0.25,
+        0.25
+      ],
+      "mse_weight": 0.1,
+      "regret_weight": 0.05,
+      "smooth_beta_model": 1.0,
+      "smooth_weight": 0.1
+    },
+    "rt60_fixed_lr_schedule": {
+      "completed_epoch_boundaries": [
+        0,
+        4,
+        6
+      ],
+      "lr_values": [
+        0.0001,
+        5e-05,
+        2.5e-05
+      ]
+    },
+    "rt60_parent": {
+      "checkpoint_sha256": "${RT59_PARENT_CHECKPOINT_SHA256}",
+      "epoch": 8,
+      "source_identity": {
+        "rt59_counter_fix_commit": "7e00824b3aab7a15286dfd9bf9a264b03080c1cd",
+        "rt59_implementation_commit": "54fd63d623ac5837e16a5d175d34041b7488661e",
+        "rt59_submitted_source_manifest_sha256": "3e1164bc4fb0441fb33e5d8cd03aa1708416708d930b01e71c4a82fd3779715e",
+        "rt60_uploaded_source_manifest_sha256": "${RT60_SOURCE_MANIFEST_SHA256}"
+      },
+      "task_id": "20260915-rt59-dual-objective-transport-v3"
+    },
+    "task_id": "20260920-rt60-final-contrast-readout",
+    "transfer_model_path": null,
+    "weight_decay": 0.0,
+    "weight_path": "${RT60_WEIGHT_PATH}"
+  }
+}
