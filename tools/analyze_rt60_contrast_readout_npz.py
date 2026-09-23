@@ -521,7 +521,16 @@ def main():
     if args.bootstrap_draws != 5000 or args.bootstrap_seed != BOOTSTRAP_SEED:
         raise ValueError('formal RT60 decision requires 5000 draws and seed 20260915.')
 
+    analysis_provenance = {
+        'analysis_git_commit': _git_value(['rev-parse', 'HEAD']),
+        'analysis_git_branch': _git_value(['branch', '--show-current']),
+        'analysis_worktree_dirty': bool(_git_value(['status', '--porcelain'])),
+        'rt60_implementation_commit': '033f01a481fdb7499aff836abe6aaae35b72e5ca',
+        'rt60_submitted_source_manifest_sha256': SOURCE_MANIFEST_SHA256,
+    }
     output_dir = Path(args.output_dir)
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise ValueError(f'output directory must be absent or empty: {output_dir}')
     output_dir.mkdir(parents=True, exist_ok=True)
     random_identity = _load_metrics_identity(args.random_metrics)
     normal_identity = _load_metrics_identity(args.normal_metrics)
@@ -713,13 +722,7 @@ def main():
             'normal_metrics': normal_identity,
             'sanitized_configs': config_sources,
         },
-        'provenance': {
-            'analysis_git_commit': _git_value(['rev-parse', 'HEAD']),
-            'analysis_git_branch': _git_value(['branch', '--show-current']),
-            'analysis_worktree_dirty': bool(_git_value(['status', '--porcelain'])),
-            'rt60_implementation_commit': '033f01a481fdb7499aff836abe6aaae35b72e5ca',
-            'rt60_submitted_source_manifest_sha256': SOURCE_MANIFEST_SHA256,
-        },
+        'provenance': analysis_provenance,
         'split_identity': {
             'declared_dataset_period': 'Japan full 2000-2024',
             'declared_split': 'val',
