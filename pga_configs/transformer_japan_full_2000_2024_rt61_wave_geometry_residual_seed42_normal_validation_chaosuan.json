@@ -1,0 +1,12 @@
+{
+    "extends": "transformer_japan_full_2000_2024_rt61_wave_geometry_residual_seed42_chaosuan.json",
+    "training_params": {
+        "weight_path": "${RT61_WEIGHT_PATH}",
+        "validation_generator_overrides": {
+            "causal_random_input_mask": {
+                "enabled": false
+            }
+        }
+    },
+    "experiment_note": "Evaluation-only normal-geometry companion for the fixed RT61 epoch-8 full_model_last.pth. It retains the immutable same-forward RT59 reference and the trained-readout adapter-off counterfactual, and disables causal random masking only for validation. No held-out test split is used."
+}

@@ -48,6 +48,9 @@ from train_light import (
     read_overfit_event_ids,
 )
 from tools.rt60_contrast_objective import restore_reference_payload
+from tools.rt61_wave_geometry import (
+    restore_reference_payload as restore_rt61_reference_payload,
+)
 
 
 def shifted_p_picks_array(p_picks):
@@ -296,6 +299,28 @@ def append_pga_temporal_residual_outputs(results, raw_model, config):
             arr = _maybe_unnormalize_pga_delta(arr, config)
         results[key].append(arr)
 
+    rt61_tensors = {
+        'rt61_reference_mdn': getattr(raw_model, '_last_rt61_reference_mdn', None),
+        'rt61_reference_mean': getattr(raw_model, '_last_rt61_reference_mean', None),
+        'rt61_increment': getattr(raw_model, '_last_rt61_increment', None),
+        'rt61_adapter_off_mdn': getattr(raw_model, '_last_rt61_adapter_off_mdn', None),
+        'rt61_adapter_off_mean': getattr(raw_model, '_last_rt61_adapter_off_mean', None),
+        'rt61_adapter_off_increment': getattr(
+            raw_model, '_last_rt61_adapter_off_increment', None
+        ),
+    }
+    for key, value in rt61_tensors.items():
+        if value is None:
+            continue
+        arr = value.detach().cpu().numpy().squeeze(0)
+        if key.endswith('_mdn'):
+            arr = _maybe_unnormalize_pga_mdn(arr, config)
+        elif key.endswith('_mean'):
+            arr = _maybe_unnormalize_pga('pga', arr, config)
+        else:
+            arr = _maybe_unnormalize_pga_delta(arr, config)
+        results[key].append(arr)
+
 
 def build_model_and_load(config, diting_args, checkpoint_path, device):
     """Build model and load checkpoint."""
@@ -315,7 +340,16 @@ def build_model_and_load(config, diting_args, checkpoint_path, device):
     rt60_enabled = bool(config.get('model_params', {}).get(
         'use_rt60_contrast_readout', False
     ))
-    if rt60_enabled:
+    rt61_enabled = bool(config.get('model_params', {}).get(
+        'use_rt61_wave_geometry_adapter', False
+    ))
+    if rt61_enabled:
+        reference_payload = checkpoint.get('rt61_reference')
+        restore_rt61_reference_payload(full_model, reference_payload)
+        object.__setattr__(
+            full_model, '_rt61_reference_identity', dict(reference_payload)
+        )
+    elif rt60_enabled:
         reference_payload = checkpoint.get('rt60_reference')
         restore_reference_payload(full_model, reference_payload)
         object.__setattr__(
@@ -326,7 +360,22 @@ def build_model_and_load(config, diting_args, checkpoint_path, device):
         for key in ('epoch', 'loss', 'checkpoint_format', 'encoder_source')
         if checkpoint.get(key) is not None
     }
-    if rt60_enabled:
+    if rt61_enabled:
+        full_model._eval_checkpoint_metadata['task_id'] = checkpoint.get('task_id')
+        full_model._eval_checkpoint_metadata['rt61_reference_identity'] = {
+            key: value for key, value in reference_payload.items()
+            if key != 'readout_state_dict'
+        }
+        full_model._eval_checkpoint_metadata['rt61_trainable_manifest'] = (
+            checkpoint.get('rt61_trainable_manifest')
+        )
+        full_model._eval_checkpoint_metadata[
+            'rt61_frozen_shared_state_fingerprint'
+        ] = checkpoint.get('rt61_frozen_shared_state_fingerprint')
+        full_model._eval_checkpoint_metadata[
+            'rt61_frozen_shared_state_verified_unchanged'
+        ] = checkpoint.get('rt61_frozen_shared_state_verified_unchanged')
+    elif rt60_enabled:
         full_model._eval_checkpoint_metadata['task_id'] = checkpoint.get('task_id')
         full_model._eval_checkpoint_metadata['rt60_reference_identity'] = {
             key: value for key, value in reference_payload.items()

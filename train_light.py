@@ -38,6 +38,15 @@ from tools.rt60_contrast_objective import (
     restore_reference_payload,
     rt60_contrast_objective,
 )
+from tools.rt61_wave_geometry import (
+    ADAPTER_PREFIX as RT61_ADAPTER_PREFIX,
+    build_reference_payload as build_rt61_reference_payload,
+    build_trainable_delta_payload as build_rt61_trainable_delta_payload,
+    export_reference_payload as export_rt61_reference_payload,
+    restore_reference_payload as restore_rt61_reference_payload,
+    rt61_contrast_objective,
+    trainable_manifest as rt61_trainable_manifest,
+)
 
 from dtbench.training.modeling import build_interaction_indexes, parse_hps
 
@@ -222,6 +231,7 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
     rt59_local_lr = training_params.get('lr_rt59_local', None)
     rt59_transport_lr = training_params.get('lr_rt59_transport', None)
     rt60_readout_lr = training_params.get('lr_rt60_readout', None)
+    rt61_trainable_lr = training_params.get('lr_rt61_trainable', None)
 
     encoder_params = list(_iter_trainable_params(raw_model.waveform_model[0]))
     adapter_params = list(_iter_trainable_params(raw_model.waveform_model[1]))
@@ -242,7 +252,20 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
         list(_iter_trainable_params(rt59_module.transport.residual_head))
         if rt59_module is not None and rt60_readout_lr is not None else []
     )
+    rt61_trainable_params = []
+    if rt59_module is not None and rt61_trainable_lr is not None:
+        rt61_adapter = getattr(
+            rt59_module.transport, 'rt61_wave_geometry_adapter', None
+        )
+        if rt61_adapter is None:
+            raise ValueError(
+                'lr_rt61_trainable requires use_rt61_wave_geometry_adapter=true.'
+            )
+        rt61_trainable_params = list(
+            _iter_trainable_params(rt59_module.transport.residual_head)
+        ) + list(_iter_trainable_params(rt61_adapter))
     rt60_readout_param_ids = {id(p) for p in rt60_readout_params}
+    rt61_trainable_param_ids = {id(p) for p in rt61_trainable_params}
     rt59_local_params = (
         list(_iter_trainable_params(rt59_module.local))
         if rt59_module is not None and rt59_local_lr is not None else []
@@ -251,6 +274,7 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
         [
             param for param in _iter_trainable_params(rt59_module.transport)
             if id(param) not in rt60_readout_param_ids
+            and id(param) not in rt61_trainable_param_ids
         ]
         if rt59_module is not None and rt59_transport_lr is not None else []
     )
@@ -272,6 +296,7 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
             or pid in rt59_local_param_ids
             or pid in rt59_transport_param_ids
             or pid in rt60_readout_param_ids
+            or pid in rt61_trainable_param_ids
         ):
             continue
         team_params.append(param)
@@ -318,6 +343,12 @@ def build_optimizer_with_groups(model, training_params, is_dist=False):
             'params': rt60_readout_params,
             'lr': rt60_readout_lr,
             'name': 'rt60_readout',
+        })
+    if rt61_trainable_params:
+        param_groups.append({
+            'params': rt61_trainable_params,
+            'lr': rt61_trainable_lr,
+            'name': 'rt61_trainable',
         })
     if encoder_params:
         if encoder_lr is None:
@@ -368,18 +399,68 @@ def apply_full_model_trainability(model, training_params, is_dist=False, rank=0)
         'anchor_transfer_only',
         'dual_anchor_residual_only',
         'rt60_contrast_readout_only',
+        'rt61_wave_geometry_residual_only',
     ):
         raise ValueError(
             "training_params.freeze_mode must be one of 'none' or "
             "'temporal_residual_only', 'station_distinctive_residual_only', "
             "'anchor_transfer_only', or 'dual_anchor_residual_only', "
             "'rt60_contrast_readout_only', "
+            "'rt61_wave_geometry_residual_only', "
             f"got {mode!r}."
         )
     if mode in (
         'anchor_transfer_only', 'dual_anchor_residual_only',
         'rt60_contrast_readout_only',
+        'rt61_wave_geometry_residual_only',
     ):
+        if mode == 'rt61_wave_geometry_residual_only':
+            rt59_head = getattr(raw_model, 'pga_anchor_residual_transport_head', None)
+            if (
+                rt59_head is None
+                or not getattr(
+                    rt59_head.transport,
+                    'use_rt61_wave_geometry_adapter',
+                    False,
+                )
+            ):
+                raise ValueError(
+                    'freeze_mode=rt61_wave_geometry_residual_only requires '
+                    'use_rt61_wave_geometry_adapter=true.'
+                )
+            for param in raw_model.parameters():
+                param.requires_grad = False
+            for param in rt59_head.transport.residual_head.parameters():
+                param.requires_grad = True
+            for param in rt59_head.transport.rt61_wave_geometry_adapter.parameters():
+                param.requires_grad = True
+            trainable_names = [
+                name for name, param in raw_model.named_parameters()
+                if param.requires_grad
+            ]
+            allowed_prefixes = (
+                'pga_anchor_residual_transport_head.transport.residual_head.',
+                RT61_ADAPTER_PREFIX,
+            )
+            invalid_names = [
+                name for name in trainable_names
+                if not name.startswith(allowed_prefixes)
+            ]
+            manifest = rt61_trainable_manifest(raw_model)
+            if invalid_names or len(trainable_names) != manifest['tensor_count']:
+                raise RuntimeError(
+                    'RT61 trainability escaped its exact whitelist: '
+                    f'{invalid_names!r}.'
+                )
+            object.__setattr__(raw_model, '_rt61_trainable_manifest', manifest)
+            if rank == 0:
+                print(
+                    '[trainability] freeze_mode=rt61_wave_geometry_residual_only: '
+                    f'tensors={manifest["tensor_count"]}, '
+                    f'trainable={manifest["scalar_count"]} parameters, '
+                    f'sha256={manifest["state_sha256"]}'
+                )
+            return
         if mode == 'rt60_contrast_readout_only':
             rt59_head = getattr(raw_model, 'pga_anchor_residual_transport_head', None)
             train_head = None if rt59_head is None else rt59_head.transport.residual_head
@@ -501,6 +582,19 @@ def set_rt60_readout_only_train_mode(model):
     if head is None or not getattr(head.transport, 'enable_rt60_reference', False):
         raise RuntimeError('RT60 train mode requires the enabled RT60 transport head.')
     head.transport.residual_head.train()
+
+
+def set_rt61_train_mode(model):
+    raw_model = model.module if hasattr(model, 'module') else model
+    raw_model.eval()
+    head = getattr(raw_model, 'pga_anchor_residual_transport_head', None)
+    if (
+        head is None
+        or not getattr(head.transport, 'use_rt61_wave_geometry_adapter', False)
+    ):
+        raise RuntimeError('RT61 train mode requires the enabled RT61 adapter.')
+    head.transport.residual_head.train()
+    head.transport.rt61_wave_geometry_adapter.train()
 
 
 def initialize_rt59_from_rt58(model, rank=0):
@@ -795,7 +889,32 @@ def save_model_checkpoint(path, model, epoch, training_params=None, optimizer=No
         payload['task_id'] = getattr(
             raw_model, '_rt60_task_id', '20260920-rt60-final-contrast-readout'
         )
+    rt61_identity = getattr(raw_model, '_rt61_reference_identity', None)
+    rt61_delta_payload = None
+    if rt61_identity is not None:
+        payload['rt61_reference'] = export_rt61_reference_payload(
+            raw_model, rt61_identity
+        )
+        payload['rt61_trainable_manifest'] = rt61_trainable_manifest(raw_model)
+        payload['task_id'] = getattr(
+            raw_model,
+            '_rt61_task_id',
+            '20260925-rt61-wave-geometry-residual-conditioning',
+        )
+        # Build and verify the delta before writing either artifact.  This
+        # fails closed if any supposedly frozen parameter or buffer drifted.
+        rt61_delta_payload = build_rt61_trainable_delta_payload(
+            raw_model, rt61_identity
+        )
+        payload['rt61_frozen_shared_state_fingerprint'] = (
+            rt61_identity['parent_shared_fingerprint']
+        )
+        payload['rt61_frozen_shared_state_verified_unchanged'] = True
     torch.save(payload, path)
+    if rt61_identity is not None:
+        delta_path = os.path.splitext(path)[0] + '.rt61_delta.pth'
+        torch.save(rt61_delta_payload, delta_path)
+        print(f'Saved RT61 trainable delta to {delta_path}')
     if excluded_count:
         print(
             f'Saved non-encoder checkpoint to {path} '
@@ -2477,6 +2596,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 rt59_fixed_lr_schedule=None,
                 rt60_contrast_objective_cfg=None,
                 rt60_fixed_lr_schedule=None,
+                rt61_contrast_objective_cfg=None,
+                rt61_fixed_lr_schedule=None,
                 freeze_mode=None, start_epoch=0, best_val_init=None):
     tb_path = f'runs/{save_name}'
     eval_model = model.module if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model
@@ -2501,18 +2622,31 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
     best_val = float(best_val_init) if best_val_init is not None else float('inf')
     best_path = os.path.join(training_params['weight_path'], f'{save_name}_best.pth')
     last_path = os.path.join(training_params['weight_path'], f'{save_name}_last.pth')
-    if rt59_fixed_lr_schedule and rt60_fixed_lr_schedule:
-        raise ValueError('RT59 and RT60 fixed LR schedules are mutually exclusive.')
+    fixed_schedules = [
+        schedule for schedule in (
+            rt59_fixed_lr_schedule,
+            rt60_fixed_lr_schedule,
+            rt61_fixed_lr_schedule,
+        ) if schedule
+    ]
+    if len(fixed_schedules) > 1:
+        raise ValueError('RT59, RT60 and RT61 fixed LR schedules are mutually exclusive.')
+    contrast_tag = 'rt61' if rt61_contrast_objective_cfg else 'rt60'
     try:
         for epoch in range(start_epoch, num_epochs):
-            fixed_lr_schedule = rt60_fixed_lr_schedule or rt59_fixed_lr_schedule
+            fixed_lr_schedule = (
+                rt61_fixed_lr_schedule
+                or rt60_fixed_lr_schedule
+                or rt59_fixed_lr_schedule
+            )
             if fixed_lr_schedule:
                 boundaries = tuple(fixed_lr_schedule.get(
                     'completed_epoch_boundaries', (0, 4, 6)
                 ))
                 default_values = (
                     (1e-4, 5e-5, 2.5e-5)
-                    if rt60_fixed_lr_schedule else (5e-4, 2.5e-4, 1.25e-4)
+                    if (rt60_fixed_lr_schedule or rt61_fixed_lr_schedule)
+                    else (5e-4, 2.5e-4, 1.25e-4)
                 )
                 values = tuple(fixed_lr_schedule.get(
                     'lr_values', default_values
@@ -2525,7 +2659,8 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         active_lr = float(value)
                 for group in optimizer.param_groups:
                     active_groups = (
-                        ('rt60_readout',) if rt60_fixed_lr_schedule
+                        ('rt61_trainable',) if rt61_fixed_lr_schedule
+                        else ('rt60_readout',) if rt60_fixed_lr_schedule
                         else ('rt59_local', 'rt59_transport')
                     )
                     if group.get('name') in active_groups:
@@ -2542,6 +2677,23 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 set_rt59_only_train_mode(model)
             elif freeze_mode == 'rt60_contrast_readout_only':
                 set_rt60_readout_only_train_mode(model)
+            elif freeze_mode == 'rt61_wave_geometry_residual_only':
+                set_rt61_train_mode(model)
+            rt61_epoch_parameter_start = None
+            if freeze_mode == 'rt61_wave_geometry_residual_only':
+                rt61_transport = (
+                    eval_model.pga_anchor_residual_transport_head.transport
+                )
+                rt61_epoch_parameter_start = {
+                    f'readout.{name}': parameter.detach().clone()
+                    for name, parameter in rt61_transport.residual_head.named_parameters()
+                }
+                rt61_epoch_parameter_start.update({
+                    f'adapter.{name}': parameter.detach().clone()
+                    for name, parameter in (
+                        rt61_transport.rt61_wave_geometry_adapter.named_parameters()
+                    )
+                })
             running_loss = 0.0
             num_train_batches = 0
             first_batch_logged = False
@@ -2578,7 +2730,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 7, dtype=torch.float64, device=device
             )
             rt60_epoch_grad_sums = torch.zeros(
-                2, dtype=torch.float64, device=device
+                6 if freeze_mode == 'rt61_wave_geometry_residual_only' else 2,
+                dtype=torch.float64,
+                device=device,
             )
             rt60_epoch_stat_batches = 0
             for batch_idx, (inputs, labels, p_picks) in enumerate(train_loader):
@@ -2706,13 +2860,13 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                     loss = loss + residual_decor_loss
                 rt59_stats = None
                 rt60_stats = None
-                if (
-                    rt59_dual_objective_cfg
-                    and rt59_dual_objective_cfg.get('enabled', False)
-                    and rt60_contrast_objective_cfg
-                    and rt60_contrast_objective_cfg.get('enabled', False)
-                ):
-                    raise ValueError('RT59 and RT60 objectives must not be enabled together.')
+                enabled_objectives = sum(bool(cfg and cfg.get('enabled', False)) for cfg in (
+                    rt59_dual_objective_cfg,
+                    rt60_contrast_objective_cfg,
+                    rt61_contrast_objective_cfg,
+                ))
+                if enabled_objectives > 1:
+                    raise ValueError('RT59, RT60 and RT61 objectives are mutually exclusive.')
                 if rt59_dual_objective_cfg and rt59_dual_objective_cfg.get('enabled', False):
                     loss, rt59_stats = rt59_grouped_objective(
                         eval_model,
@@ -2735,6 +2889,17 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         rt60_contrast_objective_cfg,
                         pga_target_normalization=pga_target_normalization,
                     )
+                if rt61_contrast_objective_cfg and rt61_contrast_objective_cfg.get('enabled', False):
+                    loss, rt60_stats = rt61_contrast_objective(
+                        eval_model,
+                        outputs,
+                        labels,
+                        eval_model.output_layout,
+                        pga_target_valid,
+                        p_picks,
+                        rt61_contrast_objective_cfg,
+                        pga_target_normalization=pga_target_normalization,
+                    )
                 loss.backward()
                 pre_clip_global_grad = global_grad_norm(model.parameters())
                 rt59_local_pre_clip = None
@@ -2743,6 +2908,10 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 rt59_transport_post_clip = None
                 rt60_readout_pre_clip = None
                 rt60_readout_post_clip = None
+                rt61_readout_pre_clip = None
+                rt61_readout_post_clip = None
+                rt61_adapter_pre_clip = None
+                rt61_adapter_post_clip = None
                 if freeze_mode == 'dual_anchor_residual_only':
                     rt59_head = eval_model.pga_anchor_residual_transport_head
                     rt59_local_pre_clip = module_grad_norm(rt59_head.local)
@@ -2753,6 +2922,17 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         .transport.residual_head
                     )
                     rt60_readout_pre_clip = module_grad_norm(rt60_readout)
+                elif freeze_mode == 'rt61_wave_geometry_residual_only':
+                    rt61_transport = (
+                        eval_model.pga_anchor_residual_transport_head.transport
+                    )
+                    rt60_readout_pre_clip = module_grad_norm(rt61_transport)
+                    rt61_readout_pre_clip = module_grad_norm(
+                        rt61_transport.residual_head
+                    )
+                    rt61_adapter_pre_clip = module_grad_norm(
+                        rt61_transport.rt61_wave_geometry_adapter
+                    )
                 if (((not is_dist) or (is_dist and (rank == 0))) and not first_batch_logged):
                     diag_scalars = {}
                     forward_diag = getattr(eval_model, '_last_diag', {})
@@ -2810,13 +2990,13 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                             'point', 'nll', 'smooth', 'mse', 'regret',
                             'contrast', 'total',
                         ):
-                            diag_scalars[f'rt60/loss_{name}'] = rt60_stats[name]
+                            diag_scalars[f'{contrast_tag}/loss_{name}'] = rt60_stats[name]
                         for group_index, group_name in enumerate(GROUP_NAMES):
-                            diag_scalars[f'rt60/targets_{group_name}'] = (
+                            diag_scalars[f'{contrast_tag}/targets_{group_name}'] = (
                                 rt60_stats['target_counts'][group_index].float()
                             )
                         for bucket_index, bucket_name in enumerate(FIELD_BUCKET_NAMES):
-                            diag_scalars[f'rt60/fields_{bucket_name}'] = (
+                            diag_scalars[f'{contrast_tag}/fields_{bucket_name}'] = (
                                 rt60_stats['field_counts'][bucket_index].float()
                             )
 
@@ -2874,6 +3054,25 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         rt60_readout.parameters(), max_norm=1.0
                     )
                     rt60_readout_post_clip = module_grad_norm(rt60_readout)
+                elif freeze_mode == 'rt61_wave_geometry_residual_only':
+                    rt61_transport = (
+                        eval_model.pga_anchor_residual_transport_head.transport
+                    )
+                    allowed_parameters = list(
+                        rt61_transport.residual_head.parameters()
+                    ) + list(
+                        rt61_transport.rt61_wave_geometry_adapter.parameters()
+                    )
+                    torch.nn.utils.clip_grad_norm_(
+                        allowed_parameters, max_norm=1.0
+                    )
+                    rt60_readout_post_clip = module_grad_norm(rt61_transport)
+                    rt61_readout_post_clip = module_grad_norm(
+                        rt61_transport.residual_head
+                    )
+                    rt61_adapter_post_clip = module_grad_norm(
+                        rt61_transport.rt61_wave_geometry_adapter
+                    )
                 elif clipnorm is not None:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clipnorm)
                 post_clip_global_grad = global_grad_norm(model.parameters())
@@ -2917,9 +3116,14 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                             'contrast', 'total',
                         )
                     ]).to(device)
-                    for grad_index, grad_value in enumerate((
+                    contrast_grad_values = (
                         rt60_readout_pre_clip, rt60_readout_post_clip,
-                    )):
+                        rt61_readout_pre_clip, rt61_readout_post_clip,
+                        rt61_adapter_pre_clip, rt61_adapter_post_clip,
+                    ) if freeze_mode == 'rt61_wave_geometry_residual_only' else (
+                        rt60_readout_pre_clip, rt60_readout_post_clip,
+                    )
+                    for grad_index, grad_value in enumerate(contrast_grad_values):
                         if grad_value is not None and torch.isfinite(grad_value):
                             rt60_epoch_grad_sums[grad_index] += grad_value.detach().double()
                     rt60_epoch_stat_batches += 1
@@ -2931,8 +3135,12 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         ('rt59/transport_pre_clip_norm', rt59_transport_pre_clip),
                         ('rt59/local_post_clip_norm', rt59_local_post_clip),
                         ('rt59/transport_post_clip_norm', rt59_transport_post_clip),
-                        ('rt60/readout_pre_clip_norm', rt60_readout_pre_clip),
-                        ('rt60/readout_post_clip_norm', rt60_readout_post_clip),
+                        (f'{contrast_tag}/trainable_pre_clip_norm', rt60_readout_pre_clip),
+                        (f'{contrast_tag}/trainable_post_clip_norm', rt60_readout_post_clip),
+                        (f'{contrast_tag}/readout_pre_clip_norm', rt61_readout_pre_clip),
+                        (f'{contrast_tag}/readout_post_clip_norm', rt61_readout_post_clip),
+                        (f'{contrast_tag}/adapter_pre_clip_norm', rt61_adapter_pre_clip),
+                        (f'{contrast_tag}/adapter_post_clip_norm', rt61_adapter_post_clip),
                     ):
                         if value is not None and not torch.isnan(value).any():
                             diag_scalars[name] = value.detach()
@@ -3031,33 +3239,73 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                         'contrast', 'total',
                     )):
                         _record_scalar(
-                            writer, scalar_history, f'rt60_epoch/loss_{name}',
+                            writer, scalar_history, f'{contrast_tag}_epoch/loss_{name}',
                             rt60_epoch_loss_sums[index] / denom, epoch,
                         )
-                    for index, name in enumerate(
-                        ('readout_pre_clip_norm', 'readout_post_clip_norm')
-                    ):
+                    grad_metric_names = (
+                        (
+                            'trainable_pre_clip_norm', 'trainable_post_clip_norm',
+                            'readout_pre_clip_norm', 'readout_post_clip_norm',
+                            'adapter_pre_clip_norm', 'adapter_post_clip_norm',
+                        )
+                        if contrast_tag == 'rt61'
+                        else ('readout_pre_clip_norm', 'readout_post_clip_norm')
+                    )
+                    for index, name in enumerate(grad_metric_names):
                         _record_scalar(
-                            writer, scalar_history, f'rt60_epoch/{name}',
+                            writer, scalar_history, f'{contrast_tag}_epoch/{name}',
                             rt60_epoch_grad_sums[index] / denom, epoch,
                         )
                     for group_index, group_name in enumerate(GROUP_NAMES):
                         _record_scalar(
                             writer, scalar_history,
-                            f'rt60_epoch/targets_{group_name}',
+                            f'{contrast_tag}_epoch/targets_{group_name}',
                             rt60_epoch_target_counts[group_index], epoch,
                         )
                     for bucket_index, bucket_name in enumerate(FIELD_BUCKET_NAMES):
                         _record_scalar(
                             writer, scalar_history,
-                            f'rt60_epoch/fields_{bucket_name}',
+                            f'{contrast_tag}_epoch/fields_{bucket_name}',
                             rt60_epoch_field_counts[bucket_index], epoch,
                         )
                     for group in optimizer.param_groups:
-                        if group.get('name') == 'rt60_readout':
+                        if group.get('name') in ('rt60_readout', 'rt61_trainable'):
                             _record_scalar(
-                                writer, scalar_history, 'rt60_epoch/lr_readout',
+                                writer, scalar_history, f'{contrast_tag}_epoch/lr_trainable',
                                 group['lr'], epoch,
+                            )
+                    if rt61_epoch_parameter_start is not None:
+                        rt61_transport = (
+                            eval_model.pga_anchor_residual_transport_head.transport
+                        )
+                        current_parameters = {
+                            f'readout.{name}': parameter.detach()
+                            for name, parameter in (
+                                rt61_transport.residual_head.named_parameters()
+                            )
+                        }
+                        current_parameters.update({
+                            f'adapter.{name}': parameter.detach()
+                            for name, parameter in (
+                                rt61_transport.rt61_wave_geometry_adapter
+                                .named_parameters()
+                            )
+                        })
+                        for module_name in ('readout', 'adapter'):
+                            squared_delta = sum(
+                                (
+                                    current_parameters[name]
+                                    - rt61_epoch_parameter_start[name]
+                                ).double().square().sum()
+                                for name in current_parameters
+                                if name.startswith(f'{module_name}.')
+                            )
+                            _record_scalar(
+                                writer,
+                                scalar_history,
+                                f'rt61_epoch/{module_name}_parameter_delta_l2',
+                                squared_delta.sqrt(),
+                                epoch,
                             )
             if (not is_dist) or (is_dist and (rank == 0)):
                 _record_scalar(writer, scalar_history, 'train/epoch_loss', epoch_loss, epoch)
@@ -3197,6 +3445,17 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                             rt60_contrast_objective_cfg,
                             pga_target_normalization=pga_target_normalization,
                         )
+                    if rt61_contrast_objective_cfg and rt61_contrast_objective_cfg.get('enabled', False):
+                        loss, _ = rt61_contrast_objective(
+                            eval_model,
+                            outputs,
+                            labels,
+                            eval_model.output_layout,
+                            pga_target_valid,
+                            p_picks,
+                            rt61_contrast_objective_cfg,
+                            pga_target_normalization=pga_target_normalization,
+                        )
                     val_running_loss += loss.item()
                     num_val_batches += 1
 
@@ -3216,7 +3475,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
                 print(f'Validation Loss: {val_loss:.4f}')
 
             monitor_loss = epoch_loss if lr_monitor == 'train' else val_loss
-            if rt59_fixed_lr_schedule or rt60_fixed_lr_schedule:
+            if rt59_fixed_lr_schedule or rt60_fixed_lr_schedule or rt61_fixed_lr_schedule:
                 pass
             elif isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                 scheduler.step(monitor_loss)
@@ -3228,7 +3487,15 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, num_epoch
             # before this step and are repaired once by load_checkpoint().
             if (not is_dist) or (is_dist and (rank == 0)):
                 schedule_extra = None
-                if rt60_fixed_lr_schedule:
+                if rt61_fixed_lr_schedule:
+                    schedule_extra = {
+                        'rt61_schedule_completed_epochs': epoch + 1,
+                        'rt61_next_lr': (
+                            1e-4 if epoch + 1 < 4 else
+                            5e-5 if epoch + 1 < 6 else 2.5e-5
+                        ),
+                    }
+                elif rt60_fixed_lr_schedule:
                     schedule_extra = {
                         'rt60_schedule_completed_epochs': epoch + 1,
                         'rt60_next_lr': (
@@ -3337,20 +3604,40 @@ def load_checkpoint(model, optimizer, scheduler, checkpoint_path, device,
             getattr(rt59_head.transport, 'enable_rt60_reference', False)
         )
         if rt60_enabled:
-            reference_payload = checkpoint.get('rt60_reference')
-            restore_reference_payload(raw_model, reference_payload)
-            object.__setattr__(
-                raw_model, '_rt60_reference_identity', dict(reference_payload)
-            )
-            object.__setattr__(
-                raw_model, '_rt60_task_id', checkpoint.get(
-                    'task_id', '20260920-rt60-final-contrast-readout'
+            rt61_enabled = bool(getattr(
+                rt59_head.transport, 'use_rt61_wave_geometry_adapter', False
+            ))
+            if rt61_enabled:
+                reference_payload = checkpoint.get('rt61_reference')
+                restore_rt61_reference_payload(raw_model, reference_payload)
+                object.__setattr__(
+                    raw_model, '_rt61_reference_identity', dict(reference_payload)
                 )
-            )
-            saved_completed = checkpoint.get(
-                'rt60_schedule_completed_epochs', None
-            )
-            schedule_name = 'RT60'
+                object.__setattr__(
+                    raw_model, '_rt61_task_id', checkpoint.get(
+                        'task_id',
+                        '20260925-rt61-wave-geometry-residual-conditioning',
+                    )
+                )
+                saved_completed = checkpoint.get(
+                    'rt61_schedule_completed_epochs', None
+                )
+                schedule_name = 'RT61'
+            else:
+                reference_payload = checkpoint.get('rt60_reference')
+                restore_reference_payload(raw_model, reference_payload)
+                object.__setattr__(
+                    raw_model, '_rt60_reference_identity', dict(reference_payload)
+                )
+                object.__setattr__(
+                    raw_model, '_rt60_task_id', checkpoint.get(
+                        'task_id', '20260920-rt60-final-contrast-readout'
+                    )
+                )
+                saved_completed = checkpoint.get(
+                    'rt60_schedule_completed_epochs', None
+                )
+                schedule_name = 'RT60'
         else:
             saved_completed = checkpoint.get(
                 'rt59_schedule_completed_epochs', None
@@ -4163,6 +4450,7 @@ if __name__ == '__main__':
 
         print('Building model')
         rt60_parent_checkpoint = None
+        rt61_parent_checkpoint = None
         full_model = models.build_transformer_model(**config['model_params'],
                                                     trace_length=10000,
                                                     diting_args=diting_args)
@@ -4204,6 +4492,13 @@ if __name__ == '__main__':
                 if not isinstance(ckpt, dict) or 'model_state_dict' not in ckpt:
                     raise ValueError('RT60 requires a metadata-bearing RT59 checkpoint.')
                 rt60_parent_checkpoint = ckpt
+            if (
+                training_params.get('rt61_contrast_objective')
+                and training_params['rt61_contrast_objective'].get('enabled', False)
+            ):
+                if not isinstance(ckpt, dict) or 'model_state_dict' not in ckpt:
+                    raise ValueError('RT61 requires a metadata-bearing RT59 checkpoint.')
+                rt61_parent_checkpoint = ckpt
             rt59_cfg = training_params.get('rt59_dual_objective', None)
             resume_requested = resolve_full_model_resume_path(
                 training_params, args.resume_full_model
@@ -4492,6 +4787,78 @@ if __name__ == '__main__':
                     f'readout_sha256={reference_payload["readout_sha256"]}, '
                     f'parent_sha256={actual_sha}'
                 )
+        rt61_contrast_objective_cfg = training_params.get(
+            'rt61_contrast_objective', None
+        )
+        if rt61_contrast_objective_cfg and rt61_contrast_objective_cfg.get('enabled', False):
+            if rt61_parent_checkpoint is None:
+                raise RuntimeError('RT61 parent checkpoint was not loaded.')
+            parent_cfg = training_params.get('rt61_parent', {})
+            expected_sha = str(parent_cfg.get('checkpoint_sha256', '')).lower()
+            actual_sha = None
+            if (not is_dist) or rank == 0:
+                digest = hashlib.sha256()
+                with open(training_params['load_model_path'], 'rb') as handle:
+                    for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b''):
+                        digest.update(chunk)
+                actual_sha = digest.hexdigest()
+            if is_dist:
+                sha_holder = [actual_sha]
+                dist.broadcast_object_list(sha_holder, src=0)
+                actual_sha = sha_holder[0]
+            if actual_sha != expected_sha:
+                raise ValueError(
+                    'RT61 parent checkpoint SHA-256 mismatch: '
+                    f'expected {expected_sha}, got {actual_sha}.'
+                )
+            reference_payload = None
+            if (not is_dist) or rank == 0:
+                source_identity = dict(parent_cfg.get('source_identity', {}))
+                config_digest = hashlib.sha256()
+                with open(args.config, 'rb') as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+                        config_digest.update(chunk)
+                source_identity.update({
+                    'rt61_config_name': os.path.basename(args.config),
+                    'rt61_config_sha256': config_digest.hexdigest(),
+                    'split_contract': 'inherited full 2000-2024 train/dev; no held-out test',
+                })
+                reference_payload = build_rt61_reference_payload(
+                    raw_full,
+                    rt61_parent_checkpoint,
+                    actual_sha,
+                    pga_target_norm_cfg,
+                    source_identity,
+                    str(parent_cfg.get(
+                        'task_id', '20260915-rt59-dual-objective-transport-v3'
+                    )),
+                    int(parent_cfg.get('epoch', 8)),
+                    expected_readout_sha256=str(parent_cfg.get(
+                        'readout_sha256', ''
+                    )).lower() or None,
+                )
+            if is_dist:
+                payload_holder = [reference_payload]
+                dist.broadcast_object_list(payload_holder, src=0)
+                reference_payload = payload_holder[0]
+                if rank != 0:
+                    restore_rt61_reference_payload(raw_full, reference_payload)
+            object.__setattr__(
+                raw_full, '_rt61_reference_identity', reference_payload
+            )
+            object.__setattr__(
+                raw_full, '_rt61_task_id', str(training_params.get(
+                    'task_id',
+                    '20260925-rt61-wave-geometry-residual-conditioning',
+                ))
+            )
+            if rank == 0:
+                print(
+                    '[rt61] immutable RT59 reference configured: '
+                    f'readout_sha256={reference_payload["readout_sha256"]}, '
+                    f'parent_sha256={actual_sha}, '
+                    f'shared_fingerprint={reference_payload["parent_shared_fingerprint"]}'
+                )
         if (not is_dist) or (is_dist and rank == 0):
             with open(os.path.join(training_params['weight_path'], 'config.json'), 'w') as f:
                 json.dump(config, f, indent=4)
@@ -4505,7 +4872,19 @@ if __name__ == '__main__':
         rt59_dual_objective_cfg = training_params.get('rt59_dual_objective', None)
         rt59_fixed_lr_schedule = training_params.get('rt59_fixed_lr_schedule', None)
         rt60_fixed_lr_schedule = training_params.get('rt60_fixed_lr_schedule', None)
-        if rt60_contrast_objective_cfg and rt60_contrast_objective_cfg.get('enabled', False):
+        rt61_fixed_lr_schedule = training_params.get('rt61_fixed_lr_schedule', None)
+        enabled_final_objectives = sum(bool(cfg and cfg.get('enabled', False)) for cfg in (
+            rt59_dual_objective_cfg,
+            rt60_contrast_objective_cfg,
+            rt61_contrast_objective_cfg,
+        ))
+        if enabled_final_objectives > 1:
+            raise ValueError('RT59, RT60 and RT61 objectives cannot be combined.')
+        if rt61_contrast_objective_cfg and rt61_contrast_objective_cfg.get('enabled', False):
+            if not rt61_fixed_lr_schedule:
+                raise ValueError('RT61 requires rt61_fixed_lr_schedule.')
+            lr_decay = None
+        elif rt60_contrast_objective_cfg and rt60_contrast_objective_cfg.get('enabled', False):
             if rt59_dual_objective_cfg and rt59_dual_objective_cfg.get('enabled', False):
                 raise ValueError('RT59 and RT60 objectives cannot both be enabled.')
             if not rt60_fixed_lr_schedule:
@@ -4578,6 +4957,9 @@ if __name__ == '__main__':
                     epoch=0,
                     training_params=training_params,
                     extra={
+                        'rt61_schedule_completed_epochs': 0,
+                        'rt61_next_lr': 1e-4,
+                    } if rt61_fixed_lr_schedule else {
                         'rt60_schedule_completed_epochs': 0,
                         'rt60_next_lr': 1e-4,
                     } if rt60_fixed_lr_schedule else {
@@ -4671,6 +5053,8 @@ if __name__ == '__main__':
                 print(f'[loss] station_local_pga_aux_loss={station_local_pga_loss_cfg}')
             if rt59_fixed_lr_schedule:
                 print(f'[lr] RT59 fixed schedule={rt59_fixed_lr_schedule}')
+            elif rt61_fixed_lr_schedule:
+                print(f'[lr] RT61 fixed schedule={rt61_fixed_lr_schedule}')
             elif rt60_fixed_lr_schedule:
                 print(f'[lr] RT60 fixed schedule={rt60_fixed_lr_schedule}')
             else:
@@ -4715,6 +5099,8 @@ if __name__ == '__main__':
             rt59_fixed_lr_schedule=rt59_fixed_lr_schedule,
             rt60_contrast_objective_cfg=rt60_contrast_objective_cfg,
             rt60_fixed_lr_schedule=rt60_fixed_lr_schedule,
+            rt61_contrast_objective_cfg=rt61_contrast_objective_cfg,
+            rt61_fixed_lr_schedule=rt61_fixed_lr_schedule,
             freeze_mode=training_params.get('freeze_mode', None),
             start_epoch=resume_start_epoch,
             best_val_init=resume_best_val,

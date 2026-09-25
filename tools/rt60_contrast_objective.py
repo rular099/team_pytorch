@@ -273,14 +273,15 @@ def rt60_contrast_objective(
         query_valid: Tensor,
         p_picks,
         cfg: Mapping[str, object],
-        pga_target_normalization: Optional[Mapping[str, float]] = None
+        pga_target_normalization: Optional[Mapping[str, float]] = None,
+        reference_attribute: str = '_last_rt60_reference_mdn',
         ) -> Tuple[Tensor, Dict[str, Tensor]]:
     if not cfg or not cfg.get('enabled', False):
         raise ValueError('RT60 contrast objective is not enabled.')
     if not isinstance(p_picks, dict) or 'causal_random_mask_applied' not in p_picks:
         raise ValueError('RT60 objective requires causal_random_mask_applied metadata.')
     raw = _raw_model(model)
-    reference_mdn = getattr(raw, '_last_rt60_reference_mdn', None)
+    reference_mdn = getattr(raw, reference_attribute, None)
     observed = getattr(raw, '_last_rt59_route_observed', None)
     station_valid = getattr(raw, '_last_station_valid', None)
     if reference_mdn is None or observed is None or station_valid is None:

@@ -1699,17 +1699,59 @@ class RT59LocalResidualHead(nn.Module):
         return torch.where(station_valid, delta, torch.zeros_like(delta))
 
 
+class RT61WaveGeometryAdapter(nn.Module):
+    """Low-rank waveform/event by query-geometry residual adapter.
+
+    Layer normalization is deliberately parameter free.  The zero initialized
+    output projection makes this module an exact identity at construction,
+    while the two input projections retain non-zero Xavier initialization so
+    gradients can reach them after the first optimizer update.
+    """
+
+    def __init__(self, wave_dim, geometry_dim, hidden_dim, rank=16):
+        super().__init__()
+        self.wave_dim = int(wave_dim)
+        self.geometry_dim = int(geometry_dim)
+        self.hidden_dim = int(hidden_dim)
+        self.rank = int(rank)
+        if self.rank != 16:
+            raise ValueError('RT61 preregistration fixes the adapter rank at 16.')
+        self.wave_projection = nn.Linear(self.wave_dim, self.rank, bias=False)
+        self.geometry_projection = nn.Linear(
+            self.geometry_dim, self.rank, bias=False
+        )
+        self.output_projection = nn.Linear(
+            self.rank, self.hidden_dim, bias=False
+        )
+        nn.init.xavier_uniform_(self.wave_projection.weight)
+        nn.init.xavier_uniform_(self.geometry_projection.weight)
+        nn.init.zeros_(self.output_projection.weight)
+
+    def forward(self, station_state, geometry, pair_valid):
+        station_state = F.layer_norm(station_state, (self.wave_dim,))
+        wave_factor = torch.tanh(self.wave_projection(station_state))
+        geometry_factor = torch.tanh(self.geometry_projection(geometry))
+        interaction = wave_factor[:, None, :, :] * geometry_factor
+        interaction = self.output_projection(interaction)
+        return interaction * pair_valid[..., None].to(interaction.dtype)
+
+
 class RT59ResidualTransportHead(nn.Module):
     """Base-relative spatial transport path with query-independent station level."""
 
     def __init__(self, station_dim, emb_dim, hidden_dim=256, set_layers=2,
-                 heads=4, distance_scale=0.05, enable_rt60_reference=False):
+                 heads=4, distance_scale=0.05, enable_rt60_reference=False,
+                 use_rt61_wave_geometry_adapter=False,
+                 rt61_wave_geometry_rank=16):
         super().__init__()
         self.station_dim = int(station_dim)
         self.emb_dim = int(emb_dim)
         self.hidden_dim = int(hidden_dim)
         self.distance_scale = float(distance_scale)
         self.enable_rt60_reference = bool(enable_rt60_reference)
+        self.use_rt61_wave_geometry_adapter = bool(
+            use_rt61_wave_geometry_adapter
+        )
         # Deliberately not a Module, Parameter or buffer: the immutable RT59
         # teacher is checkpoint metadata and must not change model_state_dict.
         object.__setattr__(self, '_rt60_reference_state', None)
@@ -1747,6 +1789,14 @@ class RT59ResidualTransportHead(nn.Module):
         nn.init.zeros_(self.level_head[-1].bias)
         nn.init.zeros_(self.residual_head[-1].weight)
         nn.init.zeros_(self.residual_head[-1].bias)
+        if self.use_rt61_wave_geometry_adapter:
+            wave_dim = 2 * self.station_dim + self.emb_dim + self.hidden_dim
+            self.rt61_wave_geometry_adapter = RT61WaveGeometryAdapter(
+                wave_dim=wave_dim,
+                geometry_dim=10,
+                hidden_dim=self.hidden_dim,
+                rank=rt61_wave_geometry_rank,
+            )
 
     @staticmethod
     def _rt60_reference_keys():
@@ -1867,6 +1917,9 @@ class RT59ResidualTransportHead(nn.Module):
             safe_query_coords,
             safe_station_coords,
         )
+        geometry = torch.where(
+            pair_valid[..., None], geometry, torch.zeros_like(geometry)
+        )
         pair_state = self.pair_encoder(torch.cat([
             frozen_u[:, None, :, :].expand(-1, n_query, -1, -1),
             frozen_d[:, None, :, :].expand(-1, n_query, -1, -1),
@@ -1875,16 +1928,47 @@ class RT59ResidualTransportHead(nn.Module):
             frozen_query[:, :, None, :].expand(-1, -1, n_station, -1),
             geometry,
         ], dim=-1))
+        student_pair_state = pair_state
+        if self.use_rt61_wave_geometry_adapter:
+            station_state = torch.cat([
+                frozen_u,
+                frozen_d,
+                torch.where(
+                    station_mask,
+                    event_station,
+                    torch.zeros_like(event_station),
+                ),
+                torch.where(
+                    station_mask,
+                    refinement[:, None, :].expand(-1, n_station, -1),
+                    torch.zeros(
+                        refinement.shape[0], n_station, refinement.shape[-1],
+                        device=refinement.device,
+                        dtype=refinement.dtype,
+                    ),
+                ),
+            ], dim=-1)
+            station_state = torch.where(
+                station_mask, station_state, torch.zeros_like(station_state)
+            )
+            student_pair_state = pair_state + self.rt61_wave_geometry_adapter(
+                station_state, geometry, pair_valid
+            )
         base_difference = (
             frozen_public_base[:, :, None]
             - frozen_input_base[:, None, :]
         )
-        residual_input = torch.cat([
+        reference_input = torch.cat([
             pair_state,
             anchor_residual[:, None, :, None].expand(-1, n_query, -1, -1),
             base_difference[..., None],
         ], dim=-1)
-        relative = self.residual_head(residual_input).squeeze(-1)
+        student_input = torch.cat([
+            student_pair_state,
+            anchor_residual[:, None, :, None].expand(-1, n_query, -1, -1),
+            base_difference[..., None],
+        ], dim=-1)
+        relative = self.residual_head(student_input).squeeze(-1)
         distance = torch.linalg.norm(
             safe_query_coords[:, :, None, :] - safe_station_coords[:, None, :, :],
             dim=-1,
@@ -1918,7 +2002,10 @@ class RT59ResidualTransportHead(nn.Module):
             'weights': weights,
         }
         if self.enable_rt60_reference:
-            reference_relative = self._rt60_reference_residual(residual_input)
+            # The immutable RT59 teacher must consume h0 even when the RT61
+            # student adapter changes h1.  Reusing student_input here would
+            # silently make the teacher depend on trainable adapter weights.
+            reference_relative = self._rt60_reference_residual(reference_input)
             reference_relative = reference_relative * torch.tanh(
                 distance / self.distance_scale
             )
@@ -1942,6 +2029,33 @@ class RT59ResidualTransportHead(nn.Module):
                 'reference_relative': reference_relative,
                 'reference_remote_delta': reference_remote_delta,
             })
+            if self.use_rt61_wave_geometry_adapter:
+                adapter_off_relative = self.residual_head(
+                    reference_input
+                ).squeeze(-1)
+                adapter_off_relative = adapter_off_relative * torch.tanh(
+                    distance / self.distance_scale
+                )
+                adapter_off_relative = adapter_off_relative * pair_valid.to(
+                    adapter_off_relative.dtype
+                )
+                adapter_off_candidate = (
+                    level[:, None, :] * anchor_residual[:, None, :]
+                    + adapter_off_relative
+                )
+                adapter_off_candidate = adapter_off_candidate * pair_valid.to(
+                    adapter_off_candidate.dtype
+                )
+                adapter_off_remote_delta = (
+                    weights * adapter_off_candidate
+                ).sum(dim=-1)
+                adapter_off_remote_delta = adapter_off_remote_delta * (
+                    query_valid.to(adapter_off_remote_delta.dtype)
+                )
+                result.update({
+                    'adapter_off_relative': adapter_off_relative,
+                    'adapter_off_remote_delta': adapter_off_remote_delta,
+                })
         return result
 
 
@@ -1951,7 +2065,9 @@ class PGAAnchorResidualTransportHead(nn.Module):
     def __init__(self, station_dim, emb_dim, local_hidden_dim=128,
                  transport_hidden_dim=256, set_layers=2, heads=4,
                  distance_scale=0.05, match_atol=1e-6,
-                 enable_rt60_reference=False):
+                 enable_rt60_reference=False,
+                 use_rt61_wave_geometry_adapter=False,
+                 rt61_wave_geometry_rank=16):
         super().__init__()
         self.local = RT59LocalResidualHead(station_dim, emb_dim, local_hidden_dim)
         self.transport = RT59ResidualTransportHead(
@@ -1962,6 +2078,8 @@ class PGAAnchorResidualTransportHead(nn.Module):
             heads=heads,
             distance_scale=distance_scale,
             enable_rt60_reference=enable_rt60_reference,
+            use_rt61_wave_geometry_adapter=use_rt61_wave_geometry_adapter,
+            rt61_wave_geometry_rank=rt61_wave_geometry_rank,
         )
         self.match_atol = float(match_atol)
         self.register_buffer('_warm_copy_complete', torch.tensor(False), persistent=True)
@@ -2027,6 +2145,18 @@ class PGAAnchorResidualTransportHead(nn.Module):
                 'reference_applied_delta': reference_applied,
                 'rt60_increment': applied - reference_applied,
             })
+            if self.transport.use_rt61_wave_geometry_adapter:
+                adapter_off_applied = route_correction(
+                    local_delta,
+                    transport['adapter_off_remote_delta'],
+                    unique_match,
+                    observed,
+                    query_valid,
+                )
+                result.update({
+                    'adapter_off_applied_delta': adapter_off_applied,
+                    'rt61_increment': applied - reference_applied,
+                })
         if record:
             self._last = result
         return result
@@ -4335,6 +4465,12 @@ class FullModel(nn.Module):
         self._last_rt60_reference_mdn = None
         self._last_rt60_reference_mean = None
         self._last_rt60_increment = None
+        self._last_rt61_reference_mdn = None
+        self._last_rt61_reference_mean = None
+        self._last_rt61_increment = None
+        self._last_rt61_adapter_off_mdn = None
+        self._last_rt61_adapter_off_mean = None
+        self._last_rt61_adapter_off_increment = None
         self._last_raw_station_emb = None
         self._last_wave_station_emb = None
         self._last_station_residual_emb = None
@@ -6208,6 +6344,12 @@ class FullModel(nn.Module):
             self._last_rt60_reference_mdn = None
             self._last_rt60_reference_mean = None
             self._last_rt60_increment = None
+            self._last_rt61_reference_mdn = None
+            self._last_rt61_reference_mean = None
+            self._last_rt61_increment = None
+            self._last_rt61_adapter_off_mdn = None
+            self._last_rt61_adapter_off_mean = None
+            self._last_rt61_adapter_off_increment = None
             layer_outputs = []
             if self.pga_readout_mode == 'target_cross_attention':
                 readout_module = (
@@ -6474,11 +6616,32 @@ class FullModel(nn.Module):
                         frozen_base_mdn,
                         rt59['reference_applied_delta'].unsqueeze(-1),
                     )
-                    self._last_rt60_reference_mdn = reference_mdn.detach()
-                    self._last_rt60_reference_mean = (
-                        self._pga_point_mean_from_output(reference_mdn).detach()
-                    )
-                    self._last_rt60_increment = rt59['rt60_increment']
+                    reference_mean = self._pga_point_mean_from_output(
+                        reference_mdn
+                    ).detach()
+                    if (
+                        self.pga_anchor_residual_transport_head.transport
+                        .use_rt61_wave_geometry_adapter
+                    ):
+                        self._last_rt61_reference_mdn = reference_mdn.detach()
+                        self._last_rt61_reference_mean = reference_mean
+                        self._last_rt61_increment = rt59['rt61_increment']
+                        adapter_off_mdn = self._shift_pga_output_by_delta(
+                            frozen_base_mdn,
+                            rt59['adapter_off_applied_delta'].unsqueeze(-1),
+                        )
+                        self._last_rt61_adapter_off_mdn = adapter_off_mdn
+                        self._last_rt61_adapter_off_mean = (
+                            self._pga_point_mean_from_output(adapter_off_mdn)
+                        )
+                        self._last_rt61_adapter_off_increment = (
+                            rt59['adapter_off_applied_delta']
+                            - rt59['reference_applied_delta']
+                        )
+                    else:
+                        self._last_rt60_reference_mdn = reference_mdn.detach()
+                        self._last_rt60_reference_mean = reference_mean
+                        self._last_rt60_increment = rt59['rt60_increment']
                 self._last_pga_anchor_base_mean = frozen_public_mean
                 if not self.training:
                     rolled_u, rolled_d = self._rt59_roll_valid_station_features(
@@ -6896,6 +7059,8 @@ def build_transformer_model(max_stations,
                             anchor_transfer_zero_init=True,
                             use_pga_anchor_residual_transport=False,
                             use_rt60_contrast_readout=False,
+                            use_rt61_wave_geometry_adapter=False,
+                            rt61_wave_geometry_rank=16,
                             anchor_residual_local_hidden_dim=128,
                             anchor_residual_transport_hidden_dim=256,
                             anchor_residual_transport_set_layers=2,
@@ -7194,9 +7359,16 @@ def build_transformer_model(max_stations,
         )
 
     pga_anchor_residual_transport_head = None
-    if use_rt60_contrast_readout and not use_pga_anchor_residual_transport:
+    if use_rt60_contrast_readout and use_rt61_wave_geometry_adapter:
         raise ValueError(
-            'use_rt60_contrast_readout=true requires '
+            'RT60 and RT61 experiment switches are mutually exclusive.'
+        )
+    if (
+        (use_rt60_contrast_readout or use_rt61_wave_geometry_adapter)
+        and not use_pga_anchor_residual_transport
+    ):
+        raise ValueError(
+            'RT60/RT61 reference mode requires '
             'use_pga_anchor_residual_transport=true.'
         )
     if use_pga_anchor_residual_transport:
@@ -7220,7 +7392,11 @@ def build_transformer_model(max_stations,
             heads=anchor_residual_transport_heads,
             distance_scale=anchor_residual_transport_distance_scale,
             match_atol=anchor_residual_transport_match_atol,
-            enable_rt60_reference=use_rt60_contrast_readout,
+            enable_rt60_reference=(
+                use_rt60_contrast_readout or use_rt61_wave_geometry_adapter
+            ),
+            use_rt61_wave_geometry_adapter=use_rt61_wave_geometry_adapter,
+            rt61_wave_geometry_rank=rt61_wave_geometry_rank,
         )
 
     pga_station_target_readout = None
