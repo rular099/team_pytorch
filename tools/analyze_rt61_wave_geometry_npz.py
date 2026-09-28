@@ -719,7 +719,13 @@ def _write_fixed_examples_figure(path, data, selected):
         ])
     vmin = float(min(np.min(value) for value in arrays))
     vmax = float(max(np.max(value) for value in arrays))
-    figure, axes = plt.subplots(len(selected), 3, figsize=(10.5, 9.0), squeeze=False)
+    figure, axes = plt.subplots(
+        len(selected), 3, figsize=(14.5, 11.0), squeeze=False
+    )
+    figure.subplots_adjust(
+        left=0.08, right=0.86, bottom=0.07, top=0.88,
+        wspace=0.30, hspace=0.55,
+    )
     scatter = None
     for row_axis, item in enumerate(selected):
         row = int(item['row_index'])
@@ -736,20 +742,25 @@ def _write_fixed_examples_figure(path, data, selected):
                 coords[:, 0], coords[:, 1], c=values,
                 vmin=vmin, vmax=vmax, cmap='viridis', s=18,
             )
-            axis.set_title(
-                f'{item["selection_rule"]}: {title}\n'
-                f'n={item["n_targets"]}, event={item["event_id"]}'
-            )
-            axis.set_xlabel('coordinate 0 (configured units)')
-            axis.set_ylabel('coordinate 1 (configured units)')
+            axis.set_title(title, fontsize=11)
+            axis.set_xlabel('coordinate 0 (configured units)', fontsize=9)
+            axis.set_ylabel('coordinate 1 (configured units)', fontsize=9)
+        middle_position = axes[row_axis, 1].get_position()
+        figure.text(
+            0.47, middle_position.y1 + 0.035,
+            f'{item["selection_rule"]}: event={item["event_id"]}, '
+            f'n={item["n_targets"]}',
+            ha='center', va='bottom', fontsize=11,
+        )
+    color_axis = figure.add_axes([0.89, 0.16, 0.018, 0.66])
     figure.colorbar(
-        scatter, ax=axes.ravel().tolist(),
-        label='PGA log10(m/s^2)', shrink=0.85,
+        scatter, cax=color_axis, label='PGA log10(m/s^2)'
     )
     figure.suptitle(
-        'Fixed-rule random-field examples; common coordinates and color scale'
+        'Fixed-rule random-field examples; common coordinates and color scale',
+        fontsize=14, y=0.965,
     )
-    figure.savefig(path, dpi=180, bbox_inches='tight')
+    figure.savefig(path, dpi=180)
     plt.close(figure)
     return True
 
