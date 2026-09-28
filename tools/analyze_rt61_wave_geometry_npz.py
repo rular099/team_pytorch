@@ -1175,7 +1175,7 @@ def main():
     mechanism_passes = sum(item['pass'] is True for item in mechanism_gates)
     legacy_passes = sum(item['pass'] is True for item in legacy_gates)
     readme = [
-        '# RT61 final-contrast readout validation', '',
+        '# RT61 wave-geometry residual conditioning validation', '',
         f'- `rt61_mechanism_pass`: **{mechanism_pass}** ({mechanism_passes}/14 gates pass)',
         f'- `useful_joint_progress`: **{useful_joint_progress}**',
         f'- `legacy_full_go`: **{legacy_full_go}** ({legacy_passes}/25 required gates pass)',
