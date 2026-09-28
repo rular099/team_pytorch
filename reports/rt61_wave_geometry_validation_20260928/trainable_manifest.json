@@ -1,0 +1,20 @@
+{
+  "adapter_scalar_count": 32544,
+  "adapter_tensor_count": 3,
+  "parameter_names": [
+    "pga_anchor_residual_transport_head.transport.residual_head.0.weight",
+    "pga_anchor_residual_transport_head.transport.residual_head.0.bias",
+    "pga_anchor_residual_transport_head.transport.residual_head.1.weight",
+    "pga_anchor_residual_transport_head.transport.residual_head.1.bias",
+    "pga_anchor_residual_transport_head.transport.residual_head.3.weight",
+    "pga_anchor_residual_transport_head.transport.residual_head.3.bias",
+    "pga_anchor_residual_transport_head.transport.rt61_wave_geometry_adapter.wave_projection.weight",
+    "pga_anchor_residual_transport_head.transport.rt61_wave_geometry_adapter.geometry_projection.weight",
+    "pga_anchor_residual_transport_head.transport.rt61_wave_geometry_adapter.output_projection.weight"
+  ],
+  "readout_scalar_count": 67077,
+  "readout_tensor_count": 6,
+  "scalar_count": 99621,
+  "state_sha256": "da40c496c297db451878c3091d0ab97fcd53aa277948b1c5393c1b07264c9421",
+  "tensor_count": 9
+}

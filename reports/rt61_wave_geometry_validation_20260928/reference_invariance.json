@@ -1,0 +1,39 @@
+{
+  "field_mse_decomposition_max_abs_error": 4.0245584642661925e-16,
+  "immutable_readout_sha256": "db11b3c6152ea8ea76d78441769da04e6f03bb313050d70c64e4d12e1259f021",
+  "normal": {
+    "adapter_off_reconstruction_max_abs_error": 2.604210749268532e-07,
+    "candidate_export_max_abs_error": {
+      "nll": 2.098321516541546e-14,
+      "probability": 1.43361004178999e-07,
+      "sigma": 5.5196378572208715e-06
+    },
+    "candidate_reconstruction_max_abs_error": 3.5762786865234375e-07,
+    "mdn_component_identity": {
+      "adapter_off_component_sigma_max_abs_difference": 0.0,
+      "adapter_off_logit_max_abs_difference": 0.0,
+      "component_sigma_max_abs_difference": 3.7889790749368046e-08,
+      "logit_max_abs_difference": 0.0,
+      "predictive_sigma_max_abs_difference": 5.950133830090465e-08
+    }
+  },
+  "normal_input_increment_max_abs": 0.0,
+  "random": {
+    "adapter_off_reconstruction_max_abs_error": 2.5704503059387207e-07,
+    "candidate_export_max_abs_error": {
+      "nll": 1.5987211554602254e-14,
+      "probability": 1.3831869216662795e-07,
+      "sigma": 6.798233998517311e-07
+    },
+    "candidate_reconstruction_max_abs_error": 2.905726432800293e-07,
+    "mdn_component_identity": {
+      "adapter_off_component_sigma_max_abs_difference": 0.0,
+      "adapter_off_logit_max_abs_difference": 0.0,
+      "component_sigma_max_abs_difference": 3.996996411625986e-08,
+      "logit_max_abs_difference": 0.0,
+      "predictive_sigma_max_abs_difference": 6.239262165252946e-08
+    }
+  },
+  "shared_state_fingerprint": "9af5406450d7810dc2e29a6febfbaf13ac9072c6f25cfd6ea5eb73b8ad4e864b",
+  "task_id": "20260925-rt61-wave-geometry-residual-conditioning"
+}

@@ -1,0 +1,4 @@
+selection_rule,row_index,event_id,requested_elapsed_time_seconds,actual_station_count,n_targets,candidate_minus_reference_pairwise_delta_mae
+largest_improvement,1246,20041104230300,1.0,1,8,-0.06566581981522701
+median_change,4592,20120906032000,1.0,3,8,-0.0006629526615142822
+largest_degradation,4121,20110921223000,40.0,8,15,0.022360901889346918
