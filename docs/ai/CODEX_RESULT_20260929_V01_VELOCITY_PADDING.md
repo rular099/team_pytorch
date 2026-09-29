@@ -114,7 +114,7 @@ one-event 2024 materialization plus derived-cache generator read
 
 After updating the defaults to the user's actual supercomputer upload paths,
 the dry-run source manifest SHA256 is
-`7cfc0a7049b16b9270298a69020847393e2ac423884fe87fbad3a0f3777838b9`.
+`3179f572802ebed8b7ed25db9dc97d84dc489826cd93fddecc1d40c3f87346a7`.
 Uploaded-folder users must still verify the value printed by the copy on the
 cluster and pin that printed value for formal submission.
 

@@ -8,7 +8,7 @@ set -euo pipefail
 WORKDIR=${WORKDIR:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel}
 ACC_DATA_ROOT=${ACC_DATA_ROOT:-/public/home/test_bigmodel/seismogram/zb/origin_corrected_diting_vel_acc_vs30}
 VELOCITY_DATA_ROOT=${VELOCITY_DATA_ROOT:-/public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data}
-RT55_RUN_ROOT=${RT55_RUN_ROOT:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42}
+RT55_RUN_ROOT=${RT55_RUN_ROOT:-/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42}
 FROZEN_SPLIT_MANIFEST=${FROZEN_SPLIT_MANIFEST:-$RT55_RUN_ROOT/split_events.csv}
 RT55_EP32_CHECKPOINT=${RT55_EP32_CHECKPOINT:-$RT55_RUN_ROOT/full_model_best_ep32.pth}
 V01_RUN_ROOT=${V01_RUN_ROOT:-$WORKDIR/v01_velocity_prep_padding_seed42}

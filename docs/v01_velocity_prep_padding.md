@@ -106,10 +106,10 @@ default HPC:
 frozen split local:
   ../chaosuan_res/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv
 default HPC:
-  /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv
+  /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv
 
 RT55 epoch-32 parent default HPC:
-  /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth
+  /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth
 ```
 
 Upload the complete repository/branch too; do not upload only the new tools,
@@ -126,7 +126,7 @@ cd /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geom
 export WORKDIR=$PWD
 export ACC_DATA_ROOT=/public/home/test_bigmodel/seismogram/zb/origin_corrected_diting_vel_acc_vs30
 export VELOCITY_DATA_ROOT=/public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data
-export RT55_RUN_ROOT=/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42
+export RT55_RUN_ROOT=/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42
 export FROZEN_SPLIT_MANIFEST=$RT55_RUN_ROOT/split_events.csv
 export RT55_EP32_CHECKPOINT=$RT55_RUN_ROOT/full_model_best_ep32.pth
 export V01_RUN_ROOT=$WORKDIR/v01_velocity_prep_padding_seed42
