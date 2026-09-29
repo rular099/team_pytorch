@@ -162,7 +162,8 @@ Default resources are configurable through `SLURM_PARTITION`,
 `TRAIN_TIME`, `EVAL_GPUS`, `EVAL_TIME`, `SLURM_CPUS_PER_TASK`, `SLURM_MEM`,
 `CONDA_ENV`, `MODULE_UNLOAD`, `MODULE_LOADS`, `DITING_CONFIG`, and
 `DITING_PRETRAINED`.  Defaults stay below the site's observed one-day effective
-limit (`23:50:00`).
+limit (`23:50:00`).  The CPU preflight defaults to 8 CPUs and 102400M because
+the `diting` partition rejected the earlier 192000M request as unsatisfiable.
 
 ## Results to return
 
