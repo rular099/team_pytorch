@@ -1,0 +1,11 @@
+{
+  "extends": "${V01_ARM_CONFIG}",
+  "training_params": {
+    "validation_generator_overrides": {
+      "causal_random_input_mask": {
+        "enabled": false
+      }
+    }
+  },
+  "v01_validation_protocol": "normal"
+}

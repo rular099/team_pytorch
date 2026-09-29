@@ -4061,6 +4061,7 @@ if __name__ == '__main__':
                                           decimate_events=generator.get('decimate_events', None),
                                           min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
                                           metadata_cache_columns=metadata_cache_columns,
+                                          frozen_split_manifest=training_params.get('frozen_split_manifest'),
                                           station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                        for data_path, generator in zip(training_params['data_path'], generator_params)]
     full_data_dev = [loader.load_events(data_path, event_metadata_path=metadata_cache_stub,limit=limit,
@@ -4073,6 +4074,7 @@ if __name__ == '__main__':
                                         decimate_events=generator.get('decimate_events', None),
                                         min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
                                         metadata_cache_columns=metadata_cache_columns,
+                                        frozen_split_manifest=training_params.get('frozen_split_manifest'),
                                         station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                      for data_path, generator in zip(training_params['data_path'], generator_params)]
     full_data_test = [loader.load_events(data_path, event_metadata_path=metadata_cache_stub, limit=limit,
@@ -4085,6 +4087,7 @@ if __name__ == '__main__':
                                          decimate_events=generator.get('decimate_events', None),
                                          min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
                                          metadata_cache_columns=metadata_cache_columns,
+                                         frozen_split_manifest=training_params.get('frozen_split_manifest'),
                                          station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                       for data_path, generator in zip(training_params['data_path'], generator_params)]
 
@@ -4107,6 +4110,7 @@ if __name__ == '__main__':
                                             decimate_events=generator.get('decimate_events', None),
                                             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
                                             metadata_cache_columns=metadata_cache_columns,
+                                            frozen_split_manifest=training_params.get('frozen_split_manifest'),
                                             station_filter=generator.get('station_filter', training_params.get('station_filter', None)))
                          for data_path, generator in zip(training_params['data_path'], generator_params)]
         fixed_overfit_ids = None

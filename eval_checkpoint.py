@@ -495,6 +495,7 @@ def build_datasets(config, overfit_n=0, input_station_selection='config', splits
             decimate_events=g.get('decimate_events', None),
             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
             metadata_cache_columns=metadata_cache_columns,
+            frozen_split_manifest=training_params.get('frozen_split_manifest'),
             station_filter=g.get('station_filter', training_params.get('station_filter', None)),
         ) for data_path, g in zip(training_params['data_path'], generator_params)]
 
@@ -519,6 +520,7 @@ def build_datasets(config, overfit_n=0, input_station_selection='config', splits
             decimate_events=g.get('decimate_events', None),
             min_stalta_ratio_at_pick=min_stalta_ratio_at_pick,
             metadata_cache_columns=metadata_cache_columns,
+            frozen_split_manifest=training_params.get('frozen_split_manifest'),
             station_filter=g.get('station_filter', training_params.get('station_filter', None)))
             for data_path, g in zip(training_params['data_path'], generator_params)]
         fixed_overfit_ids = None
@@ -1405,8 +1407,14 @@ def run_inference(
                 'realtime_target_lead_time',
                 'waveform_valid_sample_count',
                 'waveform_valid_seconds',
+                'waveform_pre_p_valid_sample_count',
+                'waveform_pre_p_valid_seconds',
                 'waveform_post_p_valid_sample_count',
                 'waveform_post_p_valid_seconds',
+                'v01_source_role',
+                'v01_retained_prep_samples',
+                'v01_template_id',
+                'v01_match_distance_km',
                 'selected_input_indices',
                 'selected_original_input_indices',
                 'input_pga_values',

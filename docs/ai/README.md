@@ -1,6 +1,13 @@
 # ChatGPT Project 与 Codex 协作约定
 
-更新日期：2026-09-02
+更新日期：2026-09-29
+
+当前 V01 审阅入口：
+
+- `V01_prompt.md`：用户原始入口（按字节归档）；
+- `V01_VELOCITY_PREP_PADDING_CODEX_PROMPT_20260929.md`：完整实施规范（按字节归档）；
+- `CODEX_RESULT_20260929_V01_VELOCITY_PADDING.md`：Codex 实施、测试和 HPC 交付记录；
+- `../v01_velocity_prep_padding.md`：数据状态、上传路径和提交说明。
 
 ## 1. 协作边界
 

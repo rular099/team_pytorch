@@ -553,7 +553,10 @@ class PreloadedEventGenerator(Dataset):
                  dpk_prior_cache_dataset_id=0, dpk_prior_cache_align_realtime=True,
                  dpk_prior_cache_filter_missing_stations=True,
                  emit_waveform_padding_mask=False,
-                 waveform_padding_mask_eps=1e-8, **kwargs):
+                 waveform_padding_mask_eps=1e-8,
+                 metadata_support_station_valid=False,
+                 v01_padding_intervention=None,
+                 v01_source_role_key='v01_source_role', **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -612,6 +615,11 @@ class PreloadedEventGenerator(Dataset):
         self.dpk_prior_cache_filter_missing_stations = bool(dpk_prior_cache_filter_missing_stations)
         self.emit_waveform_padding_mask = bool(emit_waveform_padding_mask)
         self.waveform_padding_mask_eps = float(waveform_padding_mask_eps)
+        # New-backend-only switches.  Defaults preserve the exact legacy
+        # RT55/RT56 amplitude-sentinel behavior.
+        self.metadata_support_station_valid = bool(metadata_support_station_valid)
+        self.v01_padding_intervention = dict(v01_padding_intervention or {})
+        self.v01_source_role_key = str(v01_source_role_key)
         self.trigger_based = trigger_based
         self.disable_station_foreshadowing = disable_station_foreshadowing
         self.selection_skew = selection_skew
@@ -932,7 +940,8 @@ class PreloadedEventGenerator(Dataset):
         return normalized
 
     def _sample_causal_random_input_indices(self, picks, station_coords, waveforms,
-                                            current_sample, target_values=None, rng=None):
+                                            current_sample, target_values=None, rng=None,
+                                            sample_valid=None):
         """Select a causal random station set from the full event before max-station truncation."""
         cfg = self.causal_random_input_mask
         if not cfg.get('enabled', False):
@@ -953,6 +962,9 @@ class PreloadedEventGenerator(Dataset):
         signal_stop = min(int(current_sample) + 1, waves.shape[1])
         if signal_stop <= 0:
             has_signal = np.zeros(picks.shape, dtype=bool)
+        elif getattr(self, 'metadata_support_station_valid', False) and sample_valid is not None:
+            support = np.asarray(sample_valid, dtype=bool)
+            has_signal = support[:, :signal_stop].any(axis=1)
         else:
             has_signal = (np.abs(waves[:, :signal_stop, :]) > self.wave_eps).any(axis=(1, 2))
         candidates = np.where(coord_valid & pick_valid & has_signal)[0]
@@ -1034,7 +1046,8 @@ class PreloadedEventGenerator(Dataset):
 
     def _realtime_pick_valid(self, picks):
         picks = np.asarray(picks, dtype=float)
-        return np.isfinite(picks) & (picks > 0) & (picks < self.trace_length)
+        trace_length = getattr(self, 'trace_length', np.inf)
+        return np.isfinite(picks) & (picks > 0) & (picks < trace_length)
 
     def _select_realtime_cutout(self, full_p_picks, station_valid_full, rng, context, waveform_length):
         picks = np.asarray(full_p_picks[0], dtype=float)
@@ -1042,7 +1055,15 @@ class PreloadedEventGenerator(Dataset):
         valid &= self._realtime_pick_valid(picks)
         if not valid.any():
             raise _EmptySample()
-        first_pick = int(round(float(np.min(picks[valid]))))
+        reference_override = getattr(self, 'v01_reference_p_pick', None)
+        if reference_override is None:
+            first_pick = int(round(float(np.min(picks[valid]))))
+        else:
+            first_pick = int(reference_override)
+            if first_pick < 0 or first_pick >= waveform_length:
+                raise ValueError(
+                    f'V01 reference P pick {first_pick} is outside waveform length {waveform_length}'
+                )
         if 'time_index' in context:
             time_index = int(context.get('time_index', 0))
             times_key = 'val_times' if context['mode'] == 'val' else 'train_times'
@@ -1639,6 +1660,38 @@ class PreloadedEventGenerator(Dataset):
                             row_selector,
                             cur_waveform,
                         )
+                        intervention_enabled = bool(
+                            self.v01_padding_intervention.get('enabled', False)
+                        )
+                        if intervention_enabled:
+                            required = ('p_picks', 'v01_retained_prep_samples', self.v01_source_role_key)
+                            missing = [name for name in required if name not in g_event]
+                            if missing:
+                                raise ValueError(
+                                    f'V01 padding intervention requires datasets {missing} in {event_name}'
+                                )
+                            from tools.prep_padding_protocol import apply_prep_intervention
+                            source_picks = self._select_station_aligned_values(
+                                g_event['p_picks'], row_selector, g_event['waveforms'].shape[0]
+                            ).astype(np.int64) // self.decimate
+                            retained = self._select_station_aligned_values(
+                                g_event['v01_retained_prep_samples'],
+                                row_selector,
+                                g_event['waveforms'].shape[0],
+                            ).astype(np.int64) // self.decimate
+                            source_role = self._select_station_aligned_values(
+                                g_event[self.v01_source_role_key],
+                                row_selector,
+                                g_event['waveforms'].shape[0],
+                            ).astype(bool)
+                            cur_waveform, cur_sample_mask = apply_prep_intervention(
+                                cur_waveform,
+                                cur_sample_mask,
+                                source_picks,
+                                retained,
+                                source_role,
+                                fill_value=float(self.v01_padding_intervention.get('fill_value', 0.0)),
+                            )
                         cur_waveform = _center_waveforms_with_sample_mask(
                             cur_waveform,
                             cur_sample_mask,
@@ -1659,6 +1712,24 @@ class PreloadedEventGenerator(Dataset):
         self.metadata = np.concatenate(data['coords'], axis=0) # coords of stations (lat, lon, elev)
         self.waveforms = X
         self.original_wave_idx = original_wave_idx_for_loaded
+        if self.v01_source_role_key in data:
+            self.v01_source_role = np.concatenate(
+                data[self.v01_source_role_key], axis=0
+            ).astype(bool, copy=False)
+        else:
+            self.v01_source_role = None
+        self.v01_retained_prep_samples = (
+            np.concatenate(data['v01_retained_prep_samples'], axis=0).astype(np.int64)
+            if 'v01_retained_prep_samples' in data else None
+        )
+        self.v01_template_id = (
+            np.concatenate(data['v01_template_id'], axis=0).astype(np.int64)
+            if 'v01_template_id' in data else None
+        )
+        self.v01_match_distance_km = (
+            np.concatenate(data['v01_match_distance_km'], axis=0).astype(np.float32)
+            if 'v01_match_distance_km' in data else None
+        )
 
         has_pga_values = self.pga_key in data
         if has_pga_values:
@@ -1707,6 +1778,13 @@ class PreloadedEventGenerator(Dataset):
         if self.pga_key in data:
             self.pga = np.asarray(self.pga)
         self.crop_start = crop_start
+        if 'v01_reference_p_pick' in data:
+            reference = np.asarray(data['v01_reference_p_pick'][0]).reshape(-1)
+            if reference.size != 1:
+                raise ValueError('v01_reference_p_pick must be an event scalar')
+            self.v01_reference_p_pick = int(reference[0]) - int(crop_start)
+        else:
+            self.v01_reference_p_pick = None
 
         y = np.array([self.event_metadata.get_group(ith_event)[self.target_key]]) # magnitude
         event_target_for_input_selection = None
@@ -1743,6 +1821,7 @@ class PreloadedEventGenerator(Dataset):
                     else None
                 ),
                 rng=rng,
+                sample_valid=self.waveform_sample_valid,
             )
 
         waveforms = np.zeros((true_batch_size, self.max_stations) + self.waveforms.shape[1:])  # shape (1, 25, 10000, 3)
@@ -1826,6 +1905,16 @@ class PreloadedEventGenerator(Dataset):
                     )
                 elif self.select_first_inputs: # pick_time
                     selection = np.argsort(self.triggers)
+
+                # V01 derived shards contain independent source and query rows.
+                # Query rows retain PGA/pick metadata but must never displace a
+                # physical source from the input slots.
+                if self.v01_source_role is not None:
+                    source_first = self.v01_source_role[selection]
+                    selection = np.concatenate((
+                        selection[source_first],
+                        selection[~source_first],
+                    ))
 
                 selection = selection[:true_max_stations_in_batch] # len tms
                 metadata[i, :len(selection)] = self.metadata[selection]
@@ -2020,7 +2109,10 @@ class PreloadedEventGenerator(Dataset):
         station_valid_for_targets = station_valid_full.copy()
         full_selected_indices_for_targets = full_selected_indices.copy()
         input_station_valid_for_model = station_valid_full[:, :self.max_stations].copy()
-        has_signal_for_input = (np.abs(waveforms) > self.wave_eps).any(axis=(2, 3))
+        if self.metadata_support_station_valid and waveform_sample_valid is not None:
+            has_signal_for_input = waveform_sample_valid.any(axis=2)
+        else:
+            has_signal_for_input = (np.abs(waveforms) > self.wave_eps).any(axis=(2, 3))
         pick_valid_for_input = (p_picks > 0) & (p_picks < waveforms.shape[2])
         input_station_valid_for_model &= has_signal_for_input
         input_station_valid_for_model &= pick_valid_for_input
@@ -2195,7 +2287,10 @@ class PreloadedEventGenerator(Dataset):
         # invalid for the encoder. Waveform "all zero" is a safe sentinel here:
         # real seismic data is mean-subtracted but never identically zero across
         # all samples and channels; only explicit zeroing produces this state.
-        has_signal = (np.abs(waveforms) > self.wave_eps).any(axis=(2, 3))
+        if self.metadata_support_station_valid and waveform_sample_valid is not None:
+            has_signal = waveform_sample_valid.any(axis=2)
+        else:
+            has_signal = (np.abs(waveforms) > self.wave_eps).any(axis=(2, 3))
         station_valid &= has_signal
         pick_valid = (p_picks > 0) & (p_picks < waveforms.shape[2])
         station_valid &= pick_valid
@@ -2281,6 +2376,7 @@ class PreloadedEventGenerator(Dataset):
             input_pga_values = np.where(input_pga_valid, input_pga, 0.0)
 
         waveform_valid_sample_count = None
+        waveform_pre_p_valid_sample_count = None
         waveform_post_p_valid_sample_count = None
         if waveform_sample_valid is not None:
             waveform_sample_valid &= station_valid[:, :, None]
@@ -2301,6 +2397,12 @@ class PreloadedEventGenerator(Dataset):
                 & valid_pick[:, :, None]
                 & (sample_index >= p_picks[:, :, None])
             )
+            pre_p_mask = (
+                waveform_sample_valid
+                & valid_pick[:, :, None]
+                & (sample_index < p_picks[:, :, None])
+            )
+            waveform_pre_p_valid_sample_count = pre_p_mask.sum(axis=2).astype(np.int64)
             waveform_post_p_valid_sample_count = post_p_mask.sum(axis=2).astype(np.int64)
 
         # Sanity check: at least one station must have a real waveform to avoid
@@ -2405,6 +2507,24 @@ class PreloadedEventGenerator(Dataset):
             'selected_original_input_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
             'original_station_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
         }
+        if self.v01_source_role is not None:
+            selected_rows = selected_input_indices[0]
+            selected_ok = selected_rows >= 0
+            role_values = np.zeros(self.max_stations, dtype=bool)
+            role_values[selected_ok] = self.v01_source_role[selected_rows[selected_ok]]
+            p_pick_info['v01_source_role'] = torch.from_numpy(role_values).bool()
+            for name, values, dtype in (
+                ('v01_retained_prep_samples', self.v01_retained_prep_samples, np.int64),
+                ('v01_template_id', self.v01_template_id, np.int64),
+                ('v01_match_distance_km', self.v01_match_distance_km, np.float32),
+            ):
+                if values is None:
+                    continue
+                fill = -1 if np.issubdtype(dtype, np.integer) else np.nan
+                selected_values = np.full(self.max_stations, fill, dtype=dtype)
+                selected_values[selected_ok] = values[selected_rows[selected_ok]]
+                tensor = torch.from_numpy(selected_values)
+                p_pick_info[name] = tensor.long() if np.issubdtype(dtype, np.integer) else tensor.float()
         if self.causal_random_input_mask.get('enabled', False):
             p_pick_info.update({
                 'causal_random_mask_applied': torch.tensor(
@@ -2430,6 +2550,13 @@ class PreloadedEventGenerator(Dataset):
             ).long()
             p_pick_info['waveform_valid_seconds'] = torch.from_numpy(
                 waveform_valid_sample_count[0].astype(np.float32)
+                / float(self.sampling_rate)
+            ).float()
+            p_pick_info['waveform_pre_p_valid_sample_count'] = torch.from_numpy(
+                waveform_pre_p_valid_sample_count[0]
+            ).long()
+            p_pick_info['waveform_pre_p_valid_seconds'] = torch.from_numpy(
+                waveform_pre_p_valid_sample_count[0].astype(np.float32)
                 / float(self.sampling_rate)
             ).float()
             p_pick_info['waveform_post_p_valid_sample_count'] = torch.from_numpy(

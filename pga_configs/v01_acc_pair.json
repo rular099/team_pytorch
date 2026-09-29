@@ -1,0 +1,30 @@
+{
+  "extends": "v01_common_rt55_model.json",
+  "training_params": {
+    "data_path": [
+      "${V01_CACHE_ROOT}/2004/japan_2004_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2005/japan_2005_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2006/japan_2006_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2007/japan_2007_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2008/japan_2008_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2009/japan_2009_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2010/japan_2010_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2011/japan_2011_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2012/japan_2012_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2013/japan_2013_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2014/japan_2014_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2015/japan_2015_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2016/japan_2016_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2017/japan_2017_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2018/japan_2018_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2019/japan_2019_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2020/japan_2020_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2021/japan_2021_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2022/japan_2022_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2023/japan_2023_v01_acc_pair.hdf5",
+      "${V01_CACHE_ROOT}/2024/japan_2024_v01_acc_pair.hdf5"
+    ],
+    "weight_path": "${V01_APAIR_WEIGHT_PATH}"
+  },
+  "v01_arm": "apair"
+}

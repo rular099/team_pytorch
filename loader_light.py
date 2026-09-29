@@ -429,7 +429,7 @@ def ensure_event_metadata_cache(data_path, event_metadata_path='./event_metadata
 def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=None, parts=None, shuffle_train_dev=False, custom_split=None, data_keys=None,
                 overwrite_sampling_rate=None, min_mag=None, mag_key=None, decimate_events=None,
                 min_stalta_ratio_at_pick=0.1, station_filter=None,
-                metadata_cache_columns=None):
+                metadata_cache_columns=None, frozen_split_manifest=None):
     if min_mag is not None and mag_key is None:
         raise ValueError('mag_key needs to be set to enforce magnitude threshold')
     if isinstance(data_paths, str):
@@ -458,7 +458,27 @@ def load_events(data_paths, event_metadata_path='./event_metadata.csv', limit=No
     # Split at event level to avoid data leakage (same event in train+dev/test).
     # event_metadata is station-level (one row per station per event), so we
     # deduplicate to event level, run the splitter, then map back.
-    if parts:
+    if parts and frozen_split_manifest:
+        split_frame = pd.read_csv(frozen_split_manifest, dtype={'EVENT': str})
+        split_event_key = event_key if event_key in split_frame.columns else detect_event_key(split_frame.columns)
+        if 'split' not in split_frame.columns:
+            raise ValueError(f'frozen_split_manifest lacks split column: {frozen_split_manifest}')
+        split_frame[split_event_key] = split_frame[split_event_key].astype(str)
+        assignments = split_frame[[split_event_key, 'split']].drop_duplicates()
+        conflicts = assignments.groupby(split_event_key)['split'].nunique()
+        if (conflicts > 1).any():
+            raise ValueError('frozen_split_manifest assigns at least one event to multiple splits')
+        split_by_event = dict(assignments.itertuples(index=False, name=None))
+        requested = set()
+        if parts[0]:
+            requested.add('train')
+        if parts[1]:
+            requested.update(('dev', 'val', 'validation'))
+        if parts[2]:
+            requested.add('test')
+        mapped = event_metadata[event_key].astype(str).map(split_by_event)
+        event_metadata = event_metadata[mapped.isin(requested)]
+    elif parts:
         unique_events = event_metadata.drop_duplicates(subset=event_key, keep='first')
         event_mask = TrainDevTestSplitter.run_method(unique_events, custom_split, shuffle_train_dev, parts=parts)
         keep_events = set(unique_events.loc[event_mask, event_key])

@@ -1,0 +1,19 @@
+{
+  "extends": "v01_common_rt55_model.json",
+  "training_params": {
+    "weight_path": "${V01_VMISSING_WEIGHT_PATH}",
+    "train_generator_overrides": {
+      "v01_padding_intervention": {
+        "enabled": true,
+        "fill_value": 0.0
+      }
+    },
+    "validation_generator_overrides": {
+      "v01_padding_intervention": {
+        "enabled": true,
+        "fill_value": 0.0
+      }
+    }
+  },
+  "v01_arm": "vmissing"
+}

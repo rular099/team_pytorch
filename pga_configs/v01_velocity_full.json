@@ -1,0 +1,7 @@
+{
+  "extends": "v01_common_rt55_model.json",
+  "training_params": {
+    "weight_path": "${V01_VFULL_WEIGHT_PATH}"
+  },
+  "v01_arm": "vfull"
+}
