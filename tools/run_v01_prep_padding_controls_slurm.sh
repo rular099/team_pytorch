@@ -70,8 +70,13 @@ IFS=',' read -r -a ARM_LIST <<< "$ARMS"
 declare -A ARM_ENABLED=([vfull]=0 [vmissing]=0 [apair]=0)
 for arm in "${ARM_LIST[@]}"; do
     arm=${arm//[[:space:]]/}
-    [[ -v "ARM_ENABLED[$arm]" ]] || { echo "Unknown arm: $arm" >&2; exit 2; }
-    ARM_ENABLED[$arm]=1
+    # Bash 4.2 (used on the target cluster) supports associative arrays but
+    # does not reliably support ``[[ -v 'array[key]' ]]``.  Validate with a
+    # plain case statement so legitimate arms are accepted on old login nodes.
+    case "$arm" in
+        vfull|vmissing|apair) ARM_ENABLED["$arm"]=1 ;;
+        *) echo "Unknown arm: $arm" >&2; exit 2 ;;
+    esac
 done
 
 require_file() {
