@@ -80,7 +80,7 @@ local source:
   /run/media/zhangb/My Passport/hinet_data/archive/hinet_raw_2024*.h5
 
 recommended HPC destination:
-  /public/home/test_bigmodel/seismogram/zb/hinet_data/archive/
+  /public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data/archive/
 ```
 
 Upload the matching catalog for provenance as well, although the builder reads
@@ -90,7 +90,7 @@ the event manifest and CH table embedded in each archive:
 local:
   /run/media/zhangb/My Passport/hinet_data/catalog/
 HPC:
-  /public/home/test_bigmodel/seismogram/zb/hinet_data/catalog/
+  /public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data/catalog/
 ```
 
 The 2000--2003 partial archives may be omitted for V01.  The following data are
@@ -106,10 +106,10 @@ default HPC:
 frozen split local:
   ../chaosuan_res/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv
 default HPC:
-  $WORKDIR/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv
+  /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv
 
 RT55 epoch-32 parent default HPC:
-  $WORKDIR/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth
+  /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth
 ```
 
 Upload the complete repository/branch too; do not upload only the new tools,
@@ -121,13 +121,14 @@ First set cluster paths.  For an uploaded folder without `.git`, run one dry
 run to obtain the printed source manifest hash, then repeat with that hash:
 
 ```bash
-cd /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics
+cd /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel
 
 export WORKDIR=$PWD
 export ACC_DATA_ROOT=/public/home/test_bigmodel/seismogram/zb/origin_corrected_diting_vel_acc_vs30
-export VELOCITY_DATA_ROOT=/public/home/test_bigmodel/seismogram/zb/hinet_data
-export FROZEN_SPLIT_MANIFEST=$WORKDIR/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv
-export RT55_EP32_CHECKPOINT=$WORKDIR/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth
+export VELOCITY_DATA_ROOT=/public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data
+export RT55_RUN_ROOT=/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42
+export FROZEN_SPLIT_MANIFEST=$RT55_RUN_ROOT/split_events.csv
+export RT55_EP32_CHECKPOINT=$RT55_RUN_ROOT/full_model_best_ep32.pth
 export V01_RUN_ROOT=$WORKDIR/v01_velocity_prep_padding_seed42
 export SOURCE_IDENTITY_MODE=uploaded_sha256
 

@@ -77,14 +77,14 @@ Upload the annual velocity archive files for 2004--2024 from:
 to:
 
 ```text
-/public/home/test_bigmodel/seismogram/zb/hinet_data/archive/
+/public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data/archive/
 ```
 
 Do not upload `.lock` files.  The recommended provenance catalog transfer is:
 
 ```text
 /run/media/zhangb/My Passport/hinet_data/catalog/
-  -> /public/home/test_bigmodel/seismogram/zb/hinet_data/catalog/
+  -> /public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data/catalog/
 ```
 
 The 2000--2003 velocity archives are not referenced by V01.  Existing
@@ -112,10 +112,11 @@ one-event 2024 materialization plus derived-cache generator read
   -> completed locally
 ```
 
-The dry-run source manifest SHA256 before the documentation-only handoff commit
-was `a9ce1b0a0bce5fce106a8d469ec3d9a6dcd348af9e26844a813e3bdd6dfc9f6e`.
-Uploaded-folder users must recompute it with the dry run after upload and then
-pin the printed value for formal submission.
+After updating the defaults to the user's actual supercomputer upload paths,
+the dry-run source manifest SHA256 is
+`72ca3ed7866708c0a9c1eed5d6a4495476e35594f85e55d84211c38eea91a303`.
+Uploaded-folder users must still verify the value printed by the copy on the
+cluster and pin that printed value for formal submission.
 
 NOT RUN locally:
 
