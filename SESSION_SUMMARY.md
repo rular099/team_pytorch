@@ -1,615 +1,597 @@
 # TEAM PyTorch 项目交接文档
 
-更新时间：2026-08-25（Asia/Shanghai）
+更新时间：2026-09-30（Asia/Shanghai）
 
-本文档是下一次全新 agent 会话的权威入口。先读完本文，再检查超算端状态和 Git
-工作区；不要根据旧聊天记录、文件名或本地旧 checkpoint 猜测当前状态。
+本文档是下一次全新 agent 会话的权威工程入口。当前主任务已从 RT57--RT61
+模型结构研究切换到 **V01：速度波形输入与 P 前缺失/补零受控实验**。不要根据旧聊天、
+旧 `PROJECT_CONTEXT.md` 的分支名、目录名或 checkpoint 文件名推断当前状态。
 
-## 0. 快速定位与最重要结论
+## 0. 快速定位和当前结论
 
 - 工作区：`/home/zhangb/work/people/zhangbei/team_claude`
-- 主仓库：`/home/zhangb/work/people/zhangbei/team_claude/team_pytorch`
-- 当前分支：`zhangb/native-scale-adapter-scaling`
-- 本次 rt56 修改前基线：`8dd3bb3 Sync rt55 formal evaluation and project handoff`
-- GitHub：`github.com/rular099/team_pytorch`
-- 主实验：`rt55`，Japan 2000–2024 KNET-only 全量实时 PGA 概率预测
-- 本地结果：`../chaosuan_res/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42`
-- 超算仓库：`/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team`
-- 超算权重目录：`weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42`
-- 超算实际数据根：`/public/home/test_bigmodel/seismogram/zb/origin_corrected_diting_vel_acc_vs30`
+- 当前活跃仓库：
+  `/home/zhangb/work/people/zhangbei/team_claude/team_pytorch_query_geometry_diagnostics`
+- GitHub：`rular099/team_pytorch`
+- 当前分支：`exp/v01-velocity-prep-padding-control`
+- V01 基线提交：`9c95dbfaf92f36b2673d816026cd3f25b91eec66`
+- V01 核心实现提交：`6a341fb936035d4654db4ddbba974a3cdd471352`
+- 本交接前最新代码提交：`04a23a3aa74c81ba18d4625f09e4015d2dc8ae69`
+- 远端同名分支已推送到上述最新代码提交。
+- 当前工作树有用户未跟踪文件 `tmp.tar.gz`；不要删除、覆盖或提交它。
+- 当前最重要事实：**V01 代码和提交脚本已就绪，但尚无一次确认成功的正式 Slurm
+  提交，更没有 V01 训练或验证结果。**
 
-当前结论：
+超算实际路径：
 
-1. rt55 已训练到 checkpoint epoch 34，不建议继续无变化续训。
-2. 当前远端 `full_model_best.pth` 的已知元数据为 epoch 32、validation objective
-   `0.0123629803`；`full_model_last.pth` 应为 epoch 34。
-3. epoch 32 的正式 validation normal 与 waveform-station-roll 已完成。normal PGA
-   为 MAE `0.11663`、RMSE `0.18055`、R² `0.75412`、NLL `-0.88674`。
-4. roll 后 MAE 升至 `0.24898`、R² 降至 `0.20691`，证明模型显著依赖正确匹配的
-   台站波形；“模型只看坐标”的担忧不成立。
-5. 用户在 2026-08-23 报告超算已同步运行 epoch 20 和 epoch 32 formal test；本地尚无
-   新 test 结果，完成状态和指标仍须从超算核验，不能根据 test 结果反向改实验协议。
-6. rt56 random geometry 已实现：ep32 zero-shot random mask 与 50% rt55 / 50% causal
-   random mixed fine-tuning 可独立并行提交；rt55 配置、模型结构和原加载/推理路径不变。
-7. 极重要：本地 `full_model_best.pth` 和 `full_model_last.pth` 都仍是 epoch 20，不能
-   用它们代替远端 epoch 32/34 checkpoint。最新结果包没有覆盖这两个大文件。
+```text
+V01 代码：
+  /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel
+
+速度 archive：
+  /public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data/archive
+
+速度 catalog：
+  /public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data/catalog
+
+加速度年度 HDF5：
+  /public/home/test_bigmodel/seismogram/zb/origin_corrected_diting_vel_acc_vs30
+
+RT55 历史运行目录：
+  /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42
+```
+
+当前上传模式应打印的源码清单 SHA-256：
+
+```text
+bccb84254bacdd6aa8878bec5deaa17aaa6033139277853bccab1c7184109afe
+```
+
+该哈希只适用于超算文件与提交 `04a23a3...` 的 source-manifest 文件逐字节一致时；
+正式提交必须以超算 dry-run 实际打印值为准。
 
 ## 1. 项目当前目标
 
-### 1.1 主线目标
+### 1.1 当前主任务：V01
 
-使用冻结的 DiTing waveform encoder、可训练 station adapter 和 TEAM 风格多台站
-Transformer，对 Japan K-NET 台站进行实时、多目标 PGA 概率预测，同时保留震级和
-位置辅助任务。
+V01 要回答两个受控问题：
 
-当前阶段已经从“继续优化 validation”进入“一次性冻结模型并做 held-out test”：
+1. 使用真实 Hi-net 速度计记录作为输入，能否在保持 RT55 模型计算和 PGA 标签定义
+   不变的前提下训练可用模型？
+2. 在完全相同的速度记录、事件、source/query 身份、空间坐标和决策时刻下，人工删除
+   一段 P 前有效样本并正确标为 mask=False，会造成多大 PGA 预测损失？
 
-1. 固定 epoch 32 为正式 test 的预选 checkpoint；
-2. 在固定 test split 上跑 normal，输出 MAE、RMSE、R²、NLL、Brier、1σ/2σ coverage；
-3. 如实验方案预先要求，再跑 test waveform-station-roll，不能根据 normal test 结果
-   再决定模型或阈值；
-4. 汇总 validation/test 的时间、台站数、目标类型、预警提前量、有效波形秒数等分桶；
-5. 再决定是否开展多 seed、encoder 末层解冻或更强 station representation 实验。
+正式准备三个训练臂：
 
-### 1.2 次要工作流
+| arm | 输入 | 目的 |
+|---|---|---|
+| `vfull` | Hi-net 速度记录，保留全部可用 P 前支持 | 完整速度前缀基线 |
+| `vmissing` | 同一速度记录，仅删除模板指定的 P 前前缀 | 核心缺失干预 |
+| `apair` | 与速度 source 配对的实测加速度记录 | 跨输入域桥接控制 |
 
-- Hi-net 原始 CNT/CH 年度 HDF5 归档、断点续传和数据集审计；
-- 技术交流 PPT 与图表；
-- station representation collapse 与诊断统计修正。
+两个速度 checkpoint 要在 `vfull`/`vmissing` 两个视图上交叉验证，并分别跑固定
+normal/random validation。目标仍是原 KNET 查询台站 PGA，坐标为 `log10(m/s^2)`；
+不是 PGV，也不是速度记录微分出的新标签。
 
-这些次要工作流不能改变 rt55 的固定 split、checkpoint 或正式 test 协议。
+### 1.2 当前不是要做的事
+
+- 不继续 RT62；V01 明确暂停了上一轮独立 RT62 任务。
+- 不继续相同设置训练 RT59/RT60/RT61。
+- 不打开 held-out test 来选择 V01 协议、epoch、mask 强度或阈值。
+- 不把 V01 当作 RT61 性能升级；它是独立的数据机制实验。
 
 ## 2. 当前完成状态
 
-### 2.1 2000–2024 数据与固定 split
+### 2.1 V01 已完成的实现
 
-全量源数据检查已经通过：
+已实现并推送：
 
-- 25 个年度 HDF5 shard（2000–2024）；
-- 14,153 个事件，501,956 条 station rows；
-- KNET 211,546 条，KiK-net 290,410 条；
-- 100 Hz、三分量，必要波形、坐标、P pick、PGA、storage-valid 区间和 VS30 字段齐全；
-- `pga` 坐标为 `log10(m/s²)`；
-- 波形入模前转 float32，不需要另存一套 float32 HDF5；
-- 97.37% KNET 记录有前置 storage padding，loader 已优先使用
-  `record_start_sample + valid_n_samples` 生成显式有效区间。
+- `tools/velocity_waveform_backend.py`
+  - 读取年度 Hi-net CNT/CH archive；
+  - 每个事件一次解码所需通道；
+  - 按 CH `counts_per_physical_unit` 将 raw counts 转成 m/s；
+  - 明确标记 `response_correction=sensitivity_only`，不声称完整去仪器响应；
+  - E/N/U 三分量顺序；进程独立 reader 和有界打开句柄。
+- `tools/prep_padding_protocol.py`
+  - train-only P 前支持模板；
+  - event/source 稳定哈希分配；
+  - 只删除严格早于 P 的样本；P 点和 P 后支持不变；
+  - 填零并设置 mask=False。
+- `tools/build_v01_paired_manifest.py`
+  - 先继承冻结 RT55 split，再筛速度交集；
+  - test event 在打开波形前排除；
+  - source 与 query 使用各自真实传感器身份和坐标；
+  - 同一 Hi-net source 去重，不能复制成多台输入；
+  - 生成 velocity 和 A-pair 两套 derived cache；`vmissing` 是运行时视图，不复制第三套波形；
+  - 保存单位、source hash、配对、计划和干预 provenance。
+- `gemini_util_light.py`
+  - 新 metadata-support、V01 干预和 source-role 路径均默认关闭；
+  - 干预发生在中心化/归一化之前；
+  - V01 可用显式 support mask，不用幅值阈值决定速度台站是否存在；
+  - 导出 P 前/P 后有效秒数和 V01 provenance。
+- `loader_light.py`
+  - 新增显式 frozen split manifest；旧默认 splitter 不变。
+- `train_light.py`、`eval_checkpoint.py`
+  - 只增加 V01 split/provenance 透传；继续复用原模型、损失和正式评估路径。
+- `pga_configs/v01_*.json`
+  - 三臂同一 RT55 `model_params`、RT56 mixed geometry、seed 42、8 新 epoch、
+    LR/adapter LR/TEAM LR 均为 1e-4。
+- `tools/analyze_v01_padding_controls.py`
+  - 汇总点误差；做 5,000 次 event-cluster paired bootstrap，seed 20260915。
+- `tools/run_v01_prep_padding_controls_slurm.sh`
+  - `ACTION=preflight|train|eval|analyze|all`；
+  - `ARMS=vfull,vmissing,apair`；
+  - 默认 dry-run，正式运行要求 `CONFIRM_V01=1 DRY_RUN=0`；
+  - `all` 使用 `afterok` 串联 preflight、三个训练、十个 validation eval 和分析；
+  - 非空输出拒绝覆盖，resume 必须显式开启；
+  - 只跑 validation，不调 test。
 
-固定 KNET split：
+`gemini_models.py`、DiTing 源码和所有 RT55--RT61 配置均未修改。V01 实现时记录：
 
-| split | events | station rows |
-|---|---:|---:|
-| train | 9,627 | 146,842 |
-| validation | 1,383 | 22,336 |
-| test | 2,769 | 42,368 |
+```text
+gemini_models.py SHA-256:
+  cd8481286436342d09781888967dc757f4bde383f4d344033d866c6b06b7be84
 
-划分是每个年度 shard 内 event-disjoint 的约 70%/10%/20%，不是 held-out-year 外推。
-`split_events.csv` 和 `split_stations.csv` 已随远端运行目录生成，正式 test launcher 会
-核验 test 数量。
+canonical RT55/V01 model_params SHA-256:
+  d0ee04ee99872c2eeed644c1ce05ec822b311eb610b58c732465d024bcc1ef6b
+```
 
-### 2.2 rt55 结构与训练设置
+### 2.2 已核验的 V01 数据状态
 
-rt55 的固定设计：
+本地速度归档快照在 2026-09-29 核验为：
 
-- KNET-only；
-- legacy station adapter；
-- 显式 waveform storage-valid mask；
-- DiTing encoder 冻结；station adapter 和 TEAM 侧训练；
-- DPK cache、DPK token weighting、PGA temporal residual 全关闭；
-- PGA 三分量 MDN，主要优化 PGA，保留 magnitude/location 辅助头；
-- PGA normalization：mean `-1.1228067351`，std `0.4312468402`，count `146842`；
-- train 每个事件每 epoch 从 7 个实时 bin 中不放回抽 3 个；
-- validation/test 固定 1/3/5/10/20/40/90 秒；
-- 训练使用约 4 节点 × 4 DCU，batch size 8/卡，global batch 128；
-- 初始 lr 为 `1e-3`，ReduceLROnPlateau factor `0.5`、patience `2`、min lr `1e-5`；
-- 续训目标 epoch 是“总完成轮数”，不是额外轮数。
+- 外置盘 `/dev/sdd1` 以 `fuseblk,ro` 只读挂载；
+- 没有实际 Hi-net 下载进程；最后更新时间为 2026-08-11；
+- 14,153 requested，12,708 committed；其中 12,392 有波形，316 无匹配台站；
+- 1,445 个事件未归档；
+- archive 约 26 GiB，catalog 约 14 MiB，加速度数据约 60 GiB；
+- 12 个完整年度：2006、2008、2009、2010、2011、2014、2015、2017、2019、
+  2020、2021、2023；
+- 13 个 partial 年度：2000--2005、2007、2012、2013、2016、2018、2022、2024；
+- 2000--2003 没有可用波形，V01 配置只引用 2004--2024。
 
-### 2.3 训练已经完成到 epoch 34
+用户已明确报告 2004--2024 HDF5 archive 和 catalog 已上传到上述超算路径。
+partial archive 在 V01 中被当作固定只读快照，并由哈希固定；不要边下载边训练。
 
-训练经历了 12、20、34 三个阶段。checkpoint 中的 `epoch=32` 表示已经完成 32 轮，
-对应 TensorBoard/CSV 的零基 step 31；不要混淆这两个编号。
+真实 metadata-only V01 audit：
 
-最新本地标量包记录的后十个零基 epoch：
+| item | count |
+|---|---:|
+| train events | 8,439 |
+| validation events | 1,225 |
+| source-event sensor rows | 129,636 |
+| KNET query targets | 153,462 |
+| KNET-compatible source rows | 2,094 |
+| KiK/Hi-net bridge source rows | 127,542 |
+| frozen test events excluded before waveform open | 2,483 |
+| train-only P-prefix templates | 146,842 |
 
-| scalar step | 完成后的 checkpoint epoch | train loss | validation objective | lr |
-|---:|---:|---:|---:|---:|
-| 24 | 25 | 0.08814 | 0.02996 | 2.5e-4 |
-| 25 | 26 | 0.08609 | 0.05430 | 2.5e-4 |
-| 26 | 27 | 0.08017 | 0.02443 | 2.5e-4 |
-| 27 | 28 | 0.07965 | 0.03731 | 2.5e-4 |
-| 28 | 29 | 0.08732 | 0.04127 | 2.5e-4 |
-| 29 | 30 | 0.06459 | 0.02421 | 2.5e-4 |
-| 30 | 31 | 0.07478 | 0.06963 | 2.5e-4 |
-| 31 | 32 | 0.06629 | **0.01236** | 2.5e-4 |
-| 32 | 33 | **0.06007** | 0.02942 | 2.5e-4 |
-| 33 | 34 | 0.06578 | 0.05684 | 2.5e-4 |
+这些是 metadata/preflight 数，不是最终训练数；完整 materialization 可能因三分量或
+channel 校验减少样本。模板保留 P 前支持的中位数为 7.21 s；小于 1/3/5 s 的比例约
+3.21%/16.10%/32.78%，因此一部分样本的实际干预剂量较小，必须据实报告。
 
-训练判断：
+### 2.3 本地验证状态
 
-- epoch 32 是当前 validation objective 最优 checkpoint；
-- epoch 33/34 连续回升，继续相同训练的边际收益低且会增加事后选择风险；
-- epoch 32 后 train loss 仍低，但 validation objective 反弹，当前应停止并固定 test；
-- epoch 20 到 32 的收益主要体现在 NLL、RMSE、R²和波形依赖证据，MAE 几乎持平；
-- 本地标量包缺少 step 20–23，不应据此虚构这四轮的轨迹。
+V01 核心实现后实际运行：
 
-### 2.4 scheduler 恢复问题已修复
+```text
+python -m unittest tests.test_v01_velocity_backend tests.test_v01_padding_controls
+  -> 10 tests, PASS
 
-旧 checkpoint 在 `scheduler.step()` 之前保存，导致恢复后 ReduceLROnPlateau 内部状态
-少观察一次当轮 validation loss。修复包括：
+python -m unittest discover -s tests -p 'test_*.py'
+  -> 118 tests, PASS
 
-- 新 checkpoint 在 scheduler step 后保存；
-- 写入 `scheduler_step_completed`、`scheduler_monitor`、
-  `scheduler_monitor_loss`；
-- 加载旧 checkpoint 时仅对缺少完成标记的 ReduceLROnPlateau 重放一次 monitor loss；
-- 新 checkpoint 恢复时不重复 step；
-- `tests/test_scheduler_checkpoint_resume.py` 覆盖旧 checkpoint 补 step、新 checkpoint
-  不重复 step 和 plateau/best 两类状态。
+python -m py_compile ...V01 and modified runtime files...
+  -> PASS
 
-本地 epoch 20 `.pth` 是修复前格式：optimizer lr 已是 `2.5e-4`，但 scheduler
-`last_epoch=18` 且没有新标记。它可以由修复后的 loader 正确兼容，但它不是最新模型。
-远端 epoch 32/34 checkpoint 是否带新标记尚未下载到本地，下一会话应在远端核验。
+bash -n tools/run_v01_prep_padding_controls_slurm.sh
+  -> PASS
 
-### 2.5 epoch 20 与 epoch 32 的正式 validation
+DRY_RUN=1 ACTION=all ARMS=vfull,vmissing,apair ...
+  -> preflight + 3 train + 10 eval + analyze dependency graph, PASS
 
-统一协议：1,383 个 validation events、9,681 个 realtime samples、89,770 个有效 PGA
-targets；坐标为 `log10(m/s²)`，point estimate 为 MDN predictive mixture mean；Brier
-阈值为 `-1.2 log10(m/s²)`。
+one-event 2024 cache materialization and generator read
+  -> PASS
+```
 
-| checkpoint | pairing | MAE | RMSE | R² | NLL | Brier | coverage 1σ | coverage 2σ |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| epoch 20 | normal | **0.11617** | 0.18120 | 0.75235 | -0.86667 | **0.09112** | 0.70168 | 0.95367 |
-| epoch 20 | roll | 0.24466 | 0.32063 | 0.22459 | 1.68712 | 0.23719 | 0.39195 | 0.61143 |
-| epoch 32 | normal | 0.11663 | **0.18055** | **0.75412** | **-0.88674** | 0.09344 | 0.67869 | 0.94927 |
-| epoch 32 | roll | 0.24898 | 0.32426 | 0.20691 | 1.99375 | 0.24429 | 0.37067 | 0.59288 |
+后续路径、arm 解析和资源修订只改了 launcher/docs；每次都重新执行了 `bash -n` 和
+完整三臂 dry-run。没有在最后几次路径修订后重跑 118 项 Python 测试，因为 Python
+运行时未变。
 
-epoch 32 normal 的其他关键结果：
+### 2.4 超算执行状态
 
-- correlation `0.87210`，slope `0.77200`，bias `+0.02883`；
-- predictive sigma mean `0.13838`；1σ coverage `0.67869` 接近常见高斯参考值；
-- n=1 station 时 MAE `0.2379`，n=16+ 时降至 `0.0829`；
-- event-mean valid waveform 1–3 s 时 MAE `0.2262`，40 s+ 时降至 `0.0391`；
-- post-P 0–1 s 时 MAE `0.2169`，40 s+ 时降至 `0.0369`；
-- input targets MAE `0.0830`，triggered non-input `0.1567`，untriggered `0.2061`；
-- lead 0–5 s MAE `0.1928`，5–20 s `0.2388`，20 s+ `0.3990`；最后一桶仅
-  343 targets，解释时必须报告样本量；
-- weak/strong（阈值 -1.2）MAE 分别 `0.1198/0.1122`，但 bias 分别
-  `+0.0833/-0.0477`，仍存在弱震偏高、强震偏低的动态范围压缩。
+截至 2026-09-30，用户遇到并依次报告：
 
-roll 控制的关键解释：
+1. `Unknown arm: vfull`
+   - 原因：目标集群旧 Bash 对 `[[ -v 'assoc[key]' ]]` 支持不可靠；
+   - 修复提交 `80a539e95bbe46708387738b66a53b6eb8e07222`；
+   - 改用显式 `case`，单臂/双臂/三臂均 dry-run 通过。
+2. RT55 split/中间结果默认指向了错误项目；
+   - 正确项目为 `team_pytorch-zhangb-diting-backbone-attnpool-team`；
+   - 修复提交 `492465c3013078d023f45b8cb95aefb84262c0cb`。
+3. `Memory specification can not be satisfied`；
+   - 原 preflight 默认请求 192000M；目标分区无法满足；
+   - 修复提交 `04a23a3aa74c81ba18d4625f09e4015d2dc8ae69`；
+   - 当前默认 `PREFLIGHT_CPUS=8`、`PREFLIGHT_MEM=102400M`。
 
-- epoch 32 roll 相对 normal：MAE `+0.13235`、RMSE `+0.14371`、R² `-0.54721`、
-  NLL `+2.88049`、Brier `+0.15085`；
-- 长波形反而退化最明显：valid waveform 40 s+ 的 MAE 从 `0.0391` 升到 `0.2786`；
-- n=1 时 roll 与 normal 相同是预期行为，因为只有一个有效 station 时循环置换不改变
-  waveform-station 配对；
-- 结论是模型确实利用 matched waveform，且随台站数/有效时长增加获得明显收益；
-- 这不等于 raw station adapter 的 cosine collapse 已解决。波形幅值注入、坐标和 TEAM
-  上下文仍可能承担主要区分能力。
+第三个错误发生在第一个 `sbatch` 提交阶段，按脚本 `set -e` 逻辑后续训练不会提交。
+但接手者仍须在超算用 `squeue`/`sacct` 核验，不能仅凭本地推断宣称无残留作业。
+目前没有用户确认最新脚本已覆盖、最新 dry-run 哈希匹配或正式 preflight 已进入队列。
 
-模型选择约束：epoch 20 的 MAE/Brier 略优，epoch 32 的 RMSE/R²/NLL、slope 和 roll
-依赖更强。已决定把 epoch 32 作为正式 test 的主 checkpoint；epoch 20 只能作为
-validation 参考，不能在看到 test 后切换。
+### 2.5 RT57--RT61 已完成研究链的结论
 
-### 2.6 正式评估基础设施已完成
+这些实验全部是固定 validation、单 seed 42；没有打开 held-out test。它们是 V01 的
+研究背景，不是 V01 的 parent 选择依据。
 
-`eval_checkpoint.py` 现在支持：
+| 实验 | 主要结果 | 决策 |
+|---|---|---|
+| RT57 GTNP v2 | random MAE 0.257229 -> 0.247857；normal 保留；单站空间范围明显改善但仍严重压缩；6 个 gate 中 5 个通过，slope 未过 0.40 | 保留成功结果，但未全 GO |
+| RT58 waveform-anchor transfer | 相对 gamma=1.66 base 的新 anchor correction 反而使 random MAE +0.000458；单站 range ratio 下降 | 不继续当前 anchor 设计 |
+| RT59 dual-objective transport v3 | random MAE 0.245578 -> 0.237828；normal non-input MAE 0.210371 -> 0.199301；空间 range 仍退化，22/29 gate | 当前最强 pointwise development parent；总体 NO-GO |
+| RT60 final contrast readout | 单站空间指标有极小改善，但 normal remote 指标退化；机制 8/14，legacy 18/25 | 负结果，保留 RT59 |
+| RT61 wave-geometry residual | random MAE 小幅改善到 0.237324；单站 pairwise 仅改善 0.385%，normal CI 不稳；机制 13/14、useful progress 0/4 | 不采用，保留 RT59 reference |
 
-- `--splits train,val,test`，别名规范化和去重；
-- test 真正读取 `parts=(False, False, True)`；
-- test 使用与 validation 相同的固定 7 时刻协议，不做 train 随机采样；
-- waveform-station `none/roll/random` 对照；
-- waveform、storage mask、amplitude 相关输入和 cached token weights 一起置换；
-- formal MAE、RMSE、R²、unweighted MDN NLL、Brier、1σ/2σ coverage JSON；
-- `--skip_diagnostics`，正式大 split 可跳过昂贵样例诊断；
-- 独立 TXT、NPZ、metrics JSON 输出。
+详细证据入口：
 
-Slurm 入口：
-
-- `tools/eval_rt55_validation_normal_roll_slurm.sh`：validation normal/roll 可分开提交，
-  `ACTION=normal|roll|all`；之前组合任务超时后已经通过分开续跑完成。
-- `tools/eval_rt55_test_formal_slurm.sh`：一次性 test，必须显式
-  `CONFIRM_TEST_EVAL=1`；校验 test split 数量，默认禁止覆盖已有结果。
-
-正式 test 结果截至本地 2026-08-20 更新包仍不存在。不要把 validation 的
-`metrics_1.json` 当 test。
-
-### 2.7 feature-collapse 状态
-
-全量训练没有消除 legacy adapter 原始表征的高相似性：早期 12 轮中 raw adapter
-station cosine 约 `0.987–0.988`，event-centered residual norm 只占公共向量几个百分点。
-但是 epoch 32 的 roll 对照证明最终系统并非忽略 waveform。
-
-已知诊断 bug 仍未修：`gemini_models.py` 外层逐 station 调同一个 adapter，adapter 的
-`_last_token_pool_diag` 被最后 station slot 覆盖；第 25 个 slot 常是 padding，所以
-`diag_station_pool_*_valid_token_count=0` 不能解释为所有波形被 mask。训练 forward 的
-mask 实际正常。后续应按 `station_valid` 聚合全部有效 station，并在固定 eval split 上
-统计，不要继续解释最后 slot 快照。
-
-### 2.8 rt56 causal random geometry
-
-rt56 从固定的 rt55 epoch 32 checkpoint 做 weight-only 初始化，optimizer、scheduler、
-epoch 计数和 best-loss 状态全部重新开始；DiTing encoder 继续冻结，model parameters 与
-rt55 完全一致。
-
-- train：50% 保留 rt55 协议，50% 使用 causal random geometry；
-- validation/zero-shot：100% random geometry，固定 seed 和 1/3/5/10/20/40/90 秒；
-- 输入数从 1/3/5/8/12/16 中抽取上限，只从当前时刻已触发且有有效波形的完整事件台站
-  集合中采样，发生在 25 台站截断之前；
-- 随机分支至少保留一个有限 PGA 的非输入台站，PGA targets 明确排除输入台站；
-- 未选输入 waveform 与 sample-valid mask 同时归零，避免坐标 slot 被误当作有效波形；
-- 新输出会记录 random mask 是否生效、候选/请求/实际输入台站数直方图。
-
-入口：`tools/run_rt56_random_geometry_slurm.sh`。`ACTION=all` 会提交 zero-shot 与
-fine-tune 两个无依赖并行 job；默认只允许 dry-run，真实提交必须设置 `CONFIRM_RT56=1`。
-截至本文更新，代码和脚本已准备完成，但本会话未替用户调用 `sbatch`。
-
-### 2.9 Hi-net 年度原始归档与审计
-
-Hi-net 工作流保留 CNT/CH 原始 bytes 的唯一永久副本，每年一个 HDF5，支持 SHA256
-回读校验和事务恢复，不额外永久保存 MiniSEED/SAC/NPZ waveform shard。
-
-2026-08-11 审计：
-
-- 14,153 个源事件；已提交 12,708；下载波形 12,392；无匹配台站 316；未归档 1,445；
-- 25 年中 12 年 complete；2000–2003 没有成功波形，主要是提供端无数据；
-- 270,050 个请求台站行中，949 行缺竖直分量、1,086 行缺完整三分量；影响 551 个
-  已下载事件；
-- 当前数值是 raw counts，不是响应校正后的物理速度；
-- 新下载器已增加 300 s timeout、最多 40 station/batch、整窗失败后的连续分钟回退、
-  三分量 channel table 与 CNT 样点覆盖校验；任一批次失败时事件不提交；
-- 新校验不追溯改写历史 551 个受影响事件，训练时必须使用台站级可用性 mask；
-- 审计报告在 `reports/hinet_dataset_audit_20260811/`。
+```text
+docs/ai/CODEX_RESULT_20260912_RT57_GTNP_V2_VALIDATION.md
+docs/ai/CODEX_RESULT_20260915_RT58_WATF_VALIDATION.md
+docs/ai/CODEX_RESULT_20260920_RT59_DUAL_OBJECTIVE_TRANSPORT_V3_VALIDATION.md
+docs/ai/CODEX_RESULT_20260923_RT60_CONTRAST_READOUT_VALIDATION.md
+docs/ai/CODEX_RESULT_20260928_RT61_WAVE_GEOMETRY_VALIDATION.md
+reports/rt57*  reports/rt58*  reports/rt59*  reports/rt60*  reports/rt61*
+```
 
 ## 3. 最近的重要修改
 
-### 3.1 全量训练、resume 与数据加载
+### 3.1 V01 实现文件
 
-| 文件 | 修改 | 原因 |
+| 文件 | 改动 | 原因 |
 |---|---|---|
-| `gemini_util_light.py` | storage-valid mask 回退使用 `record_start_sample` | 排除年度 HDF5 前置补零 |
-| `loader_light.py` | versioned metadata cache、HDF5 identity、精简列、原子发布 | 25 shard 加速且避免 DDP 半写 cache |
-| `train_light.py` | config `extends`/环境变量、多 shard generator、rank0 cache 预热、固定 DDP global index、resume-aware epoch sampling、epoch override | 支持 rt55 全量严格续训 |
-| `train_light.py` | scheduler post-step checkpoint 标记与 legacy replay | 修复恢复时 ReduceLROnPlateau 少一步 |
-| `train_light_slurm.sh` | 安全解析环境变量 weight path | 支持超算 launcher 覆盖路径 |
-| `pga_configs/...rt55...json` | 25 年 KNET-only、legacy+mask、no DPK、固定 normalization | 固定 rt55 实验定义 |
-| `tools/run_rt55_japan_full_2000_2024_slurm.sh` | smoke/full、last-only resume、epoch target、active-job guard、dry-run | 安全提交和续训 |
-| `tools/validate_japan_full_training_data.py` | schema、全量/抽样、mask、cache、manifest 检查 | 上传后验证数据兼容性 |
-| `docs/japan_full_training_2000_2024.md` | 数据、上传、训练、resume、eval 说明 | 固化操作协议 |
+| `tools/velocity_waveform_backend.py` | archive 探测、CNT 解码、灵敏度转换、worker reader pool | 原训练 HDF5 与 Hi-net archive schema 不同 |
+| `tools/prep_padding_protocol.py` | 稳定模板分配和 mask-first P 前删除 | 构造严格配对缺失干预 |
+| `tools/build_v01_paired_manifest.py` | split 继承、source/query 分离、两套 cache、provenance | 防 split 漂移、坐标伪造和波形复制 |
+| `gemini_util_light.py` | V01 opt-in intervention/support/source-role/provenance | 复用旧 generator 且保持 RT55 默认 |
+| `loader_light.py` | frozen split manifest | 过滤前固定原事件划分 |
+| `train_light.py`、`eval_checkpoint.py` | V01 透传和导出 | 复用训练/评估主链 |
+| `pga_configs/v01_*.json` | 三臂和 normal/random validation 配置 | 固定实验合同 |
+| `tools/analyze_v01_padding_controls.py` | point metrics 和 paired cluster CI | 固定基础统计 |
+| `tools/run_v01_prep_padding_controls_slurm.sh` | 全流程 Slurm 编排 | 用户在超算一键提交 |
+| `tests/test_v01_*.py` | 单位、mask、配对、cutoff、bootstrap 测试 | 防数据契约回归 |
+| `docs/v01_velocity_prep_padding.md` | 数据路径、运行和回传说明 | 超算操作入口 |
 
-launcher 的旧 Bash 空数组 `resume_args[@]: unbound variable` 已修复：现在先构造必定非空
-的 `train_args`，再追加可选参数。不要复制早期 launcher 写法。
+### 3.2 最近四个 launcher 修复
 
-### 3.2 formal eval 与 test
-
-| 文件 | 修改 | 原因 |
-|---|---|---|
-| `eval_checkpoint.py` | test split、split 选择、formal metrics、roll permutation、skip diagnostics | 完成正式 validation/test 协议 |
-| `eval_checkpoint_slurm.sh` | 单 checkpoint 输出、metrics JSON、参数白名单和输出检查 | 可靠提交独立 eval |
-| `tools/eval_rt55_validation_normal_roll_slurm.sh` | normal/roll 分离、overwrite guard、dry-run | 解决长任务超时后的可续跑性 |
-| `tools/eval_rt55_test_formal_slurm.sh` | test 数量审计、显式确认、固定输出名、禁止覆盖 | 防止误跑/重复使用 test |
-| `tests/test_eval_checkpoint_formal.py` | split、NLL、valid target、roll 测试 | 锁定指标语义 |
-| `tests/test_scheduler_checkpoint_resume.py` | legacy/new scheduler 恢复测试 | 防止恢复回归 |
-
-### 3.3 rt56 random geometry
-
-| 文件 | 修改 | 原因 |
-|---|---|---|
-| `gemini_util_light.py` | causal full-event random input mask、非输入 PGA target sampling、诊断字段 | 支持任意因果台站到任意非输入位置 PGA |
-| `train_light.py` | nullable load/transfer path、generator 日志、继承合并后统一展开环境变量 | weight-only ep32 初始化且避免被子配置覆盖的父占位符提前报错 |
-| `eval_checkpoint.py` | random geometry 元数据收集和 formal metrics | 审计实际随机台站数分布 |
-| `pga_configs/...rt56...json` | ep32 初始化、50/50 mixed train、100% random val | 固定新实验协议 |
-| `tools/run_rt56_random_geometry_slurm.sh` | 双任务、路径/输出/job guard、dry-run | 安全并行提交 zero-shot 和 fine-tune |
-| `tests/test_causal_random_geometry.py` | helper、端到端 generator、rt55/rt56 config 兼容测试 | 防止泄漏和 rt55 回归 |
-
-2026-08-25 首次超算提交暴露了父 rt55 的 `${JAPAN_FULL_WEIGHT_PATH}` 在 child merge 前
-被展开的问题。加载器现已改为完整继承合并后统一展开，rt56 launcher 也显式导出该父级
-占位符以兼容超算上的旧代码副本。失败发生在创建模型和权重目录之前，不是训练中断恢复。
-
-### 3.4 Hi-net
-
-| 文件 | 修改 |
+| commit | 修复 |
 |---|---|
-| `download_hinet.sh`、`download_hinet_continue.sh` | 年度倒序、重试、续传、transport 参数 |
-| `tools/download_hinet_velocity.py` | annual transaction、分批、分钟回退、错误根因和严格通道校验 |
-| `tools/hinet_raw_archive.py` | byte-exact HDF5 writer/reader、SHA256、恢复和 worker-safe 读取 |
-| `tools/plot_hinet_accel_velocity_qc.py`、`hinet_qc.sh` | 直接从年度 archive 做波形 QC |
-| `tools/audit_acceleration_hinet_datasets.py` | 全量目录/归档审计与抽样波形 QC |
-| `docs/hinet_velocity_download.md` | 下载、恢复、schema、DataLoader 使用说明 |
-| `tests/test_hinet_raw_archive.py`、`tests/test_download_hinet_archive_flow.py` | 归档事务与下载回退测试 |
+| `0411b17` | 代码默认路径改为 `_vel`，速度根改为 `japan_data/hinet_data` |
+| `80a539e` | 兼容旧 Bash 的 arm 解析 |
+| `492465c` | RT55 产物根改到 `team_pytorch-zhangb-diting-backbone-attnpool-team` |
+| `04a23a3` | preflight 从 16 CPU/192000M 降为 8 CPU/102400M |
 
-## 4. 当前架构与设计决策
+路径或 launcher 再变化时，source-manifest 哈希也会变化。不得继续使用旧哈希
+`a9ce...`、`72ca...`、`7cfc...` 或 `3179...`。
 
-### 4.1 主链路
+## 4. 当前架构和设计决策
 
-```text
-raw waveform
-  -> storage-valid mask
-  -> per-channel normalization（padding 保持 0）
-  -> frozen DiTing encoder（f2/f3/f4/x）
-  -> trainable legacy station adapter
-  -> amplitude scale embedding
-  -> coordinate fusion
-  -> TEAM station transformer
-  -> event cross-attention
-  -> target cross-attention
-  -> PGA 3-component MDN + magnitude/location auxiliary heads
-```
+### 4.1 不修改模型计算
 
-`freeze_mode=none` 不代表 encoder 可训练；full model 初始化后 encoder 被显式
-`requires_grad=False`。
+V01 固定 RT55 模型参数和 forward；不修改 `gemini_models.py`、DiTing、attention、
+readout、MDN、loss、内部幅值计算或 tensor shape。速度输入是数据协议变化，不是新模型。
+所有 V01 开关默认关闭，因此旧 RT55 loading/inference 路径应保持不变。
 
-### 4.2 mask 与物理时间
+### 4.2 source 和 query 是两个独立实体
 
-- storage-valid mask 只排除补零/记录外区域，不等于 post-P event mask；
-- P 前可以是真噪声，也可以是 padding，不能混为一谈；
-- 诊断必须同时报告 valid waveform seconds 和 post-P valid seconds；
-- 不要只报告 token 数。
+- 输入 source 使用真实 Hi-net/配对加速度传感器 ID 和真实 source 坐标；
+- PGA query 使用原 KNET 目标 ID、坐标和标签；
+- 近邻匹配只表示 paired-site，不等于同一传感器或直接观测目标；
+- query-only 行不能进入 waveform input slot；
+- 同一速度波形不能复制成多个输入台站。
 
-### 4.3 DPK 与 station adapter 选择
+这是硬约束。不要为扩大样本量伪造坐标、扩大匹配半径或把 surface/borehole 当同一站。
 
-- 用户不接受手工 P/DET confidence gate 作为主融合方案；
-- rt55 关闭所有 DPK cache/token/residual，减少迁移和置信度校准依赖；
-- rt52 legacy、rt53 NLTA-S、rt54 NLTA-M 的 validation roll delta 都约 0.009，NLTA-S/M
-  没有相对 legacy 的 Pareto 优势；
-- 不要直接上 NLTA-L，也不要原样重复 event+residual 或可关闭 scalar gate；
-- 若后续改结构，优先评估轻量解冻 DiTing 最后 blocks，backbone lr 取 adapter lr 的
-  约 0.05–0.1，并做相同 split/seed 的严格消融。
+### 4.3 单位和响应
 
-### 4.4 数据与计算
+Hi-net CH `counts_per_physical_unit` 只做灵敏度换算：输出是 m/s 的
+`velocity_sensor_output`。仪器频率响应形状仍在；这不是完整反褶积后的宽频真实地动速度。
+A-pair 与速度的比较还包含仪器、深度、场地、频响和输入域差异，不能单独归因于 padding。
 
-- 保留 25 个年度 HDF5，不合并；
-- metadata cache 可重建，不复制 waveform；
-- corrected HDF5 不再 origin-correct，不转 float32，不生成 DPK cache；
-- 登录节点不做全量 HDF5 扫描或正式推理；
-- 精确续训应保持原 world size/global batch，但 rt55 当前不建议再续；
-- resolved `weight_dir/config.json` 是 eval 的权威配置，不用原始含 `auto`/环境变量配置。
+### 4.4 干预和时间协议
+
+- `vfull` 与 `vmissing` 共用同一 velocity cache；
+- 模板只来自 frozen train split；
+- 只删 `time < P - retained_preP` 的原有效样本；
+- P 点、P 后样本和原 storage 缺口不改变；
+- 删除发生在中心化/归一化之前，填零且 mask=False；
+- 两视图共享 event/source/query、absolute cutoff 和 crop anchor；
+- test event 不物化、不评估、不参与模板。
+
+### 4.5 训练合同
+
+- 同一 RT55 epoch-32 weight-only 起点；
+- 新 optimizer/scheduler/epoch/best state；
+- DiTing encoder 冻结，按 RT55/RT56 规则训练其余原模块；
+- seed 42，8 个新 epoch，固定 epoch 8 比较；
+- 50% normal-style + 50% causal-random train；
+- LR/adapter LR/TEAM LR 都是 1e-4；
+- 相同 batch/world-size/update 计划；
+- validation normal/random，绝不自动触发 test。
+
+### 4.6 缓存和 I/O tradeoff
+
+preflight 会为 2004--2024 生成 velocity 和 A-pair 两套 derived HDF5，并计算源 archive
+和加速度 shard 哈希。这样训练 I/O 可控且复现性强，但首次 preflight 可能耗时、占用大量
+临时/永久空间。`vmissing` 不复制第三套大文件。不要在 preflight 未完成时手工启动训练。
 
 ## 5. 未完成事项（按优先级）
 
-### P0：完成正在运行的 formal test 并归档
+### P0：确认最新 launcher 已部署并成功提交 preflight
 
-1. 在超算读取 `full_model_best.pth` 和 `full_model_last.pth` 元数据，确认分别为 epoch
-   32 和 34，并确认 epoch 32 loss 为 `0.012362980283796787`。
-2. 若还没有固定副本，使用不覆盖方式归档：
+1. 在超算覆盖最新 `tools/run_v01_prep_padding_controls_slurm.sh`。
+2. 核验 split、ep32 checkpoint、21 个 2004--2024 archive 和可用空间。
+3. 检查是否有 V01 残留 job 或半成品输出。
+4. 用 uploaded-sha256 模式 dry-run；实际 hash 必须为当前上传内容打印的值。
+5. 正式提交 `ACTION=all ARMS=vfull,vmissing,apair`，保存所有 job IDs。
 
-   ```bash
-   cp -n full_model_best.pth full_model_best_ep32.pth
-   cp -n full_model_last.pth full_model_last_ep34.pth
-   ```
+### P0：监控 preflight，而不是重复提交
 
-3. 检查用户所述 epoch 20/32 test jobs 的 `squeue`、日志与输出；不要重复提交同一输出。
-4. jobs 完成后下载 TXT、NPZ、metrics JSON 和新 checkpoint 元数据，不要只下载标量
-   CSV；放入一个新的本地目录或保留原文件名，避免自动生成 `_1/_2` 后失去语义。
-5. epoch 32 是预先固定的主结果；epoch 20 仅作事先声明的 sensitivity reference，不能
-   根据两者 test 表现重新选择模型。roll 是稳健性对照，也不参与选择。
+- 检查 `v01-preflight` 的日志、运行时间、MaxRSS、磁盘增长；
+- 如果因 23:50:00 超时，先保留 `.tmp`/日志并分析 builder 是否支持安全续跑；当前 builder
+  默认拒绝覆盖，不要直接 `--overwrite` 或删目录；
+- 如果内存仍不满足，可显式降至 `PREFLIGHT_MEM=96000M`，但先看分区节点配置；
+- preflight 成功后核验 `protocol_lock.json`、`preflight_summary.json` 和实际 cohort counts。
 
-### P0：运行 rt56 zero-shot 与 mixed-random fine-tuning
+### P0：训练和验证完成后回传产物
 
-1. 同步新 commit 后先在超算执行 `DRY_RUN=1 ACTION=all`；
-2. 核对源 checkpoint 是远端 `full_model_best_ep32.pth`、25 个年度 shard 均存在、新权重
-   目录为空，且 zero-shot 输出未存在；
-3. 用 `CONFIRM_RT56=1 ACTION=all` 提交两个并行任务；
-4. fine-tune 只按 random-geometry validation 选择 checkpoint；后续 retention eval 要用
-   原 resolved rt55 config 加载所选 rt56 checkpoint，不能修改 rt55 正在运行的 test。
+至少回传：
 
-### P1：结果整理
+```text
+V01_RUN_ROOT/derived_cache/protocol_lock.json
+V01_RUN_ROOT/derived_cache/preflight_summary.json
+V01_RUN_ROOT/derived_cache/cohort_counts_by_year.csv
+V01_RUN_ROOT/derived_cache/cohort_audit.csv
+V01_RUN_ROOT/weights_*/config.json
+V01_RUN_ROOT/weights_*/split_events.csv
+V01_RUN_ROOT/weights_*/split_stations.csv
+V01_RUN_ROOT/weights_*/full_model_init.pth metadata/hash
+V01_RUN_ROOT/weights_*/full_model_last.pth metadata/hash
+V01_RUN_ROOT/weights_*/训练日志和 scalar CSV
+V01_RUN_ROOT/eval/*.{npz,metrics.json,txt}
+V01_RUN_ROOT/report/*
+V01_RUN_ROOT/logs/*
+sacct 表
+```
 
-- 汇总 validation/test overall 和 1/3/5/10/20/40/90 s；
-- 同时报告 station count、target type、lead time、valid/post-P seconds、PGA 强弱和样本量；
-- 校准结果必须说明 Brier threshold 与 coverage 定义；
-- epoch 20 可列为 validation sensitivity reference，不在 test 上比较并重新选择；
-- 正式论文至少补 2 seeds，理想 3 seeds；rt55 当前仅 seed 42。
+不要把 raw Hi-net 波形或大 checkpoint 直接推到 GitHub；可把结果包放 `chaosuan_res/`，
+Git 只保存轻量摘要、哈希、表和批准公开的固定案例。
 
-### P1：修 station-pool diagnostics
+### P1：补齐 V01 规范中的低成本诊断
 
-- 按 `station_valid` 聚合所有有效 station，不再读取最后 slot；
-- all-invalid station 不进入平均；
-- 同时记录有效 token、valid seconds、post-P seconds；
-- 添加“最后 slot 为 padding 仍能得到正确聚合”的回归测试；
-- 在固定 eval split 上统计，不依赖每 epoch 单 batch 快照。
+当前尚未自动化：
 
-### P1：决定下一模型实验
+- production FullModel masked-filler invariant；
+- zero-as-valid diagnostic；
+- P 前固定 0/1/3/5/full dose inference；
+- A-historical stage-0 参考；
+- 完整概率、空间 field、calibration 图表和全部分层表。
 
-formal test 和多 seed 计划确定后再选：
+这些是明确缺口，不得在结果报告中写成已完成。优先先让核心三臂正常运行；不要重新加一串
+smoke。核心结果回来后，根据主效应和 ChatGPT 审阅决定最小补充诊断。
 
-- 若当前性能满足 baseline 目标，冻结 rt55，把 collapse 作为独立 representation 研究；
-- 若要改善早期/未触发目标，优先研究 encoder 末层解冻、物理时间上下文或更稳健的
-  station-local learning objective；
-- 不要仅因 raw cosine 高就否定系统，roll 已给出直接因果对照；
-- 不要仅因 roll gap 大就声称 station representation 已充分多样化。
+### P1：完善分析器
 
-### P2：Hi-net
+当前 `tools/analyze_v01_padding_controls.py` 主要提供 MAE/RMSE/bias/tail/within-threshold
+和两类 paired MAE CI。最终报告还需核验 eval NPZ 中的 MDN 输出、NLL/Brier/coverage、
+common-remote 分组、field range/pairwise difference、干预剂量和 event-macro 稳健性。
 
-- 用新分批/分钟回退机制处理剩余技术失败；长期无数据应进入可审计终态，不无限重试；
-- 训练用速度时先生成 station-row availability mask；
-- 物理速度研究前完成响应/灵敏度校正和单位追踪；
-- 历史已提交归档不原地改写，修复应新建版本或外置质量表。
+### P2：数据下载
 
-## 6. 已知问题与风险
+当前本地盘只读且下载停止。V01 已上传固定快照，不要在计算节点恢复下载。若未来补齐
+1,445 个未归档事件，应先把盘安全重挂为可写并独立恢复 downloader；新快照必须用新
+数据身份，不能静默替换正在使用的 V01 archive。
 
-1. 本地两个 `.pth` 都是 epoch 20；最新 epoch 32/34 checkpoint 只在超算，或尚未被
-   下载。文件名相同不代表内容最新。
-2. 本地带 `_1` 的 eval 文件是 epoch 32；不带后缀的是 epoch 20。带 `_2` 的训练标量
-   是后续 24–33 step。后缀来自重复解压/复制碰撞，不是实验编号。
-3. 本地标量缺 step 20–23；不能画成连续完整曲线而不标注缺口。
-4. 远端 epoch 32/34 checkpoint 的 scheduler 完成标记尚未在本地核验。
-5. formal test 尚无本地结果；不能用 validation 代替 test，也不能在 test 后调模型。
-6. test launcher 默认禁止覆盖。若已有文件，先鉴别是完整结果还是超时残留；不要直接
-   `ALLOW_OVERWRITE=1`。
-7. validation normal+roll 曾因单任务时限不足而超时；分开提交已解决。test 样本约为
-   validation 两倍，建议 `SLURM_TIME=3-00:00:00`。
-8. split 是每年内部固定划分，不是 unseen-year；不能声称时间外推泛化。
-9. 137 个事件 correction provenance 缺失；严格数据质量消融应另建配置，不原地改 HDF5。
-10. `station_pool_*` 诊断仍是最后 station slot，部分值为 0 只说明最后 slot 是 padding。
-11. 多数训练 `diag_*` 是单 batch 快照，不是完整 split 均值。
-12. rt55 只有一个 seed；单次 test 不支持稳健显著性结论。
-13. 本地 worktree 曾混有 Hi-net、PPT 和训练多批文件。不要 reset、checkout 或批量删除。
-14. `logs.zip`、PPT 生成目录、lock/state 和大图属于本地产物，不应无审查地加入源码提交。
-15. GitHub SSH 端口 22 在 2026-08-21 曾被网络中间层关闭；HTTPS `ls-remote` 可用。
-16. Hi-net archive identity 很严格；科学选择参数改变后使用新 archive，transport timeout/
-    batch/fallback 可以在同一 partial archive 上调整。
+## 6. 已知问题和风险
+
+1. **HPC 成功状态未知。** 最后一次用户反馈仍是 `sbatch` 内存规格失败；最新资源修复后
+   没有收到成功 job ID。
+2. **超算是上传目录，可能没有 `.git`。** 应使用 `SOURCE_IDENTITY_MODE=uploaded_sha256`，
+   不能要求 `EXPECTED_GIT_COMMIT`。
+3. **旧脚本哈希全部失效。** 当前预期是 `bccb...`，但仍以超算打印值为准。
+4. **preflight 是重量级物化，不只是轻量审计。** 它会读/哈希大文件并写两套 cache；
+   可能受时限和空间限制。
+5. **partial archive 是不完整数据快照。** 允许使用不代表可称全量完整 Hi-net 数据。
+6. **A-pair 主要是 KiK/Hi-net bridge。** 129,636 source rows 中只有 2,094 是
+   KNET-compatible；不能称为历史 RT55 KNET-only 对照。
+7. **单 seed、短预算。** V01 的 8 epoch 只比较受控条件，不证明速度或加速度各自充分
+   训练后的性能上限。
+8. **干预剂量不均。** 一些样本原本没有足够 P 前上下文，不能把 nominal 模板时长当
+   实际删除时长。
+9. **当前分析器不满足完整论文级 V01 规范。** 不能只凭 `cross_eval_metrics.csv` 宣称
+   padding 是主要瓶颈。
+10. **旧 `PROJECT_CONTEXT.md` 是 2026-09-02 的 RT55/RT56 快照。** 其指标仍可作为背景，
+    但其中活跃分支和当前任务已过期。
+11. **RT57--RT61 validation 被反复用于开发。** 不把这些 validation 结果写成独立泛化
+    或 held-out test 证据。
+12. **结果包常不含 checkpoint body。** 以前 RT58--RT61 报告只能核验导出和 metadata；
+    V01 回传时要保存 checkpoint hash/epoch，不根据文件名认身份。
+13. **可选 xFormers/Apex 警告通常不是致命错误。** 判断失败要看最终 traceback 和退出码。
+14. **时间上限存在站点隐藏约束。** 过去 `3-00:00:00` 实际约一天被杀；V01 默认
+    `23:50:00` 是有意规避，不要因 partition 显示 unlimited 就假设可跑多天。
+15. **工作树有 `tmp.tar.gz`。** 它属于用户，保持未跟踪；禁止 `git add -A`。
 
 ## 7. 下一会话第一步
 
-不要再改 rt55 模型，也不要继续 rt55 原设置训练。
-
-第一步是在超算确认正在运行的 epoch 20/32 formal test 和 rt56 同步状态：
+第一步不是改模型，而是在超算确认最新 V01 launcher、输入文件和队列状态。
 
 ```bash
-cd /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team
+cd /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel
 
-RUN=weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42
+export WORKDIR=$PWD
+export ACC_DATA_ROOT=/public/home/test_bigmodel/seismogram/zb/origin_corrected_diting_vel_acc_vs30
+export VELOCITY_DATA_ROOT=/public/home/test_bigmodel/seismogram/zb/japan_data/hinet_data
+export RT55_RUN_ROOT=/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42
+export FROZEN_SPLIT_MANIFEST=$RT55_RUN_ROOT/split_events.csv
+export RT55_EP32_CHECKPOINT=$RT55_RUN_ROOT/full_model_best_ep32.pth
+export V01_RUN_ROOT=$WORKDIR/v01_velocity_prep_padding_seed42
+export SOURCE_IDENTITY_MODE=uploaded_sha256
 
-python - <<'PY'
-import torch
-from pathlib import Path
-
-root = Path("weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42")
-for name in ("full_model_best.pth", "full_model_last.pth"):
-    ckpt = torch.load(root / name, map_location="cpu")
-    print(name, {
-        "epoch": ckpt.get("epoch"),
-        "loss": ckpt.get("loss"),
-        "scheduler_step_completed": ckpt.get("scheduler_step_completed"),
-        "scheduler_monitor_loss": ckpt.get("scheduler_monitor_loss"),
-    })
-PY
-
-squeue -u "$USER" -n team-rt55-test
-ls -lh "logs/$RUN"/eval_test_best_normal.* 2>/dev/null || true
-
-DRY_RUN=1 ACTION=all bash tools/run_rt56_random_geometry_slurm.sh
+test -s "$FROZEN_SPLIT_MANIFEST"
+test -s "$RT55_EP32_CHECKPOINT"
+find "$VELOCITY_DATA_ROOT/archive" -maxdepth 1 -type f -name 'hinet_raw_*.h5' | sort
+df -h "$WORKDIR" "$VELOCITY_DATA_ROOT"
+squeue -u "$USER" | grep -E 'v01|JOBID' || true
+find "$V01_RUN_ROOT" -maxdepth 2 -type f -printf '%p %s\n' 2>/dev/null | head -n 100
 ```
 
-只有在确认 formal test 实际未提交、没有输出且用户仍要求补交时，才使用原 rt55 test
-launcher；不要在用户所述任务仍运行时重复提交。rt56 的真实提交命令为：
+若没有运行作业且没有需要保留的非空 V01 输出，先 dry-run：
 
 ```bash
-CONFIRM_RT56=1 ACTION=all bash tools/run_rt56_random_geometry_slurm.sh
+unset EXPECTED_SOURCE_MANIFEST_SHA256
+
+DRY_RUN=1 ACTION=all ARMS=vfull,vmissing,apair \
+  bash tools/run_v01_prep_padding_controls_slurm.sh
 ```
+
+确认打印的 source manifest 和资源为：
+
+```text
+source_manifest_sha256=bccb84254bacdd6aa8878bec5deaa17aaa6033139277853bccab1c7184109afe
+v01-preflight: cpus-per-task=8, mem=102400M, time=23:50:00
+```
+
+再正式提交：
+
+```bash
+export EXPECTED_SOURCE_MANIFEST_SHA256=bccb84254bacdd6aa8878bec5deaa17aaa6033139277853bccab1c7184109afe
+
+CONFIRM_V01=1 DRY_RUN=0 ACTION=all ARMS=vfull,vmissing,apair \
+  bash tools/run_v01_prep_padding_controls_slurm.sh
+```
+
+立即记录脚本打印的 preflight/train/eval/analyze job IDs。若目标只是先验证 cache，可用
+`ACTION=preflight`；不要同时再提交 `ACTION=all` 造成重复物化。
 
 ## 8. 不要做什么
 
-- 不要继续相同设置续训并在更多 validation 波动中挑 checkpoint。
-- 不要用本地 epoch 20 `.pth` 冒充 epoch 32。
-- 不要从 best 恢复训练；last 才是恢复点，best 是推理/选择点。
-- 不要看到 test 后切换 epoch 20/32、阈值、seed 或分桶定义。
-- 不要把 validation objective 当 MAE，也不要把 validation 指标当 test。
-- 不要覆盖已有 test 输出，除非先证明它只是失败残留并保留审计记录。
-- 不要把 station-pool token count 为 0 解读为所有波形被 mask。
-- 不要只报告总体均值，忽略早期、未触发、长 lead-time 和样本量。
-- 不要声称 roll 证明 adapter 本身不 collapse；它证明最终系统使用 matched waveform。
-- 不要声称每年内部 test 是 held-out-year。
-- 不要重新启用 DPK 或手工 confidence gate，除非设计独立、同 split 的新消融。
-- 不要直接上 NLTA-L；NLTA-S/M 已无 Pareto 优势。
-- 不要重新 origin-correct 已校正 HDF5，不要合并年度 HDF5，不要复制 float32 波形。
-- Hi-net 不要同时永久保存 CNT、MiniSEED 和 decoded waveform shards。
-- 不要把 Hi-net raw counts 称为物理速度。
-- 不要执行 `git reset --hard`、`git checkout --`、批量删除或无审查 `git add -A`。
+- 不要修改 `gemini_models.py`、DiTing、PGA 标签、MDN/loss 或 RT55--RT61 原配置来绕过
+  V01 数据问题。
+- 不要用 RT59/RT61 checkpoint 替换预注册的 RT55 ep32 V01 起点。
+- 不要在过滤速度交集后重新随机 split；必须先继承 frozen RT55 split。
+- 不要读取 test 波形建模板、调协议、挑 epoch、选阈值或写主结论。
+- 不要把 validation 结果改名为 test。
+- 不要把 raw counts 直接叫 m/s，也不要对 sensitivity-only 数据声称完整去响应。
+- 不要把速度 source 坐标替换成 KNET query 坐标，不要复制一个速度波形成多台输入。
+- 不要把 A-pair 冒充 KNET-only 或同仪器严格对照。
+- 不要边下载边训练，不要上传/使用 `.lock`，不要原地改写 partial archive。
+- 不要看到 preflight 超时就删除 cache 或加 `--overwrite`；先审计临时文件和可恢复性。
+- 不要重复此前已经完成的 query-geometry smoke、waveform/station mismatch smoke 或 RT57--RT61
+  大矩阵诊断。
+- 不要自动增加 epoch、扫 LR/mask/dose/seed，或根据 validation 继续事后调参。
+- 不要只报告总体 MAE；至少区分 protocol、时间、input/non-input/common-remote、事件数和
+  target 数，并同时看概率与空间指标。
+- 不要执行 `git reset --hard`、`git checkout --`、批量删除、`git add -A`。
+- 不要删除或提交用户未跟踪的 `tmp.tar.gz`。
 
 ## 9. 关键上下文速记
 
-### 9.1 formal validation 文件映射
+### 9.1 新会话阅读顺序
 
-本地目录：
+1. `AGENTS.md`
+2. 本 `SESSION_SUMMARY.md`
+3. `docs/ai/V01_prompt.md`
+4. `docs/ai/V01_VELOCITY_PREP_PADDING_CODEX_PROMPT_20260929.md`
+5. `docs/ai/CODEX_RESULT_20260929_V01_VELOCITY_PADDING.md`
+6. `docs/v01_velocity_prep_padding.md`
+7. V01 launcher、config、builder、backend、tests
+
+`docs/ai/PROJECT_CONTEXT.md` 只作为 RT55/RT56 历史快照；不要用其中旧分支覆盖本交接。
+
+### 9.2 Repo 结构
 
 ```text
-../chaosuan_res/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/
+team_pytorch_query_geometry_diagnostics/
+  AGENTS.md
+  SESSION_SUMMARY.md
+  train_light.py
+  eval_checkpoint.py
+  gemini_util_light.py
+  gemini_models.py
+  loader_light.py
+  train_light_slurm.sh
+  eval_checkpoint_slurm.sh
+  pga_configs/v01_*.json
+  tools/velocity_waveform_backend.py
+  tools/prep_padding_protocol.py
+  tools/build_v01_paired_manifest.py
+  tools/analyze_v01_padding_controls.py
+  tools/run_v01_prep_padding_controls_slurm.sh
+  tests/test_v01_velocity_backend.py
+  tests/test_v01_padding_controls.py
+  docs/v01_velocity_prep_padding.md
+  docs/ai/
+  reports/
 ```
+
+### 9.3 Launcher 常用变量
 
 ```text
-eval_validation_best_normal.metrics.json              # epoch 20
-eval_validation_best_waveform_station_roll.metrics.json # epoch 20
-eval_validation_best_normal.metrics_1.json            # epoch 32
-eval_validation_best_waveform_station_roll.metrics_1.json # epoch 32
-train_epoch_loss_2.csv / val_epoch_loss_2.csv          # scalar step 24–33
-full_model_best.pth / full_model_last.pth              # 两者均为本地旧 epoch 20
+WORKDIR, ACC_DATA_ROOT, VELOCITY_DATA_ROOT, RT55_RUN_ROOT
+FROZEN_SPLIT_MANIFEST, RT55_EP32_CHECKPOINT, V01_RUN_ROOT, V01_CACHE_ROOT
+SOURCE_IDENTITY_MODE, EXPECTED_SOURCE_MANIFEST_SHA256, EXPECTED_GIT_COMMIT
+ACTION, ARMS, DRY_RUN, CONFIRM_V01, RESUME_V01, ALLOW_EXISTING_EVAL
+SLURM_PARTITION, SLURM_GRES_RESOURCE, SLURM_ACCOUNT
+PREFLIGHT_CPUS, PREFLIGHT_MEM, PREFLIGHT_TIME
+TRAIN_NODES, TRAIN_GPUS_PER_NODE, TRAIN_TIME
+EVAL_GPUS, EVAL_TIME, SLURM_CPUS_PER_TASK, SLURM_MEM
+CONDA_ENV, MODULE_UNLOAD, MODULE_LOADS, DITING_CONFIG, DITING_PRETRAINED
 ```
 
-### 9.2 validation 重跑入口
+默认资源：preflight 1 node/8 CPU/102400M/23:50；train 4 nodes x 4 DCU、
+8 CPU/task、102400M/node、23:50；eval 1 DCU、12:00。
+
+### 9.4 Resume 和输出保护
+
+- `ACTION=all` 在 preflight 已生成非空 cache 时可能拒绝覆盖；不要盲目重复。
+- 训练 resume 只在对应 arm 输出非空且存在 `full_model_last.pth`、`config.json` 时使用：
+
+  ```bash
+  CONFIRM_V01=1 DRY_RUN=0 ACTION=train ARMS=vfull RESUME_V01=1 \
+    bash tools/run_v01_prep_padding_controls_slurm.sh
+  ```
+
+- resume 前要核验 protocol/parent/source/data hashes；当前脚本的 resume 身份保护仍不等于
+  完整科学审计。
+
+### 9.5 结果统计约定
+
+- PGA/error 坐标：`log10(m/s^2)`；
+- point estimate：该坐标上的 MDN predictive mixture mean；
+- 核心时间：normal/random 的 1/3/5 s，同时保留 10/20/40/90 s 描述；
+- bootstrap：event ID 聚类，5,000 draws，seed 20260915；
+- 正 paired key 至少包含 event、decision time、query target 和 protocol；
+- 同事件全部时刻/台站应一起重采样；不能按 target 独立 bootstrap；
+- 单 seed CI 不代表训练 seed 不确定性。
+
+### 9.6 Git 操作
 
 ```bash
-ACTION=normal bash tools/eval_rt55_validation_normal_roll_slurm.sh
-ACTION=roll bash tools/eval_rt55_validation_normal_roll_slurm.sh
+git status --short --branch
+git diff --check
+git log -8 --oneline --decorate
 ```
 
-当前 epoch 32 validation 已完成，不要无理由覆盖重跑。
+当前远端活跃分支为 `exp/v01-velocity-prep-padding-control`。GitHub SSH 22 端口在本环境
+不可用时，已验证可通过 `ssh.github.com:443` 推送。只暂存本任务文件，保留
+`tmp.tar.gz` 未跟踪。
 
-### 9.3 test 输出
-
-normal 预期生成：
+### 9.7 权威文档
 
 ```text
-logs/$RUN/eval_test_best_normal.txt
-logs/$RUN/eval_test_best_normal.npz
-logs/$RUN/eval_test_best_normal.metrics.json
+docs/ai/V01_prompt.md
+docs/ai/V01_VELOCITY_PREP_PADDING_CODEX_PROMPT_20260929.md
+docs/ai/V01_TASK_SOURCE_HASHES.md
+docs/ai/CODEX_RESULT_20260929_V01_VELOCITY_PADDING.md
+docs/v01_velocity_prep_padding.md
 ```
 
-可选 roll 使用 `PERMUTATION=roll`，输出 stem 为
-`eval_test_best_waveform_station_roll`。normal 是正式主结果。
-
-### 9.4 当前快速测试
-
-2026-08-23 本地执行通过 28 个测试：
-
-```bash
-python -m unittest -v \
-  tests.test_causal_random_geometry \
-  tests.test_scheduler_checkpoint_resume \
-  tests.test_eval_checkpoint_formal \
-  tests.test_hinet_raw_archive \
-  tests.test_download_hinet_archive_flow
-
-python -m py_compile \
-  train_light.py eval_checkpoint.py loader_light.py gemini_util_light.py \
-  tools/download_hinet_velocity.py tools/hinet_raw_archive.py \
-  tools/plot_hinet_accel_velocity_qc.py \
-  tools/audit_acceleration_hinet_datasets.py \
-  tools/validate_japan_full_training_data.py
-
-bash -n \
-  check_hinet.sh download_hinet.sh download_hinet_continue.sh hinet_qc.sh \
-  train_light_slurm.sh eval_checkpoint_slurm.sh \
-  tools/run_rt55_japan_full_2000_2024_slurm.sh \
-  tools/eval_rt55_validation_normal_roll_slurm.sh \
-  tools/eval_rt55_test_formal_slurm.sh \
-  tools/run_rt56_random_geometry_slurm.sh
-```
-
-测试输出中的 `Please 'pip install apex'` / `xformers` 是可选依赖提示，不是测试失败。
-
-### 9.5 Repo 结构
-
-```text
-team_pytorch/
-  SESSION_SUMMARY.md             # 本交接文档
-  train_light.py                 # 训练、resume、scheduler、多 shard、split export
-  eval_checkpoint.py             # train/val/test、roll、formal metrics
-  gemini_models.py               # adapters、TEAM、readouts、diagnostics
-  gemini_util_light.py           # generator、mask、realtime sampling
-  loader_light.py                # HDF5 metadata/cache/split
-  train_light_slurm.sh           # 通用训练 Slurm
-  eval_checkpoint_slurm.sh       # 通用 eval Slurm
-  pga_configs/                   # 实验配置
-  tools/                         # launchers、validators、Hi-net
-  tests/                         # scheduler/eval/Hi-net 回归测试
-  reports/                       # 实验计划、数据审计、汇报源文件
-  docs/                          # 操作文档
-```
-
-### 9.6 Hi-net 常用入口
-
-```bash
-export HINET_USER='...'
-export HINET_PASSWORD='...'
-bash download_hinet.sh
-```
-
-凭据只通过环境变量提供，不写入仓库。中断后重复同一命令恢复；不要对 corrected HDF5
-再传 `--origin-corrections`。
-
-### 9.7 Git 注意事项
-
-- 提交前先看 `git status --short --branch` 和 `git diff --check`；
-- GitHub SSH 如仍被关闭，可使用 HTTPS fetch/push，但不要在命令行明文写 token；
-- 本地 `logs.zip`、PPTX、生成 slide 图片和 lock/state 文件需保留，但不属于默认源码同步；
-- 任何新 agent 都要先确认这些本地产物是否仍未跟踪，再决定是否另建 artifact release。
+若实际超算文件、job 状态或结果与本文不同，优先相信可核验的 `squeue/sacct`、日志、
+resolved config、checkpoint metadata、NPZ/metrics 和文件哈希，并立即更新本交接文档。
