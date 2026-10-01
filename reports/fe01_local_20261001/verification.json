@@ -1,0 +1,19 @@
+{
+  "tests": 87,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "command": ".venv-fe01/bin/python -m pytest -q tests/test_fe01_*.py tests/test_causal_random_geometry.py tests/test_scheduler_checkpoint_resume.py tests/test_query_geometry_diagnostics.py tests/test_eval_checkpoint_formal.py",
+  "exit_code": 0,
+  "device": "CPU",
+  "sample_types": [
+    "synthetic HDF5",
+    "actual offline STEAD v2 native feature hooks",
+    "legacy synthetic encoder regression"
+  ],
+  "warning": "timm deprecated import; nonfatal",
+  "python_ast_files": 33,
+  "bash_syntax_files": 10,
+  "compileall_exit_code": 0,
+  "additional_regression": "nonfinite predictions/features fail causal audit; native verification applies only to actually audited family"
+}

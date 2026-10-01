@@ -106,3 +106,13 @@ review_request:
 - 活跃开发分支：以用户指定为准；本快照使用 `zhangb/native-scale-adapter-scaling`，不要默认读取 `team_collab_baseline`。
 - 在第一个 Project 对话里要求 ChatGPT 回报它实际读到的 branch、commit，以及 `AGENTS.md` 首个标题。
 - 若连接器只能看到默认分支，应先通过正常 PR/合并流程把这些协作文档带到默认分支，不能假装已经读取当前实验分支。
+
+## 8. FE01 V2 独立工程交付（2026-10-01）
+
+任务 `20261001-fe01-native-window-random-time-v2` 在独立分支
+`exp/fe01-feature-extractor-site-effects`，基于
+`9c95dbfaf92f36b2673d816026cd3f25b91eec66`。V2原生窗口/随机时刻方案替代V1；
+未回写RT55或混入V01。入口：[协议](FE01_PROTOCOL.md)、[代码审计](FE01_REPO_AUDIT.md)、
+[运行手册](FE01_HPC_RUNBOOK.md)、[验证](FE01_VERIFICATION.md)、[证据schema](FE01_ARTIFACT_SCHEMA.md)。
+本轮停止于手动超算交接，NOT_SUBMITTED，87项本地聚焦测试通过；真实DiTing/生产数据/
+设备资源/正式评价仍待手动audit。不要把reports/fe01_local_20261001的合成证据作为Japan结果。

@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "data": "generated synthetic; 9 events, 6 stations; no Japan production reads",
+  "training": "one CPU update, TEAM frontend/common width20; not formal training",
+  "full_width": "RT55 common width1000 synthetic forward + initialization/causal checks for five available families",
+  "picking_weights": "real offline STEAD v2",
+  "diting_1200m": "NOT_RUN: actual weights absent",
+  "hpc": "NOT_SUBMITTED",
+  "replay": "3 validation cases, seconds1..2, actual grid queries and GIF"
+}

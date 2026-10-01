@@ -7111,6 +7111,8 @@ def build_transformer_model(max_stations,
                             pga_mask_sanity_check=False,
                             diting_frontend=None,
                             diting_args=None,
+                            station_waveform_model=None,
+                            full_model_class=None,
                             **kwargs):
     if kwargs:
         print(f'Warning: Unused model parameters: {", ".join(kwargs.keys())}')
@@ -7172,7 +7174,8 @@ def build_transformer_model(max_stations,
         diting_args.diting_station_metadata_dim = emb_dim if diting_station_metadata_mode != 'none' else None
         diting_args.diting_station_metadata_hidden_dim = diting_station_metadata_hidden_dim
         diting_args.diting_station_metadata_scale = diting_station_metadata_scale
-    waveform_model = get_diting_model(diting_args, station_emb_dim=waveform_model_dims[-1])
+    waveform_model = (get_diting_model(diting_args, station_emb_dim=waveform_model_dims[-1])
+                      if station_waveform_model is None else station_waveform_model)
 
     #   Event model
 
@@ -7465,7 +7468,8 @@ def build_transformer_model(max_stations,
             pga_delta_output_models.append(
                 PointOutput((output_mlp_dims[-1],), d=1, bias_mu=0, activation=None)
             )
-    full_model = FullModel(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
+    model_class = FullModel if full_model_class is None else full_model_class
+    full_model = model_class(waveform_model, position_embedding, transformer, mlp_mag, output_model_mag, mlp_loc,
                              output_model_loc, mlp_pga, output_model_pga, skip_transformer, alternative_coords_embedding,
                              metadata_shape, emb_dim, no_event_token, add_event_token, n_pga_targets, dataset_bias,
                              add_constant_to_mixture, n_datasets, waveform_scale_proj=full_waveform_scale_proj,

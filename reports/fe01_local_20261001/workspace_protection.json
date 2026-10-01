@@ -1,0 +1,24 @@
+{
+  "team_pytorch": {
+    "head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+    "unchanged": true,
+    "checks": {
+      "head": true,
+      "status": true,
+      "diff": true,
+      "staged": true
+    },
+    "snapshot_sha256": "0e866d291a217a87980a995eee4ee7895a1cc0a4cb623f7689c06c171190d3eb"
+  },
+  "team_pytorch_query_geometry_diagnostics": {
+    "head": "8f54477ed11bf2623f40121648f7fcc756ada1a2",
+    "unchanged": true,
+    "checks": {
+      "head": true,
+      "status": true,
+      "diff": true,
+      "staged": true
+    },
+    "snapshot_sha256": "ade7a3c9069bd446b214add386a2b81803444506d856a4f22670448e59d54cfe"
+  }
+}

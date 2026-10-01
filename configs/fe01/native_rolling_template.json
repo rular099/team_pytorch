@@ -1,0 +1,8 @@
+{
+  "extends": "base.json",
+  "window": {
+    "protocol": "native_rolling_v2",
+    "rolling_trained": true
+  },
+  "note": "Explicit follow-up only; not included in default run matrices"
+}

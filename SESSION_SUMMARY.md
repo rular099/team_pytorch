@@ -613,3 +613,23 @@ bash download_hinet.sh
 - GitHub SSH 如仍被关闭，可使用 HTTPS fetch/push，但不要在命令行明文写 token；
 - 本地 `logs.zip`、PPTX、生成 slide 图片和 lock/state 文件需保留，但不属于默认源码同步；
 - 任何新 agent 都要先确认这些本地产物是否仍未跟踪，再决定是否另建 artifact release。
+
+## 10. FE01 V2 原生特征窗口对照（2026-10-01）
+
+独立工作目录team_pytorch_fe01，分支exp/fe01-feature-extractor-site-effects，固定基点
+9c95dbfaf92f36b2673d816026cd3f25b91eec66。原team_pytorch与V01活跃工作目录的HEAD/
+tracked diff/staged/untracked清单前后精确一致。按FE01 V2替代V1：四组独立重新训练RT55
+公共下游，使用原生10000/3001/6000样本、5秒pre-P、严格排他cutoff、按能力条件化的
+1–90秒早期加权采样；共同1/3/5/10/20秒noninput等时间/等几何协议MAE选择checkpoint。
+PhaseNet超过25秒、EQT超过54.99秒累计域为N/A，不补分或进入跨域总榜。
+
+公共物理尺度先于归一化，frozen encoder eval/BN/dropout锁定。OriginalTEAM单独修正端口，
+DiTing沿用MAE1200M backbone_attn_pool；legacy代码只加显式factory注入，默认行为不变。
+提供37配置（pilot4、formal12主组+9控制、spatial12）、手动DCU/ROCm scripts、MDN/概率/
+site/spatial分析、真实格点/每秒回放/图源、严格resume和证据封装。87聚焦测试通过，
+CPU合成一次更新与真实STEAD v2权重的原生层/1000维公共指纹/因果检查通过。
+
+NOT_SUBMITTED；未运行正式训练/验证/test/远程任务。实际Japan年度shards、DiTing权重、
+账户/设备环境须用户填写并手动audit；catalog picks/离线滤波不等于真实实时可用性。
+下一步按docs/ai/FE01_HPC_RUNBOOK.md用户手动运行四个pilot再提交正式12组；不自动追加
+滚动训练、模型搜索、速度转换或论文工作。

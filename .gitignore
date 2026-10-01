@@ -1,6 +1,10 @@
 *.pyc
 __pycache__/
 *.pyo
+/.venv-fe01/
+/offline_weights/
+/artifacts/fe01/
+/vendor/
 
 # Notebook cache
 .ipynb_checkpoints/

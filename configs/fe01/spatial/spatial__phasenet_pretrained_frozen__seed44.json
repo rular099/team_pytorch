@@ -1,0 +1,268 @@
+{
+  "fe01": {
+    "enabled": true,
+    "version": 2
+  },
+  "seed": 44,
+  "sampling_seed": 42,
+  "model_family": "phasenet_pretrained_frozen",
+  "native_n_samples": 3001,
+  "query_chunk_size": 15,
+  "query_independence_verified": false,
+  "pretrained_manifest": "${FE01_WEIGHTS_ROOT}/pretrained_manifest.json",
+  "diting_config": "${FE01_CODE_ROOT}/diting/config/diting_1200m_backbone_attnpool.yml",
+  "output_root": "${FE01_OUTPUT_ROOT}",
+  "model_params": {
+    "waveform_model_dims": [
+      1000,
+      1000,
+      1000
+    ],
+    "output_mlp_dims": [
+      64
+    ],
+    "output_location_dims": [
+      150,
+      50
+    ],
+    "wavelength": [
+      [
+        0.01,
+        15
+      ],
+      [
+        0.01,
+        15
+      ],
+      [
+        0.01,
+        10
+      ]
+    ],
+    "mad_params": {
+      "n_heads": 10,
+      "att_dropout": 0.0,
+      "initializer_range": 0.02
+    },
+    "ffn_params": {
+      "hidden_dim": 2000
+    },
+    "transformer_layers": 2,
+    "hidden_dropout": 0.0,
+    "activation": "relu",
+    "n_pga_targets": 15,
+    "location_mixture": 3,
+    "pga_mixture": 3,
+    "magnitude_mixture": 1,
+    "borehole": false,
+    "max_stations": 25,
+    "bias_mag_mu": 5.0,
+    "bias_mag_sigma": 0.5,
+    "bias_loc_mu": 0,
+    "bias_loc_sigma": 2,
+    "event_token_init_range": 0.02,
+    "no_event_token": false,
+    "diting_station_adapter": "legacy",
+    "diting_station_pool_queries": 4,
+    "diting_station_pool_temperature": 1.0,
+    "diting_station_pool_dropout": 0.0,
+    "waveform_scale_gain": 1.0,
+    "waveform_scale_log_divisor": 10.0,
+    "waveform_scale_init_gate": 0.1,
+    "use_amplitude_info": true,
+    "disable_waveform_scale": false,
+    "use_coords_rel": false,
+    "use_coords_abs": true,
+    "use_coords_rel_abs_fusion": false,
+    "coords_abs_weight": 0.1,
+    "coord_fusion_mode": "add",
+    "output_distribution": "mdn",
+    "rotation_anchor": [
+      37,
+      140
+    ],
+    "pga_readout_mode": "target_cross_attention",
+    "event_readout_mode": "event_cross_attention",
+    "query_token_init_range": 0.02,
+    "pga_attention_diagnostics": false,
+    "pga_mask_sanity_check": false,
+    "pga_readout_layers": 4,
+    "event_readout_layers": 1,
+    "readout_ffn_hidden_dim": 1000,
+    "readout_residual_gates": true,
+    "readout_residual_gate_init": 0.0,
+    "readout_ffn_gate_init": 0.0,
+    "readout_first_residual": true,
+    "station_context_gate_init": 0.0,
+    "use_vs30": false,
+    "vs30_reference_mps": 760.0,
+    "vs30_init_gate": 0.0,
+    "rope_coord_mode": "relative_xy_km",
+    "rope_coord_scale": 100.0,
+    "rope_base": 10000.0,
+    "rope_lat_origin": 37.0,
+    "station_context_mode": "off",
+    "use_rope": false,
+    "pga_layerwise_refinement": false,
+    "pga_delta_gate_init": 0.001,
+    "station_delta_gate_init": 0.001,
+    "station_delta_ffn_gate_init": 0.001,
+    "use_target_temporal_pooling": false,
+    "temporal_pool_dim": 256,
+    "temporal_pool_geom_hidden_dim": 128,
+    "temporal_pool_time_basis": 32,
+    "temporal_pool_gate_init": 0.001,
+    "pga_use_event_context": false,
+    "vs30_injection_mode": "additive",
+    "vs30_site_affine_hidden_dim": 64,
+    "vs30_site_affine_scale": 0.1,
+    "vs30_site_affine_sigma_shift": false,
+    "diting_frontend": "vit_adapter",
+    "station_token_weight_mode": "none",
+    "temporal_token_weight_mode": "none",
+    "token_weight_floor": 0.0001,
+    "token_weight_scale": 4.0,
+    "dpk_checkpoint_path": null,
+    "dpk_share_encoder_if_identical": false,
+    "dpk_compare_encoder": false,
+    "dpk_encoder_policy": "current",
+    "dpk_weight_temperature": 1.0,
+    "dpk_weight_resample": "max",
+    "use_pga_temporal_residual": false,
+    "pga_temporal_residual_zero_init": false,
+    "temporal_token_dim": 256,
+    "pga_temporal_residual_mode": "residual",
+    "pga_temporal_residual_use_event_context": false,
+    "pga_temporal_residual_query_source": "readout",
+    "pga_temporal_residual_station_weighting": "attention",
+    "pga_temporal_residual_token_control": "none"
+  },
+  "data": {
+    "root": "${DATA_ROOT}",
+    "split_manifest": "${FE01_SPLIT_MANIFEST}",
+    "station_filter": "knet",
+    "sampling_rate": 100,
+    "component_order": "NEZ",
+    "units": "m/s^2",
+    "upstream_processing": "legacy offline resampling/filtering; online causality not certified"
+  },
+  "window": {
+    "protocol": "native_prefix_v2",
+    "pre_p_seconds": 5,
+    "strict_causal": true,
+    "rolling_trained": false
+  },
+  "realtime": {
+    "bins": [
+      [
+        1,
+        3
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        10,
+        20
+      ],
+      [
+        20,
+        40
+      ],
+      [
+        40,
+        90
+      ]
+    ],
+    "probabilities": [
+      0.2,
+      0.2,
+      0.2,
+      0.15,
+      0.15,
+      0.1
+    ],
+    "draws_per_event": 3,
+    "fixed_times": [
+      1,
+      3,
+      5,
+      10,
+      20,
+      40,
+      90
+    ],
+    "common_times": [
+      1,
+      3,
+      5,
+      10,
+      20
+    ]
+  },
+  "geometry": {
+    "random_station_counts": [
+      1,
+      3,
+      5,
+      8,
+      12,
+      16
+    ],
+    "train_random_probability": 0.5
+  },
+  "training": {
+    "epochs": 12,
+    "max_updates": null,
+    "global_batch": 128,
+    "microbatch": 8,
+    "lr": 0.001,
+    "weight_decay": 0,
+    "gradient_clip": 5,
+    "scheduler": "cosine_fixed_updates",
+    "validation_frequency_epochs": 1,
+    "workers": 0,
+    "early_stopping": false,
+    "res_comps": [
+      "mag",
+      "loc",
+      "pga"
+    ],
+    "res_weight": [
+      0.02,
+      0.02,
+      1.0
+    ],
+    "distribution_mean_loss": {
+      "enabled": true,
+      "weight": 0.1,
+      "loss_type": "huber",
+      "huber_delta": 1.0
+    }
+  },
+  "target_normalization": {
+    "enabled": true,
+    "mean": -1.1228067351176172,
+    "std": 0.4312468402225416,
+    "count": 146842,
+    "source": "2000-2024 default event-level train split, source_network=knt, finite pga_norm_resampled_mps2"
+  },
+  "selection": {
+    "rule": "equal protocols / equal common fixed times / noninput MAE; tie earlier epoch",
+    "threshold_log10_pga": -1.2
+  },
+  "spatial": {
+    "enabled": true,
+    "manifest": "${FE01_SPATIAL_MANIFEST}",
+    "buffer_km": 20
+  },
+  "transfer_model_path": null,
+  "load_model_path": null,
+  "run_id": "spatial__phasenet_pretrained_frozen__seed44",
+  "stage": "spatial"
+}

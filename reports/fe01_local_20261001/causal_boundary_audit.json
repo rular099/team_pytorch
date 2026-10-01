@@ -1,0 +1,108 @@
+{
+  "team_original_scratch": {
+    "status": "PASS",
+    "event_id": "20200101000000",
+    "first_forbidden_sample": 601,
+    "modified": "all raw samples from exclusive cutoff onward \u2192 NaN",
+    "max_prediction_delta": 0.0,
+    "max_feature_delta": 0.0,
+    "observed_encoder_outputs": [
+      [
+        1,
+        1000
+      ],
+      [
+        1,
+        1000
+      ]
+    ],
+    "station_feature_shape": [
+      1,
+      25,
+      1000
+    ],
+    "upstream_causality": "not certified: existing offline resampling/filtering is unchanged"
+  },
+  "phasenet_pretrained_frozen": {
+    "status": "PASS",
+    "event_id": "20200101000000",
+    "first_forbidden_sample": 601,
+    "modified": "all raw samples from exclusive cutoff onward \u2192 NaN",
+    "max_prediction_delta": 0.0,
+    "max_feature_delta": 0.0,
+    "observed_encoder_outputs": [
+      [
+        1,
+        128,
+        12
+      ],
+      [
+        1,
+        128,
+        12
+      ]
+    ],
+    "station_feature_shape": [
+      1,
+      25,
+      1000
+    ],
+    "upstream_causality": "not certified: existing offline resampling/filtering is unchanged"
+  },
+  "eqt_pretrained_frozen": {
+    "status": "PASS",
+    "event_id": "20200101000000",
+    "first_forbidden_sample": 601,
+    "modified": "all raw samples from exclusive cutoff onward \u2192 NaN",
+    "max_prediction_delta": 0.0,
+    "max_feature_delta": 0.0,
+    "observed_encoder_outputs": [
+      [
+        1,
+        16,
+        47
+      ],
+      [
+        1,
+        16,
+        47
+      ]
+    ],
+    "station_feature_shape": [
+      1,
+      25,
+      1000
+    ],
+    "upstream_causality": "not certified: existing offline resampling/filtering is unchanged"
+  },
+  "amplitude_only": {
+    "status": "PASS",
+    "event_id": "20200101000000",
+    "first_forbidden_sample": 601,
+    "modified": "all raw samples from exclusive cutoff onward \u2192 NaN",
+    "max_prediction_delta": 0.0,
+    "max_feature_delta": 0.0,
+    "observed_encoder_outputs": [],
+    "station_feature_shape": [
+      1,
+      25,
+      1000
+    ],
+    "upstream_causality": "not certified: existing offline resampling/filtering is unchanged"
+  },
+  "coords_only": {
+    "status": "PASS",
+    "event_id": "20200101000000",
+    "first_forbidden_sample": 601,
+    "modified": "all raw samples from exclusive cutoff onward \u2192 NaN",
+    "max_prediction_delta": 0.0,
+    "max_feature_delta": 0.0,
+    "observed_encoder_outputs": [],
+    "station_feature_shape": [
+      1,
+      25,
+      1000
+    ],
+    "upstream_causality": "not certified: existing offline resampling/filtering is unchanged"
+  }
+}
