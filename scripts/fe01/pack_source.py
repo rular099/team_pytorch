@@ -42,8 +42,9 @@ def main():
     files['vendor/DITINGBENCH_LICENSE']=( (dependency/'LICENSE').read_bytes(),0o644)
     if a.weights_root:
         weights=Path(a.weights_root)
+        prefix='offline_weights/'+weights.name+'/'
         manifest=json.loads((weights/'pretrained_manifest.json').read_text())
-        files['offline_weights/pretrained_manifest.json']=((weights/'pretrained_manifest.json').read_bytes(),0o644)
+        files[prefix+'pretrained_manifest.json']=((weights/'pretrained_manifest.json').read_bytes(),0o644)
         for model in manifest['models'].values():
             for record in model['files'].values():
                 relative=Path(record['path'])
@@ -51,7 +52,7 @@ def main():
                     raise ValueError('Use a portable relative registered weight path before bundling')
                 data=(weights/relative).read_bytes()
                 if hashlib.sha256(data).hexdigest()!=record['sha256']: raise ValueError('Weight hash mismatch')
-                files['offline_weights/'+str(relative)]=(data,0o644)
+                files[prefix+str(relative)]=(data,0o644)
     hashes={name:hashlib.sha256(data).hexdigest() for name,(data,_) in files.items()}
     identity=dict(commit=commit,created_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         files_sha256=hashes,excluded_historical_artifacts=excluded,
