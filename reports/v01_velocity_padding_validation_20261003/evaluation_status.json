@@ -1,0 +1,92 @@
+[
+  {
+    "cell": "vfull__vfull__normal",
+    "protocol": "normal",
+    "npz_present": false,
+    "metrics_present": false,
+    "log_present": true,
+    "terminal_error": "ValueError: Found event without PGA idx=7",
+    "status": "failed"
+  },
+  {
+    "cell": "vfull__vfull__random",
+    "protocol": "random",
+    "npz_present": true,
+    "metrics_present": true,
+    "log_present": true,
+    "terminal_error": null,
+    "status": "exported"
+  },
+  {
+    "cell": "vfull__vmissing__normal",
+    "protocol": "normal",
+    "npz_present": false,
+    "metrics_present": false,
+    "log_present": true,
+    "terminal_error": "ValueError: Found event without PGA idx=7",
+    "status": "failed"
+  },
+  {
+    "cell": "vfull__vmissing__random",
+    "protocol": "random",
+    "npz_present": true,
+    "metrics_present": true,
+    "log_present": true,
+    "terminal_error": null,
+    "status": "exported"
+  },
+  {
+    "cell": "vmissing__vfull__normal",
+    "protocol": "normal",
+    "npz_present": false,
+    "metrics_present": false,
+    "log_present": true,
+    "terminal_error": "ValueError: Found event without PGA idx=7",
+    "status": "failed"
+  },
+  {
+    "cell": "vmissing__vfull__random",
+    "protocol": "random",
+    "npz_present": true,
+    "metrics_present": true,
+    "log_present": true,
+    "terminal_error": null,
+    "status": "exported"
+  },
+  {
+    "cell": "vmissing__vmissing__normal",
+    "protocol": "normal",
+    "npz_present": false,
+    "metrics_present": false,
+    "log_present": true,
+    "terminal_error": "ValueError: Found event without PGA idx=7",
+    "status": "failed"
+  },
+  {
+    "cell": "vmissing__vmissing__random",
+    "protocol": "random",
+    "npz_present": true,
+    "metrics_present": true,
+    "log_present": true,
+    "terminal_error": null,
+    "status": "exported"
+  },
+  {
+    "cell": "apair__apair__normal",
+    "protocol": "normal",
+    "npz_present": false,
+    "metrics_present": false,
+    "log_present": true,
+    "terminal_error": "ValueError: Found event without PGA idx=7",
+    "status": "failed"
+  },
+  {
+    "cell": "apair__apair__random",
+    "protocol": "random",
+    "npz_present": true,
+    "metrics_present": true,
+    "log_present": true,
+    "terminal_error": null,
+    "status": "exported"
+  }
+]

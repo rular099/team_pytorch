@@ -1,5 +1,20 @@
 # V01 velocity / P-prefix padding control
 
+## Current results (2026-10-03)
+
+All three returned last checkpoints were directly verified at epoch 8 with
+1,496 optimizer updates and identical saved initial model tensors. Five random
+validation cells exported predictions; all five normal cells failed in the
+generator with `Found event without PGA idx=7`. A-pair random contains 45 extra
+duplicate event/time samples and is not strict paired cross-domain evidence.
+
+Read `../reports/v01_velocity_padding_validation_20261003/RESULT_REVIEW.md` and
+`ai/CHATGPT_REVIEW_REQUEST_20261003_V01.md`. This is partial validation, not
+test or a completed full matrix. Do not repeat the historical full/recovery
+submission below. No further cluster job was submitted during result collation;
+the next minimal evaluation-only remedy needs review first. Existing weights,
+cache and random results must be preserved.
+
 ## Scope
 
 V01 keeps `gemini_models.py`, the DiTing computation, RT55 tensor shapes, PGA

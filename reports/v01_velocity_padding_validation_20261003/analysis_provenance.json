@@ -1,0 +1,18 @@
+{
+  "repo": "rular099/team_pytorch",
+  "branch": "exp/v01-velocity-prep-padding-control",
+  "analysis_start_commit": "8f54477ed11bf2623f40121648f7fcc756ada1a2",
+  "recovery_archive_commit": "8829029f7a1a3ef49cedeccef9385298c683ac01",
+  "hpc_runtime_git_commit_verified": false,
+  "hpc_uploaded_source_manifest_received": false,
+  "local_source_sha256": {
+    "gemini_models.py": "cd8481286436342d09781888967dc757f4bde383f4d344033d866c6b06b7be84",
+    "gemini_util_light.py": "66a3ae810b9acc30f3893e6c9166c9119780ac1623794c4a185452d7a78ce7f9",
+    "train_light.py": "2395249936c14844baa5903483c7b3eb3bebdf27a6ce6f5a700864dc664158d8",
+    "eval_checkpoint.py": "e972671a6491b8eaede11c4363085b6b19ad30ef862953e2b06c60720d9530b0",
+    "tools/summarize_v01_results.py": "f96fa6146923bbde3b6e7945b91fba4ec3072dc77f628169ccd14c65963aac01"
+  },
+  "analysis_command": "python tools/summarize_v01_results.py --input-root ../chaosuan_res/vel --output-dir reports/v01_velocity_padding_validation_20261003 --audit-checkpoints",
+  "hpc_jobs_submitted_this_turn": false,
+  "test_data_read_this_turn": false
+}

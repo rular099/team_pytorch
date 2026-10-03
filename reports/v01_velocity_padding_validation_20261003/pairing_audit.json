@@ -1,0 +1,42 @@
+[
+  {
+    "comparison": "R_MM_minus_R_FF",
+    "left_targets": 84259,
+    "right_targets": 84259,
+    "matched_targets": 84259,
+    "same_target_index": true,
+    "truth_and_time_equal": true
+  },
+  {
+    "comparison": "R_FM_minus_R_FF",
+    "left_targets": 84259,
+    "right_targets": 84259,
+    "matched_targets": 84259,
+    "same_target_index": true,
+    "truth_and_time_equal": true
+  },
+  {
+    "comparison": "R_MF_minus_R_FF",
+    "left_targets": 84259,
+    "right_targets": 84259,
+    "matched_targets": 84259,
+    "same_target_index": true,
+    "truth_and_time_equal": true
+  },
+  {
+    "comparison": "R_MM_minus_R_MF",
+    "left_targets": 84259,
+    "right_targets": 84259,
+    "matched_targets": 84259,
+    "same_target_index": true,
+    "truth_and_time_equal": true
+  },
+  {
+    "comparison": "R_MM_minus_R_FM",
+    "left_targets": 84259,
+    "right_targets": 84259,
+    "matched_targets": 84259,
+    "same_target_index": true,
+    "truth_and_time_equal": true
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "status": "partial_validation_results_normal_failed",
+  "input_root": "../chaosuan_res/vel",
+  "date": "2026-10-03",
+  "split": "val",
+  "checkpoint_epoch": 8,
+  "coordinate": "log10(m/s^2)",
+  "point_estimate": "predictive_mixture_mean",
+  "successful_exported_cells": 5,
+  "failed_cells": 5,
+  "bootstrap_draws": 5000,
+  "bootstrap_seed": 20260915,
+  "pair_key": [
+    "event_id",
+    "time_s",
+    "query_lat",
+    "query_lon",
+    "query_depth"
+  ],
+  "positive_delta": "right condition has larger MAE",
+  "limitations": [
+    "All normal cells failed; no normal metrics are available.",
+    "A-pair has duplicate event/time samples; aggregate scores are descriptive, not strict paired evidence.",
+    "Exported coordinates stand in for query identity; sensor IDs and frozen/cohort manifests are missing.",
+    "Single training seed; bootstrap does not quantify training-seed variation.",
+    "Sensitivity-only velocity, not full instrument deconvolution; cross-domain comparison is confounded.",
+    "Inherited full_data_manifest is historical and cannot prove actual V01 training counts.",
+    "Only exported post-P support checked; raw post-P waveforms not supplied.",
+    "No held-out test, Slurm sacct or uploaded runtime source manifest supplied."
+  ]
+}

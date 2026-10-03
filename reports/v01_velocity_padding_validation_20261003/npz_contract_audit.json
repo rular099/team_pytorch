@@ -1,0 +1,156 @@
+{
+  "vfull__vfull__random": {
+    "samples": 8358,
+    "unique_events_in_samples": 1194,
+    "unique_event_time_pairs": 8358,
+    "extra_duplicate_samples": 0,
+    "duplicate_event_time_examples": [],
+    "valid_targets": 84259,
+    "valid_target_type_counts": {
+      "1": 60080,
+      "2": 24179
+    },
+    "query_only_in_valid_input_slots": 0,
+    "selected_source_observations": 38302,
+    "pre_p_valid_seconds_mean": 9.091245631002383,
+    "pre_p_valid_seconds_median": 8.020000457763672,
+    "pre_p_valid_seconds_p90": 14.180000305175781,
+    "zero_pre_p_source_observations": 0,
+    "post_p_valid_seconds_mean": 25.506426056223777,
+    "physical_sensor_id_exported": false,
+    "pair_key_policy": "event + requested time + exact exported query coordinates; labels and cutoff checked"
+  },
+  "vfull__vmissing__random": {
+    "samples": 8358,
+    "unique_events_in_samples": 1194,
+    "unique_event_time_pairs": 8358,
+    "extra_duplicate_samples": 0,
+    "duplicate_event_time_examples": [],
+    "valid_targets": 84259,
+    "valid_target_type_counts": {
+      "1": 60080,
+      "2": 24179
+    },
+    "query_only_in_valid_input_slots": 0,
+    "selected_source_observations": 38302,
+    "pre_p_valid_seconds_mean": 6.089131377497476,
+    "pre_p_valid_seconds_median": 5.489999771118164,
+    "pre_p_valid_seconds_p90": 10.600000381469727,
+    "zero_pre_p_source_observations": 15,
+    "post_p_valid_seconds_mean": 25.506426056223777,
+    "physical_sensor_id_exported": false,
+    "pair_key_policy": "event + requested time + exact exported query coordinates; labels and cutoff checked"
+  },
+  "vmissing__vfull__random": {
+    "samples": 8358,
+    "unique_events_in_samples": 1194,
+    "unique_event_time_pairs": 8358,
+    "extra_duplicate_samples": 0,
+    "duplicate_event_time_examples": [],
+    "valid_targets": 84259,
+    "valid_target_type_counts": {
+      "1": 60080,
+      "2": 24179
+    },
+    "query_only_in_valid_input_slots": 0,
+    "selected_source_observations": 38302,
+    "pre_p_valid_seconds_mean": 9.091245631002383,
+    "pre_p_valid_seconds_median": 8.020000457763672,
+    "pre_p_valid_seconds_p90": 14.180000305175781,
+    "zero_pre_p_source_observations": 0,
+    "post_p_valid_seconds_mean": 25.506426056223777,
+    "physical_sensor_id_exported": false,
+    "pair_key_policy": "event + requested time + exact exported query coordinates; labels and cutoff checked"
+  },
+  "vmissing__vmissing__random": {
+    "samples": 8358,
+    "unique_events_in_samples": 1194,
+    "unique_event_time_pairs": 8358,
+    "extra_duplicate_samples": 0,
+    "duplicate_event_time_examples": [],
+    "valid_targets": 84259,
+    "valid_target_type_counts": {
+      "1": 60080,
+      "2": 24179
+    },
+    "query_only_in_valid_input_slots": 0,
+    "selected_source_observations": 38302,
+    "pre_p_valid_seconds_mean": 6.089131377497476,
+    "pre_p_valid_seconds_median": 5.489999771118164,
+    "pre_p_valid_seconds_p90": 10.600000381469727,
+    "zero_pre_p_source_observations": 15,
+    "post_p_valid_seconds_mean": 25.506426056223777,
+    "physical_sensor_id_exported": false,
+    "pair_key_policy": "event + requested time + exact exported query coordinates; labels and cutoff checked"
+  },
+  "apair__apair__random": {
+    "samples": 8358,
+    "unique_events_in_samples": 1193,
+    "unique_event_time_pairs": 8313,
+    "extra_duplicate_samples": 45,
+    "duplicate_event_time_examples": [
+      {
+        "event_id": "20080822092500",
+        "time_s": 3.0
+      },
+      {
+        "event_id": "20080822092500",
+        "time_s": 3.0
+      },
+      {
+        "event_id": "20091031024200",
+        "time_s": 3.0
+      },
+      {
+        "event_id": "20091031024200",
+        "time_s": 3.0
+      },
+      {
+        "event_id": "20110829170600",
+        "time_s": 3.0
+      },
+      {
+        "event_id": "20110829170600",
+        "time_s": 3.0
+      },
+      {
+        "event_id": "20110907025400",
+        "time_s": 3.0
+      },
+      {
+        "event_id": "20110907025400",
+        "time_s": 3.0
+      },
+      {
+        "event_id": "20110917163400",
+        "time_s": 20.0
+      },
+      {
+        "event_id": "20110917163400",
+        "time_s": 20.0
+      },
+      {
+        "event_id": "20110917163400",
+        "time_s": 20.0
+      },
+      {
+        "event_id": "20110917163400",
+        "time_s": 20.0
+      }
+    ],
+    "valid_targets": 84329,
+    "valid_target_type_counts": {
+      "1": 60220,
+      "2": 24109
+    },
+    "query_only_in_valid_input_slots": 0,
+    "selected_source_observations": 38234,
+    "pre_p_valid_seconds_mean": 6.615617252955815,
+    "pre_p_valid_seconds_median": 6.079999923706055,
+    "pre_p_valid_seconds_p90": 10.869999885559082,
+    "zero_pre_p_source_observations": 13,
+    "post_p_valid_seconds_mean": 25.40156719614191,
+    "physical_sensor_id_exported": false,
+    "pair_key_policy": "event + requested time + exact exported query coordinates; labels and cutoff checked"
+  }
+}

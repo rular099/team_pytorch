@@ -2,6 +2,11 @@
 
 日期：2026-10-01（Asia/Shanghai）
 
+2026-10-03 更新：本文保留当时的交付状态作为历史记录。上述修复已归档为
+`8829029f7a1a3ef49cedeccef9385298c683ac01`；用户已回传三臂真实 epoch-8 权重与五份
+random 结果，normal 五份发生新的 generator 错误。当前入口为
+`CODEX_RESULT_20261003_V01_PARTIAL_VALIDATION.md`，不要重复执行本文的整体 recovery。
+
 ## 版本和边界
 
 - repo: `rular099/team_pytorch`

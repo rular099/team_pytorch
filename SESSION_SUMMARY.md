@@ -1,6 +1,6 @@
 # TEAM PyTorch 项目交接文档
 
-更新时间：2026-10-01（Asia/Shanghai）
+更新时间：2026-10-03（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威工程入口。当前主任务已从 RT57--RT61
 模型结构研究切换到 **V01：速度波形输入与 P 前缺失/补零受控实验**。不要根据旧聊天、
@@ -15,17 +15,22 @@
 - 当前分支：`exp/v01-velocity-prep-padding-control`
 - V01 基线提交：`9c95dbfaf92f36b2673d816026cd3f25b91eec66`
 - V01 核心实现提交：`6a341fb936035d4654db4ddbba974a3cdd471352`
-- 本交接前最新代码提交：`04a23a3aa74c81ba18d4625f09e4015d2dc8ae69`
-- 远端同名分支已推送到上述最新代码提交。
+- 本轮开始 HEAD：`8f54477ed11bf2623f40121648f7fcc756ada1a2`。
+- recovery 修复独立归档：`8829029f7a1a3ef49cedeccef9385298c683ac01`。
+- 本轮结果 commit 为更新本文的提交；精确 SHA 见 `git log` 与最终 CODEX-RESULT。
 - 当前工作树有用户未跟踪文件 `tmp.tar.gz`；不要删除、覆盖或提交它。
-- 当前最重要事实：**用户报告 V01 preflight、vmissing 和 apair 训练完成，文件清单确认
-  两臂权重存在。vfull job 28899987 在构建台站缓存时失败，尚未开始训练；验证入口存在
-  配置继承读取错误。两处修复及最小补跑入口已在本地完成，尚未执行新的超算补跑。**
-- 本轮修复 base：`8f54477ed11bf2623f40121648f7fcc756ada1a2`；尚未 commit/push。
-- 最新操作入口：`docs/ai/CODEX_RESULT_20261001_V01_RECOVERY.md`；不要再次 ACTION=all。
-- 补跑：`bash tools/recover_v01_prep_padding_controls_slurm.sh`，仅 1 个新 vfull 训练、
-  10 个原定 validation、1 个汇总，复用 derived cache 与两臂权重。
-- 新输出：`weights_vfull_retry1`、`eval_retry1`、`report_retry1`，旧目录均保留。
+- 当前最重要事实：**三臂真实 checkpoint 已核验 epoch 8 和 1,496 optimizer updates；
+  五个 random 完整导出，五个 normal 均因 `Found event without PGA idx=7` 失败。
+  A-pair random 有 45 条额外重复 event/time sample；本轮不能称完整矩阵成功。**
+- 原始结果：`../chaosuan_res/vel`；轻量报告：
+  `reports/v01_velocity_padding_validation_20261003/RESULT_REVIEW.md`。
+- 审阅入口：`docs/ai/CODEX_RESULT_20261003_V01_PARTIAL_VALIDATION.md` 和
+  `docs/ai/CHATGPT_REVIEW_REQUEST_20261003_V01.md`。
+- random MM/FF MAE 为 0.236895/0.244516；同模型视图效应小，单输入空间塌缩仍明显。
+  这是独立 V01 机制实验，不是 RT61 公平性能升级或 test 证据。
+- 此前 recovery 已执行到回传产物阶段；**不要再次整体 recovery、all 或三臂训练**。
+  本轮只整理、归档和请求审阅，没有修新 generator 问题、提交超算或增加实验。
+- 本轮新检查：135 项 unittest PASS；5 NPZ 指标复算匹配 JSON；9 checkpoint 读验。
 
 超算实际路径：
 
@@ -337,24 +342,16 @@ preflight 会为 2004--2024 生成 velocity 和 A-pair 两套 derived HDF5，并
 
 ## 5. 未完成事项（按优先级）
 
-### P0：部署最新修复，仅提交缺失任务
+### P0：审阅已有结果，再确定最小验证补救
 
-1. 在原 `_vel` 目录部署本轮补丁；保留已有数据、checkpoint 和结果。
-2. 查看已有作业状态，避免原失败依赖作业或重复训练仍在排队。
-3. 用 recovery 入口 dry-run 核对 `a061...` source manifest。
-4. 正式 recovery 会检查已完成 preflight 与两臂 checkpoint，然后只启动 vfull，
-   复用 42 个 derived shard，不重新下载或物化波形。
-5. 保存 12 个新 job IDs；预留目录同样记录 IDs。不要反复点击入口。
+1. 阅读 2026-10-03 结果报告与 ChatGPT 请求；三臂训练已完成，不再要求训练补跑。
+2. 查 normal 在空 PGA 候选处失败的 V01 数据路径根因；不要用静默跳过掩盖 cohort 漂移。
+3. 查 A-pair 的空样本替代/重复 event-time；不要把其总体指标当成 strict paired 对照。
+4. 优先回传已有 preflight/cohort/split/source identity 与 sacct 文本，避免重复计算。
+5. 如审阅决定需要修复，必须显式 V01 opt-in、兼容 RT55，并复用现有 epoch-8 权重，
+   新目录仅补必要验证；不整体 recovery，不覆盖成功 random 输出。
 
-### P0：监控补跑，而不是重复提交
-
-- 检查新 vfull 是否进入 epoch、成功保存 last；保持总 8 epoch。
-- 既有 vm/apair 的六个 validation 可同步运行，新 vfull 的四个 validation 等待其训练成功。
-- epoch 8 校验在计算节点执行，不要求登录节点安装 torch。
-- 如部分提交失败，保留 submissions/recover_retry1 和 submitted_jobs.txt，先核对 Slurm；
-  不删除预留目录、不整体重提。
-
-### P0：训练和验证完成后回传产物
+### P0：补齐回传缺口（不是重复生成已有产物）
 
 至少回传：
 
@@ -391,11 +388,12 @@ Git 只保存轻量摘要、哈希、表和批准公开的固定案例。
 这些是明确缺口，不得在结果报告中写成已完成。优先先让核心三臂正常运行；不要重新加一串
 smoke。核心结果回来后，根据主效应和 ChatGPT 审阅决定最小补充诊断。
 
-### P1：完善分析器
+### P1：完善剩余审计，不重复已有统计
 
-当前 `tools/analyze_v01_padding_controls.py` 主要提供 MAE/RMSE/bias/tail/within-threshold
-和两类 paired MAE CI。最终报告还需核验 eval NPZ 中的 MDN 输出、NLL/Brier/coverage、
-common-remote 分组、field range/pairwise difference、干预剂量和 event-macro 稳健性。
+新增 `tools/summarize_v01_results.py` 已复算 NLL/Brier/coverage、时间/类型/强弱/输入数分层、
+field range/pairwise difference、实际支持剂量和 event-macro CI，且识别 incomplete 矩阵。
+尚缺真实 sensor IDs 定义的 common-remote、raw post-P 值和 preflight/source provenance。
+原 `analyze_v01_padding_controls.py` 未被替换，不使用其 `analysis_complete` 自动宣布矩阵完成。
 
 ### P2：数据下载
 
@@ -405,8 +403,8 @@ common-remote 分组、field range/pairwise difference、干预剂量和 event-m
 
 ## 6. 已知问题和风险
 
-1. **补跑尚未执行。** 用户已报告 preflight/两臂训练完成；已有文件确认，但尚未回传完整
-   sacct 表及 apair epoch 元数据，新补跑任务仍需用户提交。
+1. **normal 新失败与 A-pair 重复。** 三臂训练已读验 epoch 8；五份 random 完整，normal
+   五份空 PGA 候选失败，A-pair 45 条额外重复。缺 sacct/cohort/source 文本；不要整体重跑。
 2. **超算是上传目录，可能没有 `.git`。** 应使用 `SOURCE_IDENTITY_MODE=uploaded_sha256`，
    不能要求 `EXPECTED_GIT_COMMIT`。
 3. **旧脚本哈希全部失效。** 当前修复预期是 `a061...`，但仍须核对超算打印值。
@@ -419,8 +417,8 @@ common-remote 分组、field range/pairwise difference、干预剂量和 event-m
    训练后的性能上限。
 8. **干预剂量不均。** 一些样本原本没有足够 P 前上下文，不能把 nominal 模板时长当
    实际删除时长。
-9. **当前分析器不满足完整论文级 V01 规范。** 不能只凭 `cross_eval_metrics.csv` 宣称
-   padding 是主要瓶颈。
+9. **仍非完整论文级 V01 证据。** 新报告补足多类统计，但 normal、真实 sensor 身份和
+   原始波形/protocol provenance 缺失；不能宣称 padding 是主要瓶颈或删除普遍有益。
 10. **旧 `PROJECT_CONTEXT.md` 是 2026-09-02 的 RT55/RT56 快照。** 其指标仍可作为背景，
     但其中活跃分支和当前任务已过期。
 11. **RT57--RT61 validation 被反复用于开发。** 不把这些 validation 结果写成独立泛化
@@ -434,7 +432,13 @@ common-remote 分组、field range/pairwise difference、干预剂量和 event-m
 
 ## 7. 下一会话第一步
 
-第一步不是改模型，而是在超算确认最新 V01 launcher、输入文件和队列状态。
+先读 `docs/ai/CHATGPT_REVIEW_REQUEST_20261003_V01.md` 和本轮结果报告，等待明确审阅决定；
+不要自动提交任务。当前无需再次 vfull training；后续若仅修 normal/A-pair evaluation，
+必须复用三臂 epoch-8 权重，记录新 protocol 身份并保留本轮结果。
+
+### 历史 recovery 操作（2026-10-01，已补跑，以下命令不得整体重复执行）
+
+以下保留历史路径与步骤供追溯，不是当前的任务提交建议。
 
 ```bash
 cd /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel
@@ -509,7 +513,8 @@ CONFIRM_V01=1 DRY_RUN=0 bash tools/recover_v01_prep_padding_controls_slurm.sh
 
 1. `AGENTS.md`
 2. 本 `SESSION_SUMMARY.md`
-   当前补跑先读 `docs/ai/CODEX_RESULT_20261001_V01_RECOVERY.md`。
+   当前结果先读 `docs/ai/CODEX_RESULT_20261003_V01_PARTIAL_VALIDATION.md` 与审阅请求；
+   10-01 recovery 仅是历史记录。
 3. `docs/ai/V01_prompt.md`
 4. `docs/ai/V01_VELOCITY_PREP_PADDING_CODEX_PROMPT_20260929.md`
 5. `docs/ai/CODEX_RESULT_20260929_V01_VELOCITY_PADDING.md`

@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "eval_checkpoint.py", line 2736, in <module>
+    main()
+  File "eval_checkpoint.py", line 2645, in main
+    results = run_inference(
+  File "/public/home/test_bigmodel/.conda/envs/lsm_env/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "eval_checkpoint.py", line 1353, in run_inference
+    inputs, labels, p_picks = dataset[idx]
+  File "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/gemini_util_light.py", line 2771, in __getitem__
+    batch_inp, batch_out, batch_info = self.generators[generator_id][batch_id]
+  File "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/gemini_util_light.py", line 1605, in __getitem__
+    return self._get_one(index)
+  File "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/gemini_util_light.py", line 2191, in _get_one
+    raise ValueError(f'Found event without PGA idx={indexes[i]}')
+ValueError: Found event without PGA idx=7

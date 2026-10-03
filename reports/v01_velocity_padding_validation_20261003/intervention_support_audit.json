@@ -1,0 +1,24 @@
+{
+  "same_exported_inputs_cutoff_and_post_p_support": {
+    "event_id": true,
+    "realtime_requested_elapsed_time": true,
+    "realtime_current_sample": true,
+    "realtime_first_p_pick_sample": true,
+    "station_valid": true,
+    "station_coords_abs": true,
+    "selected_original_input_indices": true,
+    "p_picks": true,
+    "v01_source_role": true,
+    "v01_template_id": true,
+    "v01_retained_prep_samples": true,
+    "waveform_post_p_valid_sample_count": true
+  },
+  "selected_source_observations": 38302,
+  "removed_mean_seconds": 3.002114253504906,
+  "removed_median_seconds": 0.9699997901916504,
+  "removed_p90_seconds": 8.699999809265137,
+  "changed_observations": 21380,
+  "negative_removed_observations": 0,
+  "raw_post_p_values_compared": false,
+  "note": "NPZ verifies post-P support counts, not raw waveform sample equality; sensor IDs and source hashes are not exported."
+}

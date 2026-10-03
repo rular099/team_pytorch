@@ -1,0 +1,51 @@
+{
+  "model_params_identical_across_arms": true,
+  "seed_values": {
+    "vfull": 42,
+    "vmissing": 42,
+    "apair": 42
+  },
+  "epochs": {
+    "vfull": 8,
+    "vmissing": 8,
+    "apair": 8
+  },
+  "learning_rates": {
+    "vfull": {
+      "lr": 0.0001,
+      "lr_adapter": 0.0001,
+      "lr_team": 0.0001
+    },
+    "vmissing": {
+      "lr": 0.0001,
+      "lr_adapter": 0.0001,
+      "lr_team": 0.0001
+    },
+    "apair": {
+      "lr": 0.0001,
+      "lr_adapter": 0.0001,
+      "lr_team": 0.0001
+    }
+  },
+  "parent_paths": {
+    "vfull": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth",
+    "vmissing": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth",
+    "apair": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth"
+  },
+  "frozen_split_paths": {
+    "vfull": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv",
+    "vmissing": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv",
+    "apair": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv"
+  },
+  "data_shard_counts": {
+    "vfull": 21,
+    "vmissing": 21,
+    "apair": 21
+  },
+  "inherited_full_data_manifest_is_not_actual_v01_counts": true,
+  "preflight_cohort_counts_available": false,
+  "frozen_split_file_available": false,
+  "hpc_source_manifest_available": false,
+  "initial_saved_tensors_identical": true,
+  "all_last_checkpoint_epoch8": true
+}
