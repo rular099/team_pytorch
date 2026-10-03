@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import os
+import filecmp
 import tempfile
 import time
 
@@ -370,7 +371,20 @@ def build_event_metadata(data_path, event_metadata_path, overwrite_sampling_rate
     os.close(fd)
     try:
         event_metadata.to_csv(tmp_path, index=False)
-        os.replace(tmp_path, event_metadata_path)
+        try:
+            os.replace(tmp_path, event_metadata_path)
+        except FileExistsError:
+            # Some cluster filesystems reject a racing replacement even though
+            # the same cache was just published by another job.  Accept only
+            # byte-identical complete CSVs; never mask a conflicting cache.
+            if not os.path.isfile(event_metadata_path):
+                raise
+            if not filecmp.cmp(tmp_path, event_metadata_path, shallow=False):
+                raise RuntimeError(
+                    f'Concurrent metadata cache differs from generated CSV: '
+                    f'{event_metadata_path}; existing cache was preserved.'
+                )
+            print(f'Reusing identical concurrently published metadata cache {event_metadata_path}')
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)

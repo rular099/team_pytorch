@@ -117,6 +117,29 @@ because the source-identity manifest covers inherited configs and runtime code.
 
 ## Submission
 
+### Recovery after the first V01 run (2026-10-01)
+
+The user reports preflight, vmissing and apair training completed.  vfull job
+28899987 failed before training while publishing the shared station CSV cache;
+validation job 28899994 confirmed epoch 8 then failed on an inheritance-blind
+`weight_path` lookup.  Both launcher problems are fixed locally.
+
+Use `tools/recover_v01_prep_padding_controls_slurm.sh` rather than repeating
+`ACTION=all`.  It reuses the existing derived waveform caches and trained arms,
+restarts only vfull under `weights_vfull_retry1`, writes the original ten
+validation outputs under `eval_retry1`, and then runs `report_retry1` analysis.
+Job-specific station CSV caches and configuration copies are isolated.
+No model, split, mask, seed, learning rate or epoch settings change.
+
+Deployment, exact source hash and commands are in
+`docs/ai/CODEX_RESULT_20261001_V01_RECOVERY.md`.  JSON configuration checks do not
+need torch on the login node.  The recovery entrypoint is run with **bash**, not
+sbatch; it submits the twelve jobs itself.  Do not delete existing weights,
+waveform caches or outputs.  The submission reservation under
+`submissions/recover_retry1` prevents duplicate submission while jobs are queued.
+
+### Original first-run submission (historical; do not repeat on existing outputs)
+
 First set cluster paths.  For an uploaded folder without `.git`, run one dry
 run to obtain the printed source manifest hash, then repeat with that hash:
 

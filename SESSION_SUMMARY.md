@@ -1,6 +1,6 @@
 # TEAM PyTorch 项目交接文档
 
-更新时间：2026-09-30（Asia/Shanghai）
+更新时间：2026-10-01（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威工程入口。当前主任务已从 RT57--RT61
 模型结构研究切换到 **V01：速度波形输入与 P 前缺失/补零受控实验**。不要根据旧聊天、
@@ -18,8 +18,14 @@
 - 本交接前最新代码提交：`04a23a3aa74c81ba18d4625f09e4015d2dc8ae69`
 - 远端同名分支已推送到上述最新代码提交。
 - 当前工作树有用户未跟踪文件 `tmp.tar.gz`；不要删除、覆盖或提交它。
-- 当前最重要事实：**V01 代码和提交脚本已就绪，但尚无一次确认成功的正式 Slurm
-  提交，更没有 V01 训练或验证结果。**
+- 当前最重要事实：**用户报告 V01 preflight、vmissing 和 apair 训练完成，文件清单确认
+  两臂权重存在。vfull job 28899987 在构建台站缓存时失败，尚未开始训练；验证入口存在
+  配置继承读取错误。两处修复及最小补跑入口已在本地完成，尚未执行新的超算补跑。**
+- 本轮修复 base：`8f54477ed11bf2623f40121648f7fcc756ada1a2`；尚未 commit/push。
+- 最新操作入口：`docs/ai/CODEX_RESULT_20261001_V01_RECOVERY.md`；不要再次 ACTION=all。
+- 补跑：`bash tools/recover_v01_prep_padding_controls_slurm.sh`，仅 1 个新 vfull 训练、
+  10 个原定 validation、1 个汇总，复用 derived cache 与两臂权重。
+- 新输出：`weights_vfull_retry1`、`eval_retry1`、`report_retry1`，旧目录均保留。
 
 超算实际路径：
 
@@ -43,11 +49,11 @@ RT55 历史运行目录：
 当前上传模式应打印的源码清单 SHA-256：
 
 ```text
-bccb84254bacdd6aa8878bec5deaa17aaa6033139277853bccab1c7184109afe
+a06164c0243ac920d78202e2d1455226f8a6f9103117c28de9337739e0d94592
 ```
 
-该哈希只适用于超算文件与提交 `04a23a3...` 的 source-manifest 文件逐字节一致时；
-正式提交必须以超算 dry-run 实际打印值为准。
+该哈希对应本轮本地修复后的 source-manifest；旧 `bccb...` 不再适用。
+正式提交必须以超算上传内容 dry-run 实际打印值核对，不能绕过不同哈希。
 
 ## 1. 项目当前目标
 
@@ -197,7 +203,7 @@ one-event 2024 cache materialization and generator read
 完整三臂 dry-run。没有在最后几次路径修订后重跑 118 项 Python 测试，因为 Python
 运行时未变。
 
-### 2.4 超算执行状态
+### 2.4 首次提交阶段的历史状态（截至 2026-09-30）
 
 截至 2026-09-30，用户遇到并依次报告：
 
@@ -216,6 +222,13 @@ one-event 2024 cache materialization and generator read
 第三个错误发生在第一个 `sbatch` 提交阶段，按脚本 `set -e` 逻辑后续训练不会提交。
 但接手者仍须在超算用 `squeue`/`sacct` 核验，不能仅凭本地推断宣称无残留作业。
 目前没有用户确认最新脚本已覆盖、最新 dry-run 哈希匹配或正式 preflight 已进入队列。
+
+上述是历史状态，已被 2026-10-01 用户回报更新：preflight、vmissing/apair 训练完成；
+两臂 init/last/best 文件清单已确认。vfull 28899987 在
+`loader_light.build_event_metadata -> os.replace` 发生 EEXIST，仅生成启动 config，
+没有 epoch 进度。vmissing->vfull normal 28899994 成功读取 epoch 8 后，在 shell 原始 JSON
+读取 weight_path 处发生 KeyError。本轮已修复继承读取，隔离每个训练/验证的 station CSV
+缓存，并增加相同 CSV 发布冲突的安全复用。130 项本地测试全部通过，尚未真实补跑。
 
 ### 2.5 RT57--RT61 已完成研究链的结论
 
@@ -324,21 +337,22 @@ preflight 会为 2004--2024 生成 velocity 和 A-pair 两套 derived HDF5，并
 
 ## 5. 未完成事项（按优先级）
 
-### P0：确认最新 launcher 已部署并成功提交 preflight
+### P0：部署最新修复，仅提交缺失任务
 
-1. 在超算覆盖最新 `tools/run_v01_prep_padding_controls_slurm.sh`。
-2. 核验 split、ep32 checkpoint、21 个 2004--2024 archive 和可用空间。
-3. 检查是否有 V01 残留 job 或半成品输出。
-4. 用 uploaded-sha256 模式 dry-run；实际 hash 必须为当前上传内容打印的值。
-5. 正式提交 `ACTION=all ARMS=vfull,vmissing,apair`，保存所有 job IDs。
+1. 在原 `_vel` 目录部署本轮补丁；保留已有数据、checkpoint 和结果。
+2. 查看已有作业状态，避免原失败依赖作业或重复训练仍在排队。
+3. 用 recovery 入口 dry-run 核对 `a061...` source manifest。
+4. 正式 recovery 会检查已完成 preflight 与两臂 checkpoint，然后只启动 vfull，
+   复用 42 个 derived shard，不重新下载或物化波形。
+5. 保存 12 个新 job IDs；预留目录同样记录 IDs。不要反复点击入口。
 
-### P0：监控 preflight，而不是重复提交
+### P0：监控补跑，而不是重复提交
 
-- 检查 `v01-preflight` 的日志、运行时间、MaxRSS、磁盘增长；
-- 如果因 23:50:00 超时，先保留 `.tmp`/日志并分析 builder 是否支持安全续跑；当前 builder
-  默认拒绝覆盖，不要直接 `--overwrite` 或删目录；
-- 如果内存仍不满足，可显式降至 `PREFLIGHT_MEM=96000M`，但先看分区节点配置；
-- preflight 成功后核验 `protocol_lock.json`、`preflight_summary.json` 和实际 cohort counts。
+- 检查新 vfull 是否进入 epoch、成功保存 last；保持总 8 epoch。
+- 既有 vm/apair 的六个 validation 可同步运行，新 vfull 的四个 validation 等待其训练成功。
+- epoch 8 校验在计算节点执行，不要求登录节点安装 torch。
+- 如部分提交失败，保留 submissions/recover_retry1 和 submitted_jobs.txt，先核对 Slurm；
+  不删除预留目录、不整体重提。
 
 ### P0：训练和验证完成后回传产物
 
@@ -391,11 +405,11 @@ common-remote 分组、field range/pairwise difference、干预剂量和 event-m
 
 ## 6. 已知问题和风险
 
-1. **HPC 成功状态未知。** 最后一次用户反馈仍是 `sbatch` 内存规格失败；最新资源修复后
-   没有收到成功 job ID。
+1. **补跑尚未执行。** 用户已报告 preflight/两臂训练完成；已有文件确认，但尚未回传完整
+   sacct 表及 apair epoch 元数据，新补跑任务仍需用户提交。
 2. **超算是上传目录，可能没有 `.git`。** 应使用 `SOURCE_IDENTITY_MODE=uploaded_sha256`，
    不能要求 `EXPECTED_GIT_COMMIT`。
-3. **旧脚本哈希全部失效。** 当前预期是 `bccb...`，但仍以超算打印值为准。
+3. **旧脚本哈希全部失效。** 当前修复预期是 `a061...`，但仍须核对超算打印值。
 4. **preflight 是重量级物化，不只是轻量审计。** 它会读/哈希大文件并写两套 cache；
    可能受时限和空间限制。
 5. **partial archive 是不完整数据快照。** 允许使用不代表可称全量完整 Hi-net 数据。
@@ -442,33 +456,31 @@ squeue -u "$USER" | grep -E 'v01|JOBID' || true
 find "$V01_RUN_ROOT" -maxdepth 2 -type f -printf '%p %s\n' 2>/dev/null | head -n 100
 ```
 
-若没有运行作业且没有需要保留的非空 V01 输出，先 dry-run：
+已有 preflight 和两臂权重应保留；部署本轮修复后，只使用 recovery 入口：
 
 ```bash
 unset EXPECTED_SOURCE_MANIFEST_SHA256
 
-DRY_RUN=1 ACTION=all ARMS=vfull,vmissing,apair \
-  bash tools/run_v01_prep_padding_controls_slurm.sh
+DRY_RUN=1 bash tools/recover_v01_prep_padding_controls_slurm.sh
 ```
 
-确认打印的 source manifest 和资源为：
+确认打印的 source manifest 和任务图为：
 
 ```text
-source_manifest_sha256=bccb84254bacdd6aa8878bec5deaa17aaa6033139277853bccab1c7184109afe
-v01-preflight: cpus-per-task=8, mem=102400M, time=23:50:00
+source_manifest_sha256=a06164c0243ac920d78202e2d1455226f8a6f9103117c28de9337739e0d94592
+1 vfull train + 10 validation + 1 analysis; no preflight or vm/apair train
 ```
 
 再正式提交：
 
 ```bash
-export EXPECTED_SOURCE_MANIFEST_SHA256=bccb84254bacdd6aa8878bec5deaa17aaa6033139277853bccab1c7184109afe
+export EXPECTED_SOURCE_MANIFEST_SHA256=a06164c0243ac920d78202e2d1455226f8a6f9103117c28de9337739e0d94592
 
-CONFIRM_V01=1 DRY_RUN=0 ACTION=all ARMS=vfull,vmissing,apair \
-  bash tools/run_v01_prep_padding_controls_slurm.sh
+CONFIRM_V01=1 DRY_RUN=0 bash tools/recover_v01_prep_padding_controls_slurm.sh
 ```
 
-立即记录脚本打印的 preflight/train/eval/analyze job IDs。若目标只是先验证 cache，可用
-`ACTION=preflight`；不要同时再提交 `ACTION=all` 造成重复物化。
+立即记录脚本打印的 12 个 job IDs；同一 recovery_tag 不要重复提交。
+详情及部分阶段恢复说明见 `docs/ai/CODEX_RESULT_20261001_V01_RECOVERY.md`。
 
 ## 8. 不要做什么
 
@@ -497,6 +509,7 @@ CONFIRM_V01=1 DRY_RUN=0 ACTION=all ARMS=vfull,vmissing,apair \
 
 1. `AGENTS.md`
 2. 本 `SESSION_SUMMARY.md`
+   当前补跑先读 `docs/ai/CODEX_RESULT_20261001_V01_RECOVERY.md`。
 3. `docs/ai/V01_prompt.md`
 4. `docs/ai/V01_VELOCITY_PREP_PADDING_CODEX_PROMPT_20260929.md`
 5. `docs/ai/CODEX_RESULT_20260929_V01_VELOCITY_PADDING.md`
@@ -524,6 +537,9 @@ team_pytorch_query_geometry_diagnostics/
   tools/build_v01_paired_manifest.py
   tools/analyze_v01_padding_controls.py
   tools/run_v01_prep_padding_controls_slurm.sh
+  tools/recover_v01_prep_padding_controls_slurm.sh
+  tools/launcher_config.py
+  tests/test_v01_recovery_launchers.py
   tests/test_v01_velocity_backend.py
   tests/test_v01_padding_controls.py
   docs/v01_velocity_prep_padding.md
@@ -538,6 +554,8 @@ WORKDIR, ACC_DATA_ROOT, VELOCITY_DATA_ROOT, RT55_RUN_ROOT
 FROZEN_SPLIT_MANIFEST, RT55_EP32_CHECKPOINT, V01_RUN_ROOT, V01_CACHE_ROOT
 SOURCE_IDENTITY_MODE, EXPECTED_SOURCE_MANIFEST_SHA256, EXPECTED_GIT_COMMIT
 ACTION, ARMS, DRY_RUN, CONFIRM_V01, RESUME_V01, ALLOW_EXISTING_EVAL
+V01_RECOVERY_TAG, V01_VFULL_WEIGHT_PATH, V01_VMISSING_WEIGHT_PATH, V01_APAIR_WEIGHT_PATH
+V01_EVAL_ROOT, V01_REPORT_ROOT, V01_SUBMISSION_GUARD_DIR
 SLURM_PARTITION, SLURM_GRES_RESOURCE, SLURM_ACCOUNT
 PREFLIGHT_CPUS, PREFLIGHT_MEM, PREFLIGHT_TIME
 TRAIN_NODES, TRAIN_GPUS_PER_NODE, TRAIN_TIME
@@ -554,8 +572,8 @@ CONDA_ENV, MODULE_UNLOAD, MODULE_LOADS, DITING_CONFIG, DITING_PRETRAINED
 - 训练 resume 只在对应 arm 输出非空且存在 `full_model_last.pth`、`config.json` 时使用：
 
   ```bash
-  CONFIRM_V01=1 DRY_RUN=0 ACTION=train ARMS=vfull RESUME_V01=1 \
-    bash tools/run_v01_prep_padding_controls_slurm.sh
+  CONFIRM_V01=1 DRY_RUN=0 ACTION=train RESUME_V01=1 \
+    bash tools/recover_v01_prep_padding_controls_slurm.sh
   ```
 
 - resume 前要核验 protocol/parent/source/data hashes；当前脚本的 resume 身份保护仍不等于

@@ -259,14 +259,7 @@ if [[ "$RESET_WEIGHT_PATH" == "1" ]]; then
             esac
         done
     fi
-    WEIGHT_PATH_TO_RESET=$(python -c '
-import json, os, sys
-value = json.load(open(sys.argv[1]))["training_params"]["weight_path"]
-value = os.path.expanduser(os.path.expandvars(value))
-if "$" in value:
-    raise SystemExit("Unresolved environment variable in weight_path: " + value)
-print(value)
-' "$CONFIG")
+    WEIGHT_PATH_TO_RESET=$(python "$WORKDIR/tools/launcher_config.py" "$CONFIG" weight-path)
     if [[ -z "$WEIGHT_PATH_TO_RESET" || "$WEIGHT_PATH_TO_RESET" == "/" || "$WEIGHT_PATH_TO_RESET" == "." || "$WEIGHT_PATH_TO_RESET" == ".." ]]; then
         echo "Refusing to reset unsafe weight_path: '$WEIGHT_PATH_TO_RESET'" >&2
         exit 1
@@ -286,14 +279,7 @@ print(value)
     rm -rf -- "$WEIGHT_DIR_TO_RESET"
 fi
 
-WEIGHT_PATH=$(python -c '
-import json, os, sys
-value = json.load(open(sys.argv[1]))["training_params"]["weight_path"]
-value = os.path.expanduser(os.path.expandvars(value))
-if "$" in value:
-    raise SystemExit("Unresolved environment variable in weight_path: " + value)
-print(value)
-' "$CONFIG")
+WEIGHT_PATH=$(python "$WORKDIR/tools/launcher_config.py" "$CONFIG" weight-path)
 if [[ -z "$WEIGHT_PATH" || "$WEIGHT_PATH" == "/" || "$WEIGHT_PATH" == "." || "$WEIGHT_PATH" == ".." ]]; then
     echo "Unsafe weight_path in config: '$WEIGHT_PATH'" >&2
     exit 1
@@ -435,9 +421,7 @@ cp "$RUN_CONFIG" "$RUN_LOG_DIR/config.json"
 echo "[INFO] run config copied to: $RUN_LOG_DIR/config.json"
 
 if [[ "$RUN_EVAL" == "1" ]]; then
-    SINGLE_STATION_ENABLED=$(python -c 'import json, sys
-cfg = json.load(open(sys.argv[1]))
-print("1" if cfg["training_params"].get("single_station_pretrain", {}).get("enabled", False) else "0")' "$CONFIG")
+    SINGLE_STATION_ENABLED=$(python "$WORKDIR/tools/launcher_config.py" "$CONFIG" single-station-enabled)
     if [[ -z "${EVAL_SINGLE_STATION_CHECKPOINT:-}" && "$SINGLE_STATION_ENABLED" == "1" ]]; then
         if [[ -f "$WEIGHT_DIR/single_station_best.pth" ]]; then
             EVAL_SINGLE_STATION_CHECKPOINT="$WEIGHT_DIR/single_station_best.pth"

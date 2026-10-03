@@ -23,6 +23,7 @@ TRAIN_SCRIPT=${TRAIN_SCRIPT:-$WORKDIR/train_light_slurm.sh}
 EVAL_SCRIPT=${EVAL_SCRIPT:-$WORKDIR/eval_checkpoint_slurm.sh}
 PREFLIGHT_TOOL=${PREFLIGHT_TOOL:-$WORKDIR/tools/build_v01_paired_manifest.py}
 ANALYZE_TOOL=${ANALYZE_TOOL:-$WORKDIR/tools/analyze_v01_padding_controls.py}
+CONFIG_TOOL=${CONFIG_TOOL:-$WORKDIR/tools/launcher_config.py}
 VFULL_CONFIG=${VFULL_CONFIG:-$WORKDIR/pga_configs/v01_velocity_full.json}
 VMISSING_CONFIG=${VMISSING_CONFIG:-$WORKDIR/pga_configs/v01_velocity_missing.json}
 APAIR_CONFIG=${APAIR_CONFIG:-$WORKDIR/pga_configs/v01_acc_pair.json}
@@ -60,7 +61,7 @@ MODULE_LOADS=${MODULE_LOADS:-"compiler/rocm/dtk-23.04 apps/miniconda/3"}
 DITING_CONFIG=${DITING_CONFIG:-$WORKDIR/diting/config/diting_1200m_backbone_attnpool.yml}
 DITING_PRETRAINED=${DITING_PRETRAINED:-/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt}
 
-case "$ACTION" in preflight|train|eval|analyze|all) ;; *) echo "ACTION must be preflight, train, eval, analyze, or all; got $ACTION" >&2; exit 2 ;; esac
+case "$ACTION" in preflight|train|eval|analyze|all|recover) ;; *) echo "ACTION must be preflight, train, eval, analyze, all, or recover; got $ACTION" >&2; exit 2 ;; esac
 if [[ "$DRY_RUN" != "1" && "$CONFIRM_V01" != "1" ]]; then
     echo "Formal V01 submission requires CONFIRM_V01=1 DRY_RUN=0." >&2
     exit 2
@@ -93,6 +94,7 @@ SOURCE_MANIFEST_FILES=(
     tools/velocity_waveform_backend.py tools/prep_padding_protocol.py
     tools/build_v01_paired_manifest.py tools/analyze_v01_padding_controls.py
     tools/run_v01_prep_padding_controls_slurm.sh
+    tools/launcher_config.py tools/recover_v01_prep_padding_controls_slurm.sh
     pga_configs/transformer_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_chaosuan.json
     pga_configs/transformer_japan_full_2000_2024_rt56_ep32_mixed_random_geometry_seed42_chaosuan.json
     pga_configs/v01_common_rt55_model.json pga_configs/v01_velocity_full.json
@@ -134,6 +136,7 @@ esac
 for required in \
     "$TRAIN_SCRIPT:training launcher" "$EVAL_SCRIPT:evaluation launcher" \
     "$PREFLIGHT_TOOL:preflight tool" "$ANALYZE_TOOL:analysis tool" \
+    "$CONFIG_TOOL:torch-free config resolver" \
     "$VFULL_CONFIG:vfull config" "$VMISSING_CONFIG:vmissing config" \
     "$APAIR_CONFIG:apair config" "$NORMAL_CONFIG:normal config" \
     "$RANDOM_CONFIG:random config" "$FROZEN_SPLIT_MANIFEST:frozen split" \
@@ -146,6 +149,24 @@ if [[ "$DRY_RUN" != "1" ]]; then
     [[ -d "$VELOCITY_DATA_ROOT" ]] || { echo "VELOCITY_DATA_ROOT not found: $VELOCITY_DATA_ROOT" >&2; exit 1; }
 fi
 
+if [[ "$ACTION" == recover ]]; then
+    # This recovery action is deliberately specific: preflight and two arms
+    # already succeeded; only the vfull training and validation matrix failed.
+    for arm in vfull vmissing apair; do
+        [[ "${ARM_ENABLED[$arm]}" == 1 ]] || { echo "recover requires all three ARMS." >&2; exit 2; }
+    done
+    require_file "$V01_CACHE_ROOT/protocol_lock.json" "completed preflight protocol lock"
+    require_file "$V01_CACHE_ROOT/preflight_summary.json" "completed preflight summary"
+    for weight in "$V01_VMISSING_WEIGHT_PATH" "$V01_APAIR_WEIGHT_PATH"; do
+        require_file "$weight/full_model_last.pth" "existing trained-arm checkpoint"
+        require_file "$weight/config.json" "existing trained-arm resolved config"
+    done
+    for ((year = 2004; year <= 2024; year++)); do
+        require_file "$V01_CACHE_ROOT/$year/japan_${year}_v01_velocity.hdf5" "existing velocity cache"
+        require_file "$V01_CACHE_ROOT/$year/japan_${year}_v01_acc_pair.hdf5" "existing A-pair cache"
+    done
+fi
+
 for arm in vfull vmissing apair; do
     [[ "${ARM_ENABLED[$arm]}" == 1 ]] || continue
     case "$arm" in
@@ -153,7 +174,9 @@ for arm in vfull vmissing apair; do
         vmissing) weight=$V01_VMISSING_WEIGHT_PATH ;;
         apair) weight=$V01_APAIR_WEIGHT_PATH ;;
     esac
-    if [[ "$ACTION" =~ ^(train|all)$ && -d "$weight" ]] && find "$weight" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
+    train_requested=0
+    if [[ "$ACTION" == train || "$ACTION" == all || ( "$ACTION" == recover && "$arm" == vfull ) ]]; then train_requested=1; fi
+    if [[ "$train_requested" == 1 && -d "$weight" ]] && find "$weight" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
         if [[ "$RESUME_V01" != "1" ]]; then
             echo "Refusing to overwrite non-empty arm output: $weight (set RESUME_V01=1 for an explicit resume)" >&2; exit 1
         fi
@@ -162,6 +185,24 @@ for arm in vfull vmissing apair; do
     fi
 done
 
+# Check the whole output matrix BEFORE submitting any job.  A duplicate
+# invocation must not launch another training then fail halfway through evals.
+if [[ "$ACTION" == eval || "$ACTION" == all || "$ACTION" == recover ]]; then
+    for checkpoint_arm in vfull vmissing apair; do
+        [[ "${ARM_ENABLED[$checkpoint_arm]}" == 1 ]] || continue
+        views=("$checkpoint_arm")
+        if [[ "$checkpoint_arm" != apair ]]; then views=(vfull vmissing); fi
+        for view in "${views[@]}"; do
+            for protocol in normal random; do
+                stem="$V01_EVAL_ROOT/${checkpoint_arm}__${view}__${protocol}"
+                if [[ "$ALLOW_EXISTING_EVAL" != 1 && ( -e "$stem.npz" || -e "$stem.txt" || -e "$stem.metrics.json" || -e "$stem.config.json" ) ]]; then
+                    echo "Refusing to overwrite existing evaluation output: $stem" >&2; exit 1
+                fi
+            done
+        done
+    done
+fi
+
 COMMON_EXPORT="WORKDIR=$WORKDIR,ACC_DATA_ROOT=$ACC_DATA_ROOT,VELOCITY_DATA_ROOT=$VELOCITY_DATA_ROOT,RT55_RUN_ROOT=$RT55_RUN_ROOT,FROZEN_SPLIT_MANIFEST=$FROZEN_SPLIT_MANIFEST,RT55_EP32_CHECKPOINT=$RT55_EP32_CHECKPOINT,V01_RUN_ROOT=$V01_RUN_ROOT,V01_CACHE_ROOT=$V01_CACHE_ROOT,V01_VFULL_WEIGHT_PATH=$V01_VFULL_WEIGHT_PATH,V01_VMISSING_WEIGHT_PATH=$V01_VMISSING_WEIGHT_PATH,V01_APAIR_WEIGHT_PATH=$V01_APAIR_WEIGHT_PATH,CONDA_ENV=$CONDA_ENV,MODULE_UNLOAD=$MODULE_UNLOAD,MODULE_LOADS=$MODULE_LOADS,DITING_CONFIG=$DITING_CONFIG,DITING_PRETRAINED=$DITING_PRETRAINED"
 
 SBATCH_BASE=(sbatch --parsable --partition="$SLURM_PARTITION" --chdir="$WORKDIR")
@@ -169,6 +210,14 @@ if [[ -n "$SLURM_ACCOUNT" ]]; then SBATCH_BASE+=(--account="$SLURM_ACCOUNT"); fi
 mkdir_command="mkdir -p '$V01_RUN_ROOT/logs' '$V01_EVAL_ROOT' '$V01_REPORT_ROOT'"
 if [[ "$DRY_RUN" != "1" ]]; then
     mkdir -p "$V01_RUN_ROOT/logs" "$V01_EVAL_ROOT" "$V01_REPORT_ROOT"
+    if [[ -n "${V01_SUBMISSION_GUARD_DIR:-}" ]]; then
+        mkdir -p "$(dirname "$V01_SUBMISSION_GUARD_DIR")"
+        if ! mkdir "$V01_SUBMISSION_GUARD_DIR"; then
+            echo "Recovery already submitted or reserved: $V01_SUBMISSION_GUARD_DIR; inspect its submitted_jobs.txt and Slurm state before retrying." >&2
+            exit 1
+        fi
+        printf 'source_manifest_sha256=%s\n' "$actual_manifest" > "$V01_SUBMISSION_GUARD_DIR/source_identity.txt"
+    fi
 fi
 
 submit_or_print() {
@@ -182,7 +231,12 @@ submit_or_print() {
         printf '\n' >&2
         echo "DRYJOB$RANDOM"
     else
-        "${command[@]}"
+        local job_id
+        job_id=$("${command[@]}") || return $?
+        if [[ -n "${V01_SUBMISSION_GUARD_DIR:-}" ]]; then
+            printf '%s\n' "$job_id" >> "$V01_SUBMISSION_GUARD_DIR/submitted_jobs.txt"
+        fi
+        printf '%s\n' "$job_id"
     fi
 }
 
@@ -199,16 +253,22 @@ if [[ "$ACTION" == preflight || "$ACTION" == all ]]; then
 fi
 
 declare -A TRAIN_JOB
-if [[ "$ACTION" == train || "$ACTION" == all ]]; then
+if [[ "$ACTION" == train || "$ACTION" == all || "$ACTION" == recover ]]; then
     for arm in vfull vmissing apair; do
         [[ "${ARM_ENABLED[$arm]}" == 1 ]] || continue
+        [[ "$ACTION" != recover || "$arm" == vfull ]] || continue
         case "$arm" in
             vfull) config=$VFULL_CONFIG ;;
             vmissing) config=$VMISSING_CONFIG ;;
             apair) config=$APAIR_CONFIG ;;
         esac
         resume_arg=""; [[ "$RESUME_V01" == 1 ]] && resume_arg="--resume_full_model last"
-        train_command="$mkdir_command && AUTO_SBATCH=0 RUN_EVAL=0 RESET_WEIGHT_PATH=0 bash '$TRAIN_SCRIPT' '$config' --epochs_full_model 8 $resume_arg"
+        # Separate the cheap station CSV caches across independent jobs.  The
+        # waveform cache, split, seed, training budget and model remain fixed.
+        resolved_config="$V01_RUN_ROOT/logs/resolved/train_${arm}.json"
+        metadata_cache="$V01_RUN_ROOT/metadata_cache/train_${arm}"
+        resolve_command="python '$CONFIG_TOOL' '$config' resolved-json --metadata-cache-dir '$metadata_cache' --output '$resolved_config'"
+        train_command="$mkdir_command && $resolve_command && AUTO_SBATCH=0 RUN_EVAL=0 RESET_WEIGHT_PATH=0 bash '$TRAIN_SCRIPT' '$resolved_config' --epochs_full_model 8 $resume_arg"
         TRAIN_JOB[$arm]=$(submit_or_print "$preflight_job" \
             --job-name="v01-$arm-train" --nodes="$TRAIN_NODES" \
             --ntasks-per-node="$TRAIN_GPUS_PER_NODE" --cpus-per-task="$SLURM_CPUS_PER_TASK" \
@@ -221,7 +281,7 @@ if [[ "$ACTION" == train || "$ACTION" == all ]]; then
 fi
 
 declare -a EVAL_JOBS=()
-if [[ "$ACTION" == eval || "$ACTION" == all ]]; then
+if [[ "$ACTION" == eval || "$ACTION" == all || "$ACTION" == recover ]]; then
     for checkpoint_arm in vfull vmissing apair; do
         [[ "${ARM_ENABLED[$checkpoint_arm]}" == 1 ]] || continue
         case "$checkpoint_arm" in
@@ -244,8 +304,11 @@ if [[ "$ACTION" == eval || "$ACTION" == all ]]; then
                     echo "Refusing to overwrite existing evaluation output: $stem" >&2; exit 1
                 fi
                 dependency=${TRAIN_JOB[$checkpoint_arm]:-}
-                eval_export="$COMMON_EXPORT,V01_ARM_CONFIG=$arm_config,EVAL_CHECKPOINT=$checkpoint,EVAL_OUTPUT_TXT=$stem.txt,EVAL_OUTPUT_NPZ=$stem.npz,EXPECTED_CHECKPOINT_EPOCH=8,EVAL_PREFER_REQUESTED_CONFIG=1"
-                eval_command="$mkdir_command && AUTO_SBATCH=0 bash '$EVAL_SCRIPT' '$eval_config' --splits val --skip_single_station --skip_diagnostics"
+                config_log_dir="$V01_RUN_ROOT/logs/eval_configs/${checkpoint_arm}__${view}__${protocol}"
+                metadata_cache="$V01_RUN_ROOT/metadata_cache/eval_${checkpoint_arm}__${view}__${protocol}"
+                eval_export="$COMMON_EXPORT,V01_ARM_CONFIG=$arm_config,EVAL_CHECKPOINT=$checkpoint,EVAL_OUTPUT_TXT=$stem.txt,EVAL_OUTPUT_NPZ=$stem.npz,EXPECTED_CHECKPOINT_EPOCH=8,EVAL_PREFER_REQUESTED_CONFIG=1,RUN_LOG_DIR=$config_log_dir"
+                resolve_command="python '$CONFIG_TOOL' '$eval_config' resolved-json --metadata-cache-dir '$metadata_cache' --output '$stem.config.json'"
+                eval_command="$mkdir_command && $resolve_command && AUTO_SBATCH=0 bash '$EVAL_SCRIPT' '$stem.config.json' --splits val --skip_single_station --skip_diagnostics"
                 job=$(submit_or_print "$dependency" \
                     --job-name="v01-${checkpoint_arm}-${view}-${protocol}" --nodes=1 --ntasks=1 \
                     --cpus-per-task="$SLURM_CPUS_PER_TASK" --gres="$SLURM_GRES_RESOURCE:$EVAL_GPUS" \
@@ -259,7 +322,7 @@ if [[ "$ACTION" == eval || "$ACTION" == all ]]; then
     done
 fi
 
-if [[ "$ACTION" == analyze || "$ACTION" == all ]]; then
+if [[ "$ACTION" == analyze || "$ACTION" == all || "$ACTION" == recover ]]; then
     dependency=""
     if ((${#EVAL_JOBS[@]})); then dependency=$(IFS=:; echo "${EVAL_JOBS[*]}"); fi
     analyze_command="$mkdir_command && python '$ANALYZE_TOOL' --eval-dir '$V01_EVAL_ROOT' --output-dir '$V01_REPORT_ROOT' --bootstrap-draws 5000 --bootstrap-seed 20260915"
