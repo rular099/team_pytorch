@@ -1,0 +1,53 @@
+{
+  "source_label": "fe01_runs_20261002",
+  "source_files": 2201,
+  "source_bytes": 14193566080,
+  "formal_runs": 9,
+  "pilot_runs": 3,
+  "selected_validation_rows": 1748385,
+  "formal_journal_rows": 2930688,
+  "training_git_commits": [
+    "73ae9dec50713805c878b5e4efeb8264c01d0c76"
+  ],
+  "common_validation_population_sha256": "e96284780cb5f72b952c1697d4d264d307e7139a153201fa222566015aec7f69",
+  "common_truth_input_and_decision_sha256": "f204deca06725af5513895416d5b0691c75c12221127854c32d1d497855155bb",
+  "bootstrap_draws": 5000,
+  "bootstrap_rng_seed": 20261001,
+  "reader_versions": {
+    "python": "3.11.11",
+    "numpy": "1.26.4",
+    "pandas": "2.3.0"
+  },
+  "checks": {
+    "source_configuration_matches_lock": true,
+    "training_and_audit_lock_identical": true,
+    "shared_cohort_identical": true,
+    "shared_validation_population_identical": true,
+    "shared_labels_inputs_and_decisions_identical": true,
+    "common_initialization_matches_within_seed": true,
+    "all_nine_selection_scores_recomputed": true,
+    "mixture_score_32_rows_per_run_verified": true,
+    "all_formal_journal_counts_match_curves": true,
+    "saved_journal_boundaries_verified": true,
+    "reader_audited_source_matches_hpc_code_hash": true
+  },
+  "missing": {
+    "checkpoint_files": true,
+    "final_test_evaluation": true,
+    "rt55_paired_reevaluation": true,
+    "random_validation_time_predictions": true,
+    "spatial_evaluation": true,
+    "formal_slurm_completion_records": true
+  },
+  "limitations": [
+    "Validation checkpoint selection and validation reporting share the same data.",
+    "Event bootstrap is descriptive within a selected model/seed and does not include checkpoint-selection uncertainty.",
+    "Training-time support is model-specific; common fixed-time validation is 1/3/5/10/20s.",
+    "Journal commit membership and best.pth identity cannot be verified without checkpoints.",
+    "AUDIT_PASS is saved audit evidence; raw HDF5 and pretrained weights were not reloaded.",
+    "Epoch timers are recorded rank0 durations, not independently measured whole-job wall time.",
+    "Offline resampling/filtering causality remains uncertified."
+  ],
+  "audited_source_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "audited_source_files": 115
+}

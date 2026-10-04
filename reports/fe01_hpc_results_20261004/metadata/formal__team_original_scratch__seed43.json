@@ -1,0 +1,867 @@
+{
+  "note": "Portable derived snapshot; original bytes/hashes indexed in source_inventory.csv",
+  "resolved_config": {
+    "fe01": {
+      "enabled": true,
+      "version": 2
+    },
+    "seed": 43,
+    "sampling_seed": 42,
+    "model_family": "team_original_scratch",
+    "native_n_samples": 10000,
+    "query_chunk_size": 15,
+    "query_independence_verified": true,
+    "pretrained_manifest": "${FE01_WEIGHTS_ROOT}/pretrained_manifest.json",
+    "diting_config": "${FE01_CODE_ROOT}/diting/config/diting_1200m_backbone_attnpool.yml",
+    "output_root": "${FE01_OUTPUT_ROOT}",
+    "model_params": {
+      "waveform_model_dims": [
+        1000,
+        1000,
+        1000
+      ],
+      "output_mlp_dims": [
+        64
+      ],
+      "output_location_dims": [
+        150,
+        50
+      ],
+      "wavelength": [
+        [
+          0.01,
+          15
+        ],
+        [
+          0.01,
+          15
+        ],
+        [
+          0.01,
+          10
+        ]
+      ],
+      "mad_params": {
+        "n_heads": 10,
+        "att_dropout": 0.0,
+        "initializer_range": 0.02
+      },
+      "ffn_params": {
+        "hidden_dim": 2000
+      },
+      "transformer_layers": 2,
+      "hidden_dropout": 0.0,
+      "activation": "relu",
+      "n_pga_targets": 15,
+      "location_mixture": 3,
+      "pga_mixture": 3,
+      "magnitude_mixture": 1,
+      "borehole": false,
+      "max_stations": 25,
+      "bias_mag_mu": 5.0,
+      "bias_mag_sigma": 0.5,
+      "bias_loc_mu": 0,
+      "bias_loc_sigma": 2,
+      "event_token_init_range": 0.02,
+      "no_event_token": false,
+      "diting_station_adapter": "legacy",
+      "diting_station_pool_queries": 4,
+      "diting_station_pool_temperature": 1.0,
+      "diting_station_pool_dropout": 0.0,
+      "waveform_scale_gain": 1.0,
+      "waveform_scale_log_divisor": 10.0,
+      "waveform_scale_init_gate": 0.1,
+      "use_amplitude_info": true,
+      "disable_waveform_scale": false,
+      "use_coords_rel": false,
+      "use_coords_abs": true,
+      "use_coords_rel_abs_fusion": false,
+      "coords_abs_weight": 0.1,
+      "coord_fusion_mode": "add",
+      "output_distribution": "mdn",
+      "rotation_anchor": [
+        37,
+        140
+      ],
+      "pga_readout_mode": "target_cross_attention",
+      "event_readout_mode": "event_cross_attention",
+      "query_token_init_range": 0.02,
+      "pga_attention_diagnostics": false,
+      "pga_mask_sanity_check": false,
+      "pga_readout_layers": 4,
+      "event_readout_layers": 1,
+      "readout_ffn_hidden_dim": 1000,
+      "readout_residual_gates": true,
+      "readout_residual_gate_init": 0.0,
+      "readout_ffn_gate_init": 0.0,
+      "readout_first_residual": true,
+      "station_context_gate_init": 0.0,
+      "use_vs30": false,
+      "vs30_reference_mps": 760.0,
+      "vs30_init_gate": 0.0,
+      "rope_coord_mode": "relative_xy_km",
+      "rope_coord_scale": 100.0,
+      "rope_base": 10000.0,
+      "rope_lat_origin": 37.0,
+      "station_context_mode": "off",
+      "use_rope": false,
+      "pga_layerwise_refinement": false,
+      "pga_delta_gate_init": 0.001,
+      "station_delta_gate_init": 0.001,
+      "station_delta_ffn_gate_init": 0.001,
+      "use_target_temporal_pooling": false,
+      "temporal_pool_dim": 256,
+      "temporal_pool_geom_hidden_dim": 128,
+      "temporal_pool_time_basis": 32,
+      "temporal_pool_gate_init": 0.001,
+      "pga_use_event_context": false,
+      "vs30_injection_mode": "additive",
+      "vs30_site_affine_hidden_dim": 64,
+      "vs30_site_affine_scale": 0.1,
+      "vs30_site_affine_sigma_shift": false,
+      "diting_frontend": "vit_adapter",
+      "station_token_weight_mode": "none",
+      "temporal_token_weight_mode": "none",
+      "token_weight_floor": 0.0001,
+      "token_weight_scale": 4.0,
+      "dpk_checkpoint_path": null,
+      "dpk_share_encoder_if_identical": false,
+      "dpk_compare_encoder": false,
+      "dpk_encoder_policy": "current",
+      "dpk_weight_temperature": 1.0,
+      "dpk_weight_resample": "max",
+      "use_pga_temporal_residual": false,
+      "pga_temporal_residual_zero_init": false,
+      "temporal_token_dim": 256,
+      "pga_temporal_residual_mode": "residual",
+      "pga_temporal_residual_use_event_context": false,
+      "pga_temporal_residual_query_source": "readout",
+      "pga_temporal_residual_station_weighting": "attention",
+      "pga_temporal_residual_token_control": "none"
+    },
+    "data": {
+      "root": "${DATA_ROOT}",
+      "split_manifest": "${FE01_SPLIT_MANIFEST}",
+      "station_filter": "knet",
+      "sampling_rate": 100,
+      "component_order": "NEZ",
+      "units": "m/s^2",
+      "upstream_processing": "legacy offline resampling/filtering; online causality not certified"
+    },
+    "window": {
+      "protocol": "native_prefix_v2",
+      "pre_p_seconds": 5,
+      "strict_causal": true,
+      "rolling_trained": false
+    },
+    "realtime": {
+      "bins": [
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          5,
+          10
+        ],
+        [
+          10,
+          20
+        ],
+        [
+          20,
+          40
+        ],
+        [
+          40,
+          90
+        ]
+      ],
+      "probabilities": [
+        0.2,
+        0.2,
+        0.2,
+        0.15,
+        0.15,
+        0.1
+      ],
+      "draws_per_event": 3,
+      "fixed_times": [
+        1,
+        3,
+        5,
+        10,
+        20,
+        40,
+        90
+      ],
+      "common_times": [
+        1,
+        3,
+        5,
+        10,
+        20
+      ]
+    },
+    "geometry": {
+      "random_station_counts": [
+        1,
+        3,
+        5,
+        8,
+        12,
+        16
+      ],
+      "train_random_probability": 0.5
+    },
+    "training": {
+      "epochs": 12,
+      "max_updates": null,
+      "global_batch": 128,
+      "microbatch": 8,
+      "lr": 0.001,
+      "weight_decay": 0,
+      "gradient_clip": 5,
+      "scheduler": "cosine_fixed_updates",
+      "validation_frequency_epochs": 1,
+      "workers": 0,
+      "early_stopping": false,
+      "res_comps": [
+        "mag",
+        "loc",
+        "pga"
+      ],
+      "res_weight": [
+        0.02,
+        0.02,
+        1.0
+      ],
+      "distribution_mean_loss": {
+        "enabled": true,
+        "weight": 0.1,
+        "loss_type": "huber",
+        "huber_delta": 1.0
+      }
+    },
+    "target_normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "selection": {
+      "rule": "equal protocols / equal common fixed times / noninput MAE; tie earlier epoch",
+      "threshold_log10_pga": -1.2
+    },
+    "spatial": {
+      "enabled": false,
+      "manifest": "${FE01_SPATIAL_MANIFEST}",
+      "buffer_km": 20
+    },
+    "transfer_model_path": null,
+    "load_model_path": null,
+    "run_id": "formal__team_original_scratch__seed43",
+    "stage": "formal",
+    "audited_cohorts": {
+      "source": "shared_cohorts.csv",
+      "fingerprint": "f365d762434fb1795ef77870dae39e4657232fd5977d4be85446a4a8d2d6d848",
+      "counts": {
+        "train": 9084,
+        "val": 1310
+      }
+    }
+  },
+  "protocol_lock": {
+    "config_sha256": "ac878ab7b30a1f79a316edbb6c7399a4c497d543279d815bb9a61a4d18d16f1b",
+    "code_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+    "validation_population_sha256": "e96284780cb5f72b952c1697d4d264d307e7139a153201fa222566015aec7f69",
+    "data_identity": {
+      "split_manifest_sha256": "a914fa361dc51af957aca32396d992219dd04c665a7ccffc46ec18769c491108",
+      "shards": {
+        "${DATA_ROOT}/2000/japan_2000.hdf5": {
+          "bytes": 1586259746,
+          "mtime_ns": 1786166373000000000,
+          "sha256": "5df775a4cb82f0848ecfe3ed5499c3db67e088ce2fd8908a968438aaa9e0d8aa"
+        },
+        "${DATA_ROOT}/2001/japan_2001.hdf5": {
+          "bytes": 1787638481,
+          "mtime_ns": 1786166295000000000,
+          "sha256": "ae9a0a05afdee5c26a863ecc3bc224420042d35e0e5ed753477c16f1b83873ca"
+        },
+        "${DATA_ROOT}/2002/japan_2002.hdf5": {
+          "bytes": 1607067372,
+          "mtime_ns": 1786166214000000000,
+          "sha256": "0b7970595d1105f50941c62472ca90f96ef08b84ce65193540e0e2919462123b"
+        },
+        "${DATA_ROOT}/2003/japan_2003.hdf5": {
+          "bytes": 3807648842,
+          "mtime_ns": 1786166138000000000,
+          "sha256": "b6f2cbeea604a84ce3c0b6a0154434561183edc5a8b64a4a4dd49fd7ff6769e9"
+        },
+        "${DATA_ROOT}/2004/japan_2004.hdf5": {
+          "bytes": 4197192452,
+          "mtime_ns": 1786165965000000000,
+          "sha256": "69bb5d2523ebd4b01896c31834c77d4002bdad2d581965ab0ffdbe4c9c71e9b2"
+        },
+        "${DATA_ROOT}/2005/japan_2005.hdf5": {
+          "bytes": 3164690848,
+          "mtime_ns": 1786165784000000000,
+          "sha256": "9540f1bba4d2e8bbc9b1f1d114a7086b016fdd94da353ffcd99de90cf652f0b7"
+        },
+        "${DATA_ROOT}/2006/japan_2006.hdf5": {
+          "bytes": 1892545704,
+          "mtime_ns": 1786165649000000000,
+          "sha256": "e89603bd6c26df54cc393710bd907fcf4e0ff2b6c6f8d6c4bd7f080f5e8d84ab"
+        },
+        "${DATA_ROOT}/2007/japan_2007.hdf5": {
+          "bytes": 2500301900,
+          "mtime_ns": 1786165570000000000,
+          "sha256": "7387c4159c92cb98e9ee8351be72725b305e9f65b4c9065584ff28312c505f67"
+        },
+        "${DATA_ROOT}/2008/japan_2008.hdf5": {
+          "bytes": 2148091040,
+          "mtime_ns": 1786165463000000000,
+          "sha256": "29daeefc7e5a7770c710fca0f39a31790b22ae59da24e1a0d2badf6b6efdc52d"
+        },
+        "${DATA_ROOT}/2009/japan_2009.hdf5": {
+          "bytes": 1319745565,
+          "mtime_ns": 1786165370000000000,
+          "sha256": "0eaa875e3948d938f4812acdb1e8ab050a498590998ee870421e78c34fa862f8"
+        },
+        "${DATA_ROOT}/2010/japan_2010.hdf5": {
+          "bytes": 1363039707,
+          "mtime_ns": 1786165309000000000,
+          "sha256": "36fbd67a054434490252519f4cdf0d1b437787d0d34217b3a984d8cb55ed588f"
+        },
+        "${DATA_ROOT}/2011/japan_2011.hdf5": {
+          "bytes": 8337182420,
+          "mtime_ns": 1786165251000000000,
+          "sha256": "7021cb662117543c166e39a7d4919ad8ad979cc3009f95e865f5f88ecc955b09"
+        },
+        "${DATA_ROOT}/2012/japan_2012.hdf5": {
+          "bytes": 4388945299,
+          "mtime_ns": 1786164860000000000,
+          "sha256": "32fcf02730044ce8004e9185e6f7d48b0054bfdf9e658823a25839a8d13d092e"
+        },
+        "${DATA_ROOT}/2013/japan_2013.hdf5": {
+          "bytes": 2942089604,
+          "mtime_ns": 1786164658000000000,
+          "sha256": "7b84dbaea43968ab04f693d1561f8a7b9942e10f258d2f3735f24b643018935b"
+        },
+        "${DATA_ROOT}/2014/japan_2014.hdf5": {
+          "bytes": 2193025397,
+          "mtime_ns": 1786164531000000000,
+          "sha256": "b8886d0688ecd22d8585a907d84149188f4e9407f09d8037eee709fa5cc865b9"
+        },
+        "${DATA_ROOT}/2015/japan_2015.hdf5": {
+          "bytes": 1971169206,
+          "mtime_ns": 1786164439000000000,
+          "sha256": "1fd4bd4fc54201bb6a275194283c032d20d23bc49ac098e08c59a5b180b58c61"
+        },
+        "${DATA_ROOT}/2016/japan_2016.hdf5": {
+          "bytes": 3567406332,
+          "mtime_ns": 1786164356000000000,
+          "sha256": "db2cfc55c8767a87bbd5aadf6af80fdb9b9de1d120e0f610121ad4eec2e9668c"
+        },
+        "${DATA_ROOT}/2017/japan_2017.hdf5": {
+          "bytes": 1756413760,
+          "mtime_ns": 1786164206000000000,
+          "sha256": "6f2ec8c59d7f7d0abdab0ae85c20a50f1d22f13fd71647cdbf056cb908fba672"
+        },
+        "${DATA_ROOT}/2018/japan_2018.hdf5": {
+          "bytes": 2295708110,
+          "mtime_ns": 1786164128000000000,
+          "sha256": "c94b65c51868a59cd9f372c40bbf035fddbf5fe4318d3cfd2984549a0569eee6"
+        },
+        "${DATA_ROOT}/2019/japan_2019.hdf5": {
+          "bytes": 1505461178,
+          "mtime_ns": 1786164031000000000,
+          "sha256": "ac2095f0b28f24c64eb7eabbad7a4bc792b7df31e0a4806c7937b6b22bf1199d"
+        },
+        "${DATA_ROOT}/2020/japan_2020.hdf5": {
+          "bytes": 1516948817,
+          "mtime_ns": 1786163965000000000,
+          "sha256": "ddc0c0c15f4e7de65ac193d9769aba28556f1fdc431c5136b3365cb56386789b"
+        },
+        "${DATA_ROOT}/2021/japan_2021.hdf5": {
+          "bytes": 2055049946,
+          "mtime_ns": 1786163903000000000,
+          "sha256": "050a90a26106c3627d1d9bf51f40de233e6f6b4f7b57b06bfcae43fb3927928d"
+        },
+        "${DATA_ROOT}/2022/japan_2022.hdf5": {
+          "bytes": 2029513567,
+          "mtime_ns": 1786163818000000000,
+          "sha256": "be9dd7ac3430d2cf8d89230232053ea5aa655fbfd9636ed4b76ac08a1b60b278"
+        },
+        "${DATA_ROOT}/2023/japan_2023.hdf5": {
+          "bytes": 1351188536,
+          "mtime_ns": 1786163725000000000,
+          "sha256": "2d615facc78bf012f0deb7aaa13e93302ea58f3dd8bc4b1d04490555d4b20f11"
+        },
+        "${DATA_ROOT}/2024/japan_2024.hdf5": {
+          "bytes": 2378613764,
+          "mtime_ns": 1786163664000000000,
+          "sha256": "e44869e9f7e3fc38c5836dba0a3190d075278708e3f95669d4dcaf7b7cb98e59"
+        }
+      },
+      "spatial_manifest_sha256": null
+    },
+    "sampler": {
+      "draws": 100000,
+      "sample_type": "sampler only; no real labels",
+      "seed": 20261001,
+      "expected": [
+        20000.000000000015,
+        20000.000000000015,
+        20000.000000000164,
+        15000.000000000036,
+        15000.000000000116,
+        10000.000000000282
+      ],
+      "observed": [
+        19912,
+        19927,
+        20000,
+        15137,
+        14995,
+        10029
+      ],
+      "tolerance": [
+        763.9466384404112,
+        763.9466384404112,
+        763.9466384404134,
+        682.4953874381736,
+        682.4953874381752,
+        574.2099788303154
+      ],
+      "passed": true,
+      "retained_probability_mass": 1.0000000000000002,
+      "min_seconds": 1.0,
+      "max_seconds": 90.0,
+      "duplicate_tick_fraction": 0.91779,
+      "per_event_three_draw_duplicate_fraction": 0.0015900159001590016,
+      "bin_boundaries": "left inclusive / right exclusive; 90 included in final bin"
+    },
+    "model_family": "team_original_scratch",
+    "common_times": [
+      1,
+      3,
+      5,
+      10,
+      20
+    ],
+    "pretrained_manifest_sha256": null,
+    "upstream_causality": "offline preprocessing not certified",
+    "status": "AUDIT_PASS",
+    "effective_config": {
+      "target_normalization": {
+        "enabled": true,
+        "mean": -1.1224620633068207,
+        "std": 0.431328951490345,
+        "unit": "log10(m/s^2)",
+        "fitted_split": "train",
+        "targets": 146299,
+        "rule": "all finite labels at permitted KNET train stations; population std"
+      },
+      "query_independence_verified": true,
+      "query_chunk_size": 15
+    }
+  },
+  "runtime": {
+    "host": "d13r3n00",
+    "job_id": "29219508",
+    "python": "3.9.21 (main, Dec 11 2024, 16:24:11) \n[GCC 11.2.0]",
+    "versions": {
+      "torch": "1.13.1+git55d300e.abi0.dtk2304",
+      "seisbench": "0.10.1",
+      "numpy": "1.26.4",
+      "scipy": "1.13.1",
+      "h5py": "3.13.0"
+    },
+    "rocm": "5.4.23191-0e6bf66b",
+    "device": "Device 66a1",
+    "git_commit": "73ae9dec50713805c878b5e4efeb8264c01d0c76",
+    "git_dirty": null,
+    "base_commit": "9c95dbfaf92f36b2673d816026cd3f25b91eec66",
+    "command": [
+      "scripts/fe01/run.py",
+      "train",
+      "--config",
+      "${FE01_CODE_ROOT}/configs/fe01/formal/formal__team_original_scratch__seed43.json",
+      "--audit-dir",
+      "${FE01_OUTPUT_ROOT}/audits/formal__team_original_scratch__seed43"
+    ],
+    "recorded_utc": "2026-10-03T02:04:37.364553+00:00"
+  },
+  "model_interface_audit": {
+    "common_initial_state_sha256": "8b1a50076b7865f3e42eea7a001a8b6810a98435139c5730c800abb64cacf714",
+    "common_structure_sha256": "44a0b2832ec9ed350c9124054d5a4ce55bf62df4e07ae410f2a5627c67081435",
+    "total_parameters": 48307702,
+    "trainable_parameters": 48307702,
+    "encoder_parameters": 5886488,
+    "trainable_names": [
+      "waveform_scale_gate",
+      "pga_query_token",
+      "event_query_token",
+      "waveform_model.encoder.conv1.weight",
+      "waveform_model.encoder.conv1.bias",
+      "waveform_model.encoder.conv2.weight",
+      "waveform_model.encoder.conv2.bias",
+      "waveform_model.encoder.temporal.0.weight",
+      "waveform_model.encoder.temporal.0.bias",
+      "waveform_model.encoder.temporal.3.weight",
+      "waveform_model.encoder.temporal.3.bias",
+      "waveform_model.encoder.temporal.6.weight",
+      "waveform_model.encoder.temporal.6.bias",
+      "waveform_model.encoder.temporal.9.weight",
+      "waveform_model.encoder.temporal.9.bias",
+      "waveform_model.encoder.temporal.11.weight",
+      "waveform_model.encoder.temporal.11.bias",
+      "waveform_model.encoder.mlp.0.weight",
+      "waveform_model.encoder.mlp.0.bias",
+      "waveform_model.encoder.mlp.2.weight",
+      "waveform_model.encoder.mlp.2.bias",
+      "waveform_model.encoder.mlp.4.weight",
+      "waveform_model.encoder.mlp.4.bias",
+      "transformer.blocks.0.attention.WQ.weight",
+      "transformer.blocks.0.attention.WQ.bias",
+      "transformer.blocks.0.attention.WK.weight",
+      "transformer.blocks.0.attention.WK.bias",
+      "transformer.blocks.0.attention.WV.weight",
+      "transformer.blocks.0.attention.WV.bias",
+      "transformer.blocks.0.attention.WO.weight",
+      "transformer.blocks.0.attention.WO.bias",
+      "transformer.blocks.0.ffn.0.weight",
+      "transformer.blocks.0.ffn.0.bias",
+      "transformer.blocks.0.ffn.2.weight",
+      "transformer.blocks.0.ffn.2.bias",
+      "transformer.blocks.0.norm1.weight",
+      "transformer.blocks.0.norm1.bias",
+      "transformer.blocks.0.norm2.weight",
+      "transformer.blocks.0.norm2.bias",
+      "transformer.blocks.1.attention.WQ.weight",
+      "transformer.blocks.1.attention.WQ.bias",
+      "transformer.blocks.1.attention.WK.weight",
+      "transformer.blocks.1.attention.WK.bias",
+      "transformer.blocks.1.attention.WV.weight",
+      "transformer.blocks.1.attention.WV.bias",
+      "transformer.blocks.1.attention.WO.weight",
+      "transformer.blocks.1.attention.WO.bias",
+      "transformer.blocks.1.ffn.0.weight",
+      "transformer.blocks.1.ffn.0.bias",
+      "transformer.blocks.1.ffn.2.weight",
+      "transformer.blocks.1.ffn.2.bias",
+      "transformer.blocks.1.norm1.weight",
+      "transformer.blocks.1.norm1.bias",
+      "transformer.blocks.1.norm2.weight",
+      "transformer.blocks.1.norm2.bias",
+      "mlp_mag.mlp.0.weight",
+      "mlp_mag.mlp.0.bias",
+      "output_model_mag.alpha.weight",
+      "output_model_mag.alpha.bias",
+      "output_model_mag.mu.weight",
+      "output_model_mag.mu.bias",
+      "output_model_mag.sigma.weight",
+      "output_model_mag.sigma.bias",
+      "mlp_loc.mlp.0.weight",
+      "mlp_loc.mlp.0.bias",
+      "mlp_loc.mlp.2.weight",
+      "mlp_loc.mlp.2.bias",
+      "output_model_loc.alpha.weight",
+      "output_model_loc.alpha.bias",
+      "output_model_loc.mu.weight",
+      "output_model_loc.mu.bias",
+      "output_model_loc.sigma.weight",
+      "output_model_loc.sigma.bias",
+      "mlp_pga.mlp.0.weight",
+      "mlp_pga.mlp.0.bias",
+      "output_model_pga.alpha.weight",
+      "output_model_pga.alpha.bias",
+      "output_model_pga.mu.weight",
+      "output_model_pga.mu.bias",
+      "output_model_pga.sigma.weight",
+      "output_model_pga.sigma.bias",
+      "waveform_scale_proj.net.0.weight",
+      "waveform_scale_proj.net.0.bias",
+      "waveform_scale_proj.net.2.weight",
+      "waveform_scale_proj.net.2.bias",
+      "pga_cross_attention.query_norm.weight",
+      "pga_cross_attention.query_norm.bias",
+      "pga_cross_attention.kv_norm.weight",
+      "pga_cross_attention.kv_norm.bias",
+      "pga_cross_attention.attn.in_proj_weight",
+      "pga_cross_attention.attn.in_proj_bias",
+      "pga_cross_attention.attn.out_proj.weight",
+      "pga_cross_attention.attn.out_proj.bias",
+      "pga_cross_attention.out_norm.weight",
+      "pga_cross_attention.out_norm.bias",
+      "pga_cross_attention.extra_layers.0.attn_gate",
+      "pga_cross_attention.extra_layers.0.ffn_gate",
+      "pga_cross_attention.extra_layers.0.query_norm.weight",
+      "pga_cross_attention.extra_layers.0.query_norm.bias",
+      "pga_cross_attention.extra_layers.0.kv_norm.weight",
+      "pga_cross_attention.extra_layers.0.kv_norm.bias",
+      "pga_cross_attention.extra_layers.0.attn.in_proj_weight",
+      "pga_cross_attention.extra_layers.0.attn.in_proj_bias",
+      "pga_cross_attention.extra_layers.0.attn.out_proj.weight",
+      "pga_cross_attention.extra_layers.0.attn.out_proj.bias",
+      "pga_cross_attention.extra_layers.0.attn_out_norm.weight",
+      "pga_cross_attention.extra_layers.0.attn_out_norm.bias",
+      "pga_cross_attention.extra_layers.0.ffn.0.weight",
+      "pga_cross_attention.extra_layers.0.ffn.0.bias",
+      "pga_cross_attention.extra_layers.0.ffn.2.weight",
+      "pga_cross_attention.extra_layers.0.ffn.2.bias",
+      "pga_cross_attention.extra_layers.0.ffn_norm.weight",
+      "pga_cross_attention.extra_layers.0.ffn_norm.bias",
+      "pga_cross_attention.extra_layers.1.attn_gate",
+      "pga_cross_attention.extra_layers.1.ffn_gate",
+      "pga_cross_attention.extra_layers.1.query_norm.weight",
+      "pga_cross_attention.extra_layers.1.query_norm.bias",
+      "pga_cross_attention.extra_layers.1.kv_norm.weight",
+      "pga_cross_attention.extra_layers.1.kv_norm.bias",
+      "pga_cross_attention.extra_layers.1.attn.in_proj_weight",
+      "pga_cross_attention.extra_layers.1.attn.in_proj_bias",
+      "pga_cross_attention.extra_layers.1.attn.out_proj.weight",
+      "pga_cross_attention.extra_layers.1.attn.out_proj.bias",
+      "pga_cross_attention.extra_layers.1.attn_out_norm.weight",
+      "pga_cross_attention.extra_layers.1.attn_out_norm.bias",
+      "pga_cross_attention.extra_layers.1.ffn.0.weight",
+      "pga_cross_attention.extra_layers.1.ffn.0.bias",
+      "pga_cross_attention.extra_layers.1.ffn.2.weight",
+      "pga_cross_attention.extra_layers.1.ffn.2.bias",
+      "pga_cross_attention.extra_layers.1.ffn_norm.weight",
+      "pga_cross_attention.extra_layers.1.ffn_norm.bias",
+      "pga_cross_attention.extra_layers.2.attn_gate",
+      "pga_cross_attention.extra_layers.2.ffn_gate",
+      "pga_cross_attention.extra_layers.2.query_norm.weight",
+      "pga_cross_attention.extra_layers.2.query_norm.bias",
+      "pga_cross_attention.extra_layers.2.kv_norm.weight",
+      "pga_cross_attention.extra_layers.2.kv_norm.bias",
+      "pga_cross_attention.extra_layers.2.attn.in_proj_weight",
+      "pga_cross_attention.extra_layers.2.attn.in_proj_bias",
+      "pga_cross_attention.extra_layers.2.attn.out_proj.weight",
+      "pga_cross_attention.extra_layers.2.attn.out_proj.bias",
+      "pga_cross_attention.extra_layers.2.attn_out_norm.weight",
+      "pga_cross_attention.extra_layers.2.attn_out_norm.bias",
+      "pga_cross_attention.extra_layers.2.ffn.0.weight",
+      "pga_cross_attention.extra_layers.2.ffn.0.bias",
+      "pga_cross_attention.extra_layers.2.ffn.2.weight",
+      "pga_cross_attention.extra_layers.2.ffn.2.bias",
+      "pga_cross_attention.extra_layers.2.ffn_norm.weight",
+      "pga_cross_attention.extra_layers.2.ffn_norm.bias",
+      "event_cross_attention.query_norm.weight",
+      "event_cross_attention.query_norm.bias",
+      "event_cross_attention.kv_norm.weight",
+      "event_cross_attention.kv_norm.bias",
+      "event_cross_attention.attn.in_proj_weight",
+      "event_cross_attention.attn.in_proj_bias",
+      "event_cross_attention.attn.out_proj.weight",
+      "event_cross_attention.attn.out_proj.bias",
+      "event_cross_attention.out_norm.weight",
+      "event_cross_attention.out_norm.bias",
+      "layernorm.weight",
+      "layernorm.bias"
+    ],
+    "normalization": "masked demeaning + joint peak; scale log10/std/rms/peak/duration",
+    "input_component_order": "NEZ",
+    "outputs": [
+      "mag",
+      "loc",
+      "pga"
+    ]
+  },
+  "causal_boundary_audit": {
+    "status": "PASS",
+    "event_id": "20000106204000",
+    "first_forbidden_sample": 1699,
+    "modified": "all raw samples from exclusive cutoff onward → NaN",
+    "max_prediction_delta": 5.704350769519806e-09,
+    "max_feature_delta": 7.450580596923828e-09,
+    "observed_encoder_outputs": [
+      [
+        1,
+        1000
+      ],
+      [
+        1,
+        1000
+      ]
+    ],
+    "station_feature_shape": [
+      1,
+      25,
+      1000
+    ],
+    "upstream_causality": "not certified: existing offline resampling/filtering is unchanged"
+  },
+  "query_independence_audit": {
+    "status": "PASS",
+    "event_id": "20000106204000",
+    "queries": 3,
+    "max_mdn_parameter_delta": 9.313225746154785e-10,
+    "atol": 1e-05,
+    "rtol": 1e-05,
+    "rule": "batch vs order reversal vs independent single coordinate queries"
+  },
+  "sampler_distribution_audit": {
+    "draws": 100000,
+    "sample_type": "sampler only; no real labels",
+    "seed": 20261001,
+    "expected": [
+      20000.000000000015,
+      20000.000000000015,
+      20000.000000000164,
+      15000.000000000036,
+      15000.000000000116,
+      10000.000000000282
+    ],
+    "observed": [
+      19912,
+      19927,
+      20000,
+      15137,
+      14995,
+      10029
+    ],
+    "tolerance": [
+      763.9466384404112,
+      763.9466384404112,
+      763.9466384404134,
+      682.4953874381736,
+      682.4953874381752,
+      574.2099788303154
+    ],
+    "passed": true,
+    "retained_probability_mass": 1.0000000000000002,
+    "min_seconds": 1.0,
+    "max_seconds": 90.0,
+    "duplicate_tick_fraction": 0.91779,
+    "per_event_three_draw_duplicate_fraction": 0.0015900159001590016,
+    "bin_boundaries": "left inclusive / right exclusive; 90 included in final bin"
+  },
+  "capability_manifest": {
+    "diting_pretrained_frozen": {
+      "family": "diting",
+      "native_n_samples": 10000,
+      "sampling_rate": 100,
+      "pre_p_seconds": 5.0,
+      "feature_layer": "0.backbone + BackboneAttentionPoolAdapter",
+      "verified_native_forward": false,
+      "max_elapsed_seconds": 94.99,
+      "endpoint": "inclusive current sample; exclusive cutout=current+1",
+      "left_padding": true,
+      "only_native_length": true,
+      "normalization": "masked per-component demeaning / joint component peak",
+      "capability_claim": "declared native shape; verification status recorded separately"
+    },
+    "diting_random_frozen": {
+      "family": "diting",
+      "native_n_samples": 10000,
+      "sampling_rate": 100,
+      "pre_p_seconds": 5.0,
+      "feature_layer": "0.backbone + BackboneAttentionPoolAdapter",
+      "verified_native_forward": false,
+      "max_elapsed_seconds": 94.99,
+      "endpoint": "inclusive current sample; exclusive cutout=current+1",
+      "left_padding": true,
+      "only_native_length": true,
+      "normalization": "masked per-component demeaning / joint component peak",
+      "capability_claim": "declared native shape; verification status recorded separately"
+    },
+    "team_original_scratch": {
+      "family": "team",
+      "native_n_samples": 10000,
+      "sampling_rate": 100,
+      "pre_p_seconds": 5.0,
+      "feature_layer": "original CNN / flatten / MLP port",
+      "verified_native_forward": true,
+      "max_elapsed_seconds": 94.99,
+      "endpoint": "inclusive current sample; exclusive cutout=current+1",
+      "left_padding": true,
+      "only_native_length": true,
+      "normalization": "masked per-component demeaning / joint component peak",
+      "capability_claim": "declared native shape; verification status recorded separately",
+      "verified_input_lengths": [
+        10000
+      ],
+      "verification_device": "cuda",
+      "verification": "actual registered model forward in this audit; other families not certified here"
+    },
+    "phasenet_pretrained_frozen": {
+      "family": "phasenet",
+      "native_n_samples": 3001,
+      "sampling_rate": 100,
+      "pre_p_seconds": 5.0,
+      "feature_layer": "down_branch.4 before decoder",
+      "verified_native_forward": false,
+      "max_elapsed_seconds": 25.0,
+      "endpoint": "inclusive current sample; exclusive cutout=current+1",
+      "left_padding": true,
+      "only_native_length": true,
+      "normalization": "masked per-component demeaning / joint component peak",
+      "capability_claim": "declared native shape; verification status recorded separately"
+    },
+    "eqt_pretrained_frozen": {
+      "family": "eqtransformer",
+      "native_n_samples": 6000,
+      "sampling_rate": 100,
+      "pre_p_seconds": 5.0,
+      "feature_layer": "transformer_d shared trunk",
+      "verified_native_forward": false,
+      "max_elapsed_seconds": 54.99,
+      "endpoint": "inclusive current sample; exclusive cutout=current+1",
+      "left_padding": true,
+      "only_native_length": true,
+      "normalization": "masked per-component demeaning / joint component peak",
+      "capability_claim": "declared native shape; verification status recorded separately"
+    },
+    "amplitude_only": {
+      "family": "amplitude_only",
+      "native_n_samples": 10000,
+      "sampling_rate": 100,
+      "pre_p_seconds": 5.0,
+      "feature_layer": "",
+      "verified_native_forward": false,
+      "max_elapsed_seconds": 94.99,
+      "endpoint": "inclusive current sample; exclusive cutout=current+1",
+      "left_padding": true,
+      "only_native_length": true,
+      "normalization": "masked per-component demeaning / joint component peak",
+      "capability_claim": "declared native shape; verification status recorded separately"
+    },
+    "coords_only": {
+      "family": "coords_only",
+      "native_n_samples": 10000,
+      "sampling_rate": 100,
+      "pre_p_seconds": 5.0,
+      "feature_layer": "",
+      "verified_native_forward": false,
+      "max_elapsed_seconds": 94.99,
+      "endpoint": "inclusive current sample; exclusive cutout=current+1",
+      "left_padding": true,
+      "only_native_length": true,
+      "normalization": "masked per-component demeaning / joint component peak",
+      "capability_claim": "declared native shape; verification status recorded separately"
+    }
+  },
+  "cohort_normalization_audit": {
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "exclusion_rule": "no KNET support / no causal input or query at 1s; locked before model prediction",
+    "excluded_events": 616
+  }
+}

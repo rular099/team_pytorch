@@ -1,0 +1,4 @@
+run_id,model_family,seed,epochs_recorded,updates,samples_recorded,final_validation_selection,note
+pilot__eqt_pretrained_frozen__seed42,eqt_pretrained_frozen,42,1,3,48,0.2598651721400152,Separate smoke run; excluded from formal comparison
+pilot__phasenet_pretrained_frozen__seed42,phasenet_pretrained_frozen,42,1,3,48,0.2571039772734234,Separate smoke run; excluded from formal comparison
+pilot__team_original_scratch__seed42,team_original_scratch,42,1,3,48,0.2553033461568804,Separate smoke run; excluded from formal comparison

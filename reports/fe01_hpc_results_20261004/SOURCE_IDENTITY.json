@@ -1,0 +1,43 @@
+{
+  "task_id": "20261004-fe01-hpc-result-handoff",
+  "repo": "rular099/team_pytorch",
+  "branch": "exp/fe01-feature-extractor-site-effects",
+  "analysis_base_commit": "73ae9dec50713805c878b5e4efeb8264c01d0c76",
+  "training_runtime_commit": "73ae9dec50713805c878b5e4efeb8264c01d0c76",
+  "hpc_git_dirty": null,
+  "code_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "audited_source_file_count": 115,
+  "code_scope": "fe01/*.py; gemini_models.py; gemini_util_light.py; train_light.py; tools/**/*.py; diting/config/*.yml; dtbench/**/*.py",
+  "reader": {
+    "path": "scripts/fe01/summarize_hpc_results.py",
+    "sha256": "8338d8d36da2bedcb91f9db832084bddabfccc048a42eae562e488c7344f931b"
+  },
+  "original_source": {
+    "workspace_relative_root": "chaosuan_res/fe01_runs_20261002",
+    "files": 2201,
+    "bytes": 14193566080,
+    "byte_hashed_noncache_files": 2199,
+    "unhashed_derived_cache_files": 2
+  },
+  "local_source_weight_archive": {
+    "path": "artifacts/fe01/fe01_source_weights.tar.gz",
+    "bytes": 9970664,
+    "sha256": "f1eaf16948d0f0db2547567059765bc16698bc61577140be64710d9eede525c9",
+    "source_identity_commit": "73ae9dec50713805c878b5e4efeb8264c01d0c76",
+    "audited_manifest_matches_actual_local_sources": true
+  },
+  "evaluation_split": "val",
+  "selected_epochs": {
+    "formal__eqt_pretrained_frozen__seed42": 10,
+    "formal__eqt_pretrained_frozen__seed43": 10,
+    "formal__eqt_pretrained_frozen__seed44": 10,
+    "formal__phasenet_pretrained_frozen__seed42": 12,
+    "formal__phasenet_pretrained_frozen__seed43": 10,
+    "formal__phasenet_pretrained_frozen__seed44": 12,
+    "formal__team_original_scratch__seed42": 11,
+    "formal__team_original_scratch__seed43": 11,
+    "formal__team_original_scratch__seed44": 11
+  },
+  "result_commit": "Resolve the containing Git commit; full result SHA is recorded in the separate CODEX-RESULT handoff.",
+  "raw_predictions_journals_checkpoints_in_git": false
+}

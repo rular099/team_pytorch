@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "reader_syntax": "ast.parse passed",
+  "formal_runs": 9,
+  "curve_rows": 108,
+  "paired_comparisons": 9,
+  "exported_event_cells_reconstruct_all_nine_primary_scores": true,
+  "exported_grouped_metrics_reconstruct_all_nine_primary_scores": true,
+  "empty_cell_bootstrap_replicates": 0,
+  "source_inventory_totals_checked": true,
+  "portable_metadata_no_hpc_absolute_roots": true,
+  "reported_json_parse_checked": true,
+  "raw_hdf_or_model_forward": "NOT_RUN: saved results reader only",
+  "test_evaluation": "NOT_RUN",
+  "hpc_submission": "NOT_SUBMITTED_THIS_TASK"
+}
