@@ -1,9 +1,13 @@
 # ChatGPT Project 与 Codex 协作约定
 
-更新日期：2026-10-03
+更新日期：2026-10-04
 
 当前 V01 审阅入口：
 
+- `CODEX_RESULT_20261004_V01_VALIDATION_CLOSURE.md`：当前最小验证闭环实现，尚未提交超算；
+- `V01_prompt_2.md` / `V01_REVIEW_AND_CODEX_HANDOFF_20261004.md`：本轮原始任务书；
+- `../v01_validation_closure.md`：仅五格 normal + 已核实必要的可选 AA random 提交说明；
+- `../../reports/v01_validation_closure_20261004/IMPLEMENTATION_STATUS.md`：新协议和 AA 逐字段不可去重证据；
 - `CODEX_RESULT_20261003_V01_PARTIAL_VALIDATION.md`：三臂 epoch-8、random 结果与 normal 失败的当前交付记录；
 - `CHATGPT_REVIEW_REQUEST_20261003_V01.md`：阅读顺序及最小下一步审阅请求；
 - `../../reports/v01_velocity_padding_validation_20261003/RESULT_REVIEW.md`：指标、配对 CI、身份/剂量审计和缺口；

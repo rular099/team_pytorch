@@ -556,7 +556,8 @@ class PreloadedEventGenerator(Dataset):
                  waveform_padding_mask_eps=1e-8,
                  metadata_support_station_valid=False,
                  v01_padding_intervention=None,
-                 v01_source_role_key='v01_source_role', **kwargs):
+                 v01_source_role_key='v01_source_role',
+                 v01_validation_closure=False, **kwargs):
         if kwargs:
             print(f'Unused parameters: {", ".join(kwargs.keys())}')
         self.shuffle = shuffle
@@ -620,6 +621,7 @@ class PreloadedEventGenerator(Dataset):
         self.metadata_support_station_valid = bool(metadata_support_station_valid)
         self.v01_padding_intervention = dict(v01_padding_intervention or {})
         self.v01_source_role_key = str(v01_source_role_key)
+        self.v01_validation_closure = bool(v01_validation_closure)
         self.trigger_based = trigger_based
         self.disable_station_foreshadowing = disable_station_foreshadowing
         self.selection_skew = selection_skew
@@ -681,6 +683,9 @@ class PreloadedEventGenerator(Dataset):
         self.p_pick_limit = p_pick_limit
         self.realtime_training = self._normalize_realtime_training(realtime_training, shuffle=shuffle)
         self.realtime_enabled = bool(self.realtime_training.get('enabled', False))
+        if self.v01_validation_closure and (
+                not self.realtime_enabled or self.realtime_training.get('mode') != 'val'):
+            raise ValueError('v01_validation_closure is restricted to realtime validation')
         self.realtime_target_sampling = self._normalize_realtime_target_sampling(
             realtime_target_sampling,
             realtime_enabled=self.realtime_enabled,
@@ -1052,6 +1057,10 @@ class PreloadedEventGenerator(Dataset):
     def _select_realtime_cutout(self, full_p_picks, station_valid_full, rng, context, waveform_length):
         picks = np.asarray(full_p_picks[0], dtype=float)
         valid = np.asarray(station_valid_full[0], dtype=bool)
+        # Only the explicitly versioned V01 validation protocol changes this
+        # legacy aliasing behaviour. Clock eligibility must not delete labels.
+        if getattr(self, 'v01_validation_closure', False):
+            valid = valid.copy()
         valid &= self._realtime_pick_valid(picks)
         if not valid.any():
             raise _EmptySample()
@@ -1596,6 +1605,13 @@ class PreloadedEventGenerator(Dataset):
         return result
 
     def __getitem__(self, index):
+        if getattr(self, 'v01_validation_closure', False):
+            from tools.v01_validation_contract import V01NoPrediction
+            try:
+                return self._get_one(index)
+            except _EmptySample as exc:
+                # No neighbouring request may stand in for this event/time.
+                raise V01NoPrediction('no_available_source', str(exc)) from exc
         # Iteratively skip empty samples (no station with signal after cutout).
         # Previous implementation recursed into __getitem__, which could blow
         # the Python stack if many consecutive samples happen to be empty.
@@ -1609,6 +1625,44 @@ class PreloadedEventGenerator(Dataset):
             'All samples in dataset produced empty waveforms after cutout; '
             'check data quality or cutout configuration.'
         )
+
+    def describe_request(self, index):
+        entry = self.indexes[index]
+        event_index, context = self._realtime_index_context(entry)
+        if context.get('mode') != 'val':
+            raise ValueError('Request ledger requires frozen validation times')
+        time = float(self.realtime_training['val_times'][context['time_index']])
+        request = {'local_index': int(index), 'base_event_index': int(event_index),
+                   'event_id': str(self.event_keys[event_index]), 'time_s': time,
+                   'cache_path': str(self.data_path)}
+        if self.v01_validation_closure:
+            from tools.v01_validation_contract import cache_identity
+            cache = getattr(self, '_v01_request_identity_cache', {})
+            if event_index not in cache:
+                with h5py.File(self.data_path, 'r') as handle:
+                    group = handle['data'][request['event_id']]
+                    event = self.event_metadata.get_group(self.event_keys[event_index])
+                    selector = _select_wave_idx_rows(event, group)
+                    rows = np.arange(group['waveforms'].shape[0])[selector]
+                    identity = cache_identity(group, rows)
+                    if self.decimate != 1 or group['waveforms'].shape[1] != self.trace_length:
+                        raise ValueError('V01 closure requires the existing un-decimated fixed-length cache')
+                    identity['reference'] = int(group['v01_reference_p_pick'][0])
+                    cache[event_index] = identity
+                self._v01_request_identity_cache = cache
+            identity = cache[event_index]
+            query = identity['query_valid']
+            source = identity['v01_source_role'].astype(bool)
+            current = int(np.clip(identity['reference'] + round(time*self.sampling_rate),
+                                  0, self.trace_length-1))
+            request.update(
+                absolute_cutoff_utc=float(identity['absolute_window_start_timestamp']) + current/self.sampling_rate,
+                cache_plan_hash=identity['plan_hash'], original_rows=identity['original_rows'].tolist(),
+                requested_query_sensor_ids=identity['station_codes'][query].tolist(),
+                requested_source_sensor_ids=identity['station_codes'][source].tolist(),
+                paired_acc_sensor_ids=identity['v01_paired_acc_sensor_id'][source].tolist(),
+                expected_query_count=int(query.sum()))
+        return request
 
     def _get_one(self, index):
         # Generate indexes of the batch
@@ -1634,11 +1688,21 @@ class PreloadedEventGenerator(Dataset):
             g_event = f['data'][event_name]
             row_selector = _select_wave_idx_rows(event, g_event)
             if isinstance(row_selector, np.ndarray) and row_selector.size == 0:
+                if self.v01_validation_closure:
+                    from tools.v01_validation_contract import V01NoPrediction
+                    raise V01NoPrediction('invalid_label_or_metadata', 'empty row_selector')
                 raise _EmptySample()
             if isinstance(row_selector, slice):
                 original_wave_idx_for_loaded = np.arange(g_event['waveforms'].shape[0], dtype=np.int64)[row_selector]
             else:
                 original_wave_idx_for_loaded = np.asarray(row_selector, dtype=np.int64)
+            closure_identity = None
+            if self.v01_validation_closure:
+                from tools.v01_validation_contract import cache_identity
+                closure_identity = cache_identity(g_event, original_wave_idx_for_loaded)
+                if not np.any(closure_identity['query_valid']):
+                    from tools.v01_validation_contract import V01NoPrediction
+                    raise V01NoPrediction('invalid_label_or_metadata', 'no finite query label/coordinates')
             data = {}
             waveform_padding_masks = []
             for key in g_event:
@@ -2407,13 +2471,14 @@ class PreloadedEventGenerator(Dataset):
 
         # Sanity check: at least one station must have a real waveform to avoid
         # degenerate forward passes (all-zero input → NaN in energy loss).
-        # If violated, skip to the next sample.
+        # Legacy skips to the next sample; explicit closure records abstention.
         for i in range(waveforms.shape[0]):
             if not station_valid[i].any():
                 import warnings
                 warnings.warn(
                     f'Event {ith_event} has no station with nonzero waveform '
-                    f'after cutout — skipping sample.'
+                    f'after cutout — '
+                    + ('abstaining for this request.' if self.v01_validation_closure else 'skipping sample.')
                 )
                 raise _EmptySample()
 
@@ -2507,6 +2572,14 @@ class PreloadedEventGenerator(Dataset):
             'selected_original_input_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
             'original_station_indices': torch.from_numpy(selected_original_input_indices[0]).long(),
         }
+        if closure_identity is not None:
+            from tools.v01_validation_contract import selected_identity
+            p_pick_info.update(selected_identity(
+                closure_identity, self.describe_request(sample_index_for_cache),
+                selected_input_indices[0], station_valid[0],
+                full_selected_indices_for_targets[0], pga_target_indices[0],
+                pga_target_valid[0], realtime_info, self.crop_start,
+                self.sampling_rate, self.decimate))
         if self.v01_source_role is not None:
             selected_rows = selected_input_indices[0]
             selected_ok = selected_rows >= 0
@@ -2777,6 +2850,11 @@ class JointGenerator(Dataset):
             dataset_id = torch.tensor(id_value, dtype=torch.long)
             batch_inp += [dataset_id]
         return batch_inp, batch_out, batch_info
+
+    def describe_request(self, index):
+        generator_id, batch_id = self.indexes[index]
+        result = self.generators[generator_id].describe_request(batch_id)
+        return {**result, 'shard_id': int(generator_id), 'global_index': int(index)}
 
     def on_epoch_end(self):
         self.indexes = []

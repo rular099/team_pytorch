@@ -1,0 +1,15 @@
+{
+  "task_id": "20261004-v01-validation-closure",
+  "base_commit": "74c55aa5442b4200961c88ceee3d11af5033275d",
+  "scope": "pure offline P1 interpretation of four existing velocity random exports",
+  "sensor_id_certified": false,
+  "normal_results_available": false,
+  "aa_included": false,
+  "closure_complete": false,
+  "bootstrap_draws": 5000,
+  "bootstrap_seed": 20260915,
+  "predictions_bias_corrected": false,
+  "pga_coordinate": "log10(m/s^2)",
+  "threshold": -1.2,
+  "full_record_centering_unchanged": true
+}

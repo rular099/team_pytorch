@@ -1,0 +1,77 @@
+[
+  {
+    "comparison": "vfull__vfull__random--vfull__vmissing__random",
+    "keys": [
+      "event_id",
+      "time_s",
+      "query_lat",
+      "query_lon",
+      "query_depth"
+    ],
+    "matched": 84259,
+    "left_only": 0,
+    "right_only": 0,
+    "sensor_id_certified": false,
+    "absolute_utc_certified": false
+  },
+  {
+    "comparison": "vfull__vfull__random--vmissing__vfull__random",
+    "keys": [
+      "event_id",
+      "time_s",
+      "query_lat",
+      "query_lon",
+      "query_depth"
+    ],
+    "matched": 84259,
+    "left_only": 0,
+    "right_only": 0,
+    "sensor_id_certified": false,
+    "absolute_utc_certified": false
+  },
+  {
+    "comparison": "vfull__vfull__random--vmissing__vmissing__random",
+    "keys": [
+      "event_id",
+      "time_s",
+      "query_lat",
+      "query_lon",
+      "query_depth"
+    ],
+    "matched": 84259,
+    "left_only": 0,
+    "right_only": 0,
+    "sensor_id_certified": false,
+    "absolute_utc_certified": false
+  },
+  {
+    "comparison": "vmissing__vfull__random--vmissing__vmissing__random",
+    "keys": [
+      "event_id",
+      "time_s",
+      "query_lat",
+      "query_lon",
+      "query_depth"
+    ],
+    "matched": 84259,
+    "left_only": 0,
+    "right_only": 0,
+    "sensor_id_certified": false,
+    "absolute_utc_certified": false
+  },
+  {
+    "comparison": "vfull__vmissing__random--vmissing__vmissing__random",
+    "keys": [
+      "event_id",
+      "time_s",
+      "query_lat",
+      "query_lon",
+      "query_depth"
+    ],
+    "matched": 84259,
+    "left_only": 0,
+    "right_only": 0,
+    "sensor_id_certified": false,
+    "absolute_utc_certified": false
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "cell": "vfull__vfull__random",
+    "targets": 84259,
+    "binned_targets": 84259,
+    "outside_fixed_axes": 0
+  },
+  {
+    "cell": "vmissing__vmissing__random",
+    "targets": 84259,
+    "binned_targets": 84259,
+    "outside_fixed_axes": 0
+  },
+  {
+    "cell": "vfull__vfull__random",
+    "stratum": "below",
+    "targets": 48647,
+    "binned_targets": 48647,
+    "outside_fixed_axes": 0
+  },
+  {
+    "cell": "vmissing__vmissing__random",
+    "stratum": "below",
+    "targets": 48647,
+    "binned_targets": 48647,
+    "outside_fixed_axes": 0
+  },
+  {
+    "cell": "vfull__vfull__random",
+    "stratum": "above",
+    "targets": 35612,
+    "binned_targets": 35612,
+    "outside_fixed_axes": 0
+  },
+  {
+    "cell": "vmissing__vmissing__random",
+    "stratum": "above",
+    "targets": 35612,
+    "binned_targets": 35612,
+    "outside_fixed_axes": 0
+  }
+]

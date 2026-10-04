@@ -1,12 +1,30 @@
 # TEAM PyTorch 项目交接文档
 
-更新时间：2026-10-03（Asia/Shanghai）
+更新时间：2026-10-04（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威工程入口。当前主任务已从 RT57--RT61
 模型结构研究切换到 **V01：速度波形输入与 P 前缺失/补零受控实验**。不要根据旧聊天、
 旧 `PROJECT_CONTEXT.md` 的分支名、目录名或 checkpoint 文件名推断当前状态。
 
-## 0. 快速定位和当前结论
+## 2026-10-04 当前进展：V01 validation closure
+
+本轮按 `V01_prompt_2.md` 实施，base 为 `74c55aa5442b4200961c88ceee3d11af5033275d`，
+分支不变。V01 validation-only clock copy、strict 空请求、sensor IDs/UTC ledger、
+真实 idx7 审计门禁和 evaluation-only 提交器已实现；本地回归通过，超算未提交。
+模型/训练/loss/旧配置/旧报告不变；RT55 默认行为保留。真实 cache 没有回传，
+真实 idx7 确认和新的 normal 结果必须等超算，不能把合成机制测试当成真实修复验证。
+
+AA 离线已核实 15 组重复 / 45 额外行，15 组预测均不一致，不能安全去重；
+这次可显式增加且仅增加一格 AA random。四格速度 random 复用，脚本真实 signature 不一致则停止。
+仅执行 `tools/complete_v01_validation_slurm.sh`，不执行旧 recovery/all/preflight/train。
+默认 DRY_RUN=1，正式需 CONFIRM_V01_CLOSURE=1 DRY_RUN=0；输出新 validation_closure_v1。
+
+下一步：上传精确新源码，按 `docs/v01_validation_closure.md` 提交五 normal + 必要 AA random。
+audit 成功才放行评估；回传新目录 + sacct，再分析真实指标。当前无新超算 job ID。
+完整交付记录见 `docs/ai/CODEX_RESULT_20261004_V01_VALIDATION_CLOSURE.md`。
+用户的 tmp.tar.gz 和两份未跟踪技术交流目录都未触碰。
+
+## 0. 2026-10-03 结果快照（历史，最新状态以上文为准）
 
 - 工作区：`/home/zhangb/work/people/zhangbei/team_claude`
 - 当前活跃仓库：
@@ -432,9 +450,9 @@ field range/pairwise difference、实际支持剂量和 event-macro CI，且识�
 
 ## 7. 下一会话第一步
 
-先读 `docs/ai/CHATGPT_REVIEW_REQUEST_20261003_V01.md` 和本轮结果报告，等待明确审阅决定；
-不要自动提交任务。当前无需再次 vfull training；后续若仅修 normal/A-pair evaluation，
-必须复用三臂 epoch-8 权重，记录新 protocol 身份并保留本轮结果。
+先读 `docs/ai/CODEX_RESULT_20261004_V01_VALIDATION_CLOSURE.md` 和
+`docs/v01_validation_closure.md`。本轮实现已按明确审阅决定完成，等待用户上传源码/手动提交；
+不要重复整体 recovery/preflight/训练。未提交不代表已完成真实验证；需要新的 closure 结果和 sacct。
 
 ### 历史 recovery 操作（2026-10-01，已补跑，以下命令不得整体重复执行）
 

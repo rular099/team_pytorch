@@ -1,0 +1,462 @@
+{
+  "file": "../chaosuan_res/vel/eval_retry1/apair__apair__random.npz",
+  "sha256": "c8d5b53d7b98e332c349f57dc5738df390e204d393ab52d78fcf4d7b8429ee7d",
+  "duplicate_groups": [
+    {
+      "event_id": "20080822092500",
+      "time_s": 3.0,
+      "rows": [
+        1239,
+        1240
+      ],
+      "requested_indices": [
+        1239,
+        1240
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20091031024200",
+      "time_s": 3.0,
+      "rows": [
+        1575,
+        1576
+      ],
+      "requested_indices": [
+        1575,
+        1576
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20110829170600",
+      "time_s": 3.0,
+      "rows": [
+        2338,
+        2339
+      ],
+      "requested_indices": [
+        2338,
+        2339
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20110907025400",
+      "time_s": 3.0,
+      "rows": [
+        2562,
+        2563
+      ],
+      "requested_indices": [
+        2562,
+        2563
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20110917163400",
+      "time_s": 20.0,
+      "rows": [
+        2877,
+        2878,
+        2879,
+        2880,
+        2881
+      ],
+      "requested_indices": [
+        2877,
+        2878,
+        2879,
+        2880,
+        2881
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "mag_sigma",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20160911122200",
+      "time_s": 5.0,
+      "rows": [
+        5327,
+        5328,
+        5329
+      ],
+      "requested_indices": [
+        5327,
+        5328,
+        5329
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20171001103100",
+      "time_s": 5.0,
+      "rows": [
+        5782,
+        5783,
+        5784
+      ],
+      "requested_indices": [
+        5782,
+        5783,
+        5784
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20180914105500",
+      "time_s": 5.0,
+      "rows": [
+        6034,
+        6035,
+        6036
+      ],
+      "requested_indices": [
+        6034,
+        6035,
+        6036
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20191019180800",
+      "time_s": 90.0,
+      "rows": [
+        6531,
+        6532,
+        6533,
+        6534,
+        6535,
+        6536,
+        6537
+      ],
+      "requested_indices": [
+        6531,
+        6532,
+        6533,
+        6534,
+        6535,
+        6536,
+        6537
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20210919172600",
+      "time_s": 5.0,
+      "rows": [
+        6804,
+        6805,
+        6806
+      ],
+      "requested_indices": [
+        6804,
+        6805,
+        6806
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20210919190400",
+      "time_s": 10.0,
+      "rows": [
+        6825,
+        6826,
+        6827,
+        6828
+      ],
+      "requested_indices": [
+        6825,
+        6826,
+        6827,
+        6828
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20210927202500",
+      "time_s": 10.0,
+      "rows": [
+        6888,
+        6889,
+        6890,
+        6891
+      ],
+      "requested_indices": [
+        6888,
+        6889,
+        6890,
+        6891
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20240603063100",
+      "time_s": 40.0,
+      "rows": [
+        7791,
+        7792,
+        7793,
+        7794,
+        7795,
+        7796
+      ],
+      "requested_indices": [
+        7791,
+        7792,
+        7793,
+        7794,
+        7795,
+        7796
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20240625173100",
+      "time_s": 40.0,
+      "rows": [
+        8001,
+        8002,
+        8003,
+        8004,
+        8005,
+        8006
+      ],
+      "requested_indices": [
+        8001,
+        8002,
+        8003,
+        8004,
+        8005,
+        8006
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "mag_sigma",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    },
+    {
+      "event_id": "20240729231200",
+      "time_s": 1.0,
+      "rows": [
+        8260,
+        8261,
+        8262,
+        8263,
+        8264,
+        8265,
+        8266,
+        8267
+      ],
+      "requested_indices": [
+        8260,
+        8261,
+        8262,
+        8263,
+        8264,
+        8265,
+        8266,
+        8267
+      ],
+      "nonidentical_fields": [
+        "mag_pred",
+        "loc_pred",
+        "pga_pred",
+        "mag_mu_best",
+        "mag_sigma",
+        "loc_mu_best",
+        "loc_sigma",
+        "loc_mu_best_abs",
+        "pga_mu_best",
+        "pga_sigma",
+        "pga_nll_model_space",
+        "pga_nll_log10_mps2",
+        "pga_prob_ge_threshold"
+      ]
+    }
+  ],
+  "extra_rows": 45,
+  "can_deduplicate": false,
+  "decision": "rerun_one_AA_random",
+  "task_id": "20261004-v01-validation-closure",
+  "base_commit": "74c55aa5442b4200961c88ceee3d11af5033275d",
+  "real_cache_trace_status": "NOT_RUN: derived cache exists only on HPC",
+  "sensor_identity_certification": "NOT_AVAILABLE locally; must run audit gate on HPC",
+  "offline_dedup_performed": false
+}

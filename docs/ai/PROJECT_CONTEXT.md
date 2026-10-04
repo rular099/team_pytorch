@@ -2,6 +2,12 @@
 
 更新日期：2026-09-02（Asia/Shanghai）
 
+2026-10-04 入口提示：以下是保留的 RT55/RT56 历史快照，不是当前分支状态。
+当前 V01 分支为 `exp/v01-velocity-prep-padding-control`，validation closure 基线为
+`74c55aa5442b4200961c88ceee3d11af5033275d`。当前任务/运行说明见
+`docs/ai/CODEX_RESULT_20261004_V01_VALIDATION_CLOSURE.md` 和
+`docs/v01_validation_closure.md`。三臂训练已完成；本轮只补验证，不训练/preflight/recover。
+
 这是给 GitHub 连接器和新 AI 对话使用的紧凑入口。它不替代原始 metrics、NPZ、checkpoint 或 resolved config。定量分析前仍须核验具体 provenance。
 
 ## 1. 仓库和研究目标

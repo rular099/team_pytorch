@@ -467,8 +467,10 @@ def _canonical_eval_splits(splits=None):
 def build_datasets(config, overfit_n=0, input_station_selection='config', splits=None):
     """Build deterministic eval datasets, matching train_light.py split logic."""
     training_params = config['training_params']
-    generator_params = expand_partitioned_generator_params(training_params)
     requested_splits = _canonical_eval_splits(splits)
+    if training_params.get('v01_validation_closure', False) and (requested_splits != ['val'] or overfit_n):
+        raise ValueError('V01 closure requires validation only, with no overfit/test reads')
+    generator_params = expand_partitioned_generator_params(training_params)
 
     overwrite_sampling_rate = training_params.get('overwrite_sampling_rate', None)
     min_stalta_ratio_at_pick = training_params.get('min_stalta_ratio_at_pick', 0.1)
@@ -625,6 +627,10 @@ def build_datasets(config, overfit_n=0, input_station_selection='config', splits
             }[split_name]
             split_override = indexed_config_override(split_overrides, i)
             merged = {**defaults, **gp_copy, **split_override}
+            if training_params.get('v01_validation_closure', False):
+                if split_name != 'val':
+                    raise ValueError('V01 closure is validation-only; train/test are forbidden')
+                merged['v01_validation_closure'] = True
             # Evaluation must never duplicate or reshuffle events. Test inherits
             # the validation realtime override by default, yielding the same
             # fixed 1/3/5/10/20/40/90-second protocol for rt55.
@@ -1397,6 +1403,14 @@ def run_inference(
                 results['loc_center'].append(_to_numpy(p_picks['loc_center']))
             for info_key in (
                 'event_id',
+                'v01_query_sensor_id',
+                'v01_source_sensor_id',
+                'v01_source_paired_acc_id',
+                'v01_absolute_cutoff_utc',
+                'v01_cache_plan_hash',
+                'v01_requested_event_id',
+                'v01_protocol',
+                'v01_crop_start',
                 'pga_target_indices',
                 'realtime_elapsed_time',
                 'realtime_requested_elapsed_time',
@@ -2642,21 +2656,32 @@ def main():
         if args.num_shards > 1:
             shard_text = f' shard {args.shard_id}/{args.num_shards} ({len(eval_indices)} samples)'
         print(f'\nRunning inference on {split_name} set ({len(dataset)} samples){shard_text}...')
-        results = run_inference(
-            model,
-            dataset,
-            device,
-            config,
-            indices=eval_indices,
-            waveform_station_permutation=args.waveform_station_permutation,
-            waveform_station_permutation_seed=args.waveform_station_permutation_seed,
-            permute_cached_token_weights=permute_cached_token_weights,
-        )
+        closure = config['training_params'].get('v01_validation_closure', False)
+        if closure:
+            if args.waveform_station_permutation != 'none' or args.case_station_sweep:
+                raise ValueError('V01 closure does not allow permutation or station-count sweeps')
+            from tools.v01_validation_contract import run_closure_inference
+            results, ledger_summary = run_closure_inference(
+                model, dataset, device, config, eval_indices,
+                str(args.output) + '.' + split_name + '.requests.jsonl', run_inference)
+        else:
+            results = run_inference(
+                model,
+                dataset,
+                device,
+                config,
+                indices=eval_indices,
+                waveform_station_permutation=args.waveform_station_permutation,
+                waveform_station_permutation_seed=args.waveform_station_permutation_seed,
+                permute_cached_token_weights=permute_cached_token_weights,
+            )
         formal_metrics[split_name] = print_summary(
             results,
             split_name,
             config=config,
         )
+        if closure:
+            formal_metrics[split_name]['request_accounting'] = ledger_summary
         # Prefix keys with split name for saving
         for k, v in results.items():
             all_results[f'{split_name}_{k}'] = np.array(v, dtype=object)
