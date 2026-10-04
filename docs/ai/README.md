@@ -116,3 +116,17 @@ review_request:
 [运行手册](FE01_HPC_RUNBOOK.md)、[验证](FE01_VERIFICATION.md)、[证据schema](FE01_ARTIFACT_SCHEMA.md)。
 本轮停止于手动超算交接，NOT_SUBMITTED，87项本地聚焦测试通过；真实DiTing/生产数据/
 设备资源/正式评价仍待手动audit。不要把reports/fe01_local_20261001的合成证据作为Japan结果。
+
+## 9. FE01 超算结果交接（2026-10-04）
+
+用户下载的 `chaosuan_res/fe01_runs_20261002` 已整理为
+[真实超算结果报告](../../reports/fe01_hpc_results_20261004/README.md) 与
+[ChatGPT分析要求](../../reports/fe01_hpc_results_20261004/CHATGPT_ANALYSIS_PROMPT.md)。
+具体身份、检查和限制见 [CODEX-RESULT](CODEX_RESULT_20261004_FE01_HPC_RESULTS.md)。
+结果commit `b5b2421f2667461e8ae785bcccc01e00411d905d`，仍在
+`exp/fe01-feature-extractor-site-effects`；训练记录source为
+`73ae9dec50713805c878b5e4efeb8264c01d0c76`。
+
+TEAM/PhaseNet/EQT各3 seed的曲线均有12轮，当前成绩为预定选epoch后的validation。
+RT55复用原训练权重，尚未取得共同协议复评；本轮没有新超算提交或test评价。
+第8节是2026-10-01实现交付快照，不能用其NOT_SUBMITTED描述当前已提供的训练记录。

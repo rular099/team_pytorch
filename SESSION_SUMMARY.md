@@ -633,3 +633,31 @@ NOT_SUBMITTED；未运行正式训练/验证/test/远程任务。实际Japan年�
 账户/设备环境须用户填写并手动audit；catalog picks/离线滤波不等于真实实时可用性。
 下一步按docs/ai/FE01_HPC_RUNBOOK.md用户手动运行四个pilot再提交正式12组；不自动追加
 滚动训练、模型搜索、速度转换或论文工作。
+
+## 11. FE01 用户超算结果已整理（2026-10-04）
+
+用户上传 `chaosuan_res/fe01_runs_20261002`：TEAM scratch、PhaseNet frozen、
+EQT frozen各seed42/43/44，共9个正式run，各自记录12轮/2544 updates；3个pilot另列。
+结果commit `b5b2421f2667461e8ae785bcccc01e00411d905d`，分支仍为
+`exp/fe01-feature-extractor-site-effects`，runtime source commit为
+`73ae9dec50713805c878b5e4efeb8264c01d0c76`。
+代码/依赖受审计115个文件的内容指纹与保存HPC lock一致，模型/训练配置未改。
+
+入口 `reports/fe01_hpc_results_20261004/README.md`，含逐seed/时间/几何/目标角色指标、
+训练曲线、5000次事件配对bootstrap、可用日志采样统计、portable audit/config/runtime、
+原2201文件来源索引及2199个非cache SHA。逐事件cell表独立重建九组主指标通过。
+原始约14.19GB保留本地，Git结果包约23.86MB。
+
+所有本批成绩是validation共同1/3/5/10/20秒、normal/random的10个cell等权noninput MAE，
+单位log10(m/s²)，1310事件/139440非输入目标每run。
+跨3 seed均值/样本标准差：PhaseNet 0.225818/0.000125，EQT 0.235296/0.001310，
+TEAM 0.241817/0.003011；epoch依次为PhaseNet12/10/12、EQT10/10/10、TEAM11/11/11。
+三组95%区间覆盖率均欠覆盖，EQT较接近名义值；不能用点预测排序代替校准判断。
+
+用户为快速推进选择复用已有RT55/RT61而未新训DiTing公共下游组。
+下一步是取得已有RT55/RT61的确切checkpoint/配置并按共同人口复评，
+不要求无理由重训，也不混入历史标量作为同协议成绩。
+尚缺checkpoint字节/内部epoch/SHA、正式Slurm完成证据、独立test、随机验证时刻、
+40/90秒最终评价、site/spatial/replay证据；日志committed_journals归属和offline在线因果性未认证。
+本轮没有sbatch/srun/重训/test，详细交接见
+`docs/ai/CODEX_RESULT_20261004_FE01_HPC_RESULTS.md`。
