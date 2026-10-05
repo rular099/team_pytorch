@@ -1,0 +1,13 @@
+{
+  "split": "val",
+  "models": 9,
+  "events_per_run": 1310,
+  "rows_per_run": 194265,
+  "noninput_rows_per_run": 139440,
+  "historical_primary_preserved": true,
+  "reference_available": false,
+  "bootstrap_draws": 5000,
+  "production_forward_completed": false,
+  "site_evidence": "INCOMPLETE",
+  "hpc_status": "NOT_SUBMITTED_THIS_TASK"
+}

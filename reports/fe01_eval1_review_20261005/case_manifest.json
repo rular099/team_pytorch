@@ -1,0 +1,42 @@
+{
+  "split": "val",
+  "rule": "magnitude quantiles .25/.50/.90 of locked cohort; nearest eligible metadata; >=5 queries at every common decision; ties dataset/event",
+  "cases": [
+    {
+      "quantile": 0.25,
+      "target_magnitude": 3.6,
+      "dataset_id": "japan_2000.hdf5",
+      "event_id": "20001009022000",
+      "magnitude": 3.6,
+      "event_latitude": 33.8650016784668,
+      "event_longitude": 135.71200561523438,
+      "depth": 58.0,
+      "distance_to_quantile": 0.0
+    },
+    {
+      "quantile": 0.5,
+      "target_magnitude": 4.0,
+      "dataset_id": "japan_2000.hdf5",
+      "event_id": "20001004200000",
+      "magnitude": 4.0,
+      "event_latitude": 36.45800018310547,
+      "event_longitude": 140.62899780273438,
+      "depth": 56.0,
+      "distance_to_quantile": 0.0
+    },
+    {
+      "quantile": 0.9,
+      "target_magnitude": 4.9,
+      "dataset_id": "japan_2006.hdf5",
+      "event_id": "20060909193600",
+      "magnitude": 4.9,
+      "event_latitude": 38.28200149536133,
+      "event_longitude": 142.03500366210938,
+      "depth": 67.0,
+      "distance_to_quantile": 0.0
+    }
+  ],
+  "selection_uses_predictions": false,
+  "source_csv_sha256": "d58a7b410e8d8df5bf46ba6e7022d07740b57bb9d932140c4754d2d57149c8bc",
+  "cohort_sha256": "9df03df4e675de2fc817daa3ad1541078c086bec245dd26f87123967d0d30f5a"
+}

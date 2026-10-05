@@ -1,0 +1,4 @@
+model_family,seeds,primary_mean,primary_seed_sample_std,interpretation
+eqt_pretrained_frozen,3,0.2352962971116522,0.0013103543942158168,mean fixed-model losses; no averaged predictions or ensemble
+phasenet_pretrained_frozen,3,0.22581768504070346,0.00012545222185099465,mean fixed-model losses; no averaged predictions or ensemble
+team_original_scratch,3,0.24181725277349808,0.003011338871477544,mean fixed-model losses; no averaged predictions or ensemble

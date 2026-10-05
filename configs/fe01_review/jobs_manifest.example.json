@@ -1,0 +1,206 @@
+{
+  "split": "val",
+  "scheduler_called": false,
+  "execution_status": "NOT_SUBMITTED_THIS_TASK",
+  "models": [
+    {
+      "run_id": "formal__team_original_scratch__seed42",
+      "kind": "fe01",
+      "model_family": "team_original_scratch",
+      "seed": 42,
+      "epoch": 11,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed42/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed42/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed42",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__team_original_scratch__seed43",
+      "kind": "fe01",
+      "model_family": "team_original_scratch",
+      "seed": 43,
+      "epoch": 11,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed43/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed43/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed43",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__team_original_scratch__seed44",
+      "kind": "fe01",
+      "model_family": "team_original_scratch",
+      "seed": 44,
+      "epoch": 11,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed44/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed44/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__team_original_scratch__seed44",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__phasenet_pretrained_frozen__seed42",
+      "kind": "fe01",
+      "model_family": "phasenet_pretrained_frozen",
+      "seed": 42,
+      "epoch": 12,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed42/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed42/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed42",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__phasenet_pretrained_frozen__seed43",
+      "kind": "fe01",
+      "model_family": "phasenet_pretrained_frozen",
+      "seed": 43,
+      "epoch": 10,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed43/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed43/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed43",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__phasenet_pretrained_frozen__seed44",
+      "kind": "fe01",
+      "model_family": "phasenet_pretrained_frozen",
+      "seed": 44,
+      "epoch": 12,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed44/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed44/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__phasenet_pretrained_frozen__seed44",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__eqt_pretrained_frozen__seed42",
+      "kind": "fe01",
+      "model_family": "eqt_pretrained_frozen",
+      "seed": 42,
+      "epoch": 10,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed42/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed42/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed42",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__eqt_pretrained_frozen__seed43",
+      "kind": "fe01",
+      "model_family": "eqt_pretrained_frozen",
+      "seed": 43,
+      "epoch": 10,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed43/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed43/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed43",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__eqt_pretrained_frozen__seed44",
+      "kind": "fe01",
+      "model_family": "eqt_pretrained_frozen",
+      "seed": 44,
+      "epoch": 10,
+      "checkpoint": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed44/best.pth",
+      "config": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed44/resolved_config.json",
+      "run_dir": "$FE01_TRAIN_OUTPUT_ROOT/formal__eqt_pretrained_frozen__seed44",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "rt55_strict_prefix_replay",
+      "kind": "rt55",
+      "epoch": 32,
+      "checkpoint": "$RT55_CHECKPOINT",
+      "config": "$RT55_CONFIG",
+      "encoder": "$LEGACY_ENCODER_CHECKPOINT",
+      "diting_config": "$FE01_CODE_ROOT/diting/config/diting_1200m_backbone_attnpool.yml",
+      "system_role": "legacy_reused_system"
+    },
+    {
+      "run_id": "rt61_strict_prefix_replay",
+      "kind": "rt61",
+      "epoch": 8,
+      "checkpoint": "$RT61_CHECKPOINT",
+      "config": "$RT61_CONFIG",
+      "encoder": "$LEGACY_ENCODER_CHECKPOINT",
+      "diting_config": "$FE01_CODE_ROOT/diting/config/diting_1200m_backbone_attnpool.yml",
+      "system_role": "enhanced_system_reference"
+    }
+  ],
+  "stages": [
+    {
+      "stage": "inventory_and_requests",
+      "device": false,
+      "depends": [],
+      "fixed_request_sha256": "supplied frozen plan byte SHA",
+      "expected_fixed_rows": 194265
+    },
+    {
+      "stage": "verify",
+      "device": true,
+      "depends": [
+        "CPU identity"
+      ],
+      "decision_budget": "32..40"
+    },
+    {
+      "stage": "legacy_fixed",
+      "device": true,
+      "depends": [
+        "legacy verification PASS"
+      ],
+      "rows": 194265,
+      "noninput_rows": 139440
+    },
+    {
+      "stage": "random_long",
+      "device": true,
+      "depends": [
+        "per-model verification PASS"
+      ],
+      "denominator": "actual manifest; random3930draws3926snapshots; long capacity N/A retained"
+    },
+    {
+      "stage": "reference",
+      "device": false,
+      "depends": [
+        "data identity"
+      ],
+      "train_events": 9084,
+      "final_labels": 146299
+    },
+    {
+      "stage": "replay",
+      "device": true,
+      "depends": [
+        "verification PASS"
+      ],
+      "cases": 3,
+      "times": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ]
+    },
+    {
+      "stage": "analyze_pack",
+      "device": false,
+      "depends": [
+        "finished or documented BLOCKED stages"
+      ]
+    }
+  ]
+}

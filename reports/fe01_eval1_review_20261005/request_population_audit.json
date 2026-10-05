@@ -1,0 +1,32 @@
+{
+  "population_sha256": "e96284780cb5f72b952c1697d4d264d307e7139a153201fa222566015aec7f69",
+  "truth_input_clock_sha256": "f204deca06725af5513895416d5b0691c75c12221127854c32d1d497855155bb",
+  "rows": 194265,
+  "roles": {
+    "observed_input": 54825,
+    "triggered_noninput": 43850,
+    "untriggered_noninput": 95590
+  },
+  "events": 1310,
+  "source_csv_sha256": "d58a7b410e8d8df5bf46ba6e7022d07740b57bb9d932140c4754d2d57149c8bc",
+  "random_manifest_source_sha256": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+  "random_manifest_hashes": {
+    "formal__eqt_pretrained_frozen__seed42": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+    "formal__eqt_pretrained_frozen__seed43": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+    "formal__eqt_pretrained_frozen__seed44": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+    "formal__phasenet_pretrained_frozen__seed42": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+    "formal__phasenet_pretrained_frozen__seed43": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+    "formal__phasenet_pretrained_frozen__seed44": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+    "formal__team_original_scratch__seed42": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+    "formal__team_original_scratch__seed43": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+    "formal__team_original_scratch__seed44": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68"
+  },
+  "random_draws": 3930,
+  "unique_random_snapshots": 3926,
+  "duplicate_draws": 4,
+  "random_time_domain_seconds": [
+    1,
+    20
+  ],
+  "draw_weight": "mean targets in event/draw/geometry, then mean original draws within event, then events, then geometries"
+}

@@ -1,0 +1,7 @@
+gate,status,reason
+fixed_CSV_population,PASS,"all nine exact original byte SHAs, population and clock/labels pins"
+historical_primary_preserved,PASS,each selected-epoch score matches prior report to 1e-12
+production_forward_reuse,NOT_RUN,requires original selected checkpoints and Japan HDF5 on DCU
+legacy_same_population_comparison,NOT_RUN,RT55 ep32 and RT61 ep8 production forward missing
+train_reference_site_recovery,INCOMPLETE,Japan training HDF5 unavailable locally
+random_long_replay,NOT_RUN,manual HPC stages pending
