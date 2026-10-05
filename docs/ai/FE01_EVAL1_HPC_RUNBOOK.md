@@ -2,7 +2,7 @@
 
 **本地已完成九组CSV的真实再分析；接下来超算只补验证和评价，不训练。** 本轮没有提交任何作业。
 
-现在使用直接提交版：`artifacts/fe01/fe01_eval1_hpc_submit_20261005.tar.gz`及同名`.sha256`。这两个文件替代此前的评价交付包。包内含新增评价代码、提交脚本、配置、运行手册、原始请求元数据、两个legacy原config快照及已填路径的私有`cluster_zb.env`。不包含checkpoint/HDF5，不覆盖原115个训练源码文件，不重签旧lock，也不要求再拷1GB原权重包。
+现在使用模块初始化修复版：`artifacts/fe01/fe01_eval1_hpc_envfix_20261005.tar.gz`及同名`.sha256`。这两个文件替代此前的评价交付包。仍用直接提交脚本。包内含新增评价代码、提交脚本、配置、运行手册、原始请求元数据、两个legacy原config快照及已填路径的私有`cluster_zb.env`。不包含checkpoint/HDF5，不覆盖原115个训练源码文件，不重签旧lock，也不要求再拷1GB原权重包。
 
 | 在哪里 | 要做的事 |
 |---|---|
@@ -13,11 +13,11 @@
 
 ## 先在超算登录节点执行
 
-先把**新的tar.gz和.sha256两个文件**拷到你此前一直使用的**超算FE01项目根目录**，再在该目录执行下面命令。包里的私有env已经从你之前的launcher/config填好绝对路径，输出使用新run ID `fe01_eval1_direct_20261005`。下面不用手动激活conda；计算节点上的作业脚本会source conda.sh后激活zb。
+先把**新的tar.gz和.sha256两个文件**拷到你此前一直使用的**超算FE01项目根目录**，再在该目录执行下面命令。包里的私有env已经从你之前的launcher/config填好绝对路径，输出使用新run ID `fe01_eval1_envfix_20261005`。下面不用手动激活conda；计算节点上的作业脚本会先清理继承的modules，加载指定DTK/Miniconda，再source conda.sh并激活zb。
 
 ```bash
-sha256sum -c fe01_eval1_hpc_submit_20261005.tar.gz.sha256
-tar -xzf fe01_eval1_hpc_submit_20261005.tar.gz
+sha256sum -c fe01_eval1_hpc_envfix_20261005.tar.gz.sha256
+tar -xzf fe01_eval1_hpc_envfix_20261005.tar.gz
 sha256sum -c artifacts/fe01/eval1_overlay.sha256
 bash scripts/fe01_review/submit.sh identity
 ```
@@ -26,9 +26,17 @@ bash scripts/fe01_review/submit.sh identity
 
 `submit.sh`是你在登录节点执行的提交入口；`*_job.sbatch`是它提交给计算节点的实际作业。提交入口优先使用你已有的`~/.conda/envs/zb/bin/python`，无需在shell里执行conda activate；该Python只检查少量JSON并调用sbatch，不读取波形或加载torch。每次调用只提交指定阶段，记录实际Slurm返回值到`jobs_manifest.json`；它不会自动连续提交其他阶段。原打印入口仍保留作只读准备工具，本手册不再使用它。
 
-同一阶段重复执行会停止，不会重复提交或覆盖结果。需要重做时在私有env中设置新的`REVIEW_RUN_ID`，从identity重新开始。若旧包已生成过`fe01_eval1_20261005`目录，新包的`fe01_eval1_direct_20261005`使用另一目录。旧验证报告的源码SHA不能沿用到这份新代码。
+同一阶段重复执行会停止，不会重复提交或覆盖结果。需要重做时在私有env中设置新的`REVIEW_RUN_ID`，从identity重新开始。若旧包已生成过`fe01_eval1_20261005`或`fe01_eval1_direct_20261005`目录，新包的`fe01_eval1_envfix_20261005`使用另一目录。旧验证报告的源码SHA不能沿用到这份新代码。
 
 `FE01_TRAIN_OUTPUT_ROOT`指原训练输出，仅只读；`FE01_REVIEW_OUTPUT_ROOT/REVIEW_RUN_ID`才是新评价输出，默认在FE01项目内。`RT55_CHECKPOINT`/`RT61_CHECKPOINT`可以指各自原实验目录：inventory读取该目录各pth的内部epoch，只接受预选32/8；若同epoch有不同state则BLOCKED，不能按loss再选一个。原模型的external encoder也必须在checkpoint记录路径，不能随意换成另一份文件。
+
+## 本次identity模块冲突如何恢复
+
+已报告的错误是继承了`compiler/rocm/2.9`，与所需`compiler/rocm/dtk-23.04`冲突。新作业会执行`module purge`再逐项加载指定模块，并核对`LOADEDMODULES`。有些Tcl module wrapper打印ERROR却返回0，因此加载成功必须由实际模块列表确认。清理、加载或Conda初始化失败都会停止。
+
+CPU identity也会导入zb里的ROCm版PyTorch，需要其动态库；不申请DCU不等于可以省略DTK。现在每个计算节点作业在创建阶段产物前先尝试导入torch。正常日志先出现`FE01_MODULES_READY`和`FE01_RUNTIME_READY`，CPU任务中`accelerator_available=false`可以正常继续。
+
+确认上一份失败作业已结束后，解压修复包并执行上述identity命令即可。包已设置新的run ID，保留失败目录；无需删除目录、编辑提交记录或重装torch。若仍失败，查看新作业的`FE01_ENV_ERROR`及紧邻它的原始模块/动态库错误；这表示准备尚未进入评价阶段。
 
 ## 提交顺序：一次只推进已经过门的阶段
 
