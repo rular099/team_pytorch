@@ -1636,7 +1636,7 @@ class PreloadedEventGenerator(Dataset):
                    'event_id': str(self.event_keys[event_index]), 'time_s': time,
                    'cache_path': str(self.data_path)}
         if self.v01_validation_closure:
-            from tools.v01_validation_contract import cache_identity
+            from tools.v01_validation_contract import cache_identity, read_reference_pick
             cache = getattr(self, '_v01_request_identity_cache', {})
             if event_index not in cache:
                 with h5py.File(self.data_path, 'r') as handle:
@@ -1647,7 +1647,7 @@ class PreloadedEventGenerator(Dataset):
                     identity = cache_identity(group, rows)
                     if self.decimate != 1 or group['waveforms'].shape[1] != self.trace_length:
                         raise ValueError('V01 closure requires the existing un-decimated fixed-length cache')
-                    identity['reference'] = int(group['v01_reference_p_pick'][0])
+                    identity['reference'] = read_reference_pick(group)
                     cache[event_index] = identity
                 self._v01_request_identity_cache = cache
             identity = cache[event_index]

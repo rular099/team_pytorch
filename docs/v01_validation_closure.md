@@ -7,8 +7,10 @@
 
 ## 本轮范围与状态
 
-代码完成；本地生产 generator/真实 evaluator 的合成回归完成；超算未提交，
-真实 derived cache 的 idx7 trace 与新指标尚未生成。本地 fixture 不能替代真实失败行。
+2026-10-05：用户已提交首轮 closure，audit 在读取标量 `v01_reference_p_pick` 时失败。
+两处新审计读取已修复，生产格式的标量 fixture 和全套 159 项本地回归通过。
+修复版超算未提交；真实 derived cache 的 idx7 trace 与新指标仍待生成。
+本地 fixture 不能替代真实失败行。详见 `docs/ai/CODEX_RESULT_20261005_V01_SCALAR_FIX.md`。
 不重训、不 preflight、不旧 all/recover、不 RT62、不访问 held-out test。
 
 旧 `eval_retry1`、原报告、模型、训练代码、loss、PGA 定义、三臂 checkpoint 都保留。
@@ -37,6 +39,8 @@ AA 离线逐字段审计：15 组重复 event/time，共 45 条额外行，15 �
 cd /public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel
 export WORKDIR="$PWD"
 export V01_RUN_ROOT="$WORKDIR/v01_velocity_prep_padding_seed42"
+# 标量读取修复后的重试：保留 validation_closure_v1 的原日志/来源快照
+export V01_CLOSURE_ROOT="$V01_RUN_ROOT/validation_closure_v1_retry1"
 export DITING_CONFIG="$WORKDIR/diting/config/diting_1200m_backbone_attnpool.yml"
 export DITING_PRETRAINED="/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt"
 
@@ -55,6 +59,14 @@ DRY_RUN=0 CONFIRM_V01_CLOSURE=1 INCLUDE_AA_RANDOM=1 \
 默认新目录为 `$V01_RUN_ROOT/validation_closure_v1`，存在即拒绝再次提交/覆盖。
 若确有失败后重提需求，先检查已提交 ID 和产物，再显式设置新的
 `V01_CLOSURE_ROOT`，不要直接重复调用、删除目录或重训。源码提交后不得在运行途中更改。
+
+本次读取错误发生在 CPU audit，依赖其成功的评估不应启动；实际队列仍须核查。
+上传补丁前，用原 `validation_closure_v1/submitted_jobs.tsv` 中的明确 job ID 检查
+`squeue` / `sacct`，仅取消其中仍待运行、依赖已失败的本轮 closure 作业。
+不要批量取消其他实验，也不要继续旧 audit job：它的源码哈希快照与补丁不同。
+修复后的完整 runtime manifest SHA256 为
+`88d4570c2f87c3f0daf00eece6e87dc0a733c78a4d86963645152d1538d9fc86`。
+新目录由 prepare 写入新的 snapshot；保留旧 snapshot 供追溯。
 
 资源：评估单节点、单 DCU、8 CPU、23:50:00；审计/分析 CPU-only、04:00:00。
 默认不传 `--mem`，避免之前不可满足的固定内存申请；需要时使用站点允许的 `SLURM_MEM`。
@@ -136,8 +148,8 @@ A/V 涉及不同仪器、深度、场地、频响和输入域，不单独证明 
 
 ```bash
 cd "$V01_RUN_ROOT"
-tar --exclude='validation_closure_v1/metadata_cache' \
-  -czf v01_validation_closure_v1_results.tar.gz validation_closure_v1
+tar --exclude='validation_closure_v1_retry1/metadata_cache' \
+  -czf v01_validation_closure_v1_retry1_results.tar.gz validation_closure_v1_retry1
 sacct -j <submitted_jobs.tsv中的逗号分隔ID> \
   --format=JobID,JobName,State,ExitCode,Elapsed,MaxRSS,AllocTRES -P
 ```

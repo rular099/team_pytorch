@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 
 from gemini_util_light import PreloadedEventGenerator, JointGenerator
-from tools.v01_validation_contract import V01NoPrediction, run_closure_inference
+from tools.v01_validation_contract import V01NoPrediction, read_reference_pick, run_closure_inference
 
 
 class V01ValidationClosureTests(unittest.TestCase):
@@ -35,7 +35,8 @@ class V01ValidationClosureTests(unittest.TestCase):
                 g['p_picks'] = np.array([10, -20, 200, 0])
                 g['pga'] = np.array([np.nan, -2., -1., -.5])
                 g['v01_source_role'] = np.array([1, 0, 0, 0])
-                g['v01_reference_p_pick'] = np.array([10])
+                # Match build_v01_paired_manifest: one scalar per event, not (1,).
+                g['v01_reference_p_pick'] = np.asarray(10, dtype=np.int64)
                 g['station_codes'] = np.array(['S', 'Qneg', 'Qlate', 'Qunknown'], dtype='S16')
                 g['v01_source_sensor_id'] = np.array(['S', '', '', ''], dtype='S16')
                 g['v01_paired_acc_sensor_id'] = np.array(['AS', '', '', ''], dtype='S16')
@@ -54,6 +55,43 @@ class V01ValidationClosureTests(unittest.TestCase):
                                      'triggered_noninput_ratio': .2, 'untriggered_ratio': .5},
             causal_random_input_mask={'enabled': random, 'apply_probability': probability,
                                      'station_counts': [1]})
+
+    def test_scalar_reference_matches_actual_generator_cutoff(self):
+        with h5py.File(self.path, 'r') as h5:
+            self.assertEqual(h5['data/E1/v01_reference_p_pick'].shape, ())
+            self.assertEqual(read_reference_pick(h5['data/E1']), 10)
+        gen = self.generator()
+        for index in (3, 4, 5):
+            request = gen.describe_request(index)
+            info = gen[index][2]
+            self.assertEqual(request['absolute_cutoff_utc'], info['v01_absolute_cutoff_utc'])
+
+    def test_singleton_reference_matches_scalar_request_and_tensors(self):
+        scalar = self.generator()
+        request = scalar.describe_request(3)
+        sample = scalar[3]
+        with h5py.File(self.path, 'r+') as h5:
+            group = h5['data/E1']
+            del group['v01_reference_p_pick']
+            group['v01_reference_p_pick'] = np.array([10], dtype=np.int64)
+            self.assertEqual(read_reference_pick(group), 10)
+        singleton = self.generator()
+        self.assertEqual(singleton.describe_request(3), request)
+        other = singleton[3]
+        for left, right in zip(sample[0] + sample[1], other[0] + other[1]):
+            torch.testing.assert_close(left, right, rtol=0, atol=0, equal_nan=True)
+
+    def test_malformed_reference_fails_instead_of_changing_clock(self):
+        for value in (np.array([], dtype=np.int64), np.array([10, 20]),
+                      np.asarray(np.nan), np.asarray(10.5)):
+            with self.subTest(value=value), h5py.File(self.path, 'r+') as h5:
+                group = h5['data/E1']
+                del group['v01_reference_p_pick']
+                group['v01_reference_p_pick'] = value
+                with self.assertRaisesRegex(ValueError, 'v01_reference_p_pick must be'):
+                    read_reference_pick(group)
+            with self.assertRaisesRegex(ValueError, 'v01_reference_p_pick must be'):
+                self.generator().describe_request(3)
 
     def test_clock_copy_preserves_caller_and_legacy_alias_is_opt_in(self):
         gen = self.generator()

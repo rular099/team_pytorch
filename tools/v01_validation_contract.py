@@ -59,6 +59,23 @@ def write_json(path, value):
         stream.write('\n')
 
 
+def read_reference_pick(group):
+    """Read an event scalar, also accepting legacy single-element arrays.
+
+    The production cache builder writes a zero-dimensional int64 dataset.
+    HDF5 [()] reads both representations; [0] is illegal on a scalar.
+    """
+    values = np.asarray(group['v01_reference_p_pick'][()]).reshape(-1)
+    if values.size != 1:
+        raise ValueError('v01_reference_p_pick must be an event scalar')
+    value = values[0]
+    numeric = (np.issubdtype(values.dtype, np.integer)
+               or np.issubdtype(values.dtype, np.floating))
+    if not numeric or not np.isfinite(value) or value != int(value):
+        raise ValueError('v01_reference_p_pick must be a finite integer sample')
+    return int(value)
+
+
 def cache_identity(group, rows=None):
     """Read metadata only. IDs come from cache rows, never sampler slots."""
     required = ('station_codes', 'v01_source_sensor_id', 'v01_paired_acc_sensor_id',

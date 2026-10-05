@@ -1,12 +1,32 @@
 # TEAM PyTorch 项目交接文档
 
-更新时间：2026-10-04（Asia/Shanghai）
+更新时间：2026-10-05（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威工程入口。当前主任务已从 RT57--RT61
 模型结构研究切换到 **V01：速度波形输入与 P 前缺失/补零受控实验**。不要根据旧聊天、
 旧 `PROJECT_CONTEXT.md` 的分支名、目录名或 checkpoint 文件名推断当前状态。
 
-## 2026-10-04 当前进展：V01 validation closure
+## 2026-10-05 当前进展：V01 closure 标量读取修复
+
+用户首轮 CPU audit 报 `Illegal slicing argument for scalar dataspace`，job ID 未提供。
+原因是新增 `describe_request` / `plan_and_sidecar` 对事件标量做 HDF5 `[0]` 索引；
+builder 原本正确写入 0-D int64，旧 generator `_get_one` 的 `[()]` 已兼容，cache 不需重建。
+修复两处为共享 `[()]` reader，兼容 scalar / singleton 并拒绝损坏的多值/非整数参考点。
+fixture 改成生产标量格式；修复前两项测试复现同一错误，修复后 focused 24 / 全套 159 PASS。
+RT55 默认、训练、模型、loss、权重和旧结果未改。
+
+本轮 base `632cc63ae82d9c29c238918d4a1ffa5ec92aa3b2`，分支不变。
+runtime manifest 全 180 文件通过，新 SHA256：
+`88d4570c2f87c3f0daf00eece6e87dc0a733c78a4d86963645152d1538d9fc86`。
+小补丁包 `../v01_closure_scalar_fix_20261005.tar.gz`，覆盖的是源码而非结果/权重/cache。
+用户先核查旧 submitted_jobs.tsv，仅取消依赖已失败且仍挂起的明确 closure IDs；
+然后上传补丁，设 `V01_CLOSURE_ROOT=$V01_RUN_ROOT/validation_closure_v1_retry1`，
+按 `docs/v01_validation_closure.md` 重提同一验证流程（5 normal + 必要 AA random）。
+不重训、不 preflight，不重跑四格成功速度 random，不删除原失败目录。
+修复版未提交；真实 idx7 / 新 normal 指标仍待超算。交付和审阅记录见
+`docs/ai/CODEX_RESULT_20261005_V01_SCALAR_FIX.md`。
+
+## 2026-10-04 原始实施记录：V01 validation closure
 
 本轮按 `V01_prompt_2.md` 实施，base 为 `74c55aa5442b4200961c88ceee3d11af5033275d`，
 分支不变。V01 validation-only clock copy、strict 空请求、sensor IDs/UTC ledger、
@@ -450,9 +470,10 @@ field range/pairwise difference、实际支持剂量和 event-macro CI，且识�
 
 ## 7. 下一会话第一步
 
-先读 `docs/ai/CODEX_RESULT_20261004_V01_VALIDATION_CLOSURE.md` 和
-`docs/v01_validation_closure.md`。本轮实现已按明确审阅决定完成，等待用户上传源码/手动提交；
-不要重复整体 recovery/preflight/训练。未提交不代表已完成真实验证；需要新的 closure 结果和 sacct。
+先读 `docs/ai/CODEX_RESULT_20261005_V01_SCALAR_FIX.md` 和
+`docs/v01_validation_closure.md`。用户已提交首轮 closure，CPU audit 标量读取失败；
+本轮修复已完成，等待补丁上传和 retry1 手动提交。
+不要重复整体 recovery/preflight/训练。修复测试不代表真实门禁成功；需要新的 closure 结果和 sacct。
 
 ### 历史 recovery 操作（2026-10-01，已补跑，以下命令不得整体重复执行）
 

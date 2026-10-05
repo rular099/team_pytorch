@@ -277,7 +277,7 @@ def plan_and_sidecar(dataset, old_npz, output, name):
     import h5py
     import numpy as np
     from gemini_util_light import _select_wave_idx_rows
-    from tools.v01_validation_contract import cache_identity, json_value
+    from tools.v01_validation_contract import cache_identity, json_value, read_reference_pick
     arrays = npz_arrays(old_npz) if old_npz is not None else None
     by_request = {} if arrays is None else {int(x): row for row,x in enumerate(arrays['event_index'])}
     requested_keys = {}
@@ -298,7 +298,7 @@ def plan_and_sidecar(dataset, old_npz, output, name):
                 identity = cache_identity(group, rows)
                 if group['waveforms'].shape[1] != generator.trace_length or generator.decimate != 1:
                     raise ValueError('Unverified legacy crop/decimation: identity sidecar needs explicit trace')
-                identity['reference'] = int(group['v01_reference_p_pick'][0])
+                identity['reference'] = read_reference_pick(group)
                 identity['length'] = int(group['waveforms'].shape[1])
                 raw = identity['coords'][None].copy()
                 identity['export_coords'] = generator.location_transformation(
