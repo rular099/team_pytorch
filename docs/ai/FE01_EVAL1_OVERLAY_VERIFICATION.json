@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "exit_code": 0,
+  "identity_stdout": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea 8e99531c4cb76464f233ab2c61100ada6f6087a80a64bc2e67200cf2b8798ae4 478475f9381a462212affb33c8a9a0adeda70f1d",
+  "overlay_file_sha_validation": 0,
+  "source_bundle_sha256": "f1eaf16948d0f0db2547567059765bc16698bc61577140be64710d9eede525c9",
+  "evaluation_bundle_sha256": "419d12335cdd291d7a77f7dc824ee84260a15ef961fe1b232c997175a316ee13",
+  "scheduler_called": false
+}
