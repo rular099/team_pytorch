@@ -1,8 +1,8 @@
 # FE01重复环境错误：独立计算节点诊断
 
-已知事实：用户再次提供ROCm 2.9与DTK 23.04的冲突，以及`run.py -> runners.py -> torch`的动态库错误。现有上传的`chaosuan_res/slurm.zip`没有本次identity日志；尚缺实际Job ID、stdout和超算文件哈希。
+**最新实际结果：用户已提供`envdiag_29351024.zip`，内含Job 29351034的日志。两份脚本SHA一致，purge和DTK加载成功，torch导入因缺`libmpi.so.40`失败。** 恢复MPI及直接重新提交identity的入口见[实际诊断报告](../../reports/fe01_environment_20261006/README.md)。
 
-此前修复版`env.sh`会在模块错误时退出，并在调用`run.py`前导入torch。当前堆栈更像是旧文件/旧入口或旧日志仍被使用，但这只是推断，不能据此判定超算没有更新，也不能宣称`module purge`已在真实节点生效。
+此前仅收到ROCm冲突和`run.py -> runners.py -> torch`堆栈，尚缺Job ID/stdout/脚本SHA。关于旧文件或旧日志的解释当时只是推断。现在以真实诊断证据为准：这次部署版本正确，当前配置漏掉了purge后的MPI重载。
 
 下一步使用独立脚本`scripts/fe01_diagnostics/fe01_check_environment_20261006.sbatch`。它不调用评价入口、不读取HDF5/checkpoint、不执行模型前向、不写任何review阶段目录。它位于评价源码指纹目录之外；本次没有改动已有评价脚本、私有env或源码身份。
 
@@ -37,6 +37,6 @@ ec0d4a48130749516255f75111bb57512e0a2f154dc94b3ae7ff23c09860ce2c  scripts/fe01_r
 
 提交后保存这两个实际日志供下一步定位。诊断不会自动重新提交identity或修改旧失败记录；依据实际文件/模块证据再修复或恢复评价。
 
-本地验证：6项独立诊断测试通过，覆盖正常导入、旧脚本字节不匹配、Tcl冲突返回0、purge保留ROCm后的显式卸载、卸载返回0却仍保留、动态库导入失败。`bash -n`通过。测试使用stub模块/torch探针，真实超算诊断尚未执行。
+本地验证：6项独立诊断测试通过，覆盖正常导入、旧脚本字节不匹配、Tcl冲突返回0、purge保留ROCm后的显式卸载、卸载返回0却仍保留、动态库导入失败。`bash -n`通过。测试使用stub模块/torch探针。用户实际执行结果另见上述报告；恢复MPI后的identity尚未重新核验。
 
 原训练115文件SHA保持`3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea`，新评价module SHA保持`e65a7dd017828da10adcf5c45c4aa32d1d702833910972556d4eda5b6a640564`。

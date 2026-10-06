@@ -1,0 +1,75 @@
+{
+  "source_archive": {
+    "filename": "envdiag_29351024.zip",
+    "sha256": "228ad1c4bb4a4d4f4113ff53499e4c22bd3239f8e9770c53ae871322d708615d"
+  },
+  "actual_job_id": "29351034",
+  "diagnostic_version": "20261006-1",
+  "scheduler_state": "UNKNOWN: no sacct record provided",
+  "source_logs": [
+    {
+      "name": "fe01_envdiag_29351034.out",
+      "bytes": 1383,
+      "sha256": "3bb83f7eb323405b2d3e917727b2344c45ae5a3e3595166426b26f8017bbce39"
+    },
+    {
+      "name": "fe01_envdiag_29351034.err",
+      "bytes": 845,
+      "sha256": "276d2f9eecd63a32ce6c9c20ffd508c87773e3a5e5aa17f73546930ec52a681f"
+    }
+  ],
+  "installed_evaluation_sources": [
+    {
+      "file": "scripts/fe01_review/env.sh",
+      "expected_sha256": "889baabc4dc8836312ea4f011ed83ccc0ad6a9d543b5e2ea8c5eb9c5445ff7f0",
+      "actual_sha256": "889baabc4dc8836312ea4f011ed83ccc0ad6a9d543b5e2ea8c5eb9c5445ff7f0",
+      "match": true
+    },
+    {
+      "file": "scripts/fe01_review/identity_job.sbatch",
+      "expected_sha256": "ec0d4a48130749516255f75111bb57512e0a2f154dc94b3ae7ff23c09860ce2c",
+      "actual_sha256": "ec0d4a48130749516255f75111bb57512e0a2f154dc94b3ae7ff23c09860ce2c",
+      "match": true
+    }
+  ],
+  "inherited_modules": [
+    "compiler/devtoolset/7.3.1",
+    "compiler/rocm/2.9",
+    "mpi/hpcx/2.11.0/gcc-7.3.1",
+    "apps/tmux/gcc-7.3.1",
+    "apps/miniconda/3"
+  ],
+  "modules_after_purge": [],
+  "modules_ready": [
+    "compiler/rocm/dtk-23.04",
+    "apps/miniconda/3"
+  ],
+  "torch_import": {
+    "status": "FAIL",
+    "exception": "OSError",
+    "missing_shared_library": "libmpi.so.40",
+    "torch_version": "UNKNOWN: import failed"
+  },
+  "identity_checkpoint_data_or_model_evaluation": "NOT_RUN_IN_DIAGNOSTIC",
+  "recovery": {
+    "configuration_only": true,
+    "planned_modules": [
+      "compiler/devtoolset/7.3.1",
+      "compiler/rocm/dtk-23.04",
+      "mpi/hpcx/2.11.0/gcc-7.3.1",
+      "apps/miniconda/3"
+    ],
+    "run_id": "fe01_eval1_mpi_29351034",
+    "cluster_status": "NOT_RUN"
+  },
+  "local_recovery_tests": {
+    "command": "pytest -q tests/test_fe01_mpi_recovery.py",
+    "passed": 6,
+    "real_scheduler_called": false
+  },
+  "repository": "rular099/team_pytorch",
+  "branch": "exp/fe01-feature-extractor-site-effects",
+  "local_analysis_base_commit": "f1a956b445a47795df23a6462782061edf1bf60f",
+  "cluster_expected_evaluation_commit": "4c9c1757f726e571022a398cb5a217ca6c325cbc",
+  "redacted_logs": "Private paths and host are replaced; source log SHA256 values refer to original archive members"
+}

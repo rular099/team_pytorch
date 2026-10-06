@@ -2,6 +2,8 @@
 
 **本地已完成九组CSV的真实再分析；接下来超算只补验证和评价，不训练。** 本轮没有提交任何作业。
 
+**2026-10-06更新：实际诊断Job 29351034已确认修复版脚本和DTK加载均正确，目前缺`libmpi.so.40`。已部署用户先执行下面的MPI恢复入口，再继续阶段提交。** 不必重新拷完整评价包。
+
 现在使用模块初始化修复版：`artifacts/fe01/fe01_eval1_hpc_envfix_20261005.tar.gz`及同名`.sha256`。这两个文件替代此前的评价交付包。仍用直接提交脚本。包内含新增评价代码、提交脚本、配置、运行手册、原始请求元数据、两个legacy原config快照及已填路径的私有`cluster_zb.env`。不包含checkpoint/HDF5，不覆盖原115个训练源码文件，不重签旧lock，也不要求再拷1GB原权重包。
 
 | 在哪里 | 要做的事 |
@@ -10,6 +12,18 @@
 | 超算登录节点 | 解压新包、执行`bash scripts/fe01_review/submit.sh 阶段名`提交作业、查看`squeue/sacct` |
 | 超算计算节点 | 下面的sbatch脚本自动初始化module/conda zb，并运行其指定的CPU或DCU任务 |
 | 本地电脑 | 下载最后的轻量证据包供下一轮整理分析；完整数值输出留在超算新review目录 |
+
+## 已部署用户：恢复MPI并直接提交identity
+
+诊断日志保留了原编译器/MPI模块，`module purge`清理后原配置只加载了DTK和Miniconda，导致zb的torch找不到MPI动态库。将`scripts/fe01_diagnostics/fe01_recover_mpi_20261006.sh`这一份文件拷到超算FE01项目根目录，在该目录的登录节点执行：
+
+```bash
+bash fe01_recover_mpi_20261006.sh fe01_envdiag_29351034.out
+```
+
+脚本从实际日志恢复编译器/MPI模块，保留DTK 23.04，备份原私有env，只更改模块列表和run ID，然后**直接提交identity的sbatch**。新的输出为`fe01_eval1_mpi_29351034`；其它路径、账户及旧结果保留。配置恢复不改评价源码和原lock。当前实际报告及变更回执说明见[诊断结果](../../reports/fe01_environment_20261006/README.md)。
+
+identity完成并通过后，后续继续用本手册的`bash scripts/fe01_review/submit.sh 阶段名`，无需再次运行恢复脚本。下面“先在超算登录节点执行”保留了原部署过程；已经部署并完成诊断的用户从本节恢复。
 
 ## 先在超算登录节点执行
 

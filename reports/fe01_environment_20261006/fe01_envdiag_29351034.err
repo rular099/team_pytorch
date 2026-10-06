@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "${HOME}/.conda/envs/zb/lib/python3.9/site-packages/torch/__init__.py", line 218, in <module>
+    _load_global_deps()
+  File "${HOME}/.conda/envs/zb/lib/python3.9/site-packages/torch/__init__.py", line 178, in _load_global_deps
+    raise err
+  File "${HOME}/.conda/envs/zb/lib/python3.9/site-packages/torch/__init__.py", line 173, in _load_global_deps
+    ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL)
+  File "${HOME}/.conda/envs/zb/lib/python3.9/ctypes/__init__.py", line 382, in __init__
+    self._handle = _dlopen(self._name, mode)
+OSError: libmpi.so.40: cannot open shared object file: No such file or directory
+FE01_DIAG_ERROR: torch import failed after module/conda initialization
