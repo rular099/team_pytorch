@@ -661,3 +661,22 @@ TEAM 0.241817/0.003011；epoch依次为PhaseNet12/10/12、EQT10/10/10、TEAM11/1
 40/90秒最终评价、site/spatial/replay证据；日志committed_journals归属和offline在线因果性未认证。
 本轮没有sbatch/srun/重训/test，详细交接见
 `docs/ai/CODEX_RESULT_20261004_FE01_HPC_RESULTS.md`。
+
+## 12. FE01-EVAL1 实际超算核验与参照（2026-10-06）
+
+新入口 `reports/fe01_eval1_hpc_gates_20261006/README.md`，对应ChatGPT阅读任务同目录。
+分析base `221f8b24483148d630e0eb85a179d763f8c580ac`；超算评价source
+`4c9c1757f726e571022a398cb5a217ca6c325cbc`。评价31源码SHA与当前一致，原115训练指纹不变。
+用户下载84文件与同名tar全部字节SHA一致，14阶段seal共30条通过。
+
+11组权重身份通过，RT55内部epoch32/RT61内部epoch8确认；PhaseNet/EQT各三seed及
+两个旧系统，共8组forward PASS，每组32validation事件/decision、544目标。TEAM三seed
+尚未前向：原lock预训练SHA是null，评价runner却无条件比较实际SHA，导致BLOCKED。
+原三lock字节与inventory一致；这是评价入口条件问题，未证明TEAM权重或清单字节变化。
+本轮只报告，没有修复runner；后续修复必须保留旧lock并采用新评价source pin/run ID。
+
+参照：train-only 9084事件/960台站/146299最终标签，oracle catalog拟合。
+九组FE01选定checkpoint的真实journal曝光表覆盖全部915validation台站（input/query均见）；
+RT55/RT61曝光UNKNOWN。尚无本轮旧系统成绩、随机/长时刻补评、场地评分/图或回放。
+实际identity/verify/reference Job 29351785/29354874/29354884；没有sacct State/ExitCode证据。
+环境DTK/MPI问题已由实际Torch初始化日志排除，TEAM错误发生于其后。

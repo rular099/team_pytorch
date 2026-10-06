@@ -1,0 +1,4 @@
+scope,rows,events,decisions,noninput_rows,observed_input_rows,triggered_noninput_rows,untriggered_noninput_rows,minimum_elapsed_seconds,maximum_elapsed_seconds
+random,113226,1310,7852,70558,42668,38406,32152,1.01,19.98
+long,74116,1310,5240,39106,35010,38872,234,40.0,90.0
+replay,4800,3,240,3615,1185,2451,1164,1.0,20.0

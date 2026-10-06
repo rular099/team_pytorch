@@ -130,3 +130,19 @@ review_request:
 TEAM/PhaseNet/EQT各3 seed的曲线均有12轮，当前成绩为预定选epoch后的validation。
 RT55复用原训练权重，尚未取得共同协议复评；本轮没有新超算提交或test评价。
 第8节是2026-10-01实现交付快照，不能用其NOT_SUBMITTED描述当前已提供的训练记录。
+
+## 10. FE01-EVAL1 实际超算核验交接（2026-10-06）
+
+用户下载的 `fe01_eval1_mpi_29351034` 已整理为
+[身份/前向/参照报告](../../reports/fe01_eval1_hpc_gates_20261006/README.md) 与
+[ChatGPT分析任务](../../reports/fe01_eval1_hpc_gates_20261006/CHATGPT_ANALYSIS_PROMPT.md)。
+整理base `221f8b24483148d630e0eb85a179d763f8c580ac`；超算评价source为
+`4c9c1757f726e571022a398cb5a217ca6c325cbc`，仍在FE01独立分支。
+11组checkpoint身份通过；PhaseNet/EQT各3seed及RT55 ep32/RT61 ep8，共8组小样本
+forward PASS。TEAM三组scratch因评价入口无条件比较预训练SHA与原lock中的null而BLOCKED；
+本轮定位原因，没有修改runner或旧lock。共同train-only参照已生成，全部915个validation
+台站均在九组FE01训练曝光表中见过，不能宣称未见台站泛化。
+
+本批identity/verify/reference实际Job为29351785/29354874/29354884；未提供sacct，
+后续正式评价/回放未提供结果。14份原阶段seal的30个文件和84个tar成员一致性校验通过。
+第9节及前轮CSV报告为历史训练/性能证据，不应用其“待核验”概括本批已经提供的门。

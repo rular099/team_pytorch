@@ -1,0 +1,5 @@
+{
+  "status": "BLOCKED",
+  "reason": "Original pretrained manifest byte SHA changed",
+  "run_id": "formal__team_original_scratch__seed43"
+}

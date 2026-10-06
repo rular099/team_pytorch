@@ -1,0 +1,6 @@
+{
+  "action": "verify",
+  "run_id": "formal__team_original_scratch__seed43",
+  "status": "BLOCKED",
+  "reason": "ValueError: Original pretrained manifest byte SHA changed"
+}

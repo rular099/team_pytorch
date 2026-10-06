@@ -1,0 +1,7 @@
+{
+  "run_id": "formal__team_original_scratch__seed42",
+  "original_lock_sha256": "15143a7c0cfc4dc0aacfd35ad489805f09476c75fdc6bbaa4168e97f9f394e54",
+  "inventory_lock_matches": true,
+  "model_family": "team_original_scratch",
+  "pretrained_manifest_sha256": null
+}

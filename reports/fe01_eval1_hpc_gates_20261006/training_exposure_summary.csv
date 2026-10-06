@@ -1,0 +1,12 @@
+run_id,status,reason,journals,train_events,stations,input_stations,query_stations,validation_stations,validation_seen_as_input,validation_seen_as_query
+formal__team_original_scratch__seed42,PASS,,176,9084,960,960,960,915,915,915
+formal__team_original_scratch__seed43,PASS,,176,9084,960,960,960,915,915,915
+formal__team_original_scratch__seed44,PASS,,176,9084,960,960,960,915,915,915
+formal__phasenet_pretrained_frozen__seed42,PASS,,192,9084,960,960,960,915,915,915
+formal__phasenet_pretrained_frozen__seed43,PASS,,160,9084,960,960,960,915,915,915
+formal__phasenet_pretrained_frozen__seed44,PASS,,192,9084,960,960,960,915,915,915
+formal__eqt_pretrained_frozen__seed42,PASS,,160,9084,960,960,960,915,915,915
+formal__eqt_pretrained_frozen__seed43,PASS,,160,9084,960,960,960,915,915,915
+formal__eqt_pretrained_frozen__seed44,PASS,,160,9084,960,960,960,915,915,915
+rt55_strict_prefix_replay,UNKNOWN,Legacy original sampler exposure not inferred from FE01 label cohort,0,,,,,915,,
+rt61_strict_prefix_replay,UNKNOWN,Legacy original sampler exposure not inferred from FE01 label cohort,0,,,,,915,,

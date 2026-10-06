@@ -1,0 +1,17 @@
+{
+  "shared_geometry_sampling_seed": 42,
+  "source_random_draws_sha256": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+  "case_manifest_sha256": "928702edded5b446e5150c227866e9e38466cde5bdc019d1ec66a0387c9770c5",
+  "request_sha256": {
+    "random": "94f88ee318dcb4fa3b6a8209e15cc05314af4d16e255e041293319e96a81b27d",
+    "long": "04c835f3440a1d11a5adb7af4d5656dd0fd736b2b61d41f5736bd3df16db2daa",
+    "replay": "686465cd0b5710fa40054401c131111b6f0c2f46c50fc497d382649a15a7d14f"
+  },
+  "population_rows": {
+    "long": 74116,
+    "random": 113226,
+    "replay": 4800
+  },
+  "planning_uses_predictions": false,
+  "fixed_station_metadata_sha256": "02a55cd769692473e8d5bcad683c0aec5accf8dc0e4306378cff54a8ead7dcb8"
+}

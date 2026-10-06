@@ -1,0 +1,146 @@
+{
+  "status": "PASS",
+  "source_archive": {
+    "name": "fe01_eval1_mpi_29351034.tar.gz",
+    "bytes": 18966222,
+    "sha256": "e503c3298a1b40902e9e9ec5e556ae7acca89c5a42ec525944a123062e5bdb97",
+    "files": 84,
+    "folder_matches": "PASS"
+  },
+  "original_artifact_manifests": [
+    {
+      "manifest": "identity/artifact_manifest.sha256",
+      "entries": 3,
+      "status": "PASS"
+    },
+    {
+      "manifest": "reference/artifact_manifest.sha256",
+      "entries": 5,
+      "status": "PASS"
+    },
+    {
+      "manifest": "requests/artifact_manifest.sha256",
+      "entries": 8,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__eqt_pretrained_frozen__seed42/artifact_manifest.sha256",
+      "entries": 1,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__eqt_pretrained_frozen__seed43/artifact_manifest.sha256",
+      "entries": 1,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__eqt_pretrained_frozen__seed44/artifact_manifest.sha256",
+      "entries": 1,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__phasenet_pretrained_frozen__seed42/artifact_manifest.sha256",
+      "entries": 1,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__phasenet_pretrained_frozen__seed43/artifact_manifest.sha256",
+      "entries": 1,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__phasenet_pretrained_frozen__seed44/artifact_manifest.sha256",
+      "entries": 1,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__team_original_scratch__seed42/artifact_manifest.sha256",
+      "entries": 2,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__team_original_scratch__seed43/artifact_manifest.sha256",
+      "entries": 2,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/formal__team_original_scratch__seed44/artifact_manifest.sha256",
+      "entries": 2,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/rt55_strict_prefix_replay/artifact_manifest.sha256",
+      "entries": 1,
+      "status": "PASS"
+    },
+    {
+      "manifest": "verification/rt61_strict_prefix_replay/artifact_manifest.sha256",
+      "entries": 1,
+      "status": "PASS"
+    }
+  ],
+  "original_sealed_entries": 30,
+  "current_source_checks": [
+    {
+      "path": "identity/provenance.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "requests/provenance.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "reference/provenance.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "verification/formal__eqt_pretrained_frozen__seed42/verification.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "verification/formal__eqt_pretrained_frozen__seed43/verification.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "verification/formal__eqt_pretrained_frozen__seed44/verification.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "verification/formal__phasenet_pretrained_frozen__seed42/verification.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "verification/formal__phasenet_pretrained_frozen__seed43/verification.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "verification/formal__phasenet_pretrained_frozen__seed44/verification.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "verification/rt55_strict_prefix_replay/verification.json",
+      "files": 31,
+      "status": "PASS"
+    },
+    {
+      "path": "verification/rt61_strict_prefix_replay/verification.json",
+      "files": 31,
+      "status": "PASS"
+    }
+  ],
+  "training_source_files": 115,
+  "evaluation_source_files": 31,
+  "checkpoint_identity_and_probe_pins": "PASS",
+  "training_label_population_and_normalization": "PASS",
+  "original_team_lock_byte_pins": "PASS",
+  "raw_source_modified": false
+}

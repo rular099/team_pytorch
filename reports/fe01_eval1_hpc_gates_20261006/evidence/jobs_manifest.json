@@ -1,0 +1,230 @@
+{
+  "env_sha256": "f10f10486c3930208ad7578bb8ac9a61dde5f467f8046908d182dbd8332c17db",
+  "models": [
+    {
+      "run_id": "formal__team_original_scratch__seed42",
+      "kind": "fe01",
+      "model_family": "team_original_scratch",
+      "seed": 42,
+      "epoch": 11,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed42/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed42/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed42",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__team_original_scratch__seed43",
+      "kind": "fe01",
+      "model_family": "team_original_scratch",
+      "seed": 43,
+      "epoch": 11,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed43/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed43/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed43",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__team_original_scratch__seed44",
+      "kind": "fe01",
+      "model_family": "team_original_scratch",
+      "seed": 44,
+      "epoch": 11,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed44/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed44/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed44",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__phasenet_pretrained_frozen__seed42",
+      "kind": "fe01",
+      "model_family": "phasenet_pretrained_frozen",
+      "seed": 42,
+      "epoch": 12,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed42/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed42/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed42",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__phasenet_pretrained_frozen__seed43",
+      "kind": "fe01",
+      "model_family": "phasenet_pretrained_frozen",
+      "seed": 43,
+      "epoch": 10,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed43/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed43/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed43",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__phasenet_pretrained_frozen__seed44",
+      "kind": "fe01",
+      "model_family": "phasenet_pretrained_frozen",
+      "seed": 44,
+      "epoch": 12,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed44/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed44/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed44",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__eqt_pretrained_frozen__seed42",
+      "kind": "fe01",
+      "model_family": "eqt_pretrained_frozen",
+      "seed": 42,
+      "epoch": 10,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed42/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed42/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed42",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__eqt_pretrained_frozen__seed43",
+      "kind": "fe01",
+      "model_family": "eqt_pretrained_frozen",
+      "seed": 43,
+      "epoch": 10,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed43/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed43/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed43",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "formal__eqt_pretrained_frozen__seed44",
+      "kind": "fe01",
+      "model_family": "eqt_pretrained_frozen",
+      "seed": 44,
+      "epoch": 10,
+      "checkpoint": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed44/best.pth",
+      "config": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed44/resolved_config.json",
+      "run_dir": "${FE01_TRAIN_OUTPUT_ROOT}/formal__eqt_pretrained_frozen__seed44",
+      "system_role": "fe01_system_comparison"
+    },
+    {
+      "run_id": "rt55_strict_prefix_replay",
+      "kind": "rt55",
+      "epoch": 32,
+      "checkpoint": "${HPC_HOME}/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42",
+      "config": "${FE01_CODE_ROOT}/artifacts/fe01/eval1_inputs/rt55_original_config.json",
+      "encoder": "${LEGACY_ENCODER_CHECKPOINT}",
+      "diting_config": "${FE01_CODE_ROOT}/diting/config/diting_1200m_backbone_attnpool.yml",
+      "system_role": "legacy_reused_system"
+    },
+    {
+      "run_id": "rt61_strict_prefix_replay",
+      "kind": "rt61",
+      "epoch": 8,
+      "checkpoint": "${HPC_HOME}/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics/weights_japan_full_2000_2024_rt61_wave_geometry_residual_seed42",
+      "config": "${FE01_CODE_ROOT}/artifacts/fe01/eval1_inputs/rt61_original_config.json",
+      "encoder": "${LEGACY_ENCODER_CHECKPOINT}",
+      "diting_config": "${FE01_CODE_ROOT}/diting/config/diting_1200m_backbone_attnpool.yml",
+      "system_role": "enhanced_system_reference"
+    }
+  ],
+  "fixed_request_sha256": "dc21d6bb2853275f691ea296a6ba10c7df691df9670b8e298cce2f83b93a1849",
+  "random_draw_sha256": "c410b966b0a0eab72f7dc924aa313da4a43c62d46bd364bc8b6e8ddacba86d68",
+  "evaluation_module_sha": "e65a7dd017828da10adcf5c45c4aa32d1d702833910972556d4eda5b6a640564",
+  "split": "val",
+  "submission": "user-invoked submit.sh",
+  "scheduler_called": true,
+  "jobs": [
+    {
+      "stage": "identity",
+      "command": [
+        "sbatch",
+        "--parsable",
+        "--chdir=${FE01_CODE_ROOT}",
+        "--partition=diting",
+        "--job-name=fe01e1_identity",
+        "--export=ALL,FE01_REVIEW_ENV=${FE01_CODE_ROOT}/scripts/fe01_review/cluster_zb.env",
+        "--output=${FE01_CODE_ROOT}/artifacts/fe01_eval1_runs/fe01_eval1_mpi_29351034/logs/%x_%A_%a.out",
+        "--error=${FE01_CODE_ROOT}/artifacts/fe01_eval1_runs/fe01_eval1_mpi_29351034/logs/%x_%A_%a.err",
+        "${FE01_CODE_ROOT}/scripts/fe01_review/identity_job.sbatch"
+      ],
+      "model_ids": [],
+      "run_ids": [],
+      "execution_status": "SUBMITTED",
+      "dependency_job_ids": [],
+      "scheduler_stdout": "29351785",
+      "scheduler_stderr": "",
+      "returncode": 0,
+      "job_id": "29351785"
+    },
+    {
+      "stage": "verify",
+      "command": [
+        "sbatch",
+        "--parsable",
+        "--chdir=${FE01_CODE_ROOT}",
+        "--partition=diting",
+        "--job-name=fe01e1_verify",
+        "--export=ALL,FE01_REVIEW_ENV=${FE01_CODE_ROOT}/scripts/fe01_review/cluster_zb.env",
+        "--output=${FE01_CODE_ROOT}/artifacts/fe01_eval1_runs/fe01_eval1_mpi_29351034/logs/%x_%A_%a.out",
+        "--error=${FE01_CODE_ROOT}/artifacts/fe01_eval1_runs/fe01_eval1_mpi_29351034/logs/%x_%A_%a.err",
+        "--array=0,1,2,3,4,5,6,7,8,9,10%8",
+        "--dependency=afterany:29351785",
+        "${FE01_CODE_ROOT}/scripts/fe01_review/evaluate_job.sbatch",
+        "verify"
+      ],
+      "model_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "run_ids": [
+        "formal__team_original_scratch__seed42",
+        "formal__team_original_scratch__seed43",
+        "formal__team_original_scratch__seed44",
+        "formal__phasenet_pretrained_frozen__seed42",
+        "formal__phasenet_pretrained_frozen__seed43",
+        "formal__phasenet_pretrained_frozen__seed44",
+        "formal__eqt_pretrained_frozen__seed42",
+        "formal__eqt_pretrained_frozen__seed43",
+        "formal__eqt_pretrained_frozen__seed44",
+        "rt55_strict_prefix_replay",
+        "rt61_strict_prefix_replay"
+      ],
+      "execution_status": "SUBMITTED",
+      "dependency_job_ids": [
+        "29351785"
+      ],
+      "scheduler_stdout": "29354874",
+      "scheduler_stderr": "",
+      "returncode": 0,
+      "job_id": "29354874"
+    },
+    {
+      "stage": "reference",
+      "command": [
+        "sbatch",
+        "--parsable",
+        "--chdir=${FE01_CODE_ROOT}",
+        "--partition=diting",
+        "--job-name=fe01e1_reference",
+        "--export=ALL,FE01_REVIEW_ENV=${FE01_CODE_ROOT}/scripts/fe01_review/cluster_zb.env",
+        "--output=${FE01_CODE_ROOT}/artifacts/fe01_eval1_runs/fe01_eval1_mpi_29351034/logs/%x_%A_%a.out",
+        "--error=${FE01_CODE_ROOT}/artifacts/fe01_eval1_runs/fe01_eval1_mpi_29351034/logs/%x_%A_%a.err",
+        "--dependency=afterany:29351785",
+        "${FE01_CODE_ROOT}/scripts/fe01_review/reference_job.sbatch"
+      ],
+      "model_ids": [],
+      "run_ids": [],
+      "execution_status": "SUBMITTED",
+      "dependency_job_ids": [
+        "29351785"
+      ],
+      "scheduler_stdout": "29354884",
+      "scheduler_stderr": "",
+      "returncode": 0,
+      "job_id": "29354884"
+    }
+  ]
+}

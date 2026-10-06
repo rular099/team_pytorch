@@ -1,0 +1,14 @@
+${HPC_HOME}/.conda/envs/zb/lib/python3.9/site-packages/timm/models/layers/__init__.py:48: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+Traceback (most recent call last):
+  File "${FE01_CODE_ROOT}/scripts/fe01_review/run.py", line 69, in <module>
+    if __name__=='__main__':main()
+  File "${FE01_CODE_ROOT}/scripts/fe01_review/run.py", line 43, in main
+    verify(entry,args.plan,args.source_root,output,args.device,args.request_root)
+  File "${FE01_CODE_ROOT}/fe01_review/runners.py", line 291, in verify
+    runner,cfg,identity=load_runner(entry,device)
+  File "${FE01_CODE_ROOT}/fe01_review/runners.py", line 124, in load_runner
+    require(sha256(cfg['pretrained_manifest'])==parent_lock['pretrained_manifest_sha256'],'Original pretrained manifest byte SHA changed')
+  File "${FE01_CODE_ROOT}/fe01_review/provenance.py", line 18, in require
+    raise ValueError(message)
+ValueError: Original pretrained manifest byte SHA changed

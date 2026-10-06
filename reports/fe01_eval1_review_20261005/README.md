@@ -1,5 +1,7 @@
 # FE01-EVAL1本地真实分析：供ChatGPT审阅
 
+**后续真实证据（2026-10-06）：** 超算现已提供11组checkpoint身份、8组小样本forward PASS及共同train-only参照；TEAM三组在前向前被scratch不适用的预训练SHA条件拦住。见[新核验报告](../fe01_eval1_hpc_gates_20261006/README.md)。本文保留2026-10-05本地CSV分析时的状态与性能证据；下文“待核验/未执行”不代表新批次的全部当前状态。
+
 本轮已完成九组原始validation CSV再分析、来源/人口核验、5000次事件簇bootstrap、固定目标与空间形状诊断，并提供独立手动sbatch脚本。**生产权重前向、两个旧系统同人口成绩、train-only场地参照及3例回放未执行。** 所有数字来自真实已有CSV；合成测试没有充当Japan结果。
 
 仓库`rular099/team_pytorch`，分支`exp/fe01-feature-extractor-site-effects`，base `b2756825190f93034ece436fab778e8a69adb41c`。原训练源码commit为`73ae9dec50713805c878b5e4efeb8264c01d0c76`，115文件SHA仍为`3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea`。新工具在旧哈希范围之外；Git提交前运行的工作区状态和各文件SHA分别保存在`provenance.json`、`publication_provenance.json`。后者记录轻量导出和新增早期概率CI，不能把它当成一次新前向。

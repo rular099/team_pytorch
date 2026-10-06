@@ -1,0 +1,6 @@
+FE01_MODULES_READY: compiler/devtoolset/7.3.1:compiler/rocm/dtk-23.04:mpi/hpcx/2.11.0/gcc-7.3.1:apps/miniconda/3
+FE01_RUNTIME_READY: {"torch": "1.13.1", "rocm": "5.4.23191-0e6bf66b", "accelerator_available": false}
+Please 'pip install apex'
+Please 'pip install xformers'
+Please 'pip install apex'
+Please 'pip install xformers'
