@@ -1,0 +1,7 @@
+{
+  "protocol": "v01-validation-closure-v1",
+  "real_idx7_confirmed": true,
+  "random_numeric_signatures_equal": true,
+  "aa_random_requires_rerun": true,
+  "checkpoints_unchanged": true
+}

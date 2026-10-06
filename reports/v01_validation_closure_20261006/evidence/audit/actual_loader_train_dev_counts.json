@@ -1,0 +1,44 @@
+[
+  {
+    "view": "vfull",
+    "split": "train",
+    "eligible_events": 7967,
+    "selected_station_metadata_rows": 226414,
+    "meaning": "real loader filters, before training resampling/augmentation"
+  },
+  {
+    "view": "vfull",
+    "split": "dev",
+    "eligible_events": 1194,
+    "selected_station_metadata_rows": 36284,
+    "meaning": "real loader filters, before training resampling/augmentation"
+  },
+  {
+    "view": "vmissing",
+    "split": "train",
+    "eligible_events": 7967,
+    "selected_station_metadata_rows": 226414,
+    "meaning": "real loader filters, before training resampling/augmentation"
+  },
+  {
+    "view": "vmissing",
+    "split": "dev",
+    "eligible_events": 1194,
+    "selected_station_metadata_rows": 36284,
+    "meaning": "real loader filters, before training resampling/augmentation"
+  },
+  {
+    "view": "apair",
+    "split": "train",
+    "eligible_events": 7967,
+    "selected_station_metadata_rows": 226414,
+    "meaning": "real loader filters, before training resampling/augmentation"
+  },
+  {
+    "view": "apair",
+    "split": "dev",
+    "eligible_events": 1194,
+    "selected_station_metadata_rows": 36284,
+    "meaning": "real loader filters, before training resampling/augmentation"
+  }
+]

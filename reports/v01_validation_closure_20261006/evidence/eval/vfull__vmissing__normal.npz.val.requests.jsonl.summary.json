@@ -1,0 +1,12 @@
+{
+  "protocol": "v01-validation-closure-v1",
+  "complete": true,
+  "requested": 8358,
+  "outcomes": {
+    "predicted": 8358,
+    "no_available_source": 0,
+    "invalid_label_or_metadata": 0,
+    "implementation_error": 0
+  },
+  "ledger": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/validation_closure_v1_retry1/eval/vfull__vmissing__normal.npz.val.requests.jsonl"
+}

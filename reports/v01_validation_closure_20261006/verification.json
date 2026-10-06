@@ -1,0 +1,222 @@
+{
+  "analysis_base_commit": "7d87c4007b78405bb901c67ff0b78dc5d0e85a8e",
+  "protocol": "v01-validation-closure-v1",
+  "source_manifest_sha256": "88d4570c2f87c3f0daf00eece6e87dc0a733c78a4d86963645152d1538d9fc86",
+  "runtime_files_matched": 180,
+  "config_hashes_matched": 6,
+  "checkpoint_before_after_equal": true,
+  "checkpoint_verification_scope": "returned HPC audit; checkpoint body not re-read locally",
+  "frozen_manifest_hash_matched": true,
+  "train_dev_disjoint": true,
+  "all_request_events_in_frozen_dev": true,
+  "metric_values_checked": 4750,
+  "recomputed_primary_ci_rows": 400,
+  "primary_bootstrap_draws": 5000,
+  "primary_bootstrap_seed": 20260915,
+  "outer_joins_rechecked": 14,
+  "figure_bin_counts_recomputed": true,
+  "cells": [
+    {
+      "cell": "vfull__vfull__normal",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8358
+      },
+      "predicted_targets": 84259,
+      "predicted_events": 1194,
+      "unique_event_time_rows": 8358,
+      "target_type_counts": {
+        "1": 60845,
+        "2": 23414
+      },
+      "source_observations": 72716,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "baadf26f12e7c1e3091728a953f75e13ef7097daaf49808402227a509e490405",
+      "ledger_sha256": "59ac27e7db96475eadd2e2d7dc4e941260754b7a8620464d7c0f2f34379ff843"
+    },
+    {
+      "cell": "vfull__vmissing__normal",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8358
+      },
+      "predicted_targets": 84259,
+      "predicted_events": 1194,
+      "unique_event_time_rows": 8358,
+      "target_type_counts": {
+        "1": 60845,
+        "2": 23414
+      },
+      "source_observations": 72716,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "ddc43bf3ba33d664f8df5018a2f09b5895b140e008bdedb3e302ecccd3b44b00",
+      "ledger_sha256": "59ac27e7db96475eadd2e2d7dc4e941260754b7a8620464d7c0f2f34379ff843"
+    },
+    {
+      "cell": "vmissing__vfull__normal",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8358
+      },
+      "predicted_targets": 84259,
+      "predicted_events": 1194,
+      "unique_event_time_rows": 8358,
+      "target_type_counts": {
+        "1": 60845,
+        "2": 23414
+      },
+      "source_observations": 72716,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "0fa21c876ef2c4846f39b91bb81f75adb5c6187c5d16edec4e4b3e1f07a9fd7a",
+      "ledger_sha256": "59ac27e7db96475eadd2e2d7dc4e941260754b7a8620464d7c0f2f34379ff843"
+    },
+    {
+      "cell": "vmissing__vmissing__normal",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8358
+      },
+      "predicted_targets": 84259,
+      "predicted_events": 1194,
+      "unique_event_time_rows": 8358,
+      "target_type_counts": {
+        "1": 60845,
+        "2": 23414
+      },
+      "source_observations": 72716,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "76bbf12958318aec149d72b3597ea9c7ef53da62a02389ebcb76bf3ea6a28beb",
+      "ledger_sha256": "59ac27e7db96475eadd2e2d7dc4e941260754b7a8620464d7c0f2f34379ff843"
+    },
+    {
+      "cell": "apair__apair__normal",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8324,
+        "no_available_source": 34
+      },
+      "predicted_targets": 83995,
+      "predicted_events": 1193,
+      "unique_event_time_rows": 8324,
+      "target_type_counts": {
+        "1": 60843,
+        "2": 23152
+      },
+      "source_observations": 72658,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "1dfb664ccaa8849a3d1a21fdd62a137aaafdc26454f9dae022e2c2ff79dea9ad",
+      "ledger_sha256": "e30aa5ac4b14d12998937fe3ab3199255027bd9cd59835538f6bbab5f5fc2530"
+    },
+    {
+      "cell": "apair__apair__random",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8313,
+        "no_available_source": 45
+      },
+      "predicted_targets": 83934,
+      "predicted_events": 1193,
+      "unique_event_time_rows": 8313,
+      "target_type_counts": {
+        "1": 60067,
+        "2": 23867
+      },
+      "source_observations": 38149,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "0ff082f21b87208a8cc6e02d3c640f1ed3325cc5794ae265a55eedbf71d57c39",
+      "ledger_sha256": "8f09d0c39ebf67162df0d785ffcbda2d6ed9893501269695256abcdb81a4fc14"
+    },
+    {
+      "cell": "vfull__vfull__random",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8358
+      },
+      "predicted_targets": 84259,
+      "predicted_events": 1194,
+      "unique_event_time_rows": 8358,
+      "target_type_counts": {
+        "1": 60080,
+        "2": 24179
+      },
+      "source_observations": 38302,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "edcd780a06f4963f3a5aa88076cda3eb4212b261a927126f2a89cb8e26bcdc4a",
+      "ledger_sha256": "fbafd00f00890a498c546bfdb9a88e439b8e798089ec31e7df3a7c96adab73ee"
+    },
+    {
+      "cell": "vfull__vmissing__random",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8358
+      },
+      "predicted_targets": 84259,
+      "predicted_events": 1194,
+      "unique_event_time_rows": 8358,
+      "target_type_counts": {
+        "1": 60080,
+        "2": 24179
+      },
+      "source_observations": 38302,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "281571f4671efbd724b21d75acffc5ede07ae44526ce1cd203b3df3fc16483cb",
+      "ledger_sha256": "fbafd00f00890a498c546bfdb9a88e439b8e798089ec31e7df3a7c96adab73ee"
+    },
+    {
+      "cell": "vmissing__vfull__random",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8358
+      },
+      "predicted_targets": 84259,
+      "predicted_events": 1194,
+      "unique_event_time_rows": 8358,
+      "target_type_counts": {
+        "1": 60080,
+        "2": 24179
+      },
+      "source_observations": 38302,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "d2f0c823dabdc0b2d436e36f9bd14da32c4fdc47ab1d6ed74e0d1d5948432a12",
+      "ledger_sha256": "fbafd00f00890a498c546bfdb9a88e439b8e798089ec31e7df3a7c96adab73ee"
+    },
+    {
+      "cell": "vmissing__vmissing__random",
+      "requested": 8358,
+      "outcomes": {
+        "predicted": 8358
+      },
+      "predicted_targets": 84259,
+      "predicted_events": 1194,
+      "unique_event_time_rows": 8358,
+      "target_type_counts": {
+        "1": 60080,
+        "2": 24179
+      },
+      "source_observations": 38302,
+      "query_only_rows_in_input": 0,
+      "npz_sha256": "c7c7aeed725f11ff8b635f0c4af072161a83e8fef41a7ca621efc93b62e6ffde",
+      "ledger_sha256": "fbafd00f00890a498c546bfdb9a88e439b8e798089ec31e7df3a7c96adab73ee"
+    }
+  ],
+  "sacct_available": false,
+  "hpc_jobs_from_submitted_tsv": [
+    29318960,
+    29318961,
+    29318962,
+    29318963,
+    29318964,
+    29318965,
+    29318966,
+    29318967
+  ],
+  "no_inference_training_or_test": true,
+  "excluded_from_git": [
+    "raw NPZ",
+    "full ledgers/plans",
+    "waveform caches",
+    "checkpoints",
+    "118MB full sufficient statistics",
+    "full frozen split including test rows"
+  ]
+}

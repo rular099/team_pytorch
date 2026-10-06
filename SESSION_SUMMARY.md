@@ -1,12 +1,42 @@
 # TEAM PyTorch 项目交接文档
 
-更新时间：2026-10-05（Asia/Shanghai）
+更新时间：2026-10-06（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威工程入口。当前主任务已从 RT57--RT61
 模型结构研究切换到 **V01：速度波形输入与 P 前缺失/补零受控实验**。不要根据旧聊天、
 旧 `PROJECT_CONTEXT.md` 的分支名、目录名或 checkpoint 文件名推断当前状态。
 
-## 2026-10-05 当前进展：V01 closure 标量读取修复
+## 2026-10-06 当前进展：V01 validation closure 真实结果已整理
+
+本轮base `7d87c4007b78405bb901c67ff0b78dc5d0e85a8e`，分支仍为
+`exp/v01-velocity-prep-padding-control`。原始结果
+`../chaosuan_res/vel/validation_closure_v1_retry1`，四速度random从同级 `eval_retry1` 复用。
+真实idx7事件20041029141300/query NIG019/pick=-109证实旧clock副作用，修复后query/source
+可生成、UTC不变。5 normal + 1 AA random已完成应用闭环；HPC IDs29318960–29318967，
+sacct未回传，不伪造COMPLETED/资源数据。权重仍epoch8/1496updates，评估前后hash未变。
+
+全部10格NPZ/ledger/sensor/UTC/labels核验，4750个metric值复算，14个outer join对账，
+normal/random FF-MM all7+early135五分层400行5000-draw CI本地重算匹配。
+159项unittest PASS；本轮没有修改模型/训练/eval/generator/launcher/config。
+Git轻量材料 `reports/v01_validation_closure_20261006/`，含报告、表、PNG、bin源表、
+原始小JSON/config/protocol/cohort复制件、来源hash、弃权名单及可复算主比较event statistics。
+原NPZ/完整ledger/H5/大权重/118MB全sufficient表不入Git，用户原目录和未跟踪文件保留。
+
+normal FF/MM MAE=0.215428/0.207152；random=0.244516/0.236895。
+高PGA阈值以上MM-FF MAE normal+0.005165/random+0.009195，相关CI同向退化；
+总体MSE下降主要是bias²降低，centered variance差值CI跨零。固定M模型view效应近零。
+AA normal34弃权（10events）、random45弃权（15events），各少1个全时刻可预测event，
+无邻居替代；common available下MM-AA MAE差异CI跨零，不能判模态优势或等效。
+空间单输入range ratio约0.006仍塌缩；V01 normal all是query-only，不可直接比RT55含输入normal all。
+最终物化/loader候选train7967/dev1194，source120101/query142597；不是初始metadata或全量归档。
+
+下一步仅独立审阅，不提交新HPC。入口
+`docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md` 与
+`docs/ai/CODEX_RESULT_20261006_V01_CLOSURE_RESULTS.md`。
+请ChatGPT明确限定负机制结果能否收尾；如果需补充，必须给不可替代缺口与最小停止条件。
+历史training-runtime/encoder identity、逐批轨迹、严格在线因果性、physical site remote等仍有限制。
+
+## 2026-10-05 历史记录：V01 closure 标量读取修复
 
 用户首轮 CPU audit 报 `Illegal slicing argument for scalar dataspace`，job ID 未提供。
 原因是新增 `describe_request` / `plan_and_sidecar` 对事件标量做 HDF5 `[0]` 索引；
@@ -470,10 +500,11 @@ field range/pairwise difference、实际支持剂量和 event-macro CI，且识�
 
 ## 7. 下一会话第一步
 
-先读 `docs/ai/CODEX_RESULT_20261005_V01_SCALAR_FIX.md` 和
-`docs/v01_validation_closure.md`。用户已提交首轮 closure，CPU audit 标量读取失败；
-本轮修复已完成，等待补丁上传和 retry1 手动提交。
-不要重复整体 recovery/preflight/训练。修复测试不代表真实门禁成功；需要新的 closure 结果和 sacct。
+先读 `docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md`、
+`docs/ai/CODEX_RESULT_20261006_V01_CLOSURE_RESULTS.md` 和
+`reports/v01_validation_closure_20261006/RESULT_REVIEW.md`。
+retry1真实结果已完成应用闭环并整理，等待ChatGPT审阅决定能否按限定结论收尾。
+不要重复recovery/preflight/训练/已有验证；sacct仅是可补回的既有记录，不为此重跑。
 
 ### 历史 recovery 操作（2026-10-01，已补跑，以下命令不得整体重复执行）
 
@@ -552,8 +583,8 @@ CONFIRM_V01=1 DRY_RUN=0 bash tools/recover_v01_prep_padding_controls_slurm.sh
 
 1. `AGENTS.md`
 2. 本 `SESSION_SUMMARY.md`
-   当前结果先读 `docs/ai/CODEX_RESULT_20261003_V01_PARTIAL_VALIDATION.md` 与审阅请求；
-   10-01 recovery 仅是历史记录。
+   当前结果先读 `docs/ai/CODEX_RESULT_20261006_V01_CLOSURE_RESULTS.md` 与10-06审阅请求；
+   10-01 recovery、10-03失败矩阵与10-05重试仅是历史记录。
 3. `docs/ai/V01_prompt.md`
 4. `docs/ai/V01_VELOCITY_PREP_PADDING_CODEX_PROMPT_20260929.md`
 5. `docs/ai/CODEX_RESULT_20260929_V01_VELOCITY_PADDING.md`

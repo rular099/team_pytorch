@@ -1,0 +1,25 @@
+{
+  "protocol": "v01-validation-closure-v1",
+  "cells": [
+    "vfull__vfull__normal",
+    "vfull__vmissing__normal",
+    "vmissing__vfull__normal",
+    "vmissing__vmissing__normal",
+    "apair__apair__normal",
+    "apair__apair__random"
+  ],
+  "run_root": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42",
+  "closure_root": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/validation_closure_v1_retry1",
+  "aa_random_reason": "15 duplicate event/time groups contain 45 extra rows; all 15 have nonidentical predictions. Offline deduplication is not valid.",
+  "source_manifest_sha256": "88d4570c2f87c3f0daf00eece6e87dc0a733c78a4d86963645152d1538d9fc86",
+  "old_outputs_untouched": true,
+  "historical_runtime_identity": "NOT_AVAILABLE unless verified in copied original evidence",
+  "effective_config_sha256": {
+    "vfull__vfull__normal": "652ff21d64c94251d460a6d4947d99bee42feca3a6afc43ce0765957072d9bef",
+    "vfull__vmissing__normal": "234cddd1c0343b9f8465fb78107baf4b7aaf374b54da913ba54097aba5912e98",
+    "vmissing__vfull__normal": "fd493d291902b7c0aefc9a923f9bf3f6c722525fddd4a4c66d2f120a36b3638f",
+    "vmissing__vmissing__normal": "c27ad754b95f52962d1b59338859e7fca7d3759637571168af6f4975ba8677bd",
+    "apair__apair__normal": "9fea97ab6101c01c431312a90d40ac5d4f89e2117253776db15a9d1311d0b124",
+    "apair__apair__random": "16aae7c5d7b5ff7c139da89bda887131579167fbdf393b59388ce0e7bcb233f3"
+  }
+}

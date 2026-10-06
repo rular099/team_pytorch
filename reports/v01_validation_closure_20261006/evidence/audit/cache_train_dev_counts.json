@@ -1,0 +1,509 @@
+{
+  "counts": {
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2004/japan_2004_v01_velocity.hdf5": {
+      "train": {
+        "events": 199,
+        "source_rows": 1988,
+        "query_rows": 2262
+      },
+      "dev": {
+        "events": 51,
+        "source_rows": 486,
+        "query_rows": 484
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2005/japan_2005_v01_velocity.hdf5": {
+      "train": {
+        "events": 259,
+        "source_rows": 2606,
+        "query_rows": 3473
+      },
+      "dev": {
+        "events": 37,
+        "source_rows": 378,
+        "query_rows": 502
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2006/japan_2006_v01_velocity.hdf5": {
+      "train": {
+        "events": 196,
+        "source_rows": 1990,
+        "query_rows": 3363
+      },
+      "dev": {
+        "events": 28,
+        "source_rows": 271,
+        "query_rows": 488
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2007/japan_2007_v01_velocity.hdf5": {
+      "train": {
+        "events": 318,
+        "source_rows": 2373,
+        "query_rows": 3857
+      },
+      "dev": {
+        "events": 47,
+        "source_rows": 382,
+        "query_rows": 764
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2008/japan_2008_v01_velocity.hdf5": {
+      "train": {
+        "events": 343,
+        "source_rows": 5589,
+        "query_rows": 4938
+      },
+      "dev": {
+        "events": 45,
+        "source_rows": 645,
+        "query_rows": 666
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2009/japan_2009_v01_velocity.hdf5": {
+      "train": {
+        "events": 250,
+        "source_rows": 3449,
+        "query_rows": 3781
+      },
+      "dev": {
+        "events": 38,
+        "source_rows": 580,
+        "query_rows": 572
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2010/japan_2010_v01_velocity.hdf5": {
+      "train": {
+        "events": 201,
+        "source_rows": 3075,
+        "query_rows": 3592
+      },
+      "dev": {
+        "events": 30,
+        "source_rows": 619,
+        "query_rows": 600
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2011/japan_2011_v01_velocity.hdf5": {
+      "train": {
+        "events": 1101,
+        "source_rows": 15526,
+        "query_rows": 17739
+      },
+      "dev": {
+        "events": 169,
+        "source_rows": 2463,
+        "query_rows": 2710
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2012/japan_2012_v01_velocity.hdf5": {
+      "train": {
+        "events": 650,
+        "source_rows": 9561,
+        "query_rows": 10009
+      },
+      "dev": {
+        "events": 86,
+        "source_rows": 1262,
+        "query_rows": 1297
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2013/japan_2013_v01_velocity.hdf5": {
+      "train": {
+        "events": 455,
+        "source_rows": 6552,
+        "query_rows": 6452
+      },
+      "dev": {
+        "events": 66,
+        "source_rows": 991,
+        "query_rows": 1015
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2014/japan_2014_v01_velocity.hdf5": {
+      "train": {
+        "events": 382,
+        "source_rows": 5707,
+        "query_rows": 6387
+      },
+      "dev": {
+        "events": 56,
+        "source_rows": 815,
+        "query_rows": 940
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2015/japan_2015_v01_velocity.hdf5": {
+      "train": {
+        "events": 316,
+        "source_rows": 5166,
+        "query_rows": 6044
+      },
+      "dev": {
+        "events": 48,
+        "source_rows": 571,
+        "query_rows": 648
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2016/japan_2016_v01_velocity.hdf5": {
+      "train": {
+        "events": 537,
+        "source_rows": 6560,
+        "query_rows": 9338
+      },
+      "dev": {
+        "events": 88,
+        "source_rows": 1090,
+        "query_rows": 1492
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2017/japan_2017_v01_velocity.hdf5": {
+      "train": {
+        "events": 346,
+        "source_rows": 4218,
+        "query_rows": 5479
+      },
+      "dev": {
+        "events": 47,
+        "source_rows": 813,
+        "query_rows": 903
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2018/japan_2018_v01_velocity.hdf5": {
+      "train": {
+        "events": 362,
+        "source_rows": 4879,
+        "query_rows": 6125
+      },
+      "dev": {
+        "events": 59,
+        "source_rows": 763,
+        "query_rows": 1102
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2019/japan_2019_v01_velocity.hdf5": {
+      "train": {
+        "events": 285,
+        "source_rows": 3525,
+        "query_rows": 4299
+      },
+      "dev": {
+        "events": 41,
+        "source_rows": 567,
+        "query_rows": 722
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2020/japan_2020_v01_velocity.hdf5": {
+      "train": {
+        "events": 267,
+        "source_rows": 3621,
+        "query_rows": 4334
+      },
+      "dev": {
+        "events": 35,
+        "source_rows": 497,
+        "query_rows": 606
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2021/japan_2021_v01_velocity.hdf5": {
+      "train": {
+        "events": 334,
+        "source_rows": 5028,
+        "query_rows": 5988
+      },
+      "dev": {
+        "events": 48,
+        "source_rows": 628,
+        "query_rows": 714
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2022/japan_2022_v01_velocity.hdf5": {
+      "train": {
+        "events": 334,
+        "source_rows": 4459,
+        "query_rows": 5747
+      },
+      "dev": {
+        "events": 50,
+        "source_rows": 698,
+        "query_rows": 862
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2023/japan_2023_v01_velocity.hdf5": {
+      "train": {
+        "events": 271,
+        "source_rows": 3358,
+        "query_rows": 4085
+      },
+      "dev": {
+        "events": 40,
+        "source_rows": 612,
+        "query_rows": 809
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2024/japan_2024_v01_velocity.hdf5": {
+      "train": {
+        "events": 561,
+        "source_rows": 4313,
+        "query_rows": 5579
+      },
+      "dev": {
+        "events": 85,
+        "source_rows": 1427,
+        "query_rows": 1830
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2004/japan_2004_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 199,
+        "source_rows": 1988,
+        "query_rows": 2262
+      },
+      "dev": {
+        "events": 51,
+        "source_rows": 486,
+        "query_rows": 484
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2005/japan_2005_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 259,
+        "source_rows": 2606,
+        "query_rows": 3473
+      },
+      "dev": {
+        "events": 37,
+        "source_rows": 378,
+        "query_rows": 502
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2006/japan_2006_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 196,
+        "source_rows": 1990,
+        "query_rows": 3363
+      },
+      "dev": {
+        "events": 28,
+        "source_rows": 271,
+        "query_rows": 488
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2007/japan_2007_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 318,
+        "source_rows": 2373,
+        "query_rows": 3857
+      },
+      "dev": {
+        "events": 47,
+        "source_rows": 382,
+        "query_rows": 764
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2008/japan_2008_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 343,
+        "source_rows": 5589,
+        "query_rows": 4938
+      },
+      "dev": {
+        "events": 45,
+        "source_rows": 645,
+        "query_rows": 666
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2009/japan_2009_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 250,
+        "source_rows": 3449,
+        "query_rows": 3781
+      },
+      "dev": {
+        "events": 38,
+        "source_rows": 580,
+        "query_rows": 572
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2010/japan_2010_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 201,
+        "source_rows": 3075,
+        "query_rows": 3592
+      },
+      "dev": {
+        "events": 30,
+        "source_rows": 619,
+        "query_rows": 600
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2011/japan_2011_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 1101,
+        "source_rows": 15526,
+        "query_rows": 17739
+      },
+      "dev": {
+        "events": 169,
+        "source_rows": 2463,
+        "query_rows": 2710
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2012/japan_2012_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 650,
+        "source_rows": 9561,
+        "query_rows": 10009
+      },
+      "dev": {
+        "events": 86,
+        "source_rows": 1262,
+        "query_rows": 1297
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2013/japan_2013_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 455,
+        "source_rows": 6552,
+        "query_rows": 6452
+      },
+      "dev": {
+        "events": 66,
+        "source_rows": 991,
+        "query_rows": 1015
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2014/japan_2014_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 382,
+        "source_rows": 5707,
+        "query_rows": 6387
+      },
+      "dev": {
+        "events": 56,
+        "source_rows": 815,
+        "query_rows": 940
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2015/japan_2015_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 316,
+        "source_rows": 5166,
+        "query_rows": 6044
+      },
+      "dev": {
+        "events": 48,
+        "source_rows": 571,
+        "query_rows": 648
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2016/japan_2016_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 537,
+        "source_rows": 6560,
+        "query_rows": 9338
+      },
+      "dev": {
+        "events": 88,
+        "source_rows": 1090,
+        "query_rows": 1492
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2017/japan_2017_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 346,
+        "source_rows": 4218,
+        "query_rows": 5479
+      },
+      "dev": {
+        "events": 47,
+        "source_rows": 813,
+        "query_rows": 903
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2018/japan_2018_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 362,
+        "source_rows": 4879,
+        "query_rows": 6125
+      },
+      "dev": {
+        "events": 59,
+        "source_rows": 763,
+        "query_rows": 1102
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2019/japan_2019_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 285,
+        "source_rows": 3525,
+        "query_rows": 4299
+      },
+      "dev": {
+        "events": 41,
+        "source_rows": 567,
+        "query_rows": 722
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2020/japan_2020_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 267,
+        "source_rows": 3621,
+        "query_rows": 4334
+      },
+      "dev": {
+        "events": 35,
+        "source_rows": 497,
+        "query_rows": 606
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2021/japan_2021_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 334,
+        "source_rows": 5028,
+        "query_rows": 5988
+      },
+      "dev": {
+        "events": 48,
+        "source_rows": 628,
+        "query_rows": 714
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2022/japan_2022_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 334,
+        "source_rows": 4459,
+        "query_rows": 5747
+      },
+      "dev": {
+        "events": 50,
+        "source_rows": 698,
+        "query_rows": 862
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2023/japan_2023_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 271,
+        "source_rows": 3358,
+        "query_rows": 4085
+      },
+      "dev": {
+        "events": 40,
+        "source_rows": 612,
+        "query_rows": 809
+      }
+    },
+    "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2024/japan_2024_v01_acc_pair.hdf5": {
+      "train": {
+        "events": 561,
+        "source_rows": 4313,
+        "query_rows": 5579
+      },
+      "dev": {
+        "events": 85,
+        "source_rows": 1427,
+        "query_rows": 1830
+      }
+    }
+  },
+  "definition": "materialized cache rows before loader filters, not effective training samples"
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "cell": "vfull__vfull__random",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/eval_retry1/vfull__vfull__random.npz",
+    "sha256": "edcd780a06f4963f3a5aa88076cda3eb4212b261a927126f2a89cb8e26bcdc4a"
+  },
+  {
+    "cell": "vfull__vmissing__random",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/eval_retry1/vfull__vmissing__random.npz",
+    "sha256": "281571f4671efbd724b21d75acffc5ede07ae44526ce1cd203b3df3fc16483cb"
+  },
+  {
+    "cell": "vmissing__vfull__random",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/eval_retry1/vmissing__vfull__random.npz",
+    "sha256": "d2f0c823dabdc0b2d436e36f9bd14da32c4fdc47ab1d6ed74e0d1d5948432a12"
+  },
+  {
+    "cell": "vmissing__vmissing__random",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/eval_retry1/vmissing__vmissing__random.npz",
+    "sha256": "c7c7aeed725f11ff8b635f0c4af072161a83e8fef41a7ca621efc93b62e6ffde"
+  }
+]

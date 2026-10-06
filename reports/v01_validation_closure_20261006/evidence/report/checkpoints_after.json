@@ -1,0 +1,35 @@
+[
+  {
+    "arm": "vfull",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/weights_vfull_retry1/full_model_last.pth",
+    "sha256": "09c65503ff6e7d848899081110142487c0622f1cc5fd143df3579d55e38f4763",
+    "init_sha256": "6e91102989e1d6440dd878c6339001c1000e9a737e1071a7c6255bbe54d26577",
+    "epoch": 8,
+    "step_min": 1496.0,
+    "step_max": 1496.0,
+    "saved_encoder_source": "/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt",
+    "historical_encoder_file_sha256": "NOT_AVAILABLE"
+  },
+  {
+    "arm": "vmissing",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/weights_vmissing/full_model_last.pth",
+    "sha256": "9173d8d60d657b6b6eebb6a1dedef6c4af139319328c787c233187b2acde3b8a",
+    "init_sha256": "6e91102989e1d6440dd878c6339001c1000e9a737e1071a7c6255bbe54d26577",
+    "epoch": 8,
+    "step_min": 1496.0,
+    "step_max": 1496.0,
+    "saved_encoder_source": "/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt",
+    "historical_encoder_file_sha256": "NOT_AVAILABLE"
+  },
+  {
+    "arm": "apair",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/weights_apair/full_model_last.pth",
+    "sha256": "a2837d575e4a81e6386e2cb004669a3b0052e9ab093aa3893fcda7b76c74cb32",
+    "init_sha256": "6e91102989e1d6440dd878c6339001c1000e9a737e1071a7c6255bbe54d26577",
+    "epoch": 8,
+    "step_min": 1496.0,
+    "step_max": 1496.0,
+    "saved_encoder_source": "/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt",
+    "historical_encoder_file_sha256": "NOT_AVAILABLE"
+  }
+]

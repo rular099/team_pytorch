@@ -1,9 +1,12 @@
 # ChatGPT Project 与 Codex 协作约定
 
-更新日期：2026-10-05
+更新日期：2026-10-06
 
 当前 V01 审阅入口：
 
+- `CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md`：真实验证闭环完成后的独立审阅、能否收尾与最小下一步请求；
+- `CODEX_RESULT_20261006_V01_CLOSURE_RESULTS.md`：本轮核验、指标与远端结果交付记录；
+- `../../reports/v01_validation_closure_20261006/RESULT_REVIEW.md`：normal/random、分层CI、覆盖率、A/V和剩余限制；
 - `CODEX_RESULT_20261005_V01_SCALAR_FIX.md`：首轮 CPU audit 标量读取失败修复、补丁与保留产物的 retry1 命令；
 - `CODEX_RESULT_20261004_V01_VALIDATION_CLOSURE.md`：最小验证闭环原始实现交付记录；
 - `V01_prompt_2.md` / `V01_REVIEW_AND_CODEX_HANDOFF_20261004.md`：本轮原始任务书；

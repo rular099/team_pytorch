@@ -2,12 +2,13 @@
 
 更新日期：2026-09-02（Asia/Shanghai）
 
-2026-10-05 入口提示：以下是保留的 RT55/RT56 历史快照，不是当前分支状态。
-当前 V01 分支为 `exp/v01-velocity-prep-padding-control`；首轮 closure CPU audit
-因新增代码对 HDF5 标量做 `[0]` 索引失败。修复基线为
-`632cc63ae82d9c29c238918d4a1ffa5ec92aa3b2`，159 项本地回归通过，修复版未提交。
-当前任务/重试说明见 `docs/ai/CODEX_RESULT_20261005_V01_SCALAR_FIX.md` 和
-`docs/v01_validation_closure.md`。三臂训练已完成；只补验证，不训练/preflight/recover。
+2026-10-06 入口提示：以下是保留的 RT55/RT56 历史快照，不是当前分支状态。
+当前 V01 分支为 `exp/v01-velocity-prep-padding-control`；真实 validation closure 已回传：
+idx7根因通过，五normal+一AA random完整，三臂epoch8/step1496权重未变。
+分析基线 `7d87c4007b78405bb901c67ff0b78dc5d0e85a8e`，本轮只整理/核验，不改runtime。
+审阅入口为 `docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md`，详细结果为
+`reports/v01_validation_closure_20261006/RESULT_REVIEW.md`。总体MM更好但高PGA更差，
+不能认定padding因果机制或速度优势。等待独立审阅；不重复训练/preflight/验证。
 
 这是给 GitHub 连接器和新 AI 对话使用的紧凑入口。它不替代原始 metrics、NPZ、checkpoint 或 resolved config。定量分析前仍须核验具体 provenance。
 

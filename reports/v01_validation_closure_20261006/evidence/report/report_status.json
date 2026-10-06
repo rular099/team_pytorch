@@ -1,0 +1,26 @@
+{
+  "protocol": "v01-validation-closure-v1",
+  "normal_cells_complete": true,
+  "aa_random_complete": true,
+  "closure_complete": true,
+  "train_or_test_executed": false,
+  "threshold": -1.2,
+  "bootstrap_draws": 5000,
+  "bootstrap_seed": 20260915,
+  "pair_keys": [
+    "event_id",
+    "query_sensor_id",
+    "time_s",
+    "absolute_cutoff_utc"
+  ],
+  "macro_rmse_definition": "mean event RMSE",
+  "legacy_random_reuse_scope": "clock-copy route unchanged + production/real-cache input-label signatures; no model rerun",
+  "limitations": [
+    "validation reused for development",
+    "one seed and eight epochs",
+    "different A/V instruments/depths/sites/response, not a causal padding contrast",
+    "full-record centering and legacy cutout+1 inherited, not changed here",
+    "historical encoder/source hashes may remain unknown",
+    "sensor-ID exclusion is not certified true physical-site remote"
+  ]
+}

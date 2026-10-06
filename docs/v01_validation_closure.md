@@ -7,6 +7,13 @@
 
 ## 本轮范围与状态
 
+2026-10-06：用户回传 `validation_closure_v1_retry1`；真实idx7根因确认、5 normal + 1 AA
+random完整，三臂epoch8/step1496权重前后不变。结果已核验整理至
+`reports/v01_validation_closure_20261006/`，当前审阅入口
+`docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md`。
+**以下上传/提交步骤保留作历史追溯，不是要求再次运行。当前不补训练或验证。**
+sacct未回传，调度器状态和资源数据仍未认证。
+
 2026-10-05：用户已提交首轮 closure，audit 在读取标量 `v01_reference_p_pick` 时失败。
 两处新审计读取已修复，生产格式的标量 fixture 和全套 159 项本地回归通过。
 修复版超算未提交；真实 derived cache 的 idx7 trace 与新指标仍待生成。

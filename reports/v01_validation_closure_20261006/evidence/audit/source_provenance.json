@@ -1,0 +1,66 @@
+[
+  {
+    "file": "derived_cache/preflight_summary.json",
+    "sha256": "0d9eefb0dab73db0bcb5c8b347f64a076ba9bb36e6e30d078d787db1532a0e7a"
+  },
+  {
+    "file": "derived_cache/protocol_lock.json",
+    "sha256": "a1c24026a55565e908e04ceb5f076b059bf01518ec040ed1f3df9b4a90cdf5b3"
+  },
+  {
+    "file": "derived_cache/cohort_audit.csv",
+    "sha256": "da91ea5e943fcc61857bd9f2bb6503c7f00993de61d24d4ec3b32933c70800cc"
+  },
+  {
+    "file": "derived_cache/cohort_counts_by_year.csv",
+    "sha256": "b7e1ebfa0774247a0ceec3e652c43b541e4767a472aa8af6051079cf4537c439"
+  },
+  {
+    "file": "weights_vfull_retry1/config.json",
+    "sha256": "cbdc9bdb20f7747ce40af44d4a9122f508414951b356c4b93b151a63d6bf3868"
+  },
+  {
+    "file": "weights_vfull_retry1/manifest.json",
+    "sha256": "1ddc6e7b18ce65213770fe149fbeeaeebb238c4baa1f69c59cd95e838d98422a"
+  },
+  {
+    "file": "weights_vmissing/config.json",
+    "sha256": "2793c3647081e51b4baee3aa6895c504e9c4763af0d8f7ee91b21a223b85ce77"
+  },
+  {
+    "file": "weights_vmissing/manifest.json",
+    "sha256": "1ddc6e7b18ce65213770fe149fbeeaeebb238c4baa1f69c59cd95e838d98422a"
+  },
+  {
+    "file": "weights_apair/config.json",
+    "sha256": "f7cd22d8e8ca9d7f2691a98e9584a1d5f7848d12d99df0edc316c5e2c282b7ed"
+  },
+  {
+    "file": "weights_apair/manifest.json",
+    "sha256": "1ddc6e7b18ce65213770fe149fbeeaeebb238c4baa1f69c59cd95e838d98422a"
+  },
+  {
+    "field": "frozen_split_manifest",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/split_events.csv",
+    "current_sha256": "a914fa361dc51af957aca32396d992219dd04c665a7ccffc46ec18769c491108",
+    "historical_sha256": "NOT_AVAILABLE unless recorded in original manifest"
+  },
+  {
+    "field": "load_model_path",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep32.pth",
+    "current_sha256": "f23c036f9996981c781e90ac8a9e81b1468e82d11294a8857800c7c38a6570d3",
+    "historical_sha256": "NOT_AVAILABLE unless recorded in original manifest"
+  },
+  {
+    "field": "runtime_encoder",
+    "file": "/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt",
+    "current_sha256": "c71aea36cd3b14a3dfa8da1b22104776bede4c04e208db01b443ae25c27a685b",
+    "historical_sha256": "NOT_AVAILABLE"
+  },
+  {
+    "field": "runtime_diting_config",
+    "file": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/diting/config/diting_1200m_backbone_attnpool.yml",
+    "current_sha256": "eb08c644c16630998e305947c54c56361aec6458c93ec58b216ae1a1f3e4ab20",
+    "historical_sha256": "NOT_AVAILABLE"
+  }
+]

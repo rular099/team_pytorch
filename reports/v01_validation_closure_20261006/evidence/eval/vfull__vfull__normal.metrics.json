@@ -1,0 +1,68 @@
+{
+  "checkpoint": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/weights_vfull_retry1/full_model_last.pth",
+  "checkpoint_metadata": {
+    "checkpoint_format": "non_encoder_v1",
+    "encoder_source": "/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt",
+    "epoch": 8,
+    "loss": 1.0515646934509277
+  },
+  "config": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/validation_closure_v1_retry1/configs/vfull__vfull__normal.json",
+  "metric_protocol": {
+    "brier": "unweighted mean squared probability error at the configured PGA threshold",
+    "coverage": "|predictive_mean-target| <= k * predictive_mixture_std",
+    "nll": "unweighted mean MDN NLL over valid PGA targets in log10(m/s^2)",
+    "pga_coordinate": "log10(m/s^2)",
+    "point_estimate": "predictive_mixture_mean"
+  },
+  "metrics": {
+    "val": {
+      "pga": {
+        "bias": 0.09412337128837206,
+        "brier": 0.1757390018043998,
+        "brier_positive_rate": 0.4262690039046274,
+        "brier_threshold_log10_mps2": -1.2,
+        "coordinate": "log10(m/s^2)",
+        "correlation": 0.7199665193811805,
+        "coverage_1sigma": 0.6283601751741654,
+        "coverage_2sigma": 0.9431989461066473,
+        "events": 1194,
+        "intercept": -0.4775888964798929,
+        "mae": 0.21542753317595803,
+        "nll": 0.04243086584261171,
+        "nll_log10_mps2": 0.04243086584261171,
+        "nll_model_space": 0.8835055035262155,
+        "point_estimate": "predictive_mixture_mean",
+        "predictive_sigma_mean": 0.24477619563678768,
+        "predictive_sigma_median": 0.23348678648471832,
+        "probability_mean": 0.5637800614136439,
+        "r2": 0.4547883557602942,
+        "realtime_samples": 8358,
+        "rmse": 0.27619924313952526,
+        "slope": 0.5296714233046461,
+        "target_slots": 125370,
+        "targets": 84259,
+        "valid_target_fraction": 0.6720826353992183
+      },
+      "request_accounting": {
+        "complete": true,
+        "ledger": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/validation_closure_v1_retry1/eval/vfull__vfull__normal.npz.val.requests.jsonl",
+        "outcomes": {
+          "implementation_error": 0,
+          "invalid_label_or_metadata": 0,
+          "no_available_source": 0,
+          "predicted": 8358
+        },
+        "protocol": "v01-validation-closure-v1",
+        "requested": 8358
+      }
+    }
+  },
+  "num_shards": 1,
+  "schema_version": 1,
+  "shard_id": 0,
+  "splits": [
+    "val"
+  ],
+  "waveform_station_permutation": "none",
+  "waveform_station_permutation_seed": 12345
+}

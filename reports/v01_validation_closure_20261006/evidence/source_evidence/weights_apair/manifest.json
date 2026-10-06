@@ -1,0 +1,972 @@
+[
+  {
+    "tag": "data/coords_abs_max",
+    "file": "data_coords_abs_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/coords_abs_mean",
+    "file": "data_coords_abs_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/coords_nan_count",
+    "file": "data_coords_nan_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/event_mag_max",
+    "file": "data_event_mag_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/event_mag_mean",
+    "file": "data_event_mag_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/event_mag_min",
+    "file": "data_event_mag_min.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/event_mag_std",
+    "file": "data_event_mag_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/p_pick_max",
+    "file": "data_p_pick_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/p_pick_mean",
+    "file": "data_p_pick_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/p_pick_min",
+    "file": "data_p_pick_min.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/p_pick_shift_max",
+    "file": "data_p_pick_shift_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/p_pick_shift_mean",
+    "file": "data_p_pick_shift_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/p_pick_shift_min",
+    "file": "data_p_pick_shift_min.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/p_pick_valid_count_mean",
+    "file": "data_p_pick_valid_count_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/pga_label_mean",
+    "file": "data_pga_label_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/pga_label_std",
+    "file": "data_pga_label_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/pga_target_abs_max",
+    "file": "data_pga_target_abs_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/pga_target_abs_mean",
+    "file": "data_pga_target_abs_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/pga_target_valid_count_mean",
+    "file": "data_pga_target_valid_count_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/pga_target_valid_ratio",
+    "file": "data_pga_target_valid_ratio.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_p_pick_max",
+    "file": "data_raw_p_pick_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_p_pick_mean",
+    "file": "data_raw_p_pick_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_p_pick_min",
+    "file": "data_raw_p_pick_min.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_p_pick_missing_ratio",
+    "file": "data_raw_p_pick_missing_ratio.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_p_pick_valid_count_mean",
+    "file": "data_raw_p_pick_valid_count_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_wave_abs_max",
+    "file": "data_raw_wave_abs_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_wave_abs_mean",
+    "file": "data_raw_wave_abs_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_wave_inf_count",
+    "file": "data_raw_wave_inf_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_wave_nan_count",
+    "file": "data_raw_wave_nan_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_wave_nonzero_ratio",
+    "file": "data_raw_wave_nonzero_ratio.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/raw_wave_std",
+    "file": "data_raw_wave_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/station_valid_count_mean",
+    "file": "data_station_valid_count_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/station_valid_ratio",
+    "file": "data_station_valid_ratio.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/waveform_post_p_valid_seconds_max",
+    "file": "data_waveform_post_p_valid_seconds_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/waveform_post_p_valid_seconds_mean",
+    "file": "data_waveform_post_p_valid_seconds_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/waveform_post_p_valid_seconds_min",
+    "file": "data_waveform_post_p_valid_seconds_min.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/waveform_valid_sample_count_mean",
+    "file": "data_waveform_valid_sample_count_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/waveform_valid_sample_fraction",
+    "file": "data_waveform_valid_sample_fraction.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/waveform_valid_seconds_max",
+    "file": "data_waveform_valid_seconds_max.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/waveform_valid_seconds_mean",
+    "file": "data_waveform_valid_seconds_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "data/waveform_valid_seconds_min",
+    "file": "data_waveform_valid_seconds_min.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/coords_abs_mean",
+    "file": "diag_coords_abs_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/coords_center_abs_mean",
+    "file": "diag_coords_center_abs_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/coords_emb_norm",
+    "file": "diag_coords_emb_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/coords_rel_mean",
+    "file": "diag_coords_rel_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/event_cross_attn_entropy",
+    "file": "diag_event_cross_attn_entropy.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/event_cross_attn_entropy_ratio",
+    "file": "diag_event_cross_attn_entropy_ratio.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/event_cross_attn_max_weight",
+    "file": "diag_event_cross_attn_max_weight.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/event_cross_attn_valid_mass",
+    "file": "diag_event_cross_attn_valid_mass.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/event_cross_first_residual_enabled",
+    "file": "diag_event_cross_first_residual_enabled.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/event_cross_readout_layers",
+    "file": "diag_event_cross_readout_layers.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/event_readout_mode",
+    "file": "diag_event_readout_mode.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/gain_scale_emb_norm",
+    "file": "diag_gain_scale_emb_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/loc_mu_best_mean",
+    "file": "diag_loc_mu_best_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/loc_mu_best_std",
+    "file": "diag_loc_mu_best_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/loc_pred_target_mean_gap",
+    "file": "diag_loc_pred_target_mean_gap.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/loc_pred_target_std_gap",
+    "file": "diag_loc_pred_target_std_gap.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/loc_target_mean",
+    "file": "diag_loc_target_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/loc_target_std",
+    "file": "diag_loc_target_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/mag_mu_best_mean",
+    "file": "diag_mag_mu_best_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/mag_mu_best_std",
+    "file": "diag_mag_mu_best_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/mag_pred_target_mean_gap",
+    "file": "diag_mag_pred_target_mean_gap.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/mag_pred_target_std_gap",
+    "file": "diag_mag_pred_target_std_gap.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/mag_target_mean",
+    "file": "diag_mag_target_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/mag_target_std",
+    "file": "diag_mag_target_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_entropy",
+    "file": "diag_pga_alpha_entropy.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_logit_0_mean",
+    "file": "diag_pga_alpha_logit_0_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_logit_0_std",
+    "file": "diag_pga_alpha_logit_0_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_logit_1_mean",
+    "file": "diag_pga_alpha_logit_1_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_logit_1_std",
+    "file": "diag_pga_alpha_logit_1_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_logit_2_mean",
+    "file": "diag_pga_alpha_logit_2_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_logit_2_std",
+    "file": "diag_pga_alpha_logit_2_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_logits_mean",
+    "file": "diag_pga_alpha_logits_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_logits_std",
+    "file": "diag_pga_alpha_logits_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_prob_0_mean",
+    "file": "diag_pga_alpha_prob_0_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_prob_0_std",
+    "file": "diag_pga_alpha_prob_0_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_prob_1_mean",
+    "file": "diag_pga_alpha_prob_1_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_prob_1_std",
+    "file": "diag_pga_alpha_prob_1_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_prob_2_mean",
+    "file": "diag_pga_alpha_prob_2_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_prob_2_std",
+    "file": "diag_pga_alpha_prob_2_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_prob_mean",
+    "file": "diag_pga_alpha_prob_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_alpha_prob_std",
+    "file": "diag_pga_alpha_prob_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_best_component_frac_0",
+    "file": "diag_pga_best_component_frac_0.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_best_component_frac_1",
+    "file": "diag_pga_best_component_frac_1.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_best_component_frac_2",
+    "file": "diag_pga_best_component_frac_2.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_attn_entropy",
+    "file": "diag_pga_cross_attn_entropy.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_attn_entropy_ratio",
+    "file": "diag_pga_cross_attn_entropy_ratio.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_attn_max_weight",
+    "file": "diag_pga_cross_attn_max_weight.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_attn_valid_mass",
+    "file": "diag_pga_cross_attn_valid_mass.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_attn_gate_max_abs",
+    "file": "diag_pga_cross_extra_attn_gate_max_abs.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_attn_gate_mean",
+    "file": "diag_pga_cross_extra_attn_gate_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_ffn_gate_max_abs",
+    "file": "diag_pga_cross_extra_ffn_gate_max_abs.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_ffn_gate_mean",
+    "file": "diag_pga_cross_extra_ffn_gate_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_layer1_attn_gate",
+    "file": "diag_pga_cross_extra_layer1_attn_gate.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_layer1_ffn_gate",
+    "file": "diag_pga_cross_extra_layer1_ffn_gate.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_layer2_attn_gate",
+    "file": "diag_pga_cross_extra_layer2_attn_gate.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_layer2_ffn_gate",
+    "file": "diag_pga_cross_extra_layer2_ffn_gate.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_layer3_attn_gate",
+    "file": "diag_pga_cross_extra_layer3_attn_gate.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_extra_layer3_ffn_gate",
+    "file": "diag_pga_cross_extra_layer3_ffn_gate.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_first_residual_enabled",
+    "file": "diag_pga_cross_first_residual_enabled.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_cross_readout_layers",
+    "file": "diag_pga_cross_readout_layers.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_0_mean",
+    "file": "diag_pga_mu_0_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_0_std",
+    "file": "diag_pga_mu_0_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_0_valid_mean",
+    "file": "diag_pga_mu_0_valid_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_0_valid_std",
+    "file": "diag_pga_mu_0_valid_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_1_mean",
+    "file": "diag_pga_mu_1_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_1_std",
+    "file": "diag_pga_mu_1_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_1_valid_mean",
+    "file": "diag_pga_mu_1_valid_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_1_valid_std",
+    "file": "diag_pga_mu_1_valid_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_2_mean",
+    "file": "diag_pga_mu_2_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_2_std",
+    "file": "diag_pga_mu_2_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_2_valid_mean",
+    "file": "diag_pga_mu_2_valid_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_2_valid_std",
+    "file": "diag_pga_mu_2_valid_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_best_mean",
+    "file": "diag_pga_mu_best_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_best_std",
+    "file": "diag_pga_mu_best_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_best_valid_mean",
+    "file": "diag_pga_mu_best_valid_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_best_valid_std",
+    "file": "diag_pga_mu_best_valid_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_mean",
+    "file": "diag_pga_mu_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_mu_std",
+    "file": "diag_pga_mu_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_pred_target_mean_gap",
+    "file": "diag_pga_pred_target_mean_gap.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_pred_target_std_gap",
+    "file": "diag_pga_pred_target_std_gap.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_readout_mode",
+    "file": "diag_pga_readout_mode.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_0_mean",
+    "file": "diag_pga_sigma_0_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_0_std",
+    "file": "diag_pga_sigma_0_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_0_valid_mean",
+    "file": "diag_pga_sigma_0_valid_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_0_valid_std",
+    "file": "diag_pga_sigma_0_valid_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_1_mean",
+    "file": "diag_pga_sigma_1_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_1_std",
+    "file": "diag_pga_sigma_1_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_1_valid_mean",
+    "file": "diag_pga_sigma_1_valid_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_1_valid_std",
+    "file": "diag_pga_sigma_1_valid_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_2_mean",
+    "file": "diag_pga_sigma_2_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_2_std",
+    "file": "diag_pga_sigma_2_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_2_valid_mean",
+    "file": "diag_pga_sigma_2_valid_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_2_valid_std",
+    "file": "diag_pga_sigma_2_valid_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_best_mean",
+    "file": "diag_pga_sigma_best_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_best_std",
+    "file": "diag_pga_sigma_best_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_mean",
+    "file": "diag_pga_sigma_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_mix_mean",
+    "file": "diag_pga_sigma_mix_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_mix_std",
+    "file": "diag_pga_sigma_mix_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_sigma_std",
+    "file": "diag_pga_sigma_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_target_mean",
+    "file": "diag_pga_target_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_target_std",
+    "file": "diag_pga_target_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/pga_valid_target_count",
+    "file": "diag_pga_valid_target_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/preln_wave_emb_norm",
+    "file": "diag_preln_wave_emb_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/raw_station_emb_cosine_mean",
+    "file": "diag_raw_station_emb_cosine_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/raw_trunk_scale_cosine",
+    "file": "diag_raw_trunk_scale_cosine.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/scale_emb_norm",
+    "file": "diag_scale_emb_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/scale_feature_mean",
+    "file": "diag_scale_feature_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/scale_feature_std",
+    "file": "diag_scale_feature_std.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/scale_gate",
+    "file": "diag_scale_gate.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/scale_trunk_ratio",
+    "file": "diag_scale_trunk_ratio.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_adapter_raw_norm",
+    "file": "diag_station_adapter_raw_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_context_mode",
+    "file": "diag_station_context_mode.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_emb_cosine_mean",
+    "file": "diag_station_emb_cosine_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_emb_norm",
+    "file": "diag_station_emb_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_base_x_effective_token_count",
+    "file": "diag_station_pool_base_x_effective_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_base_x_valid_token_count",
+    "file": "diag_station_pool_base_x_valid_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_base_x_valid_token_fraction",
+    "file": "diag_station_pool_base_x_valid_token_fraction.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f2_effective_token_count",
+    "file": "diag_station_pool_f2_effective_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f2_valid_token_count",
+    "file": "diag_station_pool_f2_valid_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f2_valid_token_fraction",
+    "file": "diag_station_pool_f2_valid_token_fraction.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f3_effective_token_count",
+    "file": "diag_station_pool_f3_effective_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f3_valid_token_count",
+    "file": "diag_station_pool_f3_valid_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f3_valid_token_fraction",
+    "file": "diag_station_pool_f3_valid_token_fraction.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f4_effective_token_count",
+    "file": "diag_station_pool_f4_effective_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f4_valid_token_count",
+    "file": "diag_station_pool_f4_valid_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_f4_valid_token_fraction",
+    "file": "diag_station_pool_f4_valid_token_fraction.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_x_effective_token_count",
+    "file": "diag_station_pool_x_effective_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_x_valid_token_count",
+    "file": "diag_station_pool_x_valid_token_count.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_pool_x_valid_token_fraction",
+    "file": "diag_station_pool_x_valid_token_fraction.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_residual_emb_cosine_mean",
+    "file": "diag_station_residual_emb_cosine_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_residual_emb_norm",
+    "file": "diag_station_residual_emb_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_residual_norm_ratio",
+    "file": "diag_station_residual_norm_ratio.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/station_token_weight_mode",
+    "file": "diag_station_token_weight_mode.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/temporal_token_weight_mode",
+    "file": "diag_temporal_token_weight_mode.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/token_weight_scale",
+    "file": "diag_token_weight_scale.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/wave_emb_norm",
+    "file": "diag_wave_emb_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/wave_station_emb_cosine_mean",
+    "file": "diag_wave_station_emb_cosine_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/waveform_valid_sample_count_mean",
+    "file": "diag_waveform_valid_sample_count_mean.csv",
+    "count": 8
+  },
+  {
+    "tag": "diag/waveform_valid_sample_fraction",
+    "file": "diag_waveform_valid_sample_fraction.csv",
+    "count": 8
+  },
+  {
+    "tag": "grad/global_post_clip_norm",
+    "file": "grad_global_post_clip_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "grad/global_pre_clip_norm",
+    "file": "grad_global_pre_clip_norm.csv",
+    "count": 8
+  },
+  {
+    "tag": "grad/mlp_pga",
+    "file": "grad_mlp_pga.csv",
+    "count": 8
+  },
+  {
+    "tag": "grad/output_model_pga",
+    "file": "grad_output_model_pga.csv",
+    "count": 8
+  },
+  {
+    "tag": "grad/station_adapter",
+    "file": "grad_station_adapter.csv",
+    "count": 8
+  },
+  {
+    "tag": "grad_rms/mlp_pga",
+    "file": "grad_rms_mlp_pga.csv",
+    "count": 8
+  },
+  {
+    "tag": "grad_rms/output_model_pga",
+    "file": "grad_rms_output_model_pga.csv",
+    "count": 8
+  },
+  {
+    "tag": "grad_rms/station_adapter",
+    "file": "grad_rms_station_adapter.csv",
+    "count": 8
+  },
+  {
+    "tag": "train/epoch_loss",
+    "file": "train_epoch_loss.csv",
+    "count": 8
+  },
+  {
+    "tag": "train/loss",
+    "file": "train_loss.csv",
+    "count": 1496
+  },
+  {
+    "tag": "train/lr",
+    "file": "train_lr.csv",
+    "count": 15
+  },
+  {
+    "tag": "train/lr_adapter",
+    "file": "train_lr_adapter.csv",
+    "count": 15
+  },
+  {
+    "tag": "train/lr_team",
+    "file": "train_lr_team.csv",
+    "count": 15
+  },
+  {
+    "tag": "val/epoch_loss",
+    "file": "val_epoch_loss.csv",
+    "count": 8
+  }
+]

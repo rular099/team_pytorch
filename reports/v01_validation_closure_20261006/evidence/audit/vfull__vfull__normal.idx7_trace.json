@@ -1,0 +1,476 @@
+{
+  "request": {
+    "local_index": 49,
+    "base_event_index": 7,
+    "event_id": "20041029141300",
+    "time_s": 1.0,
+    "cache_path": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch_query_geometry_diagnostics_vel/v01_velocity_prep_padding_seed42/derived_cache/2004/japan_2004_v01_velocity.hdf5",
+    "absolute_cutoff_utc": 1099026844.7340753,
+    "cache_plan_hash": "f4151f07c2d600b224a2894664a3cae8fb30526ba32b02559e7e5663da1306cf",
+    "original_rows": [
+      0,
+      1
+    ],
+    "requested_query_sensor_ids": [
+      "NIG019"
+    ],
+    "requested_source_sensor_ids": [
+      "N.KMOH"
+    ],
+    "paired_acc_sensor_ids": [
+      "NIGH06"
+    ],
+    "expected_query_count": 1
+  },
+  "row_selector": [
+    0,
+    1
+  ],
+  "physical_rows": {
+    "station_codes": [
+      "N.KMOH",
+      "NIG019"
+    ],
+    "v01_source_sensor_id": [
+      "N.KMOH",
+      ""
+    ],
+    "v01_paired_acc_sensor_id": [
+      "NIGH06",
+      ""
+    ],
+    "coords": [
+      [
+        37.6527,
+        139.0676,
+        0.03
+      ],
+      [
+        37.3057,
+        138.7898,
+        0.052
+      ]
+    ],
+    "pga": [
+      null,
+      -0.4057878394867407
+    ],
+    "p_picks": [
+      500,
+      -109
+    ],
+    "v01_source_role": [
+      1,
+      0
+    ],
+    "query_valid": [
+      false,
+      true
+    ],
+    "absolute_window_start_timestamp": 1099026838.7340753,
+    "plan_hash": "f4151f07c2d600b224a2894664a3cae8fb30526ba32b02559e7e5663da1306cf"
+  },
+  "before_error": "ValueError('Found event without PGA idx=7')",
+  "before_clock": [
+    {
+      "p_samples": [
+        [
+          500.0,
+          -109.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "mask_before": [
+        [
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      ],
+      "mask_after": [
+        [
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      ],
+      "changed_slots": 1,
+      "clock": {
+        "cutout": 601,
+        "current_sample": 600,
+        "first_p_pick_sample": 500,
+        "elapsed_time": 1.0,
+        "requested_elapsed_time": 1.0,
+        "time_bin": -1
+      }
+    }
+  ],
+  "before_target_selection": [],
+  "after": {
+    "outcome": "predicted",
+    "actual_event_id": "20041029141300",
+    "input_count": 1,
+    "query_count": 1,
+    "identity": {
+      "v01_query_sensor_id": [
+        "NIG019",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "v01_source_sensor_id": [
+        "N.KMOH",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "v01_source_paired_acc_id": [
+        "NIGH06",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "v01_absolute_cutoff_utc": 1099026844.7340753,
+      "v01_cache_plan_hash": "f4151f07c2d600b224a2894664a3cae8fb30526ba32b02559e7e5663da1306cf",
+      "v01_requested_event_id": "20041029141300",
+      "v01_protocol": "v01-validation-closure-v1",
+      "v01_crop_start": 0,
+      "v01_source_role": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "v01_retained_prep_samples": [
+        554,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "v01_template_id": [
+        80883,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "v01_match_distance_km": [
+        0.0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  "after_clock": [
+    {
+      "p_samples": [
+        [
+          500.0,
+          -109.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "mask_before": [
+        [
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      ],
+      "mask_after": [
+        [
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      ],
+      "changed_slots": 0,
+      "clock": {
+        "cutout": 601,
+        "current_sample": 600,
+        "first_p_pick_sample": 500,
+        "elapsed_time": 1.0,
+        "requested_elapsed_time": 1.0,
+        "time_bin": -1
+      }
+    }
+  ],
+  "after_target_selection": [
+    {
+      "selected_query_count": 1,
+      "sampler_slots_not_sensor_ids": [
+        1
+      ]
+    }
+  ],
+  "confirmed": true
+}
