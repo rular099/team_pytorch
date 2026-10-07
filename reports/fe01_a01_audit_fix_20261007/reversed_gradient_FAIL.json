@@ -1,0 +1,802 @@
+{
+  "status": "FAIL",
+  "initial_equal": true,
+  "initial_state_sha256": {
+    "requested": "1c7a8c36a79f3ef50b29dce87ee3a8638a879fce3c56daffcbfe6b77e12b7f31",
+    "legacy": "1c7a8c36a79f3ef50b29dce87ee3a8638a879fce3c56daffcbfe6b77e12b7f31",
+    "a01": "1c7a8c36a79f3ef50b29dce87ee3a8638a879fce3c56daffcbfe6b77e12b7f31"
+  },
+  "forward_max_abs": 0.0,
+  "losses": [
+    4.483224868774414,
+    4.483224868774414
+  ],
+  "update_state_equal": false,
+  "update_state_sha256": [
+    "20bc616015ca2537a6e69133127db6fa2260006abab3ba9dfe9da2947c39f85d",
+    "edc57bf03863718c180d4e6aee5c90f86029b335d04457e181bcdc86c4188917"
+  ],
+  "update_numerically_equivalent": false,
+  "checks": {
+    "eval_forward": {
+      "passed": true,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 3,
+      "failed_tensors": [],
+      "max_abs": 0.0,
+      "largest_differences": [
+        {
+          "name": "0",
+          "passed": true,
+          "max_abs": 0.0,
+          "max_tolerance_ratio": 0.0,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "1",
+          "passed": true,
+          "max_abs": 0.0,
+          "max_tolerance_ratio": 0.0,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "2",
+          "passed": true,
+          "max_abs": 0.0,
+          "max_tolerance_ratio": 0.0,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": []
+    },
+    "train_forward": {
+      "passed": true,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 3,
+      "failed_tensors": [],
+      "max_abs": 0.0,
+      "largest_differences": [
+        {
+          "name": "0",
+          "passed": true,
+          "max_abs": 0.0,
+          "max_tolerance_ratio": 0.0,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "1",
+          "passed": true,
+          "max_abs": 0.0,
+          "max_tolerance_ratio": 0.0,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "2",
+          "passed": true,
+          "max_abs": 0.0,
+          "max_tolerance_ratio": 0.0,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": []
+    },
+    "loss": {
+      "passed": true,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 1,
+      "failed_tensors": [],
+      "max_abs": 0.0,
+      "largest_differences": [
+        {
+          "name": "loss",
+          "passed": true,
+          "max_abs": 0.0,
+          "max_tolerance_ratio": 0.0,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": []
+    },
+    "gradients": {
+      "passed": false,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 143,
+      "failed_tensors": [
+        "event_cross_attention.attn.in_proj_bias",
+        "event_cross_attention.attn.in_proj_weight",
+        "event_cross_attention.attn.out_proj.bias",
+        "event_cross_attention.attn.out_proj.weight",
+        "event_cross_attention.kv_norm.bias",
+        "event_cross_attention.kv_norm.weight",
+        "event_cross_attention.out_norm.bias",
+        "event_cross_attention.out_norm.weight",
+        "event_cross_attention.query_norm.bias",
+        "event_cross_attention.query_norm.weight",
+        "event_query_token",
+        "layernorm.bias",
+        "layernorm.weight",
+        "mlp_loc.mlp.0.bias",
+        "mlp_loc.mlp.0.weight",
+        "mlp_mag.mlp.0.bias",
+        "mlp_mag.mlp.0.weight",
+        "mlp_pga.mlp.0.bias",
+        "mlp_pga.mlp.0.weight",
+        "output_model_loc.alpha.bias",
+        "output_model_loc.alpha.weight",
+        "output_model_loc.mu.bias",
+        "output_model_loc.mu.weight",
+        "output_model_loc.sigma.bias",
+        "output_model_loc.sigma.weight",
+        "output_model_mag.mu.bias",
+        "output_model_mag.mu.weight",
+        "output_model_mag.sigma.bias",
+        "output_model_mag.sigma.weight",
+        "output_model_pga.alpha.bias",
+        "output_model_pga.alpha.weight",
+        "output_model_pga.mu.bias",
+        "output_model_pga.mu.weight",
+        "output_model_pga.sigma.bias",
+        "output_model_pga.sigma.weight",
+        "pga_cross_attention.attn.in_proj_bias",
+        "pga_cross_attention.attn.in_proj_weight",
+        "pga_cross_attention.attn.out_proj.bias",
+        "pga_cross_attention.attn.out_proj.weight",
+        "pga_cross_attention.extra_layers.0.attn_gate",
+        "pga_cross_attention.extra_layers.0.ffn_gate",
+        "pga_cross_attention.extra_layers.1.attn_gate",
+        "pga_cross_attention.extra_layers.1.ffn_gate",
+        "pga_cross_attention.extra_layers.2.attn_gate",
+        "pga_cross_attention.extra_layers.2.ffn_gate",
+        "pga_cross_attention.kv_norm.bias",
+        "pga_cross_attention.kv_norm.weight",
+        "pga_cross_attention.out_norm.bias",
+        "pga_cross_attention.out_norm.weight",
+        "pga_cross_attention.query_norm.bias",
+        "pga_cross_attention.query_norm.weight",
+        "pga_query_token",
+        "waveform_model.encoder.conv1.bias",
+        "waveform_model.encoder.conv1.weight",
+        "waveform_model.encoder.conv2.bias",
+        "waveform_model.encoder.conv2.weight",
+        "waveform_model.encoder.mlp.0.bias",
+        "waveform_model.encoder.mlp.0.weight",
+        "waveform_model.encoder.mlp.2.bias",
+        "waveform_model.encoder.mlp.2.weight",
+        "waveform_model.encoder.mlp.4.bias",
+        "waveform_model.encoder.mlp.4.weight",
+        "waveform_model.encoder.temporal.0.bias",
+        "waveform_model.encoder.temporal.0.weight",
+        "waveform_model.encoder.temporal.11.bias",
+        "waveform_model.encoder.temporal.11.weight",
+        "waveform_model.encoder.temporal.3.bias",
+        "waveform_model.encoder.temporal.3.weight",
+        "waveform_model.encoder.temporal.6.bias",
+        "waveform_model.encoder.temporal.6.weight",
+        "waveform_model.encoder.temporal.9.bias",
+        "waveform_model.encoder.temporal.9.weight",
+        "waveform_scale_gate",
+        "waveform_scale_proj.net.0.bias",
+        "waveform_scale_proj.net.0.weight",
+        "waveform_scale_proj.net.2.bias",
+        "waveform_scale_proj.net.2.weight"
+      ],
+      "max_abs": 2.629441738128662,
+      "largest_differences": [
+        {
+          "name": "output_model_pga.sigma.weight",
+          "passed": false,
+          "max_abs": 2.629441738128662,
+          "max_tolerance_ratio": 185862.93562402338,
+          "mismatched_elements": 24,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_pga.sigma.bias",
+          "passed": false,
+          "max_abs": 2.3466532230377197,
+          "max_tolerance_ratio": 184293.11080199332,
+          "mismatched_elements": 3,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_pga.mu.weight",
+          "passed": false,
+          "max_abs": 1.945866584777832,
+          "max_tolerance_ratio": 181359.51215059284,
+          "mismatched_elements": 24,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_pga.mu.bias",
+          "passed": false,
+          "max_abs": 1.7366235256195068,
+          "max_tolerance_ratio": 179345.49515130752,
+          "mismatched_elements": 3,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_mag.mu.weight",
+          "passed": false,
+          "max_abs": 0.1837492436170578,
+          "max_tolerance_ratio": 95765.26686286871,
+          "mismatched_elements": 8,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_mag.mu.bias",
+          "passed": false,
+          "max_abs": 0.15849126875400543,
+          "max_tolerance_ratio": 88421.2713491559,
+          "mismatched_elements": 1,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_mag.sigma.weight",
+          "passed": false,
+          "max_abs": 0.10651545971632004,
+          "max_tolerance_ratio": 69500.87269001051,
+          "mismatched_elements": 8,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_mag.sigma.bias",
+          "passed": false,
+          "max_abs": 0.09187395870685577,
+          "max_tolerance_ratio": 62954.54319659232,
+          "mismatched_elements": 1,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "waveform_model.encoder.mlp.4.bias",
+          "passed": false,
+          "max_abs": 0.04984894394874573,
+          "max_tolerance_ratio": 39903.265677978445,
+          "mismatched_elements": 7,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_pga.mlp.0.weight",
+          "passed": false,
+          "max_abs": 0.02614479511976242,
+          "max_tolerance_ratio": 23122.17277069462,
+          "mismatched_elements": 160,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": [
+        {
+          "name": "event_cross_attention.attn.in_proj_bias",
+          "passed": false,
+          "max_abs": 0.00012278230860829353,
+          "max_tolerance_ratio": 122.70697737846916,
+          "mismatched_elements": 29,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.attn.in_proj_weight",
+          "passed": false,
+          "max_abs": 0.0003412341757211834,
+          "max_tolerance_ratio": 340.652963555055,
+          "mismatched_elements": 602,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.attn.out_proj.bias",
+          "passed": false,
+          "max_abs": 0.00032736643333919346,
+          "max_tolerance_ratio": 326.83146508405554,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.attn.out_proj.weight",
+          "passed": false,
+          "max_abs": 0.00046355536323972046,
+          "max_tolerance_ratio": 462.48342986809615,
+          "mismatched_elements": 399,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.kv_norm.bias",
+          "passed": false,
+          "max_abs": 7.999579247552902e-05,
+          "max_tolerance_ratio": 79.9638086343237,
+          "mismatched_elements": 19,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.kv_norm.weight",
+          "passed": false,
+          "max_abs": 5.626729398500174e-05,
+          "max_tolerance_ratio": 56.25146839545527,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.out_norm.bias",
+          "passed": false,
+          "max_abs": 0.00017078901873901486,
+          "max_tolerance_ratio": 170.64329873129134,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.out_norm.weight",
+          "passed": false,
+          "max_abs": 0.00023431028239428997,
+          "max_tolerance_ratio": 234.03609707431028,
+          "mismatched_elements": 19,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.query_norm.bias",
+          "passed": false,
+          "max_abs": 2.4662240321049467e-06,
+          "max_tolerance_ratio": 2.4661936211750652,
+          "mismatched_elements": 5,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.query_norm.weight",
+          "passed": false,
+          "max_abs": 3.181384727213299e-06,
+          "max_tolerance_ratio": 3.1813341219743596,
+          "mismatched_elements": 4,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_query_token",
+          "passed": false,
+          "max_abs": 0.0003703373367898166,
+          "max_tolerance_ratio": 369.6528555195673,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "layernorm.bias",
+          "passed": false,
+          "max_abs": 0.00211267895065248,
+          "max_tolerance_ratio": 2090.5951686171147,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "layernorm.weight",
+          "passed": false,
+          "max_abs": 0.004641413222998381,
+          "max_tolerance_ratio": 4536.14266037209,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_loc.mlp.0.bias",
+          "passed": false,
+          "max_abs": 3.05901667161379e-05,
+          "max_tolerance_ratio": 30.58548864015492,
+          "mismatched_elements": 8,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_loc.mlp.0.weight",
+          "passed": false,
+          "max_abs": 6.452432717196643e-05,
+          "max_tolerance_ratio": 64.50351694181195,
+          "mismatched_elements": 104,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_mag.mlp.0.bias",
+          "passed": false,
+          "max_abs": 0.0005706863012164831,
+          "max_tolerance_ratio": 569.0625202921508,
+          "mismatched_elements": 8,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_mag.mlp.0.weight",
+          "passed": false,
+          "max_abs": 0.0012037577107548714,
+          "max_tolerance_ratio": 1196.5558938370937,
+          "mismatched_elements": 156,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_pga.mlp.0.bias",
+          "passed": false,
+          "max_abs": 0.014681069180369377,
+          "max_tolerance_ratio": 13677.097134293412,
+          "mismatched_elements": 8,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_pga.mlp.0.weight",
+          "passed": false,
+          "max_abs": 0.02614479511976242,
+          "max_tolerance_ratio": 23122.17277069462,
+          "mismatched_elements": 160,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_loc.alpha.bias",
+          "passed": false,
+          "max_abs": 3.571728302631527e-05,
+          "max_tolerance_ratio": 35.71090554371312,
+          "mismatched_elements": 3,
+          "reason": "finite FP comparison"
+        }
+      ]
+    },
+    "updated_state": {
+      "passed": false,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 146,
+      "failed_tensors": [
+        "event_cross_attention.attn.in_proj_bias",
+        "event_cross_attention.attn.in_proj_weight",
+        "event_cross_attention.attn.out_proj.bias",
+        "event_cross_attention.attn.out_proj.weight",
+        "event_cross_attention.kv_norm.bias",
+        "event_cross_attention.kv_norm.weight",
+        "event_cross_attention.out_norm.bias",
+        "event_cross_attention.out_norm.weight",
+        "event_cross_attention.query_norm.bias",
+        "event_cross_attention.query_norm.weight",
+        "event_query_token",
+        "layernorm.bias",
+        "layernorm.weight",
+        "mlp_loc.mlp.0.bias",
+        "mlp_loc.mlp.0.weight",
+        "mlp_mag.mlp.0.bias",
+        "mlp_mag.mlp.0.weight",
+        "mlp_pga.mlp.0.bias",
+        "mlp_pga.mlp.0.weight",
+        "output_model_loc.alpha.bias",
+        "output_model_loc.alpha.weight",
+        "output_model_loc.mu.bias",
+        "output_model_loc.mu.weight",
+        "output_model_loc.sigma.bias",
+        "output_model_loc.sigma.weight",
+        "output_model_mag.mu.bias",
+        "output_model_mag.mu.weight",
+        "output_model_mag.sigma.bias",
+        "output_model_mag.sigma.weight",
+        "output_model_pga.alpha.bias",
+        "output_model_pga.alpha.weight",
+        "output_model_pga.mu.bias",
+        "output_model_pga.mu.weight",
+        "output_model_pga.sigma.bias",
+        "output_model_pga.sigma.weight",
+        "pga_cross_attention.attn.in_proj_bias",
+        "pga_cross_attention.attn.in_proj_weight",
+        "pga_cross_attention.attn.out_proj.bias",
+        "pga_cross_attention.attn.out_proj.weight",
+        "pga_cross_attention.extra_layers.0.attn_gate",
+        "pga_cross_attention.extra_layers.0.ffn_gate",
+        "pga_cross_attention.extra_layers.1.attn_gate",
+        "pga_cross_attention.extra_layers.1.ffn_gate",
+        "pga_cross_attention.extra_layers.2.attn_gate",
+        "pga_cross_attention.extra_layers.2.ffn_gate",
+        "pga_cross_attention.kv_norm.bias",
+        "pga_cross_attention.kv_norm.weight",
+        "pga_cross_attention.out_norm.bias",
+        "pga_cross_attention.out_norm.weight",
+        "pga_cross_attention.query_norm.bias",
+        "pga_cross_attention.query_norm.weight",
+        "pga_query_token",
+        "waveform_model.encoder.conv1.bias",
+        "waveform_model.encoder.conv1.weight",
+        "waveform_model.encoder.conv2.bias",
+        "waveform_model.encoder.conv2.weight",
+        "waveform_model.encoder.mlp.0.bias",
+        "waveform_model.encoder.mlp.0.weight",
+        "waveform_model.encoder.mlp.2.bias",
+        "waveform_model.encoder.mlp.2.weight",
+        "waveform_model.encoder.mlp.4.bias",
+        "waveform_model.encoder.mlp.4.weight",
+        "waveform_model.encoder.temporal.0.bias",
+        "waveform_model.encoder.temporal.0.weight",
+        "waveform_model.encoder.temporal.11.bias",
+        "waveform_model.encoder.temporal.11.weight",
+        "waveform_model.encoder.temporal.3.bias",
+        "waveform_model.encoder.temporal.3.weight",
+        "waveform_model.encoder.temporal.6.bias",
+        "waveform_model.encoder.temporal.6.weight",
+        "waveform_model.encoder.temporal.9.bias",
+        "waveform_model.encoder.temporal.9.weight",
+        "waveform_scale_gate",
+        "waveform_scale_proj.net.0.bias",
+        "waveform_scale_proj.net.0.weight",
+        "waveform_scale_proj.net.2.bias",
+        "waveform_scale_proj.net.2.weight"
+      ],
+      "max_abs": 0.002000093460083008,
+      "largest_differences": [
+        {
+          "name": "output_model_loc.sigma.bias",
+          "passed": false,
+          "max_abs": 0.002000093460083008,
+          "max_tolerance_ratio": 102.41945169174555,
+          "mismatched_elements": 9,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "layernorm.weight",
+          "passed": false,
+          "max_abs": 0.0020000338554382324,
+          "max_tolerance_ratio": 181.98669990975128,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.kv_norm.weight",
+          "passed": false,
+          "max_abs": 0.0020000338554382324,
+          "max_tolerance_ratio": 181.97585284076544,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.out_norm.weight",
+          "passed": false,
+          "max_abs": 0.0020000338554382324,
+          "max_tolerance_ratio": 181.98669990975128,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_pga.mlp.0.weight",
+          "passed": false,
+          "max_abs": 0.0020000040531158447,
+          "max_tolerance_ratio": 1989.9418802785574,
+          "mismatched_elements": 160,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.attn.in_proj_weight",
+          "passed": false,
+          "max_abs": 0.0020000040531158447,
+          "max_tolerance_ratio": 1995.3190638330957,
+          "mismatched_elements": 1200,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.attn.out_proj.weight",
+          "passed": false,
+          "max_abs": 0.0020000040531158447,
+          "max_tolerance_ratio": 1997.3728362808124,
+          "mismatched_elements": 400,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "waveform_model.encoder.mlp.2.bias",
+          "passed": false,
+          "max_abs": 0.0020000040531158447,
+          "max_tolerance_ratio": 1550.1689079364003,
+          "mismatched_elements": 10,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "waveform_model.encoder.mlp.4.bias",
+          "passed": false,
+          "max_abs": 0.0020000040531158447,
+          "max_tolerance_ratio": 1677.249854959568,
+          "mismatched_elements": 7,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "waveform_model.encoder.mlp.4.weight",
+          "passed": false,
+          "max_abs": 0.0020000040531158447,
+          "max_tolerance_ratio": 1809.7179579655535,
+          "mismatched_elements": 70,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": [
+        {
+          "name": "event_cross_attention.attn.in_proj_bias",
+          "passed": false,
+          "max_abs": 0.001999674364924431,
+          "max_tolerance_ratio": 1979.8788005092524,
+          "mismatched_elements": 40,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.attn.in_proj_weight",
+          "passed": false,
+          "max_abs": 0.001999884843826294,
+          "max_tolerance_ratio": 1996.5958579532023,
+          "mismatched_elements": 1200,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.attn.out_proj.bias",
+          "passed": false,
+          "max_abs": 0.0019998776260763407,
+          "max_tolerance_ratio": 1980.0780570553918,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.attn.out_proj.weight",
+          "passed": false,
+          "max_abs": 0.0019999146461486816,
+          "max_tolerance_ratio": 1945.2503375643043,
+          "mismatched_elements": 400,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.kv_norm.bias",
+          "passed": false,
+          "max_abs": 0.001999499974772334,
+          "max_tolerance_ratio": 1979.7078458333324,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.kv_norm.weight",
+          "passed": false,
+          "max_abs": 0.0019993185997009277,
+          "max_tolerance_ratio": 181.8998444346582,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.out_norm.bias",
+          "passed": false,
+          "max_abs": 0.001999765867367387,
+          "max_tolerance_ratio": 1979.9685002411627,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.out_norm.weight",
+          "passed": false,
+          "max_abs": 0.0019998550415039062,
+          "max_tolerance_ratio": 181.97041943704406,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.query_norm.bias",
+          "passed": false,
+          "max_abs": 0.0019839114975184202,
+          "max_tolerance_ratio": 1964.4252681410169,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.query_norm.weight",
+          "passed": false,
+          "max_abs": 0.001987457275390625,
+          "max_tolerance_ratio": 180.84130429274214,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_query_token",
+          "passed": false,
+          "max_abs": 0.001999892294406891,
+          "max_tolerance_ratio": 1952.393586819343,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "layernorm.bias",
+          "passed": false,
+          "max_abs": 0.001999981002882123,
+          "max_tolerance_ratio": 1980.1793970006238,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "layernorm.weight",
+          "passed": false,
+          "max_abs": 0.0020000338554382324,
+          "max_tolerance_ratio": 181.98669990975128,
+          "mismatched_elements": 20,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_loc.mlp.0.bias",
+          "passed": false,
+          "max_abs": 0.00199869298376143,
+          "max_tolerance_ratio": 1978.916748656491,
+          "mismatched_elements": 8,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_loc.mlp.0.weight",
+          "passed": false,
+          "max_abs": 0.001999378204345703,
+          "max_tolerance_ratio": 1931.4029486873703,
+          "mismatched_elements": 160,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_mag.mlp.0.bias",
+          "passed": false,
+          "max_abs": 0.001999930012971163,
+          "max_tolerance_ratio": 1980.129411770331,
+          "mismatched_elements": 8,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_mag.mlp.0.weight",
+          "passed": false,
+          "max_abs": 0.001999959349632263,
+          "max_tolerance_ratio": 1992.2639676945453,
+          "mismatched_elements": 160,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_pga.mlp.0.bias",
+          "passed": false,
+          "max_abs": 0.0019999973010271788,
+          "max_tolerance_ratio": 1980.1953740095505,
+          "mismatched_elements": 8,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "mlp_pga.mlp.0.weight",
+          "passed": false,
+          "max_abs": 0.0020000040531158447,
+          "max_tolerance_ratio": 1989.9418802785574,
+          "mismatched_elements": 160,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_loc.alpha.bias",
+          "passed": false,
+          "max_abs": 0.001998880412429571,
+          "max_tolerance_ratio": 1979.1004864466313,
+          "mismatched_elements": 3,
+          "reason": "finite FP comparison"
+        }
+      ]
+    }
+  },
+  "failed_checks": [
+    "gradients",
+    "updated_state"
+  ],
+  "optimizer_scheduler": [
+    {
+      "lr": 0.0,
+      "scheduler_last_epoch": 1,
+      "scheduler_T_max": 1
+    },
+    {
+      "lr": 0.0,
+      "scheduler_last_epoch": 1,
+      "scheduler_T_max": 1
+    }
+  ],
+  "execution": {
+    "device": "cpu",
+    "torch": "2.11.0+cu130",
+    "rocm": null,
+    "rng_replayed": true,
+    "train_rng_sha256": {
+      "cpu": "624fd7602c715089c70b5e5ce2c0baf4e0cbd0fa3982a6c7a29e7cdcdb6a0ca7",
+      "cuda": {}
+    },
+    "cudnn_deterministic": true,
+    "cudnn_benchmark": false,
+    "tf32": false,
+    "controls_scope": "audit only; RNG and backend settings restored on exit"
+  },
+  "scope": "initial checkpoint + fixed mini-batch; no formal training"
+}

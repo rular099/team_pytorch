@@ -100,37 +100,78 @@ def restore_initial(model, cfg, lock):
     require(state_fingerprint(common_state(model)) == lock['initial_state']['common_sha256'], 'Common init differs')
 
 
-def reuse_equivalence(cfg, original_cfg, initial_state, inputs):
-    """Exact legacy/A01 ON initial state, forward, loss and one optimizer update."""
+def reuse_equivalence(cfg, original_cfg, initial_state, inputs, report_path=None):
+    """Exact init plus paired numerical forward/gradient/Adam-update equivalence."""
+    from .equivalence import paired_execution
+    with paired_execution(inputs[0].device) as devices:
+        return _reuse_equivalence(cfg, original_cfg, initial_state, inputs, devices, report_path)
+
+
+def _reuse_equivalence(cfg, original_cfg, initial_state, inputs, devices, report_path):
     from fe01.model import build_model as old_build
     from .model import build_model
     from fe01.engine import loss
+    from .equivalence import compare_tensors, outputs_comparison, capture_rng, restore_rng, rng_identity
+    from .provenance import write_json
+    require(cfg['training'] == original_cfg['training'], 'ON equivalence training config differs')
     new_cfg = copy.deepcopy(cfg); new_cfg['absolute_amplitude_mode'] = ON
     old = old_build(original_cfg, inputs[0].device)
     new = build_model(new_cfg, inputs[0].device)
     old.load_state_dict(initial_state, strict=True); new.load_state_dict(initial_state, strict=True)
-    initial_equal = state_fingerprint(old.state_dict()) == state_fingerprint(new.state_dict())
+    initial_pins = dict(requested=state_fingerprint(initial_state),
+                        legacy=state_fingerprint(old.state_dict()), a01=state_fingerprint(new.state_dict()))
+    initial_equal = len(set(initial_pins.values())) == 1
     old.eval(); new.eval()
+    eval_rng = capture_rng(devices)
     with torch.no_grad():
-        a, b = old(*inputs), new(*inputs)
-    forward_error = max(float((x-y).abs().max()) for x,y in zip(a,b))
+        restore_rng(eval_rng); a = old(*inputs)
+        restore_rng(eval_rng); b = new(*inputs)
+    forward = outputs_comparison(a, b)
     # Labels are synthetic and never used to claim production performance.
     labels = [torch.full((len(inputs[0]),1),4.,device=inputs[0].device),
               torch.zeros((len(inputs[0]),3),device=inputs[0].device),
               torch.zeros((*inputs[4].shape,1),device=inputs[0].device)]
-    losses = []; updates = []
+    losses = []; updates = []; gradients = []; states = []; training_outputs = []; optimizers = []
+    train_rng = capture_rng(devices)
     for model, config in ((old,original_cfg),(new,new_cfg)):
+        restore_rng(train_rng)
         model.train()
         opt = torch.optim.Adam([p for p in model.parameters() if p.requires_grad],
             lr=config['training']['lr'],weight_decay=config['training']['weight_decay'])
         count = len(config.get('audited_cohorts',{}).get('train',[])) or 1
         budget = training_budget(count,config,1)
         schedule = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1,budget['total_updates']))
-        opt.zero_grad(); value = loss(model(*inputs),labels,model,config,inputs[4])
-        value.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(),config['training']['gradient_clip'])
+        opt.zero_grad(); output = model(*inputs)
+        training_outputs.append({str(i): x.detach().cpu().clone() for i,x in enumerate(output)})
+        value = loss(output,labels,model,config,inputs[4])
+        value.backward()
+        gradients.append({name: None if p.grad is None else p.grad.detach().cpu().clone()
+                          for name,p in model.named_parameters() if p.requires_grad})
+        torch.nn.utils.clip_grad_norm_(model.parameters(),config['training']['gradient_clip'])
         opt.step(); schedule.step()
         losses.append(float(value.detach())); updates.append(state_fingerprint(model.state_dict()))
-    require(initial_equal and forward_error <= 1e-6 and losses[0] == losses[1] and updates[0] == updates[1],
-            'Legacy ON / A01 ON equivalence gate failed')
-    return dict(status='PASS', initial_equal=True, forward_max_abs=forward_error,
-                losses=losses, update_state_equal=True, scope='initial checkpoint + fixed mini-batch; no formal training')
+        states.append({name: value.detach().cpu().clone() for name,value in model.state_dict().items()})
+        optimizers.append(dict(lr=opt.param_groups[0]['lr'], scheduler_last_epoch=schedule.last_epoch,
+                               scheduler_T_max=schedule.T_max))
+    checks = dict(eval_forward=forward, train_forward=compare_tensors(*training_outputs),
+                  loss=compare_tensors({'loss':torch.tensor(losses[0],dtype=torch.float64)},
+                                       {'loss':torch.tensor(losses[1],dtype=torch.float64)}),
+                  gradients=compare_tensors(*gradients), updated_state=compare_tensors(*states))
+    failures = [name for name, check in checks.items() if not check['passed']]
+    if not initial_equal: failures.append('initial_state_SHA')
+    if optimizers[0] != optimizers[1]: failures.append('optimizer_scheduler')
+    result = dict(status='FAIL' if failures else 'PASS', initial_equal=initial_equal,
+                  initial_state_sha256=initial_pins, forward_max_abs=forward['max_abs'], losses=losses,
+                  update_state_equal=updates[0] == updates[1], update_state_sha256=updates,
+                  update_numerically_equivalent=checks['updated_state']['passed'], checks=checks,
+                  failed_checks=failures, optimizer_scheduler=optimizers,
+                  execution=dict(device=str(inputs[0].device), torch=torch.__version__, rocm=torch.version.hip,
+                                 rng_replayed=True, train_rng_sha256=rng_identity(train_rng),
+                                 cudnn_deterministic=True, cudnn_benchmark=False, tf32=False,
+                                 controls_scope='audit only; RNG and backend settings restored on exit'),
+                  scope='initial checkpoint + fixed mini-batch; no formal training')
+    if report_path is not None:
+        write_json(report_path, result)
+    require(not failures, 'Legacy ON / A01 ON equivalence gate failed: '+', '.join(failures)+
+            ('; details: '+str(report_path) if report_path is not None else ''))
+    return result

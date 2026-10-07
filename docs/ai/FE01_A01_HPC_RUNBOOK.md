@@ -117,6 +117,11 @@ RT55/RT61 的下游网络不充当 DiTing ON；只复用已认证的 DiTing **�
 
 具体错误通常会指出：checkpoint SHA、encoder、epoch、config、训练源码、
 数据 stat、请求人口、初始权重或哪个前置 gate 不匹配。不要删除校验或改旧 lock。
+新旧 ON 等价门控失败时，查看对应 `audits/<run_id>/ON_equivalence.json` 的 `failed_checks`：
+其中有 eval/train 前向、loss、梯度、更新后参数的容差与最大差异、失败参数名称；
+训练后 ON 前向报告为 `trained_ON_forward_equivalence.json`。
+原7d91791发布版只给笼统错误，并要求更新后SHA位级一致。该版本用户报告的
+三项等价门控失败，处理步骤见 [audit修复与重提](FE01_A01_AUDIT_FIX.md)。
 `a01.private.env` 中 DiTing encoder 的路径/SHA 来自已下载的 EVAL1 inventory；
 若超算上该文件已移动，先确认同一 SHA 的原文件位置，再修改私有设置。
 

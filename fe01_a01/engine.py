@@ -119,7 +119,8 @@ def audit(cfg,destination,device='cpu',world=16):
         runtime_old=copy.deepcopy(old_cfg)
         for key in ('pretrained_manifest','diting_config'):
             runtime_old[key]=resolved[key]
-        reuse=reuse_equivalence(resolved,runtime_old,initial['model_state_dict'],inputs_to(sample,device))
+        reuse=reuse_equivalence(resolved,runtime_old,initial['model_state_dict'],inputs_to(sample,device),
+                                report_path=destination/'ON_equivalence.json')
         # Check trained ON forward too, without using it to initialize the OFF run.
         legacy_model=__import__('fe01.model',fromlist=['build_model']).build_model(runtime_old,device)
         legacy_model.load_state_dict(selected['model_state_dict'],strict=True)
@@ -127,12 +128,16 @@ def audit(cfg,destination,device='cpu',world=16):
         legacy_model.eval();model.eval()
         from . import ON
         original_mode=model.absolute_amplitude_mode;model.absolute_amplitude_mode=ON
-        with torch.no_grad():
-            packed=inputs_to(sample,device)
-            a,b=legacy_model(*packed),model(*packed)
-        trained_error=max(float((x-y).abs().max()) for x,y in zip(a,b))
-        require(trained_error<=1e-6,'Trained ON forward differs')
-        reuse['trained_ON_forward_max_abs']=trained_error
+        from .equivalence import paired_execution, capture_rng, restore_rng, outputs_comparison
+        with paired_execution(device) as devices, torch.no_grad():
+            packed=inputs_to(sample,device);paired_rng=capture_rng(devices)
+            restore_rng(paired_rng);a=legacy_model(*packed)
+            restore_rng(paired_rng);b=model(*packed)
+        trained=outputs_comparison(a,b)
+        write_json(destination/'trained_ON_forward_equivalence.json',trained)
+        require(trained['passed'],'Trained ON forward differs; details: '+str(destination/'trained_ON_forward_equivalence.json'))
+        reuse['trained_ON_forward_max_abs']=trained['max_abs']
+        reuse['trained_ON_forward_comparison']=trained
         model.absolute_amplitude_mode=original_mode
         model.load_state_dict(initial['model_state_dict'],strict=True)
         del legacy_model,selected,initial

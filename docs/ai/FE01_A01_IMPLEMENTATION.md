@@ -22,6 +22,12 @@ DiTing 两组还要匹配完整初始状态与 sampler manifest。
 
 旧 ON 复用门控核对冻结文件 SHA、epoch/config/lock/world、真实预训练依赖、
 完整 frontend/adapter/common 初始状态、新旧 ON 前向与固定 mini-batch 更新。
+初始状态仍逐字节核对 SHA；两次 audit 前向/更新重放同一 CPU/DCU 随机状态，
+只在比较期间关闭 benchmark/TF32、使用 deterministic cuDNN，退出恢复原设置。
+FP32前向、loss、梯度和更新后全部参数/缓冲区采用 atol=1e-6、rtol=1e-5逐元素检查；
+名称、shape、dtype、梯度有无、整数状态及 optimizer/scheduler 设置仍严格相同。
+更新后 SHA继续记录，但不能把 GPU浮点数的位级一致性当作数值等价的必要条件。
+失败前写 `ON_equivalence.json`，训练后 ON 的前向另写 `trained_ON_forward_equivalence.json`。
 TEAM 只有实际 scratch 且预训练 SHA 为 null 才通过；pretrained 必须合法非空 SHA 并核对文件。
 若 init 缺失，重建后必须匹配已下载冻结 inventory 的完整状态与 common 指纹。
 OFF 从 epoch0 开始，绝不从 ON 最终 checkpoint 微调。
