@@ -18,3 +18,9 @@ def test_review_pack_excludes_weights_arrays_and_redacts_private_paths(tmp_path)
         assert 'A01_REVIEW_MANIFEST.json' in archive.getnames()
     assert (tmp_path/'review.tar.gz.sha256').exists()
     with pytest.raises(ValueError,match='exists'):review_package(tmp_path)
+
+
+def test_source_pack_locates_namespace_dependency_without___file__():
+    from scripts.fe01_a01.pack_source import dependency_root
+    path=dependency_root()
+    assert path.is_dir() and (path/'training/modeling.py').is_file()

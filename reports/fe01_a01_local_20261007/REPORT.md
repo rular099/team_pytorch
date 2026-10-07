@@ -129,7 +129,7 @@ level/shape MSE、P95-P05范围、近等距离站对误差和事件簇bootstrap�
 稀疏子群明确缺cell、事件/target/field数、有效重复数；单seed只作首轮证据。
 旧 ON保持冻结epoch，不因OFF结果重新选择；新旧都另报epoch12。
 
-实际执行55项聚焦/原RT55-RT61加载桥接与指标回归、Python compile/import、
+实际执行56项聚焦/原RT55-RT61加载桥接与指标回归、Python compile/import、
 全部A01 shell bash-n、fake scheduler（prepare零调用；显式submit只一阶段）、合成诊断与OFF更新。
 实际输出在 `verification/`；有既有 timm deprecation warning，无测试失败。
 既有依赖提示 apex/xformers可选，未为此安装或改变环境。

@@ -129,7 +129,7 @@
     "fe01_a01/engine.py": "a5df8424599852dcfee7d805cff3050e414bd3e99736693d92097f178b705540",
     "fe01_a01/evaluation.py": "ea537a58924f6e5552d4b9e3385e84afbb3c9c03223c35a03286f81ecd3b129a",
     "fe01_a01/identity.py": "33662fdbd4b74155847d0a2ad9ec6a643e2c9dbc9285b3b02a5e92af5a478f6c",
-    "fe01_a01/model.py": "9dd96ba80f9f7edf36dce96d5dd92ab955389163c0aa7186af5609d9ad444263",
+    "fe01_a01/model.py": "a0ebc66d305437065039d049d9e6c9e7eae7e8f98c465bc2747e91b27deb709e",
     "fe01_a01/pack.py": "f8e8bfb266229e0d1ba8d323e1011d7300fcba7392fa8c4b21965cc67a591e7c",
     "fe01_a01/plotting.py": "67e36c2190d0ce382bd339d6ed2203120ea2688944dc01c9d6fa85671d0250d0",
     "fe01_a01/provenance.py": "a9a50d425854ce313f0abcadde9f88555e976049c2b98ecccf758d5375b3f7e5",
@@ -138,7 +138,7 @@
     "scripts/fe01_a01/job.sbatch": "d7bd363cb49a9de405e066a029b8207284d987d0f0d2fc3a9701904c381f65f6",
     "scripts/fe01_a01/local_diagnostics.py": "d24614cf42669fd26d6403d2fa14701d333c3243d15c660d36a61eddc407dd4c",
     "scripts/fe01_a01/local_smoke.py": "a1f3d106ecb2157464a4ad6b82936d7fb2ee01584bbb647dcf75b7eb0e841690",
-    "scripts/fe01_a01/pack_source.py": "21f3e30d8320b2fa386a9529c76060bbacac049c19016e7b9f43e179b76d2bc7",
+    "scripts/fe01_a01/pack_source.py": "d2c8eb909384257790ff2083b28919c7dfd4fcae9e78484064e40f07116dac87",
     "scripts/fe01_a01/prepare.sh": "9a2a191c42cb7f11be33579adf6a0669bf7de805a92defdc350cdab8a219cad0",
     "scripts/fe01_a01/run.py": "f804f400490070ea46ff0450c0fcb61afc8018d7edd5b42b4dd4928ce60306fc",
     "scripts/fe01_a01/submit.sh": "4eac8742392ff55e0b19ccedaeb7ba80e4380077cf80f5876233bb0875d5f26f",
@@ -166,21 +166,21 @@
     "fe01_review/runners.py": "981adc929d445cc24cf01a8c27228f5222529e8f5ed762ec02a2bbf0033740c6",
     "fe01_review/statistics.py": "895ed13b99d8eea19ae45ad73d0cf3162da9447100e063bdfd3f5a6f39bac095"
   },
-  "a01_code_sha256": "89b73693af01a057f597c59d136f58534fd4e139b171cdeb398f19c37fa61e3e",
+  "a01_code_sha256": "a99cd2c8622f0b8d6cc634ec886c6428ae4060be1f2502bf95a70aa1e8ec47f3",
   "a01_tests_docs_sha256": {
     "tests/test_fe01_a01_assets.py": "e5d63b97de8a4a91e22b65013986a17a1dc89937a521629c62b26752e347fd03",
     "tests/test_fe01_a01_diagnostics.py": "4a1f53a1138d423f21c2f8ae9c312a47ec9a6482ebe283505298cbca893c6441",
     "tests/test_fe01_a01_evaluation.py": "10c58a092eae05e6418927811696527167cf43b4513c4516370c72cfe4b944e0",
     "tests/test_fe01_a01_helpers.py": "cb17de320d5511c2009c346e5b88b4c69c7e3043f729fb65cc867cac0b91c463",
     "tests/test_fe01_a01_identity.py": "402d577a12c1f80f55a09fcb929f8bdc20c5e6e68d3283e38d8d7032c7810c66",
-    "tests/test_fe01_a01_pack.py": "326cc15eaa7065249e8c45cab4ada79b2ffd588e0dfbefacd4d50258def618f3",
+    "tests/test_fe01_a01_pack.py": "d06bf9277ac78c605652d6fd113100dba9ac89e1cfdc14e74c283ad837178205",
     "tests/test_fe01_a01_policy.py": "6a5a397fdb9ac62e4500ce56f3f9202aa43800862ee8ca730a1fae6733c41e92",
     "tests/test_fe01_a01_scheduler.py": "3909720554a8aa3191674faa6a9e603d3cd1ccd6d26417261a08605e6cfaf6b4",
     "docs/ai/FE01_A01_HPC_RUNBOOK.md": "e9df390d6285d0dbc6178c89d9b712e52e3ce9f176f9bdbfaf5080ab8ddd28d7",
     "docs/ai/FE01_A01_IMPLEMENTATION.md": "fad52074a50287f8406bbc4740dd018bcdc9f26cfb76f769e6d8fcc6eebd8095"
   },
-  "a01_tests_docs_manifest_sha256": "ed6d24b2fe9e50258efdde033243a2bed69ec31128661cce279c7d5ebfd53e97",
-  "source_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+  "a01_tests_docs_manifest_sha256": "a931ef00da0dc3fc98d25a45b66e7b1a147365cf4d08492cef7c03b51d4102d0",
+  "source_commit": "3798b320e29223dbb10e83b993624b4434531bec",
   "source_dirty": true,
   "source_kind": "worktree; code content SHA is authoritative"
 }

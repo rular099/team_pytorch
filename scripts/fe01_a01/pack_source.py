@@ -3,12 +3,21 @@
 import argparse
 import io
 import json
+import importlib.util
 from pathlib import Path
 import subprocess
 import sys
 import tarfile
 
 ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT))
+
+
+def dependency_root():
+    # dtbench is a PEP420 namespace package and can have __file__ = None.
+    spec=importlib.util.find_spec('dtbench')
+    if spec is None or not spec.submodule_search_locations:
+        raise ValueError('Frozen dtbench source missing')
+    return Path(next(iter(spec.submodule_search_locations))).resolve()
 
 
 def main():
@@ -21,8 +30,7 @@ def main():
     require(not status.strip(),'Commit A01 changes before packaging')
     identity=source_identity();identity['commit']=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD']).decode().strip()
     raw=subprocess.check_output(['git','-C',str(ROOT),'archive','HEAD'])
-    import dtbench
-    dependency=Path(dtbench.__file__).resolve().parent
+    dependency=dependency_root()
     target.parent.mkdir(parents=True,exist_ok=True)
     with tarfile.open(target,'w:gz') as archive:
         with tarfile.open(fileobj=io.BytesIO(raw),mode='r:') as source:
