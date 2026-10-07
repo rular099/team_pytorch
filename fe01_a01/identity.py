@@ -107,6 +107,35 @@ def reuse_equivalence(cfg, original_cfg, initial_state, inputs, report_path=None
         return _reuse_equivalence(cfg, original_cfg, initial_state, inputs, devices, report_path)
 
 
+def canonical_reuse_equivalence(cfg, original_cfg, initial_state, inputs, report_path=None):
+    """Compare the real epoch0 model/update exactly on one CPU thread.
+
+    DCU forward compatibility is checked independently by engine.audit. This
+    isolates implementation equivalence from backend reduction/Adam roundoff.
+    The formal training device, optimizer, gradient clipping and DDP are intact.
+    """
+    from .provenance import write_json
+    previous_threads = torch.get_num_threads()
+    try:
+        torch.set_num_threads(1)
+        result = reuse_equivalence(cfg, original_cfg, initial_state,
+                                   [value.detach().cpu() for value in inputs], report_path)
+        exact = (result['initial_equal'] and result['update_state_equal'] and
+                 result['losses'][0] == result['losses'][1] and
+                 all(check['max_abs'] == 0. for check in result['checks'].values()))
+        result['canonical_reference'] = dict(device='cpu', threads=1, exact_state_update=exact,
+            policy='same actual initial weights/input; exact CPU forward/gradient/Adam update; separate DCU forward gate')
+        if not exact:
+            result['status'] = 'FAIL'
+            result['failed_checks'].append('canonical_CPU_exact_equivalence')
+        if report_path is not None:
+            write_json(report_path, result)
+        require(exact, 'Canonical CPU ON equivalence failed; details: '+str(report_path))
+        return result
+    finally:
+        torch.set_num_threads(previous_threads)
+
+
 def _reuse_equivalence(cfg, original_cfg, initial_state, inputs, devices, report_path):
     from fe01.model import build_model as old_build
     from .model import build_model

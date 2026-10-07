@@ -1,0 +1,85 @@
+[
+  {
+    "family": "team_original_scratch",
+    "status": "FAIL",
+    "failed_checks": [
+      "updated_state"
+    ],
+    "initial_equal": true,
+    "forward_max_abs": 4.6566128730773926e-09,
+    "losses": [
+      4.489256858825684,
+      4.489256858825684
+    ],
+    "updated_state_max_abs": 2.1723099052906036e-06,
+    "bad_elements": 11,
+    "failed_tensors": [
+      {
+        "name": "mlp_pga.mlp.0.weight",
+        "passed": false,
+        "max_abs": 2.1723099052906036e-06,
+        "max_tolerance_ratio": 2.1247814716913123,
+        "mismatched_elements": 2,
+        "reason": "finite FP comparison"
+      },
+      {
+        "name": "pga_cross_attention.attn.in_proj_weight",
+        "passed": false,
+        "max_abs": 1.4025717973709106e-06,
+        "max_tolerance_ratio": 1.209179199505445,
+        "mismatched_elements": 8,
+        "reason": "finite FP comparison"
+      },
+      {
+        "name": "pga_cross_attention.attn.out_proj.weight",
+        "passed": false,
+        "max_abs": 1.0570511221885681e-06,
+        "max_tolerance_ratio": 1.0153070608709251,
+        "mismatched_elements": 1,
+        "reason": "finite FP comparison"
+      }
+    ],
+    "report_path": "audits/a01__team_original_scratch__off__seed42/ON_equivalence.json"
+  },
+  {
+    "family": "phasenet_pretrained_frozen",
+    "status": "PASS",
+    "failed_checks": [],
+    "initial_equal": true,
+    "forward_max_abs": 5.960464477539063e-08,
+    "losses": [
+      4.493856430053711,
+      4.493856430053711
+    ],
+    "updated_state_max_abs": 4.023313522338867e-07,
+    "bad_elements": 0,
+    "failed_tensors": [],
+    "report_path": "audits/a01__phasenet_pretrained_frozen__off__seed42/ON_equivalence.json"
+  },
+  {
+    "family": "eqt_pretrained_frozen",
+    "status": "FAIL",
+    "failed_checks": [
+      "updated_state"
+    ],
+    "initial_equal": true,
+    "forward_max_abs": 5.960464477539063e-08,
+    "losses": [
+      4.4959282875061035,
+      4.4959282875061035
+    ],
+    "updated_state_max_abs": 1.9073486328125e-06,
+    "bad_elements": 5,
+    "failed_tensors": [
+      {
+        "name": "pga_cross_attention.attn.in_proj_weight",
+        "passed": false,
+        "max_abs": 1.9073486328125e-06,
+        "max_tolerance_ratio": 1.3955149121043928,
+        "mismatched_elements": 5,
+        "reason": "finite FP comparison"
+      }
+    ],
+    "report_path": "audits/a01__eqt_pretrained_frozen__off__seed42/ON_equivalence.json"
+  }
+]

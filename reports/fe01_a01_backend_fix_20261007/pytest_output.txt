@@ -1,0 +1,6 @@
+Command: env MPLCONFIGDIR=<LOCAL_CACHE>/mpl XDG_CACHE_HOME=<LOCAL_CACHE>/xdg SEISBENCH_CACHE_ROOT=<LOCAL_CACHE>/seisbench FE01_A01_TEST_WEIGHTS=<OFFLINE_REGISTERED_MANIFEST> <FE01_PYTHON> -m pytest -q tests/test_fe01_a01_*.py tests/test_fe01_review_runners.py tests/test_fe01_statistics.py tests/test_rt61_wave_geometry.py tests/test_fe01_native_windows.py tests/test_fe01_time_sampling.py
+
+......................................................................   [100%]
+
+Warning: timm.models.layers import is deprecated; local environment path redacted.
+70 passed, 1 warning in 21.87s

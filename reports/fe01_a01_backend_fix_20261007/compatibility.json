@@ -1,0 +1,58 @@
+{
+  "base_commit": "753702a7b4f727d31c5ebb14f54f7f3f0e528e55",
+  "python39_syntax_compile_import": "PASS",
+  "compiled_files": [
+    "fe01_a01/availability.py",
+    "fe01_a01/engine.py",
+    "fe01_a01/identity.py",
+    "scripts/fe01_a01/run.py",
+    "tests/test_fe01_a01_scheduler.py",
+    "scripts/fe01_a01/preflight.py",
+    "tests/test_fe01_a01_backend.py"
+  ],
+  "bash_syntax": "PASS",
+  "formal_train_function_AST_unchanged": true,
+  "original_training_code_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "original_file_count": 115,
+  "original_worktrees": [
+    {
+      "directory": "team_pytorch",
+      "unchanged": true,
+      "head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+      "branch": "zhangb/native-scale-adapter-scaling",
+      "head_sha256": "77a9a510fe797029fc00099dd57c1b7e07582ea2b4080b83f4ad89390978dd91",
+      "branch_sha256": "16d8ff3459501d7a8275488cdea70f875e45e358d21cf41faf1ef4243cdcf0a8",
+      "status_sha256": "fd3a3c822ff2dca43d1025fca47c4ce6b0ef235038ed175901b6133b69a22b92",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstaged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "directory": "team_pytorch_fe01",
+      "unchanged": true,
+      "head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+      "branch": "exp/fe01-feature-extractor-site-effects",
+      "head_sha256": "972b88fd7b456435b6ecf91b65f1414f1931719452bad07dda53640d0d0cdfd2",
+      "branch_sha256": "66d167e4d28feb3b7fc75c6ad986ae238d2d3a09aefd0e91f40f07ca1ac3a8ff",
+      "status_sha256": "f3d5e763d9276ac33811a93cdcda83a8733235fdf500b717f0349253271c109f",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstaged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "directory": "team_pytorch_query_geometry_diagnostics",
+      "unchanged": true,
+      "head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "branch": "exp/v01-velocity-prep-padding-control",
+      "head_sha256": "08e217faa2eab53e0529949ecbbf7c7c25e8f1389cdbfb95822f8f8c629bbf72",
+      "branch_sha256": "56376894827c9af26ffad8776aef408aeaeea4af35e92d0f18961afb6a3c5e9f",
+      "status_sha256": "0c9304eb2157a009b18488a9134706124b12b70b1472967ea6415eea54a79e13",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstaged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "current_a01_code_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "pytest": "70 passed, 1 warning; actual full stdout in pytest_output.txt",
+  "production_CPU_exact_update": "NOT_RUN",
+  "production_DCU_forward": "NOT_RUN",
+  "formal_train": "NOT_SUBMITTED",
+  "full_evaluation": "NOT_SUBMITTED"
+}

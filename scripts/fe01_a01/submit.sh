@@ -9,6 +9,7 @@ case "$stage" in environment|audit|diagnostics|pilot|train|eval|pack) ;; *) echo
 [[ "$indices" =~ ^[0-4](-[0-4])?$ ]] || { echo 'Indices must be 0..4 or ascending range, e.g. 0-2' >&2;exit 2; }
 [[ "${indices:0:1}" -le "${indices: -1}" ]] || { echo 'Descending range forbidden' >&2;exit 2; }
 [[ "$A01_CODE_ROOT" == "$code" ]] || { echo 'Code root mismatch' >&2;exit 2; }
+"${A01_CONFIG_PYTHON:-python3}" "$code/scripts/fe01_a01/preflight.py" "$stage" --indices "$indices" --output "$A01_OUTPUT_ROOT"
 mkdir -p "$A01_OUTPUT_ROOT/slurm"
 args=(--parsable --chdir="$code" --export=ALL --job-name="a01_$stage" --output="$A01_OUTPUT_ROOT/slurm/${stage}_%A_%a.out" --error="$A01_OUTPUT_ROOT/slurm/${stage}_%A_%a.err")
 [[ -z "${A01_PARTITION:-}" ]] || args+=(--partition="$A01_PARTITION")

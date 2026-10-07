@@ -104,6 +104,11 @@ RT55/RT61 的下游网络不充当 DiTing ON；只复用已认证的 DiTing **�
 - DiTing ON/OFF 都必须有匹配的 init 和采样门控。旧预训练清单不会被修改；
   如需注册既有 DiTing encoder，只写入 A01 输出中的专用 manifest。
 - 后续阶段验证当前 A01 源码 SHA、前一阶段证据和配置 SHA。源码改动必须重新做门控。
+- `submit.sh` 先在登录节点用 Python 标准库检查前置 JSON、源码/配置 SHA 与输出目录。
+  缺失、失败、过期或 DiTing 配对不匹配时打印 `A01_PREFLIGHT_BLOCKED`，不调用 sbatch。
+  它不导入 torch、不加载大 checkpoint；数据和权重的实际认证仍在计算节点执行。
+- DDP 每个 rank 使用 `.cache/<job_id>/rank<rank>/` 下独立的 SeisBench、XDG、matplotlib
+  缓存，防止多个进程首次导入时同时创建 `config.json`。
 - 检查为 HDF5 之后的前缀因果性；上游滤波/重采样仍为 `UPSTREAM_CAUSALITY_UNKNOWN`。
 - diagnostics 中前三项加载原 ON checkpoint 并屏蔽振幅，是 `inference_intervention`。
   DiTing 训练前诊断标为 matched initial checkpoint。正式 OFF 的评价才是 `trained_ablation`。
@@ -120,8 +125,13 @@ RT55/RT61 的下游网络不充当 DiTing ON；只复用已认证的 DiTing **�
 新旧 ON 等价门控失败时，查看对应 `audits/<run_id>/ON_equivalence.json` 的 `failed_checks`：
 其中有 eval/train 前向、loss、梯度、更新后参数的容差与最大差异、失败参数名称；
 训练后 ON 前向报告为 `trained_ON_forward_equivalence.json`。
+当前 `ON_equivalence.json` 是单线程 CPU 的精确更新控制，必须有
+`canonical_reference.exact_state_update=true`；DCU 的初始前向另存
+`initial_ON_device_forward_equivalence.json`。正式训练仍在 DCU 上运行。
 原7d91791发布版只给笼统错误，并要求更新后SHA位级一致。该版本用户报告的
 三项等价门控失败，处理步骤见 [audit修复与重提](FE01_A01_AUDIT_FIX.md)。
+753702a 版本实际下载的 TEAM/EQT 更新差异、DiTing diagnostics 与 PhaseNet
+缓存错误已核验；新的上传文件与操作步骤见 [本轮修复部署说明](FE01_A01_BACKEND_FIX.md)。
 `a01.private.env` 中 DiTing encoder 的路径/SHA 来自已下载的 EVAL1 inventory；
 若超算上该文件已移动，先确认同一 SHA 的原文件位置，再修改私有设置。
 

@@ -1,0 +1,50 @@
+{
+  "case": "real_prefix",
+  "elapsed_time": 3,
+  "cutout_exclusive": 801,
+  "checks": [
+    {
+      "passed": false,
+      "complete_inputs_exact": false,
+      "prefix_statistics_exact": false,
+      "downstream": {
+        "passed": true,
+        "atol": 1e-06,
+        "rtol": 1e-05,
+        "tensors": 3,
+        "failed_tensors": [],
+        "max_abs": 2.2351741790771484e-08,
+        "largest_differences": [
+          {
+            "name": "encoder_adapter",
+            "passed": true,
+            "max_abs": 2.2351741790771484e-08,
+            "max_tolerance_ratio": 0.01481319538508921,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "mdn",
+            "passed": true,
+            "max_abs": 4.656612873077393e-10,
+            "max_tolerance_ratio": 0.0004638041064954004,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "probabilities",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          }
+        ],
+        "failures": []
+      },
+      "mutation": "pulse",
+      "selected_ids_equal": true
+    }
+  ],
+  "upstream_status": "UPSTREAM_CAUSALITY_UNKNOWN"
+}

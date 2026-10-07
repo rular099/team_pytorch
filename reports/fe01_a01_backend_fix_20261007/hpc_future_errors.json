@@ -1,0 +1,38 @@
+[
+  {
+    "index": 3,
+    "errors": {
+      "received_mask": 0.0,
+      "station_mask": 0.0,
+      "mean": 0.0,
+      "variance": 0.0,
+      "normalized_peak": 0.0,
+      "normalized": 0.0,
+      "raw_amplitude": 0.0,
+      "duration": 0.0,
+      "delivered_amplitude": 0.0,
+      "encoder_adapter": 3.814697265625e-06,
+      "mdn": 5.960464477539063e-08,
+      "probabilities": 0.0
+    },
+    "file": "diagnostics_29397945_3.err"
+  },
+  {
+    "index": 4,
+    "errors": {
+      "received_mask": 0.0,
+      "station_mask": 0.0,
+      "mean": 0.0,
+      "variance": 0.0,
+      "normalized_peak": 0.0,
+      "normalized": 0.0,
+      "raw_amplitude": 0.0,
+      "duration": 0.0,
+      "delivered_amplitude": 0.0,
+      "encoder_adapter": 1.9073486328125e-06,
+      "mdn": 1.862645149230957e-09,
+      "probabilities": 0.0
+    },
+    "file": "diagnostics_29397945_4.err"
+  }
+]

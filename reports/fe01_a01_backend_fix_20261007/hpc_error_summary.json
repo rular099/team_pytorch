@@ -1,0 +1,179 @@
+[
+  {
+    "file": "audit_29397744_0.err",
+    "errors": [
+      "ValueError: Legacy ON / A01 ON equivalence gate failed: updated_state; details: <PRIVATE_PATH>"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "e6418399574a76c3e8aac1ac3bf24829454e64f015836384862321182bc09dc3",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "audit_29397744_1.err",
+    "errors": [],
+    "error_occurrences": 0,
+    "original_sha256": "ad3c1abbbf72db14335c089cdb05da8d988a78356ef8ffaa85deda08b9d59f2a",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "audit_29397744_2.err",
+    "errors": [
+      "ValueError: Legacy ON / A01 ON equivalence gate failed: updated_state; details: <PRIVATE_PATH>"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "317fc7b2a52234a35c732ccff59ddfcbbae677d21172195365b6b5f57487d583",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "audit_29397744_3.err",
+    "errors": [],
+    "error_occurrences": 0,
+    "original_sha256": "2c313383861a91322f13143d2557cd9602be7ac5a71df45125bca66bd6fa960a",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "audit_29397744_4.err",
+    "errors": [],
+    "error_occurrences": 0,
+    "original_sha256": "2c313383861a91322f13143d2557cd9602be7ac5a71df45125bca66bd6fa960a",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "diagnostics_29397945_0.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "08ecb3f300969cff3961302fd0ba280a5b9c344603714c03cdc58daeb7564adf",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "diagnostics_29397945_1.err",
+    "errors": [],
+    "error_occurrences": 0,
+    "original_sha256": "2c313383861a91322f13143d2557cd9602be7ac5a71df45125bca66bd6fa960a",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "diagnostics_29397945_2.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "c968cf6e5efa7d84a698abdc1c9a2cb8ee7b48a173a5b1e92ebe9ae66a280537",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "diagnostics_29397945_3.err",
+    "errors": [
+      "ValueError: Future leakage after HDF prefix: {'received_mask': 0.0, 'station_mask': 0.0, 'mean': 0.0, 'variance': 0.0, 'normalized_peak': 0.0, 'normalized': 0.0, 'raw_amplitude': 0.0, 'duration': 0.0, 'delivered_amplitude': 0.0, 'encoder_adapter': 3.814697265625e-06, 'mdn': 5.960464477539063e-08, 'probabilities': 0.0}"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "b942783f049017cbe2d81bdcee147799c701780848eb903173115ef4ddb74149",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "diagnostics_29397945_4.err",
+    "errors": [
+      "ValueError: Future leakage after HDF prefix: {'received_mask': 0.0, 'station_mask': 0.0, 'mean': 0.0, 'variance': 0.0, 'normalized_peak': 0.0, 'normalized': 0.0, 'raw_amplitude': 0.0, 'duration': 0.0, 'delivered_amplitude': 0.0, 'encoder_adapter': 1.9073486328125e-06, 'mdn': 1.862645149230957e-09, 'probabilities': 0.0}"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "bf2b373edf74ac6dc224b01010f01e32d1295d44e8bbc1663e0b85aa42f76ddc",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "environment_29397740_4294967294.err",
+    "errors": [],
+    "error_occurrences": 0,
+    "original_sha256": "2c313383861a91322f13143d2557cd9602be7ac5a71df45125bca66bd6fa960a",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "pilot_29398636_0.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "905e2fdb6df5439e52424b6420431680d8a2400e1f06a638ab01bea17b35a560",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "pilot_29398636_1.err",
+    "errors": [],
+    "error_occurrences": 0,
+    "original_sha256": "2c313383861a91322f13143d2557cd9602be7ac5a71df45125bca66bd6fa960a",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "pilot_29398636_2.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "9e725329e86b7912b790fb1a0986307162c0b5c69167c903d1db3fc4802ada7c",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "pilot_29398636_3.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "cdeece10fe70f23f2650dbc20b34ee04213bafd229babbd8b9058fbcca6a58ed",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "pilot_29398636_4.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 1,
+    "original_sha256": "0b465bcc887b9bb2015abc1337e72dbc04d3898500dc117b6eb999d51c1c3141",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "train_29399144_0.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 4,
+    "original_sha256": "f424457531078cc51d2905b1744ee4055a596714276f31f43662f17c1b53f59f",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "train_29399144_1.err",
+    "errors": [
+      "json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+    ],
+    "error_occurrences": 10,
+    "original_sha256": "b4ed748a001b272924b7934f50d72fcc175984bea644b1165eb1a96e32a90c1a",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "train_29399144_2.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 4,
+    "original_sha256": "35e6f692eb0c36448853b7507a0b602db909a0f6103dd6b339fc2b4cde690c38",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "train_29399144_3.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 16,
+    "original_sha256": "d4c2e9989b1b2a4de6161ea6f42bc25b03d000b9a1adfe238aa53e8c16f63663",
+    "scheduler_state": "NOT_PROVIDED"
+  },
+  {
+    "file": "train_29399144_4.err",
+    "errors": [
+      "FileNotFoundError: [Errno 2] No such file or directory: '<PRIVATE_PATH>'"
+    ],
+    "error_occurrences": 16,
+    "original_sha256": "ee5635220b28aeb585ae6f06c06ebc2e339a95222aa1118a557b509a52b1b899",
+    "scheduler_state": "NOT_PROVIDED"
+  }
+]

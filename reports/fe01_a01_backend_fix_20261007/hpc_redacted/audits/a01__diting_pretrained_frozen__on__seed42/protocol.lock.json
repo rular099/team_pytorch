@@ -1,0 +1,209 @@
+{
+  "config_sha256": "673a389870efc8aed62038cc3c35867d3d0a5d10f11146cf1b5515e64d4fcbe7",
+  "a01_code_sha256": "ef82d183e8163a040571636e10cc46cca3b4c74cccf4f9807d310b801c31edae",
+  "source_commit": "753702a7b4f727d31c5ebb14f54f7f3f0e528e55",
+  "code_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "effective_config": {
+    "audited_cohorts": {
+      "train": {
+        "DISPLAY_ONLY": true,
+        "count": 9084,
+        "content_sha256": "79b7c05a3db3107734c56ede2c03d69ebb0c205c08204dc21eece310ccae30e3"
+      },
+      "val": {
+        "DISPLAY_ONLY": true,
+        "count": 1310,
+        "content_sha256": "9df03df4e675de2fc817daa3ad1541078c086bec245dd26f87123967d0d30f5a"
+      }
+    },
+    "target_normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "query_independence_verified": true,
+    "query_chunk_size": 15
+  },
+  "data_identity": {
+    "split_manifest_sha256": "a914fa361dc51af957aca32396d992219dd04c665a7ccffc46ec18769c491108",
+    "shards": {
+      "PRIVATE_PATH/japan_2000.hdf5": {
+        "bytes": 1586259746,
+        "mtime_ns": 1786166373000000000,
+        "sha256": "5df775a4cb82f0848ecfe3ed5499c3db67e088ce2fd8908a968438aaa9e0d8aa"
+      },
+      "PRIVATE_PATH/japan_2001.hdf5": {
+        "bytes": 1787638481,
+        "mtime_ns": 1786166295000000000,
+        "sha256": "ae9a0a05afdee5c26a863ecc3bc224420042d35e0e5ed753477c16f1b83873ca"
+      },
+      "PRIVATE_PATH/japan_2002.hdf5": {
+        "bytes": 1607067372,
+        "mtime_ns": 1786166214000000000,
+        "sha256": "0b7970595d1105f50941c62472ca90f96ef08b84ce65193540e0e2919462123b"
+      },
+      "PRIVATE_PATH/japan_2003.hdf5": {
+        "bytes": 3807648842,
+        "mtime_ns": 1786166138000000000,
+        "sha256": "b6f2cbeea604a84ce3c0b6a0154434561183edc5a8b64a4a4dd49fd7ff6769e9"
+      },
+      "PRIVATE_PATH/japan_2004.hdf5": {
+        "bytes": 4197192452,
+        "mtime_ns": 1786165965000000000,
+        "sha256": "69bb5d2523ebd4b01896c31834c77d4002bdad2d581965ab0ffdbe4c9c71e9b2"
+      },
+      "PRIVATE_PATH/japan_2005.hdf5": {
+        "bytes": 3164690848,
+        "mtime_ns": 1786165784000000000,
+        "sha256": "9540f1bba4d2e8bbc9b1f1d114a7086b016fdd94da353ffcd99de90cf652f0b7"
+      },
+      "PRIVATE_PATH/japan_2006.hdf5": {
+        "bytes": 1892545704,
+        "mtime_ns": 1786165649000000000,
+        "sha256": "e89603bd6c26df54cc393710bd907fcf4e0ff2b6c6f8d6c4bd7f080f5e8d84ab"
+      },
+      "PRIVATE_PATH/japan_2007.hdf5": {
+        "bytes": 2500301900,
+        "mtime_ns": 1786165570000000000,
+        "sha256": "7387c4159c92cb98e9ee8351be72725b305e9f65b4c9065584ff28312c505f67"
+      },
+      "PRIVATE_PATH/japan_2008.hdf5": {
+        "bytes": 2148091040,
+        "mtime_ns": 1786165463000000000,
+        "sha256": "29daeefc7e5a7770c710fca0f39a31790b22ae59da24e1a0d2badf6b6efdc52d"
+      },
+      "PRIVATE_PATH/japan_2009.hdf5": {
+        "bytes": 1319745565,
+        "mtime_ns": 1786165370000000000,
+        "sha256": "0eaa875e3948d938f4812acdb1e8ab050a498590998ee870421e78c34fa862f8"
+      },
+      "PRIVATE_PATH/japan_2010.hdf5": {
+        "bytes": 1363039707,
+        "mtime_ns": 1786165309000000000,
+        "sha256": "36fbd67a054434490252519f4cdf0d1b437787d0d34217b3a984d8cb55ed588f"
+      },
+      "PRIVATE_PATH/japan_2011.hdf5": {
+        "bytes": 8337182420,
+        "mtime_ns": 1786165251000000000,
+        "sha256": "7021cb662117543c166e39a7d4919ad8ad979cc3009f95e865f5f88ecc955b09"
+      },
+      "PRIVATE_PATH/japan_2012.hdf5": {
+        "bytes": 4388945299,
+        "mtime_ns": 1786164860000000000,
+        "sha256": "32fcf02730044ce8004e9185e6f7d48b0054bfdf9e658823a25839a8d13d092e"
+      },
+      "PRIVATE_PATH/japan_2013.hdf5": {
+        "bytes": 2942089604,
+        "mtime_ns": 1786164658000000000,
+        "sha256": "7b84dbaea43968ab04f693d1561f8a7b9942e10f258d2f3735f24b643018935b"
+      },
+      "PRIVATE_PATH/japan_2014.hdf5": {
+        "bytes": 2193025397,
+        "mtime_ns": 1786164531000000000,
+        "sha256": "b8886d0688ecd22d8585a907d84149188f4e9407f09d8037eee709fa5cc865b9"
+      },
+      "PRIVATE_PATH/japan_2015.hdf5": {
+        "bytes": 1971169206,
+        "mtime_ns": 1786164439000000000,
+        "sha256": "1fd4bd4fc54201bb6a275194283c032d20d23bc49ac098e08c59a5b180b58c61"
+      },
+      "PRIVATE_PATH/japan_2016.hdf5": {
+        "bytes": 3567406332,
+        "mtime_ns": 1786164356000000000,
+        "sha256": "db2cfc55c8767a87bbd5aadf6af80fdb9b9de1d120e0f610121ad4eec2e9668c"
+      },
+      "PRIVATE_PATH/japan_2017.hdf5": {
+        "bytes": 1756413760,
+        "mtime_ns": 1786164206000000000,
+        "sha256": "6f2ec8c59d7f7d0abdab0ae85c20a50f1d22f13fd71647cdbf056cb908fba672"
+      },
+      "PRIVATE_PATH/japan_2018.hdf5": {
+        "bytes": 2295708110,
+        "mtime_ns": 1786164128000000000,
+        "sha256": "c94b65c51868a59cd9f372c40bbf035fddbf5fe4318d3cfd2984549a0569eee6"
+      },
+      "PRIVATE_PATH/japan_2019.hdf5": {
+        "bytes": 1505461178,
+        "mtime_ns": 1786164031000000000,
+        "sha256": "ac2095f0b28f24c64eb7eabbad7a4bc792b7df31e0a4806c7937b6b22bf1199d"
+      },
+      "PRIVATE_PATH/japan_2020.hdf5": {
+        "bytes": 1516948817,
+        "mtime_ns": 1786163965000000000,
+        "sha256": "ddc0c0c15f4e7de65ac193d9769aba28556f1fdc431c5136b3365cb56386789b"
+      },
+      "PRIVATE_PATH/japan_2021.hdf5": {
+        "bytes": 2055049946,
+        "mtime_ns": 1786163903000000000,
+        "sha256": "050a90a26106c3627d1d9bf51f40de233e6f6b4f7b57b06bfcae43fb3927928d"
+      },
+      "PRIVATE_PATH/japan_2022.hdf5": {
+        "bytes": 2029513567,
+        "mtime_ns": 1786163818000000000,
+        "sha256": "be9dd7ac3430d2cf8d89230232053ea5aa655fbfd9636ed4b76ac08a1b60b278"
+      },
+      "PRIVATE_PATH/japan_2023.hdf5": {
+        "bytes": 1351188536,
+        "mtime_ns": 1786163725000000000,
+        "sha256": "2d615facc78bf012f0deb7aaa13e93302ea58f3dd8bc4b1d04490555d4b20f11"
+      },
+      "PRIVATE_PATH/japan_2024.hdf5": {
+        "bytes": 2378613764,
+        "mtime_ns": 1786163664000000000,
+        "sha256": "e44869e9f7e3fc38c5836dba0a3190d075278708e3f95669d4dcaf7b7cb98e59"
+      }
+    },
+    "spatial_manifest_sha256": null
+  },
+  "initial_state": {
+    "path": "PRIVATE_PATH/matched_init.pth",
+    "file_sha256": "0cb5c2011ee02b5d8a458b625c007a62de69385169cd667a1557a2f4b58e6eb7",
+    "state_sha256": "e112d4952fc4686a36bc7d0162b0fddbcadc0c8bfc74e6fce75b003f9b67af1d",
+    "common_sha256": "98c3efb9e55a8c5b0afd3dc204b095d2cb3449519e44b78726adcc9b6da1d569",
+    "encoder_sha256": "2ee9bf53adec8e4ee12dfaaf5170b26c80cf0bc61ea987d380cddfd0980bccb8"
+  },
+  "pretrained_manifest_sha256": "d80ab473026112ca473fe28a82419b5ac8031b72353ad94da47dbb79fbd5b31b",
+  "dependency": {
+    "family": "diting_pretrained_frozen",
+    "pretrained_manifest_sha256": "d80ab473026112ca473fe28a82419b5ac8031b72353ad94da47dbb79fbd5b31b",
+    "encoder_assets_sha256": {
+      "weights": "c71aea36cd3b14a3dfa8da1b22104776bede4c04e208db01b443ae25c27a685b"
+    }
+  },
+  "reuse_gate": {
+    "status": "NEW_MATCHED_PAIR",
+    "reason": "DiTing has no old common-downstream ON comparator"
+  },
+  "sampling": {
+    "plan_sha256": "5d3ce6b5aae00b1a9c3e68e31dfcab6875e6431d38f9c626f5f56b5a1bda5d68",
+    "ddp_order_sha256": "7181be1a111398c07f1fa3d02776a47f033f228c3b973b3586450c6349db1929",
+    "budget": {
+      "events": 9084,
+      "samples_per_epoch": 27252,
+      "world_size": 16,
+      "sampler_per_rank": 1703,
+      "microsteps_per_rank": 212,
+      "accumulation": 1,
+      "updates_per_epoch": 212,
+      "total_updates": 2544,
+      "consumed_samples_per_epoch": 27136,
+      "dropped_samples_per_epoch": 116
+    }
+  },
+  "world_size": 16,
+  "status": "AUDIT_PASS",
+  "validation_population_sha256": "ceb16d1e0fbcb0bea14f111f049490e00d53f61b8e714a1442b81eb170254295",
+  "query_independence": {
+    "status": "PASS",
+    "event_id": "20000922074300",
+    "queries": 3,
+    "max_mdn_parameter_delta": 1.862645149230957e-09,
+    "atol": 1e-05,
+    "rtol": 1e-05,
+    "rule": "batch vs order reversal vs independent single coordinate queries"
+  }
+}

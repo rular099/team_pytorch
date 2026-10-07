@@ -22,12 +22,15 @@ DiTing 两组还要匹配完整初始状态与 sampler manifest。
 
 旧 ON 复用门控核对冻结文件 SHA、epoch/config/lock/world、真实预训练依赖、
 完整 frontend/adapter/common 初始状态、新旧 ON 前向与固定 mini-batch 更新。
-初始状态仍逐字节核对 SHA；两次 audit 前向/更新重放同一 CPU/DCU 随机状态，
-只在比较期间关闭 benchmark/TF32、使用 deterministic cuDNN，退出恢复原设置。
-FP32前向、loss、梯度和更新后全部参数/缓冲区采用 atol=1e-6、rtol=1e-5逐元素检查；
-名称、shape、dtype、梯度有无、整数状态及 optimizer/scheduler 设置仍严格相同。
-更新后 SHA继续记录，但不能把 GPU浮点数的位级一致性当作数值等价的必要条件。
-失败前写 `ON_equivalence.json`，训练后 ON 的前向另写 `trained_ON_forward_equivalence.json`。
+初始状态仍逐字节核对 SHA。真实 epoch0 权重与相同实际输入在计算节点的单线程 CPU
+执行前向、loss、梯度、裁剪、Adam 与 scheduler 单步对照，全部数值必须精确相同，
+更新后完整状态 SHA 也必须相同；合成标签仅用于该固定更新控制，不作性能证据。
+DCU 上另查 epoch0 与冻结 selected checkpoint 的 ON 前向，沿用 atol=1e-6、rtol=1e-5。
+两次执行重放相同随机状态，只在比较期间关闭 benchmark/TF32、使用 deterministic cuDNN，
+退出恢复线程数、随机状态与原 backend 设置。正式 DCU/DDP 训练循环及预算不变。
+失败前写 `ON_equivalence.json`；两份设备前向报告分别为
+`initial_ON_device_forward_equivalence.json` 与 `trained_ON_forward_equivalence.json`。
+这认证实现与设备前向兼容性，不认证两次 DCU Adam 更新逐位相同。
 TEAM 只有实际 scratch 且预训练 SHA 为 null 才通过；pretrained 必须合法非空 SHA 并核对文件。
 若 init 缺失，重建后必须匹配已下载冻结 inventory 的完整状态与 common 指纹。
 OFF 从 epoch0 开始，绝不从 ON 最终 checkpoint 微调。
@@ -46,6 +49,9 @@ station 同步置换用于等价控制，坐标单独置换是机制干预，不
 
 前缀测试固定标签、元数据和请求，从 exclusive cutoff 开始扰动 pulse/NaN/Inf。
 比较选站、mask、去均值/方差、归一化 peak、10维幅值、duration、encoder/adapter、MDN、概率。
+完整六个模型输入及所有前缀统计必须精确相同；encoder/adapter、MDN、概率的重复前向
+重放随机状态并使用既有 atol=1e-6、rtol=1e-5，避免将输出末位差异误标为未来信息泄漏。
+输入/统计变化或输出超过容差仍然失败，失败前保存各项比较 JSON。
 触发/容量/缺测/合法零/invalid station 与最后合法样本正控制都有入口。
 正控制仅要求相关统计变化，不要求任意模型预测必变。
 逐站正增益和事件共同增益控制在正常数值区间核对 shape、OFF features/MDN、
@@ -70,3 +76,5 @@ bootstrap 用 event为簇，稀疏子群列缺 cell、实际数与有效重复�
 
 可执行入口见 [HPC 操作说明](FE01_A01_HPC_RUNBOOK.md)。
 实测输出与解释见 `reports/fe01_a01_local_20261007/REPORT.md`。
+用户提供的真实失败日志及本轮修复见
+[后端与提交修复](FE01_A01_BACKEND_FIX.md) 和 `reports/fe01_a01_backend_fix_20261007/README.md`。

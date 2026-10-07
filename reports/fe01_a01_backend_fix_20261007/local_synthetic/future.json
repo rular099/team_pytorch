@@ -1,0 +1,176 @@
+{
+  "case": "real_prefix",
+  "elapsed_time": 3,
+  "cutout_exclusive": 801,
+  "checks": [
+    {
+      "passed": true,
+      "complete_inputs_exact": true,
+      "prefix_statistics_exact": true,
+      "downstream": {
+        "passed": true,
+        "atol": 1e-06,
+        "rtol": 1e-05,
+        "tensors": 3,
+        "failed_tensors": [],
+        "max_abs": 3.814697265625e-06,
+        "largest_differences": [
+          {
+            "name": "encoder_adapter",
+            "passed": true,
+            "max_abs": 3.814697265625e-06,
+            "max_tolerance_ratio": 0.03776927985767327,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "mdn",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "probabilities",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          }
+        ],
+        "failures": []
+      },
+      "mutation": "pulse",
+      "selected_ids_equal": true
+    },
+    {
+      "passed": true,
+      "complete_inputs_exact": true,
+      "prefix_statistics_exact": true,
+      "downstream": {
+        "passed": true,
+        "atol": 1e-06,
+        "rtol": 1e-05,
+        "tensors": 3,
+        "failed_tensors": [],
+        "max_abs": 3.814697265625e-06,
+        "largest_differences": [
+          {
+            "name": "encoder_adapter",
+            "passed": true,
+            "max_abs": 3.814697265625e-06,
+            "max_tolerance_ratio": 0.03776927985767327,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "mdn",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "probabilities",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          }
+        ],
+        "failures": []
+      },
+      "mutation": "NaN",
+      "selected_ids_equal": true
+    },
+    {
+      "passed": true,
+      "complete_inputs_exact": true,
+      "prefix_statistics_exact": true,
+      "downstream": {
+        "passed": true,
+        "atol": 1e-06,
+        "rtol": 1e-05,
+        "tensors": 3,
+        "failed_tensors": [],
+        "max_abs": 3.814697265625e-06,
+        "largest_differences": [
+          {
+            "name": "encoder_adapter",
+            "passed": true,
+            "max_abs": 3.814697265625e-06,
+            "max_tolerance_ratio": 0.03776927985767327,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "mdn",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "probabilities",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          }
+        ],
+        "failures": []
+      },
+      "mutation": "Inf",
+      "selected_ids_equal": true
+    },
+    {
+      "passed": true,
+      "complete_inputs_exact": true,
+      "prefix_statistics_exact": true,
+      "downstream": {
+        "passed": true,
+        "atol": 1e-06,
+        "rtol": 1e-05,
+        "tensors": 3,
+        "failed_tensors": [],
+        "max_abs": 3.814697265625e-06,
+        "largest_differences": [
+          {
+            "name": "encoder_adapter",
+            "passed": true,
+            "max_abs": 3.814697265625e-06,
+            "max_tolerance_ratio": 0.03776927985767327,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "mdn",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          },
+          {
+            "name": "probabilities",
+            "passed": true,
+            "max_abs": 0.0,
+            "max_tolerance_ratio": 0.0,
+            "mismatched_elements": 0,
+            "reason": "finite FP comparison"
+          }
+        ],
+        "failures": []
+      },
+      "mutation": "label_value_only",
+      "selected_ids_equal": true
+    }
+  ],
+  "upstream_status": "UPSTREAM_CAUSALITY_UNKNOWN"
+}

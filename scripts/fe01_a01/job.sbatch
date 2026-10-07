@@ -13,8 +13,7 @@ case "$stage" in
    export MASTER_PORT=$((A01_MASTER_PORT+index))
    export A01_WORLD_SIZE=$((SLURM_JOB_NUM_NODES*A01_DEVICES_PER_NODE))
    exec srun --kill-on-bad-exit=1 --ntasks="$A01_WORLD_SIZE" --ntasks-per-node="$A01_DEVICES_PER_NODE" \
-     bash -c 'export RANK="${SLURM_PROCID:?}" WORLD_SIZE="${A01_WORLD_SIZE:?}" LOCAL_RANK="${SLURM_LOCALID:-0}"; exec "$@"' \
-     a01-rank "$A01_PYTHON" "${args[@]}"
+     bash "$A01_CODE_ROOT/scripts/fe01_a01/rank_exec.sh" "$A01_PYTHON" "${args[@]}"
    ;;
  *) echo 'Unsupported stage' >&2;exit 2;;
 esac

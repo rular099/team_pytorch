@@ -81,7 +81,8 @@ def diagnostic(cfg,audit_dir,output,device,cap):
         controls.append(dict(**tag,**permutation_controls(model,inputs)))
         scales.extend(dict(**tag,**r) for r in scale_audit(model,inputs,cfg['absolute_amplitude_mode'])['rows'])
         if n<5:
-            future.extend({**tag,**r} for r in future_audit(model,resolved,event,probe.elapsed_time,device,'locked_decision')['rows'])
+            future.extend({**tag,**r} for r in future_audit(model,resolved,event,probe.elapsed_time,device,'locked_decision',
+                report_path=trace_dir/'future_locked_decision.json')['rows'])
         if n==0:
             from fe01.windows import clock
             cap_native=CAPABILITIES[cfg['model_family']]
@@ -97,7 +98,8 @@ def diagnostic(cfg,audit_dir,output,device,cap):
                 if changed['waveform'].shape[-1]<=cutoff:
                     future.append({**tag,'case':case,'elapsed_time':time,'status':'UNSUPPORTED_NO_STORED_FUTURE'})
                     continue
-                future.extend({**tag,**r} for r in future_audit(model,resolved,changed,time,device,case)['rows'])
+                future.extend({**tag,**r} for r in future_audit(model,resolved,changed,time,device,case,
+                    report_path=trace_dir/('future_'+case+'.json'))['rows'])
             _,_,beyond=build_window(event['waveform'],event['storage'],event['reference_sample'],
                 (cap_native.max_elapsed_sample()+1)/100,cap_native)
             require(beyond['status']=='unsupported','Native capacity unexpectedly truncates history')

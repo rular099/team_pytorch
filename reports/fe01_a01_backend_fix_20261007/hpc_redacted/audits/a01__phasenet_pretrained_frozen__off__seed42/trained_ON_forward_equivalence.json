@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "atol": 1e-06,
+  "rtol": 1e-05,
+  "tensors": 3,
+  "failed_tensors": [],
+  "max_abs": 1.9073486328125e-06,
+  "largest_differences": [
+    {
+      "name": "1",
+      "passed": true,
+      "max_abs": 1.9073486328125e-06,
+      "max_tolerance_ratio": 0.013775388678446101,
+      "mismatched_elements": 0,
+      "reason": "finite FP comparison"
+    },
+    {
+      "name": "2",
+      "passed": true,
+      "max_abs": 1.1920928955078125e-07,
+      "max_tolerance_ratio": 0.03408780746842284,
+      "mismatched_elements": 0,
+      "reason": "finite FP comparison"
+    },
+    {
+      "name": "0",
+      "passed": true,
+      "max_abs": 4.656612873077393e-10,
+      "max_tolerance_ratio": 0.00044405452155057393,
+      "mismatched_elements": 0,
+      "reason": "finite FP comparison"
+    }
+  ],
+  "failures": []
+}

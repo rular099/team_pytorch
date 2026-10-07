@@ -28,7 +28,7 @@ from fe01.model import common_state, model_audit, state_fingerprint
 from .model import build_model
 from .provenance import validate, require, read_json, write_json, source_identity, new_output
 from .identity import (check_family, old_checkpoint, training_budget, restore_initial,
-                       reuse_equivalence)
+                       canonical_reuse_equivalence)
 
 
 def sample_plan(cfg, destination, world):
@@ -119,16 +119,26 @@ def audit(cfg,destination,device='cpu',world=16):
         runtime_old=copy.deepcopy(old_cfg)
         for key in ('pretrained_manifest','diting_config'):
             runtime_old[key]=resolved[key]
-        reuse=reuse_equivalence(resolved,runtime_old,initial['model_state_dict'],inputs_to(sample,device),
+        reuse=canonical_reuse_equivalence(resolved,runtime_old,initial['model_state_dict'],inputs_to(sample,'cpu'),
                                 report_path=destination/'ON_equivalence.json')
-        # Check trained ON forward too, without using it to initialize the OFF run.
+        # Device compatibility is separate from the exact CPU optimizer control.
         legacy_model=__import__('fe01.model',fromlist=['build_model']).build_model(runtime_old,device)
-        legacy_model.load_state_dict(selected['model_state_dict'],strict=True)
-        model.load_state_dict(selected['model_state_dict'],strict=True)
+        legacy_model.load_state_dict(initial['model_state_dict'],strict=True)
         legacy_model.eval();model.eval()
         from . import ON
         original_mode=model.absolute_amplitude_mode;model.absolute_amplitude_mode=ON
         from .equivalence import paired_execution, capture_rng, restore_rng, outputs_comparison
+        with paired_execution(device) as devices, torch.no_grad():
+            packed=inputs_to(sample,device);paired_rng=capture_rng(devices)
+            restore_rng(paired_rng);a=legacy_model(*packed)
+            restore_rng(paired_rng);b=model(*packed)
+        initial_forward=outputs_comparison(a,b)
+        write_json(destination/'initial_ON_device_forward_equivalence.json',initial_forward)
+        require(initial_forward['passed'],'Initial ON device forward differs; see initial_ON_device_forward_equivalence.json')
+        reuse['initial_ON_device_forward_comparison']=initial_forward
+        # Check trained ON forward too, without using it to initialize the OFF run.
+        legacy_model.load_state_dict(selected['model_state_dict'],strict=True)
+        model.load_state_dict(selected['model_state_dict'],strict=True)
         with paired_execution(device) as devices, torch.no_grad():
             packed=inputs_to(sample,device);paired_rng=capture_rng(devices)
             restore_rng(paired_rng);a=legacy_model(*packed)

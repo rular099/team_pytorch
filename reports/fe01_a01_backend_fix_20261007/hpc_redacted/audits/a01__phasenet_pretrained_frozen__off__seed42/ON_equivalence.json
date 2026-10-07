@@ -1,0 +1,323 @@
+{
+  "status": "PASS",
+  "initial_equal": true,
+  "initial_state_sha256": {
+    "requested": "c29caf452e11a95dcfe802bfcd36754c163f3fa717c0c56f2dd346bb2a6e8121",
+    "legacy": "c29caf452e11a95dcfe802bfcd36754c163f3fa717c0c56f2dd346bb2a6e8121",
+    "a01": "c29caf452e11a95dcfe802bfcd36754c163f3fa717c0c56f2dd346bb2a6e8121"
+  },
+  "forward_max_abs": 5.960464477539063e-08,
+  "losses": [
+    4.493856430053711,
+    4.493856430053711
+  ],
+  "update_state_equal": false,
+  "update_state_sha256": [
+    "bc42d26b5d1322b56eb0a29d010ca185ff92aa240c2ddc0952d074f60417496e",
+    "254aa23e53f3712573a7c24fa0ede4f6b55107f5f58793147d453d7d1fdca871"
+  ],
+  "update_numerically_equivalent": true,
+  "checks": {
+    "eval_forward": {
+      "passed": true,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 3,
+      "failed_tensors": [],
+      "max_abs": 5.960464477539063e-08,
+      "largest_differences": [
+        {
+          "name": "2",
+          "passed": true,
+          "max_abs": 5.960464477539063e-08,
+          "max_tolerance_ratio": 0.005430682561420096,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "1",
+          "passed": true,
+          "max_abs": 1.3969838619232178e-09,
+          "max_tolerance_ratio": 0.001382852062295542,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "0",
+          "passed": true,
+          "max_abs": 2.3283064365386963e-10,
+          "max_tolerance_ratio": 0.00023251244348585686,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": []
+    },
+    "train_forward": {
+      "passed": true,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 3,
+      "failed_tensors": [],
+      "max_abs": 1.862645149230957e-09,
+      "largest_differences": [
+        {
+          "name": "2",
+          "passed": true,
+          "max_abs": 1.862645149230957e-09,
+          "max_tolerance_ratio": 0.00184334355575017,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "0",
+          "passed": true,
+          "max_abs": 6.984919309616089e-10,
+          "max_tolerance_ratio": 0.0006975373304575705,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "1",
+          "passed": true,
+          "max_abs": 6.984919309616089e-10,
+          "max_tolerance_ratio": 0.0006815833955466753,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": []
+    },
+    "loss": {
+      "passed": true,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 1,
+      "failed_tensors": [],
+      "max_abs": 0.0,
+      "largest_differences": [
+        {
+          "name": "loss",
+          "passed": true,
+          "max_abs": 0.0,
+          "max_tolerance_ratio": 0.0,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": []
+    },
+    "gradients": {
+      "passed": true,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 143,
+      "failed_tensors": [],
+      "max_abs": 1.1920928955078125e-07,
+      "largest_differences": [
+        {
+          "name": "output_model_pga.mu.weight",
+          "passed": true,
+          "max_abs": 1.1920928955078125e-07,
+          "max_tolerance_ratio": 0.018558628296644925,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_pga.sigma.weight",
+          "passed": true,
+          "max_abs": 1.1920928955078125e-07,
+          "max_tolerance_ratio": 0.029492062158015808,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_mag.mu.weight",
+          "passed": true,
+          "max_abs": 1.4901161193847656e-08,
+          "max_tolerance_ratio": 0.006299629108076335,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_mag.sigma.weight",
+          "passed": true,
+          "max_abs": 7.450580596923828e-09,
+          "max_tolerance_ratio": 0.004188193492596036,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_loc.sigma.weight",
+          "passed": true,
+          "max_abs": 6.984919309616089e-10,
+          "max_tolerance_ratio": 0.0006842594319219897,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "waveform_model.projection.weight",
+          "passed": true,
+          "max_abs": 4.656612873077393e-10,
+          "max_tolerance_ratio": 0.0004563703013963209,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "output_model_pga.alpha.weight",
+          "passed": true,
+          "max_abs": 2.9103830456733704e-10,
+          "max_tolerance_ratio": 0.00028907053780594306,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.attn.in_proj_weight",
+          "passed": true,
+          "max_abs": 2.3283064365386963e-10,
+          "max_tolerance_ratio": 0.00023028901213911784,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.attn.out_proj.weight",
+          "passed": true,
+          "max_abs": 2.3283064365386963e-10,
+          "max_tolerance_ratio": 0.00022999867068128303,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "layernorm.weight",
+          "passed": true,
+          "max_abs": 1.1641532182693481e-10,
+          "max_tolerance_ratio": 0.00011567284343248188,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": []
+    },
+    "updated_state": {
+      "passed": true,
+      "atol": 1e-06,
+      "rtol": 1e-05,
+      "tensors": 257,
+      "failed_tensors": [],
+      "max_abs": 4.023313522338867e-07,
+      "largest_differences": [
+        {
+          "name": "event_query_token",
+          "passed": true,
+          "max_abs": 4.023313522338867e-07,
+          "max_tolerance_ratio": 0.33507424466524416,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "waveform_model.projection.weight",
+          "passed": true,
+          "max_abs": 3.203749656677246e-07,
+          "max_tolerance_ratio": 0.19822518572870124,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.attn.in_proj_weight",
+          "passed": true,
+          "max_abs": 2.60770320892334e-07,
+          "max_tolerance_ratio": 0.23743180718945786,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.attn.in_proj_bias",
+          "passed": true,
+          "max_abs": 1.4850536800281589e-07,
+          "max_tolerance_ratio": 0.14850522097975954,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.attn.in_proj_weight",
+          "passed": true,
+          "max_abs": 1.3969838619232178e-07,
+          "max_tolerance_ratio": 0.12036148463175937,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.attn.in_proj_bias",
+          "passed": true,
+          "max_abs": 1.3612997307177466e-07,
+          "max_tolerance_ratio": 0.13612992252941802,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "pga_cross_attention.query_norm.weight",
+          "passed": true,
+          "max_abs": 1.1920928955078125e-07,
+          "max_tolerance_ratio": 0.010834536923982655,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.kv_norm.weight",
+          "passed": true,
+          "max_abs": 5.960464477539063e-08,
+          "max_tolerance_ratio": 0.005423334186026089,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "event_cross_attention.query_norm.weight",
+          "passed": true,
+          "max_abs": 5.960464477539063e-08,
+          "max_tolerance_ratio": 0.00542310860112291,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        },
+        {
+          "name": "layernorm.weight",
+          "passed": true,
+          "max_abs": 5.960464477539063e-08,
+          "max_tolerance_ratio": 0.005423529492415779,
+          "mismatched_elements": 0,
+          "reason": "finite FP comparison"
+        }
+      ],
+      "failures": []
+    }
+  },
+  "failed_checks": [],
+  "optimizer_scheduler": [
+    {
+      "lr": 0.000999999618753834,
+      "scheduler_last_epoch": 1,
+      "scheduler_T_max": 2544
+    },
+    {
+      "lr": 0.000999999618753834,
+      "scheduler_last_epoch": 1,
+      "scheduler_T_max": 2544
+    }
+  ],
+  "execution": {
+    "device": "cuda:0",
+    "torch": "1.13.1",
+    "rocm": "5.4.23191-0e6bf66b",
+    "rng_replayed": true,
+    "train_rng_sha256": {
+      "cpu": "a5fa0daaf91f71c63431246d8e8e6bad53d86ac5ff01cbb56a08ae76fc468c97",
+      "cuda": {
+        "0": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    },
+    "cudnn_deterministic": true,
+    "cudnn_benchmark": false,
+    "tf32": false,
+    "controls_scope": "audit only; RNG and backend settings restored on exit"
+  },
+  "scope": "initial checkpoint + fixed mini-batch; no formal training"
+}
