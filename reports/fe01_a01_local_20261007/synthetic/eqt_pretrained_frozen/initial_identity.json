@@ -1,0 +1,6 @@
+{
+  "evidence": "SYNTHETIC downstream; actual STEAD encoders for PN/EQT",
+  "state_sha256": "2274555ff28b30075c18d20aed76d31961896002d6f1bffbb1a66293365256d0",
+  "common_initial_sha256": "9344ab57e8d4d82f0415518be5eb7bc9e727e38d48f80739e52b5d069a9ca496",
+  "production_init_comparison": "NOT_RUN: no production init.pth bytes locally"
+}

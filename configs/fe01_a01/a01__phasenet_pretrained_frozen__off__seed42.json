@@ -1,0 +1,29 @@
+{
+  "extends": "../fe01/formal/formal__phasenet_pretrained_frozen__seed42.json",
+  "run_id": "a01__phasenet_pretrained_frozen__off__seed42",
+  "stage": "a01",
+  "output_root": "${A01_OUTPUT_ROOT}",
+  "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+  "a01": {
+    "original_run": "${FE01_TRAIN_OUTPUT_ROOT}/formal__phasenet_pretrained_frozen__seed42",
+    "population_audit": "${FE01_TRAIN_OUTPUT_ROOT}/audits/formal__phasenet_pretrained_frozen__seed42",
+    "original_selected_epoch": 12,
+    "comparison_kind": "trained_ablation",
+    "original_checkpoint_pins": {
+      "init": {
+        "file_sha256": "ff33a79efb10a71feff74ac58618b4905785e479867d06b397d773be021f4318",
+        "state_sha256": "c29caf452e11a95dcfe802bfcd36754c163f3fa717c0c56f2dd346bb2a6e8121"
+      },
+      "selected": {
+        "file_sha256": "6b672a9ac2a71bf6cb2086db09ca06438f2b517e7558ad2b785e690782259089",
+        "state_sha256": "0bb69dfc3d1b65b3eb210e2ec1304c4a17c13c56da2a0de1efbf979114a3f4be"
+      },
+      "last": {
+        "file_sha256": "1358eae21ba8972ea3dcf929b14251856d79b865adb00be5ecc59f96d73ef439",
+        "state_sha256": "0bb69dfc3d1b65b3eb210e2ec1304c4a17c13c56da2a0de1efbf979114a3f4be"
+      }
+    },
+    "original_common_initial_sha256": "98c3efb9e55a8c5b0afd3dc204b095d2cb3449519e44b78726adcc9b6da1d569",
+    "original_request_csv_sha256": "046d86abe5c43ac30af1ae5d0dcbc247c61596ddd562c80523a5860c47117efe"
+  }
+}

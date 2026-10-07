@@ -1,0 +1,46 @@
+[
+  {
+    "available": 8,
+    "common_queries": 4,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "S00",
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "S05",
+      "S06",
+      "S07"
+    ],
+    "query_ids": [
+      "S08",
+      "S09",
+      "S10",
+      "S11"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "available": 8,
+    "common_queries": 4,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "S00",
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "S05",
+      "S06",
+      "S07"
+    ],
+    "query_ids": [
+      "S08",
+      "S09",
+      "S10",
+      "S11"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  }
+]

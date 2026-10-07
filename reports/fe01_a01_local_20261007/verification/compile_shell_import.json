@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "python_files": [
+    "fe01_a01/__init__.py",
+    "fe01_a01/assets.py",
+    "fe01_a01/availability.py",
+    "fe01_a01/diagnostics.py",
+    "fe01_a01/engine.py",
+    "fe01_a01/evaluation.py",
+    "fe01_a01/identity.py",
+    "fe01_a01/model.py",
+    "fe01_a01/pack.py",
+    "fe01_a01/plotting.py",
+    "fe01_a01/provenance.py",
+    "scripts/fe01_a01/local_diagnostics.py",
+    "scripts/fe01_a01/local_smoke.py",
+    "scripts/fe01_a01/pack_source.py",
+    "scripts/fe01_a01/run.py"
+  ],
+  "imported": [
+    "fe01_a01.__init__",
+    "fe01_a01.assets",
+    "fe01_a01.availability",
+    "fe01_a01.diagnostics",
+    "fe01_a01.engine",
+    "fe01_a01.evaluation",
+    "fe01_a01.identity",
+    "fe01_a01.model",
+    "fe01_a01.pack",
+    "fe01_a01.plotting",
+    "fe01_a01.provenance",
+    "scripts.fe01_a01.local_diagnostics",
+    "scripts.fe01_a01.local_smoke",
+    "scripts.fe01_a01.pack_source",
+    "scripts.fe01_a01.run"
+  ],
+  "shell_files": [
+    "scripts/fe01_a01/env.sh",
+    "scripts/fe01_a01/submit.sh",
+    "scripts/fe01_a01/configure.sh",
+    "scripts/fe01_a01/job.sbatch",
+    "scripts/fe01_a01/prepare.sh"
+  ],
+  "original_training_files": 115,
+  "original_training_sha": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea"
+}

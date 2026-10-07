@@ -1,0 +1,15 @@
+{
+  "extends": "../fe01/formal/formal__diting_pretrained_frozen__seed42.json",
+  "run_id": "a01__diting_pretrained_frozen__off__seed42",
+  "stage": "a01",
+  "output_root": "${A01_OUTPUT_ROOT}",
+  "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+  "a01": {
+    "original_run": "${FE01_TRAIN_OUTPUT_ROOT}/formal__team_original_scratch__seed42",
+    "population_audit": "${FE01_TRAIN_OUTPUT_ROOT}/audits/formal__team_original_scratch__seed42",
+    "original_selected_epoch": 11,
+    "comparison_kind": "trained_ablation",
+    "original_request_csv_sha256": "d58a7b410e8d8df5bf46ba6e7022d07740b57bb9d932140c4754d2d57149c8bc"
+  },
+  "pretrained_manifest": "${A01_DITING_MANIFEST}"
+}

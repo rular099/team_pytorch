@@ -1,0 +1,9 @@
+mode,evidence,input_count,joint_max_abs,coords_only_max_abs,coords_only_scope
+physical_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,1,4.656612873077393e-10,0.0014698323793709278,mechanism intervention; NOT a physical scoring population
+physical_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,3,4.656612873077393e-10,0.0014447802677750587,mechanism intervention; NOT a physical scoring population
+physical_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,5,5.820766091346741e-10,0.0007204748690128326,mechanism intervention; NOT a physical scoring population
+physical_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,8,5.820766091346741e-10,1.2246891856193542e-07,mechanism intervention; NOT a physical scoring population
+no_absolute_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,1,6.693881005048752e-10,0.0014698822051286697,mechanism intervention; NOT a physical scoring population
+no_absolute_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,3,6.984919309616089e-10,0.001444841967895627,mechanism intervention; NOT a physical scoring population
+no_absolute_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,5,4.656612873077393e-10,0.000720480689778924,mechanism intervention; NOT a physical scoring population
+no_absolute_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,8,4.656612873077393e-10,1.2211967259645462e-07,mechanism intervention; NOT a physical scoring population

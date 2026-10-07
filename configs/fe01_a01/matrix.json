@@ -1,0 +1,47 @@
+{
+  "seed": 42,
+  "new_training": [
+    {
+      "index": 0,
+      "family": "TEAM",
+      "mode": "OFF",
+      "config": "configs/fe01_a01/a01__team_original_scratch__off__seed42.json",
+      "run_id": "a01__team_original_scratch__off__seed42",
+      "requires_old_ON_reuse": true
+    },
+    {
+      "index": 1,
+      "family": "PhaseNet",
+      "mode": "OFF",
+      "config": "configs/fe01_a01/a01__phasenet_pretrained_frozen__off__seed42.json",
+      "run_id": "a01__phasenet_pretrained_frozen__off__seed42",
+      "requires_old_ON_reuse": true
+    },
+    {
+      "index": 2,
+      "family": "EQT",
+      "mode": "OFF",
+      "config": "configs/fe01_a01/a01__eqt_pretrained_frozen__off__seed42.json",
+      "run_id": "a01__eqt_pretrained_frozen__off__seed42",
+      "requires_old_ON_reuse": true
+    },
+    {
+      "index": 3,
+      "family": "DiTing",
+      "mode": "ON",
+      "config": "configs/fe01_a01/a01__diting_pretrained_frozen__on__seed42.json",
+      "run_id": "a01__diting_pretrained_frozen__on__seed42",
+      "requires_old_ON_reuse": false
+    },
+    {
+      "index": 4,
+      "family": "DiTing",
+      "mode": "OFF",
+      "config": "configs/fe01_a01/a01__diting_pretrained_frozen__off__seed42.json",
+      "run_id": "a01__diting_pretrained_frozen__off__seed42",
+      "requires_old_ON_reuse": false
+    }
+  ],
+  "old_ON_policy": "frozen selected epochs TEAM11/PhaseNet12/EQT10; conditional reuse only",
+  "reuse_failure_policy": "BLOCK matching family; do not add new training silently"
+}

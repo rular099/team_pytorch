@@ -1,0 +1,101 @@
+[
+  {
+    "worktree": "team_pytorch",
+    "head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+    "branch": "zhangb/native-scale-adapter-scaling",
+    "checks": {
+      "head": {
+        "before": "77a9a510fe797029fc00099dd57c1b7e07582ea2b4080b83f4ad89390978dd91",
+        "after": "77a9a510fe797029fc00099dd57c1b7e07582ea2b4080b83f4ad89390978dd91",
+        "equal": true
+      },
+      "branch": {
+        "before": "16d8ff3459501d7a8275488cdea70f875e45e358d21cf41faf1ef4243cdcf0a8",
+        "after": "16d8ff3459501d7a8275488cdea70f875e45e358d21cf41faf1ef4243cdcf0a8",
+        "equal": true
+      },
+      "status": {
+        "before": "fd3a3c822ff2dca43d1025fca47c4ce6b0ef235038ed175901b6133b69a22b92",
+        "after": "fd3a3c822ff2dca43d1025fca47c4ce6b0ef235038ed175901b6133b69a22b92",
+        "equal": true
+      },
+      "staged": {
+        "before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "equal": true
+      },
+      "unstaged": {
+        "before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "equal": true
+      }
+    },
+    "status": "UNCHANGED"
+  },
+  {
+    "worktree": "team_pytorch_fe01",
+    "head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+    "branch": "exp/fe01-feature-extractor-site-effects",
+    "checks": {
+      "head": {
+        "before": "972b88fd7b456435b6ecf91b65f1414f1931719452bad07dda53640d0d0cdfd2",
+        "after": "972b88fd7b456435b6ecf91b65f1414f1931719452bad07dda53640d0d0cdfd2",
+        "equal": true
+      },
+      "branch": {
+        "before": "66d167e4d28feb3b7fc75c6ad986ae238d2d3a09aefd0e91f40f07ca1ac3a8ff",
+        "after": "66d167e4d28feb3b7fc75c6ad986ae238d2d3a09aefd0e91f40f07ca1ac3a8ff",
+        "equal": true
+      },
+      "status": {
+        "before": "f3d5e763d9276ac33811a93cdcda83a8733235fdf500b717f0349253271c109f",
+        "after": "f3d5e763d9276ac33811a93cdcda83a8733235fdf500b717f0349253271c109f",
+        "equal": true
+      },
+      "staged": {
+        "before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "equal": true
+      },
+      "unstaged": {
+        "before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "equal": true
+      }
+    },
+    "status": "UNCHANGED"
+  },
+  {
+    "worktree": "team_pytorch_query_geometry_diagnostics",
+    "head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+    "branch": "exp/v01-velocity-prep-padding-control",
+    "checks": {
+      "head": {
+        "before": "08e217faa2eab53e0529949ecbbf7c7c25e8f1389cdbfb95822f8f8c629bbf72",
+        "after": "08e217faa2eab53e0529949ecbbf7c7c25e8f1389cdbfb95822f8f8c629bbf72",
+        "equal": true
+      },
+      "branch": {
+        "before": "56376894827c9af26ffad8776aef408aeaeea4af35e92d0f18961afb6a3c5e9f",
+        "after": "56376894827c9af26ffad8776aef408aeaeea4af35e92d0f18961afb6a3c5e9f",
+        "equal": true
+      },
+      "status": {
+        "before": "0c9304eb2157a009b18488a9134706124b12b70b1472967ea6415eea54a79e13",
+        "after": "0c9304eb2157a009b18488a9134706124b12b70b1472967ea6415eea54a79e13",
+        "equal": true
+      },
+      "staged": {
+        "before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "equal": true
+      },
+      "unstaged": {
+        "before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "equal": true
+      }
+    },
+    "status": "UNCHANGED"
+  }
+]

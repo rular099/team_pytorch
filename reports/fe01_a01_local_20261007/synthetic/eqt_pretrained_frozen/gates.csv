@@ -1,0 +1,9 @@
+mode,evidence,input_count,waveform_scale_gate,pga_cross_attention.extra_layers.0.attn_gate,pga_cross_attention.extra_layers.0.ffn_gate,pga_cross_attention.extra_layers.1.attn_gate,pga_cross_attention.extra_layers.1.ffn_gate,pga_cross_attention.extra_layers.2.attn_gate,pga_cross_attention.extra_layers.2.ffn_gate
+physical_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,1,0.10000000149011612,0.0,0.0,0.0,0.0,0.0,0.0
+physical_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,3,0.10000000149011612,0.0,0.0,0.0,0.0,0.0,0.0
+physical_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,5,0.10000000149011612,0.0,0.0,0.0,0.0,0.0,0.0
+physical_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,8,0.10000000149011612,0.0,0.0,0.0,0.0,0.0,0.0
+no_absolute_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,1,0.10000000149011612,0.0,0.0,0.0,0.0,0.0,0.0
+no_absolute_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,3,0.10000000149011612,0.0,0.0,0.0,0.0,0.0,0.0
+no_absolute_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,5,0.10000000149011612,0.0,0.0,0.0,0.0,0.0,0.0
+no_absolute_scale_keep_duration,SYNTHETIC_UNTRAINED_DOWNSTREAM,8,0.10000000149011612,0.0,0.0,0.0,0.0,0.0,0.0

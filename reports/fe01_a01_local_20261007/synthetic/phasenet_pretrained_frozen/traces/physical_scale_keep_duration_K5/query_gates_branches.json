@@ -1,0 +1,43 @@
+{
+  "evidence": "SYNTHETIC_UNTRAINED_DOWNSTREAM",
+  "effective_keys": 5,
+  "effective_queries": 4,
+  "gates": {
+    "waveform_scale_gate": 0.10000000149011612,
+    "pga_cross_attention.extra_layers.0.attn_gate": 0.0,
+    "pga_cross_attention.extra_layers.0.ffn_gate": 0.0,
+    "pga_cross_attention.extra_layers.1.attn_gate": 0.0,
+    "pga_cross_attention.extra_layers.1.ffn_gate": 0.0,
+    "pga_cross_attention.extra_layers.2.attn_gate": 0.0,
+    "pga_cross_attention.extra_layers.2.ffn_gate": 0.0
+  },
+  "branches": {
+    "station_adapter_raw_norm": 1.8073930740356445,
+    "preln_wave_emb_norm": 1.8073930740356445,
+    "wave_emb_norm": 2.795344829559326,
+    "station_emb_norm": 3.3613054752349854,
+    "station_residual_emb_norm": 0.39914318919181824,
+    "station_residual_norm_ratio": 0.14278852939605713,
+    "scale_emb_norm": 0.02388848178088665,
+    "gain_scale_emb_norm": 0.0015367527958005667,
+    "scale_trunk_ratio": 0.0005498123937286437,
+    "scale_gate": 0.10000000149011612,
+    "coords_emb_norm": 1.9764235019683838,
+    "pga_cross_attn_entropy_ratio": 0.9943606853485107,
+    "pga_cross_extra_layer1_attn_gate": 0.0,
+    "pga_cross_extra_layer1_ffn_gate": 0.0,
+    "pga_cross_extra_layer2_attn_gate": 0.0,
+    "pga_cross_extra_layer2_ffn_gate": 0.0,
+    "pga_cross_extra_layer3_attn_gate": 0.0,
+    "pga_cross_extra_layer3_ffn_gate": 0.0,
+    "pga_cross_extra_attn_gate_mean": 0.0,
+    "pga_cross_extra_attn_gate_max_abs": 0.0,
+    "pga_cross_extra_ffn_gate_mean": 0.0,
+    "pga_cross_extra_ffn_gate_max_abs": 0.0,
+    "event_cross_attn_entropy_ratio": 0.9990523457527161
+  },
+  "first_residual": true,
+  "first_residual_attention_multiplier": 1.0,
+  "query_gradient_path": "eval + enable_grad; no outer no_grad/cache; no optimizer",
+  "elevation_derivative": "NOT_RUN: metadata unit not certified"
+}

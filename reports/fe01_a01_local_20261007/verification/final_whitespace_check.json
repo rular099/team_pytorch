@@ -1,0 +1,5 @@
+{
+  "status": "PASS",
+  "file": "fe01_a01/model.py",
+  "change": "removed trailing empty line; AST identical to executed diagnostic version"
+}

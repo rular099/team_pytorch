@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "initial_equal": true,
+  "forward_max_abs": 0.0,
+  "losses": [
+    4.4826340675354,
+    4.4826340675354
+  ],
+  "update_state_equal": true,
+  "scope": "initial checkpoint + fixed mini-batch; no formal training"
+}

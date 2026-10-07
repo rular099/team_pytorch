@@ -1,0 +1,234 @@
+[
+  {
+    "family": "team_original_scratch",
+    "scope": "first32 frozen train-event metadata; no HDF/label access; not full training journal",
+    "preview_events": 32,
+    "preview_draws": 1152,
+    "plan_sha256": "77dc9bb26f4ebf36a9f4d9d1705a33adc3b5e832723c3fdb5e7ff4b2a0ce975d",
+    "resolved_config_source_sha256": "bd455f6bfed0be42d88e3d34e385db003fd271082a44d11d88174608e9979a6b",
+    "native_n_samples": 10000,
+    "full_budget": {
+      "events": 9084,
+      "samples_per_epoch": 27252,
+      "world_size": 16,
+      "sampler_per_rank": 1703,
+      "microsteps_per_rank": 212,
+      "accumulation": 1,
+      "updates_per_epoch": 212,
+      "total_updates": 2544,
+      "consumed_samples_per_epoch": 27136,
+      "dropped_samples_per_epoch": 116
+    },
+    "sampler_audit": {
+      "draws": 100000,
+      "sample_type": "sampler only; no real labels",
+      "seed": 20261001,
+      "expected": [
+        20000.000000000015,
+        20000.000000000015,
+        20000.000000000164,
+        15000.000000000036,
+        15000.000000000116,
+        10000.000000000282
+      ],
+      "observed": [
+        19912,
+        19927,
+        20000,
+        15137,
+        14995,
+        10029
+      ],
+      "tolerance": [
+        763.9466384404112,
+        763.9466384404112,
+        763.9466384404134,
+        682.4953874381736,
+        682.4953874381752,
+        574.2099788303154
+      ],
+      "passed": true,
+      "retained_probability_mass": 1.0000000000000002,
+      "min_seconds": 1.0,
+      "max_seconds": 90.0,
+      "duplicate_tick_fraction": 0.91779,
+      "per_event_three_draw_duplicate_fraction": 0.0015900159001590016,
+      "bin_boundaries": "left inclusive / right exclusive; 90 included in final bin"
+    },
+    "geometry_selected_ids": "NOT_RUN: production HDF unavailable locally"
+  },
+  {
+    "family": "phasenet_pretrained_frozen",
+    "scope": "first32 frozen train-event metadata; no HDF/label access; not full training journal",
+    "preview_events": 32,
+    "preview_draws": 1152,
+    "plan_sha256": "c04a75ec4fb1c143cec6baa2c8be41744f937b623eee425667e6ed8c7eb6024e",
+    "resolved_config_source_sha256": "0412ac70d0a41b95bfa6c4c7fa8a1aac996df9fc06ef01ede67df4dbaef43065",
+    "native_n_samples": 3001,
+    "full_budget": {
+      "events": 9084,
+      "samples_per_epoch": 27252,
+      "world_size": 16,
+      "sampler_per_rank": 1703,
+      "microsteps_per_rank": 212,
+      "accumulation": 1,
+      "updates_per_epoch": 212,
+      "total_updates": 2544,
+      "consumed_samples_per_epoch": 27136,
+      "dropped_samples_per_epoch": 116
+    },
+    "sampler_audit": {
+      "draws": 100000,
+      "sample_type": "sampler only; no real labels",
+      "seed": 20261001,
+      "expected": [
+        25394.406881884133,
+        25394.406881884133,
+        25394.406881884464,
+        19045.805161413366,
+        4770.974192934037,
+        0.0
+      ],
+      "observed": [
+        25297,
+        25406,
+        25386,
+        19082,
+        4829,
+        0
+      ],
+      "tolerance": [
+        830.8591426085095,
+        830.8591426085095,
+        830.8591426085131,
+        750.0245740122496,
+        409.42636021376495,
+        5.0
+      ],
+      "passed": true,
+      "retained_probability_mass": 0.7875750000000001,
+      "min_seconds": 1.0,
+      "max_seconds": 25.0,
+      "duplicate_tick_fraction": 0.97599,
+      "per_event_three_draw_duplicate_fraction": 0.0024600246002460025,
+      "bin_boundaries": "left inclusive / right exclusive; 90 included in final bin"
+    },
+    "geometry_selected_ids": "NOT_RUN: production HDF unavailable locally"
+  },
+  {
+    "family": "eqt_pretrained_frozen",
+    "scope": "first32 frozen train-event metadata; no HDF/label access; not full training journal",
+    "preview_events": 32,
+    "preview_draws": 1152,
+    "plan_sha256": "df5e97571376778a3f02846b538691fd7c172283062cb74badc7d550ebddbe8c",
+    "resolved_config_source_sha256": "70df1271936f39a8a070298ebcad6c2ed8e0c643a9d16f0642e648adb8f0c34c",
+    "native_n_samples": 6000,
+    "full_budget": {
+      "events": 9084,
+      "samples_per_epoch": 27252,
+      "world_size": 16,
+      "sampler_per_rank": 1703,
+      "microsteps_per_rank": 212,
+      "accumulation": 1,
+      "updates_per_epoch": 212,
+      "total_updates": 2544,
+      "consumed_samples_per_epoch": 27136,
+      "dropped_samples_per_epoch": 116
+    },
+    "sampler_audit": {
+      "draws": 100000,
+      "sample_type": "sampler only; no real labels",
+      "seed": 20261001,
+      "expected": [
+        21505.515061601018,
+        21505.515061601018,
+        21505.51506160112,
+        16129.136296200419,
+        16129.136296200291,
+        3225.1822227956736
+      ],
+      "observed": [
+        21448,
+        21381,
+        21606,
+        16104,
+        16145,
+        3316
+      ],
+      "tolerance": [
+        784.5531785031264,
+        784.5531785031264,
+        784.5531785031278,
+        702.8504518198062,
+        702.8504518198039,
+        340.2042838141524
+      ],
+      "passed": true,
+      "retained_probability_mass": 0.9299940011997602,
+      "min_seconds": 1.0,
+      "max_seconds": 54.99,
+      "duplicate_tick_fraction": 0.94778,
+      "per_event_three_draw_duplicate_fraction": 0.0018600186001860018,
+      "bin_boundaries": "left inclusive / right exclusive; 90 included in final bin"
+    },
+    "geometry_selected_ids": "NOT_RUN: production HDF unavailable locally"
+  },
+  {
+    "family": "diting_pretrained_frozen",
+    "scope": "first32 frozen train-event metadata; no HDF/label access; not full training journal",
+    "preview_events": 32,
+    "preview_draws": 1152,
+    "plan_sha256": "77dc9bb26f4ebf36a9f4d9d1705a33adc3b5e832723c3fdb5e7ff4b2a0ce975d",
+    "resolved_config_source_sha256": "bd455f6bfed0be42d88e3d34e385db003fd271082a44d11d88174608e9979a6b",
+    "native_n_samples": 10000,
+    "full_budget": {
+      "events": 9084,
+      "samples_per_epoch": 27252,
+      "world_size": 16,
+      "sampler_per_rank": 1703,
+      "microsteps_per_rank": 212,
+      "accumulation": 1,
+      "updates_per_epoch": 212,
+      "total_updates": 2544,
+      "consumed_samples_per_epoch": 27136,
+      "dropped_samples_per_epoch": 116
+    },
+    "sampler_audit": {
+      "draws": 100000,
+      "sample_type": "sampler only; no real labels",
+      "seed": 20261001,
+      "expected": [
+        20000.000000000015,
+        20000.000000000015,
+        20000.000000000164,
+        15000.000000000036,
+        15000.000000000116,
+        10000.000000000282
+      ],
+      "observed": [
+        19912,
+        19927,
+        20000,
+        15137,
+        14995,
+        10029
+      ],
+      "tolerance": [
+        763.9466384404112,
+        763.9466384404112,
+        763.9466384404134,
+        682.4953874381736,
+        682.4953874381752,
+        574.2099788303154
+      ],
+      "passed": true,
+      "retained_probability_mass": 1.0000000000000002,
+      "min_seconds": 1.0,
+      "max_seconds": 90.0,
+      "duplicate_tick_fraction": 0.91779,
+      "per_event_three_draw_duplicate_fraction": 0.0015900159001590016,
+      "bin_boundaries": "left inclusive / right exclusive; 90 included in final bin"
+    },
+    "geometry_selected_ids": "NOT_RUN: production HDF unavailable locally"
+  }
+]
