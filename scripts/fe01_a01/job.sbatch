@@ -4,7 +4,7 @@ set -euo pipefail
 stage=${1:?environment|audit|diagnostics|pilot|train|eval|pack}
 source "${A01_CODE_ROOT:?}/scripts/fe01_a01/env.sh"
 index=${SLURM_ARRAY_TASK_ID:-0}
-args=(scripts/fe01_a01/run.py "$stage" --index "$index" --output "$A01_OUTPUT_ROOT" --device cuda --world "$((A01_TRAIN_NODES*A01_DEVICES_PER_NODE))")
+args=(scripts/fe01_a01/run.py "$stage" --index "$index" --output "$A01_OUTPUT_ROOT" --device cuda --world "$((A01_TRAIN_NODES*A01_DEVICES_PER_NODE))" --probe-cap "${A01_PROBE_CAP:-2}")
 case "$stage" in
  environment) args+=(--output "$A01_OUTPUT_ROOT/environment");;
  audit|diagnostics|pilot|eval|pack) ;;

@@ -98,6 +98,8 @@ RT55/RT61 的下游网络不充当 DiTing ON；只复用已认证的 DiTing **�
   默认每节点申请64GB主机内存，适合大 encoder 的只读载入；可按节点容量调整。
   更改节点/卡数会改变 world size，不能据 global batch 相同就绕过可比性门控。
 - identity/audit 需要原 resolved config、protocol lock、best/last checkpoint、原 audit 数据声明。
+  首轮诊断默认每个预定分层2个 decision，约不超过80个/模型，减少原生大 encoder 重复前向；
+  `A01_PROBE_CAP` 可设为1–32，实际数量与缺项写入 probe manifest。训练与评价人口不受此参数影响。
   init 缺失时只有完整重建状态指纹与冻结 inventory 一致才允许继续。
 - DiTing ON/OFF 都必须有匹配的 init 和采样门控。旧预训练清单不会被修改；
   如需注册既有 DiTing encoder，只写入 A01 输出中的专用 manifest。

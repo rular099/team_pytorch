@@ -29,7 +29,7 @@ values=dict(A01_CODE_ROOT=str(code),A01_OUTPUT_ROOT=str(code/'outputs'/str(batch
  A01_CONDA_ENV='zb',A01_MODULES='compiler/devtoolset/7.3.1 compiler/rocm/dtk-23.04 mpi/hpcx/2.11.0/gcc-7.3.1 apps/miniconda/3',
  A01_PARTITION='',A01_TRAIN_NODES='4',A01_DEVICES_PER_NODE='4',A01_CPUS_PER_TASK='2',
  A01_GRES='dcu:4',A01_SINGLE_GRES='dcu:1',A01_TRAIN_MEM='64G',A01_SINGLE_MEM='64G',
- A01_TRAIN_TIME='24:00:00',A01_GATE_TIME='08:00:00',A01_MASTER_PORT='29607',
+ A01_TRAIN_TIME='24:00:00',A01_GATE_TIME='08:00:00',A01_MASTER_PORT='29607',A01_PROBE_CAP='2',
  A01_DITING_MANIFEST=str(diting_manifest),A01_DITING_CHECKPOINT='',A01_DITING_ENCODER_SHA256='')
 Path(dest).write_text(''.join('export '+k+'='+shlex.quote(v)+'\n' for k,v in values.items()))
 Path(dest).chmod(0o600)
