@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Local source bundle from a clean committed A01 tree plus frozen dtbench."""
 import argparse
+import copy
 import io
 import json
 import importlib.util
@@ -18,6 +19,16 @@ def dependency_root():
     if spec is None or not spec.submodule_search_locations:
         raise ValueError('Frozen dtbench source missing')
     return Path(next(iter(spec.submodule_search_locations))).resolve()
+
+
+def archive_member(original):
+    entry=copy.copy(original)
+    entry.name='fe01_a01_source/'+original.name
+    # git archive supplies a PAX "path" for long names. Clear it so tarfile
+    # writes the new prefixed name instead of silently restoring the old path.
+    entry.pax_headers={}
+    entry.mtime=0
+    return entry
 
 
 def main():
@@ -38,8 +49,7 @@ def main():
                 if not entry.isfile() or entry.name.startswith(('reports/','docs/research/')):continue
                 if entry.name.endswith(('.pt','.pth','.hdf5','.zip','.tar.gz','.pdf','.png','.jpg')):continue
                 data=source.extractfile(entry).read()
-                entry.name='fe01_a01_source/'+entry.name;entry.mtime=0
-                archive.addfile(entry,io.BytesIO(data))
+                archive.addfile(archive_member(entry),io.BytesIO(data))
         for path in sorted(dependency.rglob('*')):
             if not path.is_file() or '__pycache__' in path.parts or path.suffix not in ('.py','.yml','.yaml','.json'):continue
             data=path.read_bytes();name='fe01_a01_source/vendor/dtbench/dtbench/'+str(path.relative_to(dependency))

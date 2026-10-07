@@ -24,3 +24,15 @@ def test_source_pack_locates_namespace_dependency_without___file__():
     from scripts.fe01_a01.pack_source import dependency_root
     path=dependency_root()
     assert path.is_dir() and (path/'training/modeling.py').is_file()
+
+
+def test_source_pack_rewrites_PAX_long_path_with_release_prefix(tmp_path):
+    from scripts.fe01_a01.pack_source import archive_member
+    import io
+    long_name='configs/'+('long_name_'*15)+'.json'
+    original=tarfile.TarInfo(long_name);original.size=2;original.pax_headers={'path':long_name}
+    path=tmp_path/'pax.tar'
+    with tarfile.open(path,'w') as f:f.addfile(archive_member(original),io.BytesIO(b'{}'))
+    with tarfile.open(path) as f:
+        assert f.getnames()==['fe01_a01_source/'+long_name]
+    assert original.name==long_name and original.pax_headers['path']==long_name
