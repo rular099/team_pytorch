@@ -52,7 +52,9 @@ def main():
                 archive.addfile(archive_member(entry),io.BytesIO(data))
         for path in sorted(dependency.rglob('*')):
             if not path.is_file() or '__pycache__' in path.parts or path.suffix not in ('.py','.yml','.yaml','.json'):continue
-            data=path.read_bytes();name='fe01_a01_source/vendor/dtbench/dtbench/'+str(path.relative_to(dependency))
+            # Frozen fe01.__init__ inserts ROOT/vendor into sys.path. Match its
+            # original package layout; a doubled dtbench directory changes SHA.
+            data=path.read_bytes();name='fe01_a01_source/vendor/dtbench/'+str(path.relative_to(dependency))
             entry=tarfile.TarInfo(name);entry.size=len(data);entry.mtime=0;archive.addfile(entry,io.BytesIO(data))
         for path in dependency.parent.glob('LICENSE*'):
             data=path.read_bytes();entry=tarfile.TarInfo('fe01_a01_source/vendor/dtbench/'+path.name)
