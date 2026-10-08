@@ -1,5 +1,33 @@
 # TEAM PyTorch 项目交接文档
 
+## 当前入口：FE02（2026-10-08）
+
+当前独立工作目录 `team_pytorch_fe02`，分支 `exp/fe02-event-fusion-readout`，
+从FE01指定基点 `ba4fa7740d9fde5fde87a7b0ae0397037209baf4` 新建worktree。
+只比较真实冻结DiTing前端下 R0/A/B/C/M 五种PGA读出；默认5组seed42，
+不是重新进行四前端矩阵。原FE01、FE01-A01、V01和主RT55 worktree未改动。
+
+主PGA独立MLP覆盖默认None、event-memory默认False，旧模型默认参数名/shape/
+初值及单台多台输出与基点逐张量一致；新配置严格拒绝未知参数/融合冲突。
+M在station memory末尾追加event mapper+type token，每层target attention共同读取，
+事件摘要由原event cross-attention计算；B/C复用post-add及初始0 gate；C绕过PGA
+attention，不是等容量对照。不加人工空间修正、不加载旧训练adapter/heads。
+
+复用FE01采样/全量支持cohort/固定12ep预算/十cell等权noninput选择；
+独立variant-aware概率和空间指标、normal/random、单台多台及配对bootstrap。
+真实audit须记录实际encoder/adapter/YAML/原生feature，完成冻结参数/buffer和梯度门。
+本地unit/mock/synthetic不代表真实encoder或HPC性能。真实audit/train/eval为
+NOT_SUBMITTED；没有新成绩，不可宣布架构优胜。
+
+下一步用户上传 `artifacts/fe02/fe02_source_20261008.tar.gz` 与 `.sha256` 到全新
+`team_pytorch_fe02` 超算目录，复制私有env并填写真实MAE1200M权重路径，按
+[FE02_HPC_RUNBOOK](docs/ai/FE02_HPC_RUNBOOK.md)先手动提交audit、再train。
+默认已复用旧数据根/RT55原项目split，模块含MPI，23:50h，未硬写内存；
+打印器不会调用sbatch/srun。超时只按失败index从last严格恢复，不删除旧输出。
+
+完整实现/验证/风险交接见 [CODEX_RESULT_20261008_FE02](docs/ai/CODEX_RESULT_20261008_FE02.md)。
+下文均为历史快照，不能按其旧NOT_SUBMITTED/test状态描述当前FE01或FE02。
+
 更新时间：2026-08-25（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威入口。先读完本文，再检查超算端状态和 Git

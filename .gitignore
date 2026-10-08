@@ -4,6 +4,7 @@ __pycache__/
 /.venv-fe01/
 /offline_weights/
 /artifacts/fe01/
+/artifacts/fe02/
 /vendor/
 
 # Notebook cache

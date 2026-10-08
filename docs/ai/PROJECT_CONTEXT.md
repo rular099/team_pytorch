@@ -1,5 +1,12 @@
 # RT55 / RT56 项目上下文快照
 
+> 当前分支工作（2026-10-08）：FE02 独立事件融合读出实验，
+> `exp/fe02-event-fusion-readout`，基点 `ba4fa7740d9fde5fde87a7b0ae0397037209baf4`。
+> 入口：[FE02协议](FE02_PROTOCOL.md)、[超算手动提交](FE02_HPC_RUNBOOK.md)、
+> [审阅请求](FE02_REVIEW_REQUEST.md)。只使用真实冻结DiTing，五组架构默认seed42，
+> 本地实现完成、真实audit/train/eval尚未提交；不能用下方历史快照替代FE02当前状态。
+> 原FE01/V01/RT55工作目录与结果保持不变。
+
 更新日期：2026-09-02（Asia/Shanghai）
 
 这是给 GitHub 连接器和新 AI 对话使用的紧凑入口。它不替代原始 metrics、NPZ、checkpoint 或 resolved config。定量分析前仍须核验具体 provenance。

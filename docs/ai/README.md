@@ -1,5 +1,10 @@
 # ChatGPT Project 与 Codex 协作约定
 
+本分支最新任务（2026-10-08）：[FE02事件融合协议](FE02_PROTOCOL.md)、
+[超算脚本/手动命令](FE02_HPC_RUNBOOK.md)、[实现交付](CODEX_RESULT_20261008_FE02.md)、
+[ChatGPT审阅要求](FE02_REVIEW_REQUEST.md)。FE02与FE01前端矩阵独立，默认仅5组seed42；
+真实DiTing/HPC门尚未执行，不宣称训练结果。
+
 更新日期：2026-09-02
 
 ## 1. 协作边界

@@ -16,6 +16,7 @@ def main():
     p.add_argument('--output',required=True)
     p.add_argument('--dtbench-root',required=True,help='Directory containing dtbench/ and LICENSE')
     p.add_argument('--weights-root',help='Optionally include registered offline assets; DiTing may be large')
+    p.add_argument('--include-report-prefix',action='append',default=[],help='Explicit small experiment report directory to include')
     a=p.parse_args();output=Path(a.output)
     if output.exists(): raise FileExistsError(output)
     if subprocess.check_output(['git','-C',str(ROOT),'status','--porcelain']).strip():
@@ -25,7 +26,7 @@ def main():
     excluded=[];selected=[]
     for name in filter(None,names):
         path=Path(name)
-        if (name.startswith('reports/') and not name.startswith('reports/fe01_local_20261001/')) or name.startswith('ppt_figures/') or path.suffix in {'.npz','.pt','.pth','.hdf5','.h5','.zip','.gz','.pptx','.png','.pdf'}:
+        if (name.startswith('reports/') and not name.startswith(tuple(['reports/fe01_local_20261001/']+a.include_report_prefix))) or name.startswith('ppt_figures/') or path.suffix in {'.npz','.pt','.pth','.hdf5','.h5','.zip','.gz','.pptx','.png','.pdf'}:
             excluded.append(name)
         else: selected.append(name)
     archive=subprocess.check_output(['git','-C',str(ROOT),'archive','--format=tar',commit,'--',*selected])

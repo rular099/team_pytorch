@@ -1,0 +1,48 @@
+{
+  "task_id": "20261008-fe02-event-fusion-readout-v1",
+  "base_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+  "branch": "exp/fe02-event-fusion-readout",
+  "date": "2026-10-08",
+  "cwd": "/home/zhangb/work/people/zhangbei/team_claude/team_pytorch_fe02",
+  "scope": "local CPU unit/regression/synthetic only; not real DiTing/Japan/HPC evidence",
+  "focused_regression_suite": {
+    "status": "PASS",
+    "tests": 128,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 50.664,
+    "command_reference": "README.md reproducibility commands",
+    "python": "../team_pytorch_fe01/.venv-fe01/bin/python",
+    "device": "CPU; CUDA_VISIBLE_DEVICES=''"
+  },
+  "fe02_tests": {
+    "status": "PASS",
+    "tests": 14,
+    "factory_baseline_compatibility": "exact state_dict keys/shapes/values and single/multi outputs; strict load",
+    "model_scope": "small synthetic frontend; production dim1000 downstream verified with explicitly mock encoder",
+    "synthetic_end_to_end": "audit hook / one CPU update / full checkpoint / last-only resume / val export",
+    "architecture": "PGA-only MLP, event memory keys/mask/gradient, C bypass, B gate, padding/order/empty-input tests",
+    "protocol": "20 configs / typo-conflict refusal / encoder registry / printer-no-submission / paired probability/spatial tables"
+  },
+  "syntax_compile_whitespace": {
+    "python_compileall": "PASS",
+    "bash_n_eight_launchers": "PASS",
+    "git_diff_check": "PASS",
+    "copied_task_prompt_cmp": "byte-identical PASS"
+  },
+  "legacy_source_preservation": {
+    "status": "PASS",
+    "unchanged_paths": ["pga_configs", "configs/fe01", "train_light.py", "eval_checkpoint.py", "gemini_util_light.py", "fe01/config.py", "fe01/model.py", "fe01/data.py", "fe01/windows.py", "fe01/extractors.py", "fe01/analysis.py"],
+    "source_worktrees": "FE01/main RT55/V01/FE01-A01 were not modified"
+  },
+  "production_checks": {
+    "real_1200m_checkpoint_keys_shapes_native_forward": "NOT_RUN: actual checkpoint is on HPC; user must register the actual path",
+    "real_encoder_frozen_parameters_buffers_adapter_gradients": "NOT_RUN: manual FE02 audit required",
+    "real_japan_cohort_and_data_identity": "NOT_RUN: production annual shards are on HPC",
+    "rocm_ddp_memory_throughput": "NOT_RUN: requires cluster allocation",
+    "formal_training_validation": "NOT_SUBMITTED",
+    "held_out_test": "NOT_RUN; FE02 CLI has no test option",
+    "model_accuracy_or_architecture_winner": "UNKNOWN: no FE02 production results exist"
+  }
+}

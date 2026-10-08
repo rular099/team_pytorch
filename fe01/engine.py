@@ -30,7 +30,7 @@ from .sampling import TimeSampler, stable_rng
 from .windows import CAPABILITIES, build_window, clock
 
 
-def runtime():
+def runtime(experiment=None):
     versions={}
     for name in ['torch','seisbench','numpy','scipy','h5py']:
         try:
@@ -48,7 +48,7 @@ def runtime():
     return dict(host=socket.gethostname(),job_id=os.environ.get('SLURM_JOB_ID'),
                 python=sys.version,versions=versions,rocm=torch.version.hip,
                 device=torch.cuda.get_device_name() if torch.cuda.is_available() else 'cpu',
-                git_commit=commit,git_dirty=dirty,base_commit=BASE_COMMIT,command=sys.argv,
+                git_commit=commit,git_dirty=dirty,base_commit=experiment.BASE_COMMIT if experiment else BASE_COMMIT,command=sys.argv,
                 recorded_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
 
 
@@ -137,6 +137,9 @@ def evaluation_rows(model,cfg,row,elapsed,protocol,device,replay=False,reference
             for name,value in scores.items():
                 record[name]=float(value[index]) if finite[index] else float('nan')
             rows.append(record)
+            if cfg.get('fe02', {}).get('enabled'):
+                record['variant_id'] = cfg['variant_id']
+                record['event_fusion'] = cfg['event_fusion']
     return rows,info
 
 
@@ -241,7 +244,8 @@ def audit_population(cfg,destination):
     cohorts={};exclusions=[];values=[];plans=[];support=[];random_times=[]
     # A family-independent common prefix gives the same cohort/selection keys.
     common=copy.deepcopy(cfg)
-    common.update(model_family='team_original_scratch',native_n_samples=10000)
+    common.update(model_family='diting_pretrained_frozen' if cfg.get('fe02', {}).get('enabled') else 'team_original_scratch',native_n_samples=10000)
+    capabilities = {cfg['model_family']: CAPABILITIES[cfg['model_family']]} if cfg.get('fe02', {}).get('enabled') else CAPABILITIES
     for split in ('train','val'):
         catalog=split_catalog(cfg,split)
         limit=cfg.get('audit_limits',{}).get(split+'_events')
@@ -283,7 +287,7 @@ def audit_population(cfg,destination):
             for elapsed in cfg['realtime']['fixed_times']:
                 _,stop=clock(event['reference_sample'],elapsed,100)
                 start=math.floor(event['reference_sample'])-500
-                for family,cap in CAPABILITIES.items():
+                for family,cap in capabilities.items():
                     support.append(dict(split=split,dataset_id=row.dataset_id,event_id=row.event_id,model_family=family,
                         elapsed_time=elapsed,required_n_samples=stop-start,native_n_samples=cap.native_n_samples,
                         status='supported' if stop-start<=cap.native_n_samples else 'unsupported_history'))
@@ -310,7 +314,9 @@ def audit_population(cfg,destination):
     return dict(audited_cohorts=cohorts,target_normalization=normalization),fingerprint(plan.to_dict('records'))
 
 
-def code_identity():
+def code_identity(experiment=None):
+    if experiment is not None:
+        return experiment.code_identity()
     paths=list((ROOT/'fe01').glob('*.py'))+[ROOT/name for name in ('gemini_models.py','gemini_util_light.py','train_light.py')]
     paths+=list((ROOT/'tools').rglob('*.py'))+list((ROOT/'diting/config').glob('*.yml'))
     import dtbench.training.modeling
@@ -320,14 +326,20 @@ def code_identity():
     return fingerprint(files)
 
 
-def audit(cfg,destination,device='cpu',existing_data_audit=None):
+def audit(cfg,destination,device='cpu',existing_data_audit=None,experiment=None):
     validate(cfg)
+    if experiment is not None:
+        experiment.validate(cfg)
     destination=safe_output(cfg['output_root'],destination)
     if destination.exists() and any(destination.iterdir()):
         raise FileExistsError('Audit output is nonempty; choose a new audit directory')
     destination.mkdir(parents=True,exist_ok=True)
     if existing_data_audit:
         data=json.loads(Path(existing_data_audit).read_text())
+        if experiment is not None:
+            current_data = data_identity(cfg, with_hash=False)
+            if set(current_data['shards']) != set(data['shards']) or current_data['spatial_manifest_sha256'] != data['spatial_manifest_sha256']:
+                raise ValueError('Reusable data audit shard set/spatial identity mismatch')
         if data_identity(cfg,with_hash=False)['split_manifest_sha256']!=data['split_manifest_sha256']:
             raise ValueError('Reusable data audit split mismatch')
         for path,record in data['shards'].items():
@@ -339,13 +351,16 @@ def audit(cfg,destination,device='cpu',existing_data_audit=None):
     write_json(destination/'data_split_audit.json',data)
     effective,population_sha=audit_population(cfg,destination)
     resolved=copy.deepcopy(cfg);resolved.update(effective)
-    model=build_model(resolved,device)
-    write_json(destination/'model_interface_audit.json',model_audit(model))
+    model=(experiment.build_model if experiment else build_model)(resolved,device)
+    write_json(destination/'model_interface_audit.json',
+               experiment.model_audit(model, resolved) if experiment else model_audit(model))
     train=split_catalog(resolved,'train')
     causal=causal_audit(model,resolved,train.iloc[0],device)
     write_json(destination/'causal_boundary_audit.json',causal)
     query_result=query_audit(model,resolved,train.iloc[0],device)
     write_json(destination/'query_independence_audit.json',query_result)
+    if experiment is not None:
+        experiment.extra_audit(model, resolved, train.iloc[0], device, destination)
     effective.update(query_independence_verified=True,
                      query_chunk_size=min(cfg.get('query_chunk_size',1),cfg['model_params']['n_pga_targets']))
     sampler=TimeSampler(max_sample=CAPABILITIES[cfg['model_family']].max_elapsed_sample(),
@@ -357,14 +372,17 @@ def audit(cfg,destination,device='cpu',existing_data_audit=None):
         raise AssertionError('Sampler density audit failed')
     write_json(destination/'sampler_distribution_audit.json',sampler_audit)
     weight_manifest=json.loads(Path(cfg['pretrained_manifest']).read_text()) if 'pretrained' in cfg['model_family'] else None
-    lock=dict(config_sha256=fingerprint(cfg),code_sha256=code_identity(),effective_config=effective,validation_population_sha256=population_sha,
+    lock=dict(config_sha256=fingerprint(cfg),code_sha256=code_identity(experiment),effective_config=effective,validation_population_sha256=population_sha,
               data_identity=data,sampler=sampler_audit,
               model_family=cfg['model_family'],common_times=cfg['realtime']['common_times'],
               pretrained_manifest_sha256=sha256(cfg['pretrained_manifest']) if weight_manifest else None,
               upstream_causality='offline preprocessing not certified',status='AUDIT_PASS')
+    if experiment is not None:
+        lock.update(variant_id=cfg['variant_id'], event_fusion=cfg['event_fusion'],
+                    encoder_checkpoint_sha256=weight_manifest['models']['diting']['files']['weights']['sha256'])
     write_json(destination/'protocol.lock.json',lock)
-    write_json(destination/'runtime.json',runtime())
-    capabilities={f:c.manifest() for f,c in CAPABILITIES.items()}
+    write_json(destination/'runtime.json',runtime(experiment))
+    capabilities={f:c.manifest() for f,c in CAPABILITIES.items() if experiment is None or f == cfg['model_family']}
     capabilities[cfg['model_family']].update(verified_native_forward=True,
         verified_input_lengths=[cfg['native_n_samples']],verification_device=str(device),
         verification='actual registered model forward in this audit; other families not certified here')
@@ -374,11 +392,11 @@ def audit(cfg,destination,device='cpu',existing_data_audit=None):
     print('AUDIT_PASS',destination,flush=True)
 
 
-def check_audit(cfg,audit_dir):
+def check_audit(cfg,audit_dir,experiment=None):
     lock=json.loads((Path(audit_dir)/'protocol.lock.json').read_text())
     if lock['status']!='AUDIT_PASS' or lock['config_sha256']!=fingerprint(cfg):
         raise ValueError('Audit/config identity mismatch; run matching manual audit')
-    if lock['code_sha256']!=code_identity(): raise ValueError('Implementation changed after audit')
+    if lock['code_sha256']!=code_identity(experiment): raise ValueError('Implementation changed after audit')
     if sha256(cfg['data']['split_manifest'])!=lock['data_identity']['split_manifest_sha256']:
         raise ValueError('Frozen split changed after audit')
     if cfg['spatial']['enabled'] and sha256(cfg['spatial']['manifest'])!=lock['data_identity']['spatial_manifest_sha256']:
@@ -404,9 +422,11 @@ def loss(outputs,labels,model,cfg,valid):
     return value+(auxiliary if auxiliary is not None else 0)
 
 
-def train(cfg,audit_dir,resume=False):
+def train(cfg,audit_dir,resume=False,experiment=None):
     validate(cfg)
-    lock=check_audit(cfg,audit_dir)
+    if experiment is not None:
+        experiment.validate(cfg)
+    lock=check_audit(cfg,audit_dir,experiment)
     source_config_sha=fingerprint(cfg)
     cfg=copy.deepcopy(cfg);cfg.update(lock['effective_config'])
     device,rank,world=distributed_device()
@@ -442,7 +462,7 @@ def train(cfg,audit_dir,resume=False):
     total_updates=updates_per_epoch*cfg['training']['epochs']
     if cfg['training']['max_updates']:
         total_updates=min(total_updates,cfg['training']['max_updates'])
-    core=build_model(cfg,device)
+    core=(experiment.build_model if experiment else build_model)(cfg,device)
     model=DistributedDataParallel(core,device_ids=[device.index] if device.type=='cuda' else None,
                                   find_unused_parameters=True) if world>1 else core
     optimizer=torch.optim.Adam([p for p in core.parameters() if p.requires_grad],
@@ -480,16 +500,17 @@ def train(cfg,audit_dir,resume=False):
         if device.type=='cuda' and rng['cuda_rng']:
             torch.cuda.set_rng_state_all(rng['cuda_rng'])
     elif rank==0:
-        write_json(output/'model_interface_audit.json',model_audit(core))
+        write_json(output/'model_interface_audit.json',
+                   experiment.model_audit(core, cfg) if experiment else model_audit(core))
         torch.save(payload(0),output/'init.pth')
     if rank==0:
         write_json(output/'resolved_config.json',cfg)
-        if not (output/'runtime.json').exists(): write_json(output/'runtime.json',runtime())
+        if not (output/'runtime.json').exists(): write_json(output/'runtime.json',runtime(experiment))
         write_json(output/'protocol.lock.json',lock)
     # Each attempt has its own journal. Only a published epoch checkpoint commits
     # its samples; interrupted attempts remain available as forensic evidence.
     attempt=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%f')+f'_rank{rank}'
-    if rank==0: write_json(output/f'runtime_{attempt}.json',runtime())
+    if rank==0: write_json(output/f'runtime_{attempt}.json',runtime(experiment))
     journal=output/'sample_journals';journal.mkdir(exist_ok=True)
     curve_path=output/'training_curves.csv'
     if rank==0 and curves: pd.DataFrame(curves).to_csv(curve_path,index=False)
@@ -570,19 +591,19 @@ def train(cfg,audit_dir,resume=False):
         dist.destroy_process_group()
 
 
-def load_checkpoint(cfg,path,device):
+def load_checkpoint(cfg,path,device,experiment=None):
     checkpoint=torch.load(path,map_location='cpu',weights_only=False)
     allowed={checkpoint.get('source_config_sha256'),fingerprint(checkpoint['config'])}
     if fingerprint(cfg) not in allowed:
         raise ValueError('Checkpoint/config mismatch')
     cfg.clear();cfg.update(copy.deepcopy(checkpoint['config']))
-    model=build_model(cfg,device)
+    model=(experiment.build_model if experiment else build_model)(cfg,device)
     model.load_state_dict(checkpoint['model_state_dict'],strict=True)
     model.eval()
     return model,checkpoint
 
 
-def export_evaluation(cfg,checkpoint_path,destination,device='cpu',split='val',allow_test=False,lock_sha=None,random_manifest=None,test_ledger=None):
+def export_evaluation(cfg,checkpoint_path,destination,device='cpu',split='val',allow_test=False,lock_sha=None,random_manifest=None,test_ledger=None,experiment=None):
     if split=='test' and (not allow_test or lock_sha is None or test_ledger is None):
         raise ValueError('Explicit --allow-test, protocol lock SHA and test exposure ledger required')
     ledger=json.loads(Path(test_ledger).read_text()) if test_ledger else None
@@ -591,10 +612,12 @@ def export_evaluation(cfg,checkpoint_path,destination,device='cpu',split='val',a
     destination=safe_output(cfg['output_root'],destination)
     if destination.exists() and any(destination.iterdir()):
         raise FileExistsError('Evaluation output exists')
-    model,checkpoint=load_checkpoint(cfg,checkpoint_path,device)
+    if experiment is not None:
+        experiment.check_evaluation_contract(cfg, checkpoint_path)
+    model,checkpoint=load_checkpoint(cfg,checkpoint_path,device,experiment)
     train_lock=Path(checkpoint_path).parent/'protocol.lock.json'
     training_protocol=json.loads(train_lock.read_text())
-    if training_protocol['code_sha256']!=code_identity(): raise ValueError('Inference code differs from training audit')
+    if training_protocol['code_sha256']!=code_identity(experiment): raise ValueError('Inference code differs from training audit')
     if split=='test' and sha256(train_lock)!=lock_sha:
         raise ValueError('Frozen protocol lock hash mismatch')
     random_times=pd.read_csv(random_manifest,dtype={'event_id':str}) if random_manifest else None
@@ -613,7 +636,9 @@ def export_evaluation(cfg,checkpoint_path,destination,device='cpu',split='val',a
         window_protocol=cfg['window']['protocol'],stage=cfg.get('stage'),
         split_manifest_sha256=sha256(cfg['data']['split_manifest']),
         validation_population_sha256=json.loads(train_lock.read_text())['validation_population_sha256'],
-        random_times_manifest_sha256=sha256(random_manifest) if random_manifest else None,runtime=runtime()))
+        random_times_manifest_sha256=sha256(random_manifest) if random_manifest else None,runtime=runtime(experiment),
+        **(dict(variant_id=cfg['variant_id'], event_fusion=cfg['event_fusion'],
+                encoder_checkpoint_sha256=training_protocol['encoder_checkpoint_sha256']) if experiment else {})))
     if ledger is not None:
         write_json(destination/'test_exposure_ledger.json',dict(**ledger,current_evaluation=dict(
             checkpoint_sha256=checkpoint_sha,protocol_lock_sha256=lock_sha,config_sha256=fingerprint(cfg),split=split)))

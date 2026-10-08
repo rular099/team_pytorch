@@ -4353,7 +4353,7 @@ class FullModel(nn.Module):
                  dpk_compare_encoder=True,
                  dpk_encoder_policy='auto',
                  dpk_weight_temperature=1.0,
-                 dpk_weight_resample='max'):
+                 dpk_weight_resample='max', pga_event_memory=False):
         super().__init__()
         self.waveform_model = waveform_model
         self.position_embedding = position_embedding
@@ -4480,6 +4480,15 @@ class FullModel(nn.Module):
         self._last_station_distinctive_local_residual_pred = None
         self._last_station_distinctive_local_absolute_pred = None
         self.pga_use_event_context = bool(pga_use_event_context)
+        self.pga_event_memory = bool(pga_event_memory)
+        if self.pga_event_memory and (
+            no_event_token or event_readout_mode != 'event_cross_attention'
+            or pga_readout_mode != 'target_cross_attention'
+            or station_context_mode != 'off' or pga_use_event_context
+            or pga_distance_bias or use_rope or use_target_temporal_pooling
+        ):
+            raise ValueError('pga_event_memory requires event/target cross-attention, '
+                             'station context off, no post-add, distance bias, RoPE or temporal pooling')
         self.pga_attention_diagnostics = bool(pga_attention_diagnostics)
         self.pga_mask_sanity_check = bool(pga_mask_sanity_check)
         if pga_readout_layers is None:
@@ -4717,6 +4726,14 @@ class FullModel(nn.Module):
         else:
             self.pga_event_context_proj = None
             self.pga_event_context_gate = None
+        # Opt-in only: no new tensors or RNG draws on the RT55/FE01 default path.
+        if self.pga_event_memory:
+            self.pga_event_memory_mapper = nn.Linear(emb_dim, emb_dim)
+            self.pga_event_memory_type = nn.Parameter(torch.empty(1, 1, emb_dim))
+            nn.init.normal_(self.pga_event_memory_type, std=float(query_token_init_range))
+        else:
+            self.pga_event_memory_mapper = None
+            self.register_parameter('pga_event_memory_type', None)
         self.vs30_additive_enabled = self.use_vs30 and self.vs30_injection_mode in ('additive', 'both')
         self.vs30_site_affine_enabled = self.use_vs30 and self.vs30_injection_mode in ('pga_site_affine', 'both')
         if self.vs30_additive_enabled:
@@ -6097,6 +6114,7 @@ class FullModel(nn.Module):
                 self.use_target_temporal_pooling
                 or self.station_context_mode == 'layerwise_station_target'
                 or self.pga_temporal_residual_head is not None
+                or self.pga_event_memory
             )
         ):
             event_query = self.event_query_token.expand(station_memory_emb.shape[0], 1, -1)
@@ -6198,14 +6216,25 @@ class FullModel(nn.Module):
                             self._last_diag['temporal_pool_gate_max_abs'] = temp_gates.abs().max()
                     self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(4.0).detach()
                 else:
+                    pga_memory, pga_memory_valid = station_memory_emb, sv
+                    pga_memory_coords = coords_abs
+                    if self.pga_event_memory:
+                        if not sv.any(-1).all():
+                            raise ValueError('Event memory cannot replace missing station observations')
+                        event_token = self.pga_event_memory_mapper(event_emb).unsqueeze(1)
+                        event_token = event_token + self.pga_event_memory_type
+                        pga_memory = torch.cat([station_memory_emb, event_token], dim=1)
+                        pga_memory_valid = torch.cat([sv, torch.ones_like(sv[:, :1])], dim=1)
+                        # The summary is not a physical station; no fabricated coordinates.
+                        pga_memory_coords = None
                     pga_readout_emb = self.pga_cross_attention(
                         pga_query_emb,
-                        station_memory_emb,
-                        sv,
+                        pga_memory,
+                        pga_memory_valid,
                         query_coords=pga_targets_abs,
-                        station_coords=coords_abs,
+                        station_coords=pga_memory_coords,
                     )
-                    self._record_cross_attention_diag('pga_cross', self.pga_cross_attention, sv)
+                    self._record_cross_attention_diag('pga_cross', self.pga_cross_attention, pga_memory_valid)
                     self._record_readout_gate_diag('pga_cross', self.pga_cross_attention)
                     self._last_diag['pga_readout_mode'] = pga_readout_emb.new_tensor(3.0).detach()
             elif self.pga_readout_mode == 'query_no_transformer':
@@ -7113,6 +7142,8 @@ def build_transformer_model(max_stations,
                             diting_args=None,
                             station_waveform_model=None,
                             full_model_class=None,
+                            pga_event_memory=False,
+                            pga_output_mlp_dims=None,
                             **kwargs):
     if kwargs:
         print(f'Warning: Unused model parameters: {", ".join(kwargs.keys())}')
@@ -7217,11 +7248,17 @@ def build_transformer_model(max_stations,
         output_model_loc = MixtureOutput((output_location_dims[-1],), n=loc_components, d=3, bias_mu=bias_loc_mu,activation=None,
                                          bias_sigma=bias_loc_sigma)
 
-    mlp_pga = MLP((emb_dim,), output_mlp_dims, activation=activation)
+    if pga_output_mlp_dims is not None and (
+        not isinstance(pga_output_mlp_dims, (list, tuple)) or not pga_output_mlp_dims
+        or any(type(width) is not int or width <= 0 for width in pga_output_mlp_dims)
+    ):
+        raise ValueError('pga_output_mlp_dims must be a nonempty positive-integer list')
+    main_pga_dims = output_mlp_dims if pga_output_mlp_dims is None else pga_output_mlp_dims
+    mlp_pga = MLP((emb_dim,), main_pga_dims, activation=activation)
     if output_distribution == 'point':
-        output_model_pga = PointOutput((output_mlp_dims[-1],), d=1, bias_mu=0, activation=None)
+        output_model_pga = PointOutput((main_pga_dims[-1],), d=1, bias_mu=0, activation=None)
     else:
-        output_model_pga = MixtureOutput((output_mlp_dims[-1],), n=pga_components, bias_mu=0, bias_sigma=1, activation=None)
+        output_model_pga = MixtureOutput((main_pga_dims[-1],), n=pga_components, bias_mu=0, bias_sigma=1, activation=None)
 
     # Module instantiation
     position_embedding = PositionEmbedding(wavelengths=wavelength, emb_dim=emb_dim, borehole=borehole, rotation=rotation, rotation_anchor=rotation_anchor)
@@ -7506,6 +7543,7 @@ def build_transformer_model(max_stations,
                              station_context_mode=station_context_mode,
                              station_context_gate_init=station_context_gate_init,
                              pga_use_event_context=pga_use_event_context,
+                             pga_event_memory=pga_event_memory,
                              pga_event_context_init_gate=pga_event_context_init_gate,
                              use_vs30=use_vs30,
                              vs30_reference_mps=vs30_reference_mps,
