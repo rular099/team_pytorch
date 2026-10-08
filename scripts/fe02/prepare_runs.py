@@ -49,7 +49,7 @@ def render(destination):
     import csv
     destination.mkdir(parents=True, exist_ok=True)
     with (destination/'runs.tsv').open('w',newline='') as stream:
-        writer=csv.DictWriter(stream,fieldnames=list(configs[0]),delimiter='\t')
+        writer=csv.DictWriter(stream,fieldnames=list(configs[0]),delimiter='\t',lineterminator='\n')
         writer.writeheader();writer.writerows(configs)
     print('FE02: 20 configs prepared (15 formal + 5 optional pilot); default submission is ONLY seed42 (5 formal runs). No jobs submitted.')
 
