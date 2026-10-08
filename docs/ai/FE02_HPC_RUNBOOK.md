@@ -6,13 +6,14 @@
 
 ## 默认入口：只运行这一行（2026-10-08 简化版）
 
-上传新版 `artifacts/fe02/fe02_source_20261008_simple.tar.gz`，在解压后的代码目录运行：
+上传新版 `artifacts/fe02/fe02_source_20261008_autosubmit.tar.gz`，在解压后的代码目录运行：
 
 ```bash
 bash scripts/fe02/submit.sh
 ```
 
-屏幕只输出**一条完整 `sbatch` 命令**，复制粘贴即可提交。无需复制 env 文件、
+脚本**直接调用sbatch提交**，屏幕返回 `Submitted batch job <JobID>`。
+无需再复制命令，无需复制 env 文件、
 手动登记权重、先提交 audit、填写依赖 Job ID，或另提 validation。
 默认数组0–4分别为seed42的R0/A/B/C/M；每组4节点×4DCU，数组并发1，
 单任务23:50h，不指定内存。每组在同一次allocation内依次：
@@ -22,9 +23,9 @@ bash scripts/fe02/submit.sh
 
 数据、split、权重采用已配置的超算路径；代码路径自动取当前脚本所在源码目录。
 旧FE01 data audit不存在时自动完整计算hash，不要求用户另行准备。
-入口不使用登录节点Python/torch；打印时不调用sbatch/srun，也不读取大权重。
-只生成只读环境快照和Slurm日志目录，提交时校验快照SHA，防止复制到另一个shell
-后丢失覆盖值。共享权重登记和同一run均加锁；已有记录不覆盖。
+入口不使用登录节点Python/torch，不读取大权重，登录节点只做环境快照和sbatch提交。
+计算任务开始时校验快照SHA，确保排队期间配置未变。共享权重登记和同一run均加锁；
+已有记录不覆盖。仅需预览时可选 `bash scripts/fe02/submit.sh --dry-run`，默认不是预览。
 
 如果某组超时，只选择那组从last继续，例如B对应index2：
 
@@ -32,7 +33,7 @@ bash scripts/fe02/submit.sh
 FE02_RESUME=1 FE02_INDICES=2 bash scripts/fe02/submit.sh
 ```
 
-同样只复制输出的一条命令。必须已有last与原成功audit；不回退到best，不删除失败
+同样直接提交并返回JobID。必须已有last与原成功audit；不回退到best，不删除失败
 记录。源代码、配置、数据、权重、world size不一致时原训练器拒绝恢复。
 
 下文保留为**可选的分阶段高级操作**，不是启动本轮训练的必读步骤；

@@ -19,12 +19,12 @@ attention，不是等容量对照。不加人工空间修正、不加载旧训�
 本地unit/mock/synthetic不代表真实encoder或HPC性能。真实audit/train/eval为
 NOT_SUBMITTED；没有新成绩，不可宣布架构优胜。
 
-下一步用户上传 `artifacts/fe02/fe02_source_20261008_simple.tar.gz` 与 `.sha256` 到全新
-`team_pytorch_fe02` 超算目录，直接运行 `bash scripts/fe02/submit.sh`，复制输出的
-唯一sbatch命令。计算节点自动登记权重、必要audit、训练与normal/random validation；
+下一步用户上传 `artifacts/fe02/fe02_source_20261008_autosubmit.tar.gz` 与 `.sha256` 到全新
+`team_pytorch_fe02` 超算目录，直接运行 `bash scripts/fe02/submit.sh`，自动sbatch提交
+并返回JobID。计算节点自动登记权重、必要audit、训练与normal/random validation；
 无需私有env副本、手动登记、独立audit任务或Job ID依赖。
 默认已复用旧数据根/RT55原项目split，模块含MPI，23:50h，未硬写内存；
-打印器不会调用sbatch/srun。超时只按失败index从last严格恢复，不删除旧输出。
+submit.sh默认直接sbatch；--dry-run才只打印。超时只按失败index从last严格恢复，不删除旧输出。
 
 完整实现/验证/风险交接见 [CODEX_RESULT_20261008_FE02](docs/ai/CODEX_RESULT_20261008_FE02.md)。
 单入口改动/本地验证见 [CODEX_RESULT_20261008_FE02_SIMPLE_SUBMIT](docs/ai/CODEX_RESULT_20261008_FE02_SIMPLE_SUBMIT.md)。

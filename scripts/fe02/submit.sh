@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Login node: print ONE command. Compute node: execute the complete run.
+# Login node: submit directly. Compute node: execute the complete run.
 set -euo pipefail
 
 if [[ "${1:-}" == --worker ]]; then
     [[ $# == 3 ]] || { echo 'Missing launch environment/hash' >&2; exit 2; }
-    : "${SLURM_JOB_ID:?Copy the printed sbatch command to submit}"
+    : "${SLURM_JOB_ID:?Run bash scripts/fe02/submit.sh to submit}"
     [[ "$(sha256sum -- "$2" | cut -d ' ' -f 1)" == "$3" ]] || {
         echo 'Launch environment changed after command generation' >&2; exit 2;
     }
@@ -13,10 +13,18 @@ if [[ "${1:-}" == --worker ]]; then
     export FE02_ENV_FILE="$2"
     exec bash "${FE02_CODE_ROOT:?}/scripts/fe02/job.sh" run
 fi
-[[ $# == 0 ]] || { echo 'Usage: bash scripts/fe02/submit.sh' >&2; exit 2; }
+dry_run=0
+if [[ $# == 1 && "$1" == --dry-run ]]; then
+    dry_run=1
+elif [[ $# != 0 ]]; then
+    echo 'Usage: bash scripts/fe02/submit.sh [--dry-run]' >&2; exit 2
+fi
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 
-# No Python, torch, modules, checkpoint hashing, or submission on the login node.
+# No Python, torch, modules, or checkpoint hashing on the login node.
+if [[ "$dry_run" == 0 ]]; then
+    command -v sbatch >/dev/null || { echo 'sbatch unavailable: run this on the supercomputer login node' >&2; exit 2; }
+fi
 export FE02_CODE_ROOT="$root"
 source "${FE02_ENV_FILE:-$root/fe02_cluster.env.example}"
 [[ "$FE02_CODE_ROOT" == "$root" ]] || { echo 'FE02_CODE_ROOT must match this uploaded source directory' >&2; exit 2; }
@@ -41,7 +49,7 @@ done
 mkdir -p "$FE02_OUTPUT_ROOT/slurm" "$FE02_OUTPUT_ROOT/launches"
 umask 077
 snapshot=$(mktemp "$FE02_OUTPUT_ROOT/launches/fe02-XXXXXX.env")
-# Freeze overrides so copy/pasting in another shell preserves this invocation.
+# Freeze this invocation's overrides for the queued compute task.
 while IFS= read -r key; do
     [[ "$key" != FE02_ENV_FILE ]] || continue
     printf 'export %s=%q\n' "$key" "${!key}"
@@ -58,5 +66,9 @@ command=(sbatch --job-name=fe02-run --partition="$FE02_PARTITION"
 [[ -z "${FE02_MEMORY:-}" ]] || command+=(--mem="$FE02_MEMORY")
 [[ -z "${FE02_ACCOUNT:-}" ]] || command+=(--account="$FE02_ACCOUNT")
 [[ -z "${FE02_QOS:-}" ]] || command+=(--qos="$FE02_QOS")
-printf '%q ' "${command[@]}" "$root/scripts/fe02/submit.sh" --worker "$snapshot" "$snapshot_sha"
-printf '\n'
+if [[ "$dry_run" == 1 ]]; then
+    printf '%q ' "${command[@]}" "$root/scripts/fe02/submit.sh" --worker "$snapshot" "$snapshot_sha"
+    printf '\n'
+else
+    exec "${command[@]}" "$root/scripts/fe02/submit.sh" --worker "$snapshot" "$snapshot_sha"
+fi

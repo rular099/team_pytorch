@@ -76,8 +76,31 @@ exec "$@"
                         FE02_TEST_TRACE=str(self.trace), PATH=str(self.bins) + ':' + os.environ['PATH'])
 
     def print_command(self, **overrides):
-        return subprocess.run(['bash', str(self.scripts / 'submit.sh')],
+        return subprocess.run(['bash', str(self.scripts / 'submit.sh'), '--dry-run'],
                               env={**self.env, **overrides}, capture_output=True, text=True)
+
+    def test_default_submits_once_and_returns_job_id_without_copy_paste(self):
+        called = Path(self.temp.name) / 'sbatch-args'
+        sbatch = self.bins / 'sbatch'
+        sbatch.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > ' + shlex.quote(str(called)) +
+                          '\necho "Submitted batch job 98765"\n')
+        result = subprocess.run(['bash', str(self.scripts / 'submit.sh')],
+                                env=self.env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), 'Submitted batch job 98765')
+        args = called.read_text().splitlines()
+        self.assertIn('--array=0-4%1', args)
+        self.assertEqual(args[-4], str(self.scripts / 'submit.sh'))
+        self.assertEqual(args[-3], '--worker')
+        self.assertTrue(Path(args[-2]).is_file())
+        self.assertFalse(self.trace.exists())
+
+    def test_submission_failure_is_returned_without_retry(self):
+        result = subprocess.run(['bash', str(self.scripts / 'submit.sh')],
+                                env=self.env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 99)
+        self.assertEqual(len(list((self.out / 'launches').glob('*.env'))), 1)
+        self.assertFalse(self.trace.exists())
 
     def worker(self, command, spool_copy=False):
         args = shlex.split(command)[-4:]
