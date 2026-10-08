@@ -4,6 +4,8 @@
 [超算脚本/手动命令](FE02_HPC_RUNBOOK.md)、[实现交付](CODEX_RESULT_20261008_FE02.md)、
 [ChatGPT审阅要求](FE02_REVIEW_REQUEST.md)。FE02与FE01前端矩阵独立，默认仅5组seed42；
 真实DiTing/HPC门尚未执行，不宣称训练结果。
+默认只需 `bash scripts/fe02/submit.sh`，复制唯一输出命令；登记/audit/训练/validation
+在计算节点内串联，不再要求用户手动分拆。见[简化入口交付](CODEX_RESULT_20261008_FE02_SIMPLE_SUBMIT.md)。
 
 更新日期：2026-09-02
 

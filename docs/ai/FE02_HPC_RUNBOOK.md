@@ -4,6 +4,40 @@
 不需要先重复前轮的两组 smoke；五组正式 audit 包含必须的真实前向/梯度/冻结门，
 通过即可正式训练。默认只 seed42，不提交 test、不自动扩展15组。
 
+## 默认入口：只运行这一行（2026-10-08 简化版）
+
+上传新版 `artifacts/fe02/fe02_source_20261008_simple.tar.gz`，在解压后的代码目录运行：
+
+```bash
+bash scripts/fe02/submit.sh
+```
+
+屏幕只输出**一条完整 `sbatch` 命令**，复制粘贴即可提交。无需复制 env 文件、
+手动登记权重、先提交 audit、填写依赖 Job ID，或另提 validation。
+默认数组0–4分别为seed42的R0/A/B/C/M；每组4节点×4DCU，数组并发1，
+单任务23:50h，不指定内存。每组在同一次allocation内依次：
+初始化模块/zb环境 → 自动登记或核验同一个真实DiTing权重 → 必要audit →
+12ep训练 → 固定时刻normal/random validation。audit失败立即停止，不启动训练。
+这里只把原有必需阶段串联，未改变模型、预算、数据、选择规则或held-out test。
+
+数据、split、权重采用已配置的超算路径；代码路径自动取当前脚本所在源码目录。
+旧FE01 data audit不存在时自动完整计算hash，不要求用户另行准备。
+入口不使用登录节点Python/torch；打印时不调用sbatch/srun，也不读取大权重。
+只生成只读环境快照和Slurm日志目录，提交时校验快照SHA，防止复制到另一个shell
+后丢失覆盖值。共享权重登记和同一run均加锁；已有记录不覆盖。
+
+如果某组超时，只选择那组从last继续，例如B对应index2：
+
+```bash
+FE02_RESUME=1 FE02_INDICES=2 bash scripts/fe02/submit.sh
+```
+
+同样只复制输出的一条命令。必须已有last与原成功audit；不回退到best，不删除失败
+记录。源代码、配置、数据、权重、world size不一致时原训练器拒绝恢复。
+
+下文保留为**可选的分阶段高级操作**，不是启动本轮训练的必读步骤；
+旧四条命令打印器仅用于需要人工分拆任务的情况。主入口已经代办登记/audit/train/eval。
+
 ## 1. 上传新源码包
 
 本地交付文件位于 `team_pytorch_fe02/artifacts/fe02/fe02_source_20261008.tar.gz`

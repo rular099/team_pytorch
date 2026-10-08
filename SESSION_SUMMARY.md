@@ -19,13 +19,15 @@ attention，不是等容量对照。不加人工空间修正、不加载旧训�
 本地unit/mock/synthetic不代表真实encoder或HPC性能。真实audit/train/eval为
 NOT_SUBMITTED；没有新成绩，不可宣布架构优胜。
 
-下一步用户上传 `artifacts/fe02/fe02_source_20261008.tar.gz` 与 `.sha256` 到全新
-`team_pytorch_fe02` 超算目录，复制私有env并填写真实MAE1200M权重路径，按
-[FE02_HPC_RUNBOOK](docs/ai/FE02_HPC_RUNBOOK.md)先手动提交audit、再train。
+下一步用户上传 `artifacts/fe02/fe02_source_20261008_simple.tar.gz` 与 `.sha256` 到全新
+`team_pytorch_fe02` 超算目录，直接运行 `bash scripts/fe02/submit.sh`，复制输出的
+唯一sbatch命令。计算节点自动登记权重、必要audit、训练与normal/random validation；
+无需私有env副本、手动登记、独立audit任务或Job ID依赖。
 默认已复用旧数据根/RT55原项目split，模块含MPI，23:50h，未硬写内存；
 打印器不会调用sbatch/srun。超时只按失败index从last严格恢复，不删除旧输出。
 
 完整实现/验证/风险交接见 [CODEX_RESULT_20261008_FE02](docs/ai/CODEX_RESULT_20261008_FE02.md)。
+单入口改动/本地验证见 [CODEX_RESULT_20261008_FE02_SIMPLE_SUBMIT](docs/ai/CODEX_RESULT_20261008_FE02_SIMPLE_SUBMIT.md)。
 下文均为历史快照，不能按其旧NOT_SUBMITTED/test状态描述当前FE01或FE02。
 
 更新时间：2026-08-25（Asia/Shanghai）

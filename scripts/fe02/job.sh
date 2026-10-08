@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-action=${1:?audit|train|eval|collect}
+action=${1:?run|audit|train|eval|collect}
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 source "$script_dir/env.sh"
 stage=${FE02_STAGE:-formal}
@@ -11,6 +11,42 @@ config=${selection[0]};run_id=${selection[1]}
 audit_dir="$FE02_OUTPUT_ROOT/audits/$run_id"
 run_dir="$FE02_OUTPUT_ROOT/$run_id"
 case "$action" in
+    run)
+        mkdir -p "$FE02_OUTPUT_ROOT/locks" "$FE02_WEIGHTS_ROOT"
+        # Protect an individual run for the whole pipeline and a shared manifest
+        # during registration, including when explicit array concurrency > 1.
+        exec 9>"$FE02_OUTPUT_ROOT/locks/$run_id.lock"
+        flock -n 9 || { echo "Another task is already running $run_id" >&2; exit 2; }
+        if [[ "${FE02_RESUME:-0}" == 1 ]]; then
+            [[ -f "$run_dir/last.pth" ]] || { echo "Resume requires $run_dir/last.pth" >&2; exit 2; }
+            [[ -f "$audit_dir/protocol.lock.json" ]] || { echo 'Resume requires the original successful audit' >&2; exit 2; }
+        elif [[ -d "$run_dir" && -n "$(ls -A -- "$run_dir")" ]]; then
+            echo "Preserving existing run: $run_dir. Use FE02_RESUME=1 with last.pth." >&2; exit 2
+        fi
+        (
+            flock -x 8
+            "$FE02_PYTHON" scripts/fe02/register_diting.py \
+                --checkpoint "$FE02_DITING_CHECKPOINT" \
+                --output "$FE02_WEIGHTS_ROOT/pretrained_manifest.json" \
+                --source 'Existing DiTing MAE1200M pretraining checkpoint; corpus overlap unknown' \
+                --reuse-existing
+        ) 8>"$FE02_WEIGHTS_ROOT/register.lock"
+        # GPU work stays inside this allocation, not on the login node.
+        unset RANK WORLD_SIZE LOCAL_RANK
+        if [[ ! -f "$audit_dir/protocol.lock.json" ]]; then
+            args=(audit --config "$config" --output "$audit_dir" --device cuda)
+            if [[ -n "${FE02_REUSE_DATA_AUDIT:-}" && -f "$FE02_REUSE_DATA_AUDIT" ]]; then
+                args+=(--reuse-data-audit "$FE02_REUSE_DATA_AUDIT")
+            fi
+            "$FE02_PYTHON" scripts/fe02/run.py "${args[@]}"
+        fi
+        # Existing training code enforces the audit lock, last-only resume, and
+        # fixed config/data/source/world identity. Failed audit never trains.
+        bash "$script_dir/job.sh" train
+        "$FE02_PYTHON" scripts/fe02/run.py eval --config "$config" \
+            --checkpoint "$run_dir/best.pth" --output "$run_dir/evaluation_fixed_val" --device cuda
+        echo "FE02 completed training and normal/random validation: $run_id"
+        ;;
     audit)
         args=(audit --config "$config" --output "$audit_dir" --device cuda)
         if [[ -n "${FE02_REUSE_DATA_AUDIT:-}" ]]; then args+=(--reuse-data-audit "$FE02_REUSE_DATA_AUDIT"); fi
