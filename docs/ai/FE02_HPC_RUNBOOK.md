@@ -1,12 +1,13 @@
 # FE02 超算手动提交（2026-10-08）
 
-本地代码完成不代表真实 DiTing/HPC 验证完成。本轮 **NOT_SUBMITTED**。
+本地代码完成不代表真实 DiTing/HPC 验证完成。用户2026-10-09报告首轮Conda初始化失败；
+本地已修复，修复版尚未在超算验证。未取得真实audit/train/eval结果。
 不需要先重复前轮的两组 smoke；五组正式 audit 包含必须的真实前向/梯度/冻结门，
 通过即可正式训练。默认只 seed42，不提交 test、不自动扩展15组。
 
 ## 默认入口：只运行这一行（2026-10-08 简化版）
 
-上传新版 `artifacts/fe02/fe02_source_20261008_autosubmit.tar.gz`，在解压后的代码目录运行：
+上传新版 `artifacts/fe02/fe02_source_20261009_conda_fix.tar.gz`，在解压后的新代码目录运行：
 
 ```bash
 bash scripts/fe02/submit.sh
@@ -20,6 +21,13 @@ bash scripts/fe02/submit.sh
 初始化模块/zb环境 → 自动登记或核验同一个真实DiTing权重 → 必要audit →
 12ep训练 → 固定时刻normal/random validation。audit失败立即停止，不启动训练。
 这里只把原有必需阶段串联，未改变模型、预算、数据、选择规则或held-out test。
+
+2026-10-09修复 `conda.sh: PS1: unbound variable`：原job.sh已开启nounset，
+被source的env.sh仅写`set -eo pipefail`不会关闭它。现在环境初始化前明确`set +u`、
+给PS1默认空值，并设置CONDA_CHANGEPS1=false；Conda激活后再`set -u`。
+13项本地启动/提交测试通过，包含原失败场景和激活失败立即停止。
+此错误发生在audit/训练前，无需resume，仍使用上面唯一一行直接重提；旧日志保留。
+使用新源码包而不是单换env.sh，避免SOURCE_IDENTITY逐文件hash不一致。
 
 数据、split、权重采用已配置的超算路径；代码路径自动取当前脚本所在源码目录。
 旧FE01 data audit不存在时自动完整计算hash，不要求用户另行准备。

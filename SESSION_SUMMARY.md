@@ -1,6 +1,6 @@
 # TEAM PyTorch 项目交接文档
 
-## 当前入口：FE02（2026-10-08）
+## 当前入口：FE02（2026-10-09）
 
 当前独立工作目录 `team_pytorch_fe02`，分支 `exp/fe02-event-fusion-readout`，
 从FE01指定基点 `ba4fa7740d9fde5fde87a7b0ae0397037209baf4` 新建worktree。
@@ -16,10 +16,10 @@ attention，不是等容量对照。不加人工空间修正、不加载旧训�
 复用FE01采样/全量支持cohort/固定12ep预算/十cell等权noninput选择；
 独立variant-aware概率和空间指标、normal/random、单台多台及配对bootstrap。
 真实audit须记录实际encoder/adapter/YAML/原生feature，完成冻结参数/buffer和梯度门。
-本地unit/mock/synthetic不代表真实encoder或HPC性能。真实audit/train/eval为
-NOT_SUBMITTED；没有新成绩，不可宣布架构优胜。
+本地unit/mock/synthetic不代表真实encoder或HPC性能。用户2026-10-09报告任务在
+Conda初始化时PS1 unbound退出，尚无真实audit/train/eval结果；不可宣布架构优胜。
 
-下一步用户上传 `artifacts/fe02/fe02_source_20261008_autosubmit.tar.gz` 与 `.sha256` 到全新
+下一步用户上传 `artifacts/fe02/fe02_source_20261009_conda_fix.tar.gz` 与 `.sha256` 到全新
 `team_pytorch_fe02` 超算目录，直接运行 `bash scripts/fe02/submit.sh`，自动sbatch提交
 并返回JobID。计算节点自动登记权重、必要audit、训练与normal/random validation；
 无需私有env副本、手动登记、独立audit任务或Job ID依赖。
@@ -28,6 +28,8 @@ submit.sh默认直接sbatch；--dry-run才只打印。超时只按失败index从
 
 完整实现/验证/风险交接见 [CODEX_RESULT_20261008_FE02](docs/ai/CODEX_RESULT_20261008_FE02.md)。
 单入口改动/本地验证见 [CODEX_RESULT_20261008_FE02_SIMPLE_SUBMIT](docs/ai/CODEX_RESULT_20261008_FE02_SIMPLE_SUBMIT.md)。
+Conda启动修复：env.sh显式set +u、初始化PS1、禁用prompt修改，激活后set -u；
+13项启动/提交回归PASS。见[启动修复交接](docs/ai/CODEX_RESULT_20261009_FE02_CONDA_FIX.md)。
 下文均为历史快照，不能按其旧NOT_SUBMITTED/test状态描述当前FE01或FE02。
 
 更新时间：2026-08-25（Asia/Shanghai）

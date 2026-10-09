@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # Only called inside an allocation. Module/conda changes never touch login shell.
 set -eo pipefail
+# This file is sourced by job.sh, which already enabled nounset. Merely omitting
+# -u above does not disable the inherited option. Legacy module/Conda hooks read
+# optional shell variables, so suspend nounset only during bootstrap.
+set +u
+PS1="${PS1-}"
+export CONDA_CHANGEPS1=false
 : "${SLURM_JOB_ID:?Submit manually with sbatch}" "${FE02_ENV_FILE:?}"
 source "$FE02_ENV_FILE"
 if ! type module >/dev/null 2>&1 && [[ -f /etc/profile.d/modules.sh ]]; then source /etc/profile.d/modules.sh; fi
