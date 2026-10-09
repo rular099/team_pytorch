@@ -1,10 +1,24 @@
 #!/usr/bin/env bash
 # Standalone operations launcher. Does not edit authenticated A01 source/gates.
-# LOGIN: inspect [ARRAY_JOB_ID] | probe | retry FAILED_INDICES_OR_failed
-set -euo pipefail
-self=$(readlink -f "${BASH_SOURCE[0]}")
-tool_dir=$(dirname "$self")
+# LOGIN: inspect [ARRAY_JOB_ID] | check [failed OR 0,2,4] | probe | retry failed
+set -Eeuo pipefail
 mode=${1:-inspect}
+invoked_file=$(readlink -f "${BASH_SOURCE[0]}")
+self=$invoked_file
+tool_dir=$(dirname "$invoked_file")
+if [[ "$mode" == _* ]]; then
+  # sbatch executes a node-local spool copy. Remote srun ranks need shared bytes.
+  self=${A01_RECOVERY_LAUNCHER:?Missing shared launcher path from submission}
+  [[ -f "$self" ]] || { echo "Shared recovery launcher missing: $self" >&2;exit 2; }
+else
+  # Save errors before private-env loading/preflight/mkdir/sbatch can fail.
+  submit_log="${A01_SUBMISSION_LOG_DIR:-$tool_dir}/dcu_${mode}_$(date +%Y%m%dT%H%M%S)_$$.log"
+  (umask 077; set -o noclobber; : > "$submit_log") || { echo "Cannot create submission log: $submit_log" >&2;exit 2; }
+  exec > >(tee -a "$submit_log") 2> >(tee -a "$submit_log" >&2)
+  printf 'A01_SUBMISSION_LOG=%s\n' "$submit_log" >&2
+  trap 'rc=$?; printf "A01_SUBMISSION_EXIT=%s log=%s\n" "$rc" "$submit_log" >&2' EXIT
+  trap 'rc=$?; printf "A01_SUBMISSION_ERROR rc=%s line=%s mode=%s\n" "$rc" "$LINENO" "$mode" >&2' ERR
+fi
 private=${A01_ENV_FILE:-}
 if [[ -z "$private" ]]; then
   for candidate in "$tool_dir/a01.private.env" "$tool_dir/.a01_releases/3ecf060a3334/a01.private.env"; do
@@ -13,8 +27,12 @@ if [[ -z "$private" ]]; then
 fi
 [[ -f "$private" ]] || { echo '找不到私有设置；设置 A01_ENV_FILE 为正在使用的 a01.private.env 绝对路径。' >&2;exit 2; }
 export A01_ENV_FILE=$(readlink -f "$private")
+printf 'A01_STAGE=load_private_settings\n' >&2
 source "$A01_ENV_FILE"
 : "${A01_CODE_ROOT:?}" "${A01_OUTPUT_ROOT:?}" "${A01_TRAIN_NODES:?}" "${A01_DEVICES_PER_NODE:?}"
+if [[ "$mode" != _* ]]; then
+  printf 'A01_CODE_ROOT=%s\nA01_OUTPUT_ROOT=%s\n' "$A01_CODE_ROOT" "$A01_OUTPUT_ROOT" >&2
+fi
 [[ -f "$A01_CODE_ROOT/scripts/fe01_a01/preflight.py" ]] || { echo '需要已部署的 backend_fix A01 release。' >&2;exit 2; }
 export A01_WORLD_SIZE=$((A01_TRAIN_NODES*A01_DEVICES_PER_NODE))
 [[ "$A01_WORLD_SIZE" == 16 ]] || { echo '保持已认证的 world16；请核对私有资源设置。' >&2;exit 2; }
@@ -120,8 +138,8 @@ case "$mode" in
     exit 0
     ;;
   probe) indices='';;
-  retry)
-    indices=${2:?Usage: retry failed OR retry 0,2,4; only selected empty failed runs}
+  check|retry)
+    indices=${2:-failed}
     [[ "$indices" != failed ]] || indices=$(scan "" indices)
     [[ "$indices" =~ ^[0-4](,[0-4])*$ ]] || { echo '使用逗号分隔的索引，如0,2,4；或failed自动识别旧启动断言。' >&2;exit 2; }
     IFS=, read -r -a chosen <<< "$indices"
@@ -129,28 +147,47 @@ case "$mode" in
     for index in "${chosen[@]}"; do
       [[ -z "${seen[$index]:-}" ]] || { echo '重复索引。' >&2;exit 2; }
       seen[$index]=1
+      printf 'A01_STAGE=preflight index=%s\n' "$index" >&2
       "${A01_CONFIG_PYTHON:-python3}" "$A01_CODE_ROOT/scripts/fe01_a01/preflight.py" train --indices "$index" --output "$A01_OUTPUT_ROOT"
     done
+    if [[ "$mode" == check ]]; then
+      "${A01_CONFIG_PYTHON:-python3}" - "$A01_OUTPUT_ROOT" <<'PY'
+import json,os,sys
+from pathlib import Path
+root=Path(sys.argv[1]);operations=root/'operations'
+folders=sorted(operations.glob('dcu_*'),key=lambda p:p.name)[-5:] if operations.is_dir() else []
+print(json.dumps(dict(output_root=str(root),output_exists=root.exists(),output_writable=os.access(root,os.W_OK),
+    operations_exists=operations.is_dir(),operations_writable=os.access(operations,os.W_OK),
+    recent_operations=[dict(path=str(p),files=sorted(c.name for c in p.iterdir())) for p in folders if p.is_dir()]),ensure_ascii=False,indent=2))
+if not os.access(root,os.W_OK) or (operations.exists() and not os.access(operations,os.W_OK)):
+    raise SystemExit('输出目录不可写；check没有提交任何作业。')
+PY
+      printf 'A01_CHECK_PASS indices=%s; no sbatch/srun, no training.\n' "$indices"
+      exit 0
+    fi
     ;;
-  *) echo 'Usage: inspect [ARRAY_JOB_ID] | probe | retry failed | retry 0,2,4' >&2;exit 2;;
+  *) echo 'Usage: inspect [ARRAY_JOB_ID] | check [failed OR 0,2,4] | probe | retry failed | retry 0,2,4' >&2;exit 2;;
 esac
 
 # This part runs only for a user-invoked probe/retry, never for inspect/compute.
+printf 'A01_STAGE=create_operations_directory\n' >&2
 mkdir -p "$A01_OUTPUT_ROOT/operations"
 operation=$(mktemp -d "$A01_OUTPUT_ROOT/operations/dcu_${mode}_$(date +%Y%m%dT%H%M%S)_XXXXXX")
+printf 'A01_OPERATION_DIRECTORY=%s\n' "$operation" >&2
 cp "$self" "$operation/dcu_recovery.sh"
 cp "$A01_ENV_FILE" "$operation/a01.private.env"
 chmod 500 "$operation/dcu_recovery.sh"
 chmod 600 "$operation/a01.private.env"
 export A01_ENV_FILE="$operation/a01.private.env"
+export A01_RECOVERY_LAUNCHER="$operation/dcu_recovery.sh"
 sha256sum "$operation/dcu_recovery.sh" > "$operation/launcher.sha256"
 sha256sum "$operation/a01.private.env" > "$operation/private_settings.sha256"
 if [[ -f "$A01_CODE_ROOT/FE01_A01_SOURCE_IDENTITY.json" ]]; then
   cp "$A01_CODE_ROOT/FE01_A01_SOURCE_IDENTITY.json" "$operation/core_source_identity.json"
 fi
-printf 'mode=%s\nindices=%s\ncode=%s\noutput=%s\nnodes=%s\ndevices_per_node=%s\nworld=%s\ngres=%s\nexclude=%s\n' \
+printf 'mode=%s\nindices=%s\ncode=%s\noutput=%s\nnodes=%s\ndevices_per_node=%s\nworld=%s\ngres=%s\nexclude=%s\nsubmission_log=%s\n' \
   "$mode" "$indices" "$A01_CODE_ROOT" "$A01_OUTPUT_ROOT" "$A01_TRAIN_NODES" "$A01_DEVICES_PER_NODE" \
-  "$A01_WORLD_SIZE" "$A01_GRES" "${A01_EXCLUDE_NODES:-}" > "$operation/request.txt"
+  "$A01_WORLD_SIZE" "$A01_GRES" "${A01_EXCLUDE_NODES:-}" "$submit_log" > "$operation/request.txt"
 args=(--parsable --chdir="$A01_CODE_ROOT" --export=ALL --job-name="a01_dcu_$mode" \
   --nodes="$A01_TRAIN_NODES" --ntasks-per-node="$A01_DEVICES_PER_NODE" --cpus-per-task="$A01_CPUS_PER_TASK" \
   --gres="$A01_GRES" --mem="${A01_TRAIN_MEM:-64G}" --output="$operation/%A_%a.out" --error="$operation/%A_%a.err")
@@ -161,6 +198,7 @@ if [[ "$mode" == probe ]]; then
 else
   args+=(--time="$A01_TRAIN_TIME" --array="$indices%3");action=_job_retry
 fi
+printf 'A01_STAGE=sbatch\n' >&2
 job=$(sbatch "${args[@]}" "$operation/dcu_recovery.sh" "$action")
 printf '%s\t%s\t%s\n' "$mode" "$indices" "$job" > "$operation/job.tsv"
 printf 'SUBMITTED mode=%s indices=%s job=%s\nLogs=%s\n' "$mode" "$indices" "$job" "$operation"

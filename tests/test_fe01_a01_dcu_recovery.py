@@ -6,10 +6,17 @@ from pathlib import Path
 import shlex
 import subprocess
 import sys
+import shutil
 
-from test_fe01_a01_scheduler import ROOT,settings,gates
+from test_fe01_a01_scheduler import ROOT,settings as original_settings,gates
 
 TOOL=ROOT/'scripts/fe01_a01_ops/dcu_recovery.sh'
+
+
+def settings(tmp):
+    env,log=original_settings(tmp)
+    env['A01_SUBMISSION_LOG_DIR']=str(tmp)
+    return env,log
 
 
 def run(env,*args):
@@ -98,7 +105,8 @@ def compute_fixture(tmp):
         'while [[ "$1" != bash ]]; do shift;done\nexport SLURM_PROCID=0 SLURM_LOCALID=0\nexec "$@"\n')
     (fake/'scontrol').write_text('#!/bin/bash\nprintf "synthetic_node\\n"\n')
     for p in fake.iterdir():p.chmod(0o755)
-    env.update(SLURM_JOB_ID='SYNTHETIC_JOB',SLURM_JOB_NUM_NODES='4',SLURM_JOB_NODELIST='synthetic_nodes',SLURM_ARRAY_TASK_ID='2')
+    env.update(SLURM_JOB_ID='SYNTHETIC_JOB',SLURM_JOB_NUM_NODES='4',SLURM_JOB_NODELIST='synthetic_nodes',SLURM_ARRAY_TASK_ID='2',
+               A01_RECOVERY_LAUNCHER=str(TOOL))
     env.pop('SLURM_PROCID',None);env.pop('SLURM_LOCALID',None)
     return env,log
 
@@ -150,3 +158,56 @@ def test_real_probe_program_records_initialization_exception_as_JSON(tmp_path):
     record=json.loads(next(line.split('A01_DCU_PROBE ',1)[1] for line in result.stdout.splitlines() if line.startswith('A01_DCU_PROBE ')))
     assert record['status']=='FAIL' and not record['available'] and record['count']==0
     assert record['init_error']=='RuntimeError: SYNTHETIC_INITIALIZATION_ERROR'
+
+
+def test_check_saves_preflight_failure_before_operations_directory_exists(tmp_path):
+    env,log=settings(tmp_path);error_logs(env,[0,2])
+    result=run(env,'check')
+    assert result.returncode!=0 and not log.exists()
+    saved=next(tmp_path.glob('dcu_check_*.log')).read_text()
+    assert 'A01_PREFLIGHT_BLOCKED' in saved and 'A01_OUTPUT_ROOT=' in saved
+    assert 'A01_SUBMISSION_EXIT=' in saved
+    assert not (Path(env['A01_OUTPUT_ROOT'])/'operations').exists()
+
+
+def test_check_passes_without_creating_operations_or_calling_scheduler(tmp_path):
+    env,log=settings(tmp_path);error_logs(env,[0,2]);gates(env,[0,2])
+    result=run(env,'check')
+    assert result.returncode==0,result.stderr
+    assert 'A01_CHECK_PASS indices=0,2' in result.stdout and not log.exists()
+    assert not (Path(env['A01_OUTPUT_ROOT'])/'operations').exists()
+    saved=next(tmp_path.glob('dcu_check_*.log')).read_text()
+    assert 'A01_CHECK_PASS' in saved and 'A01_SUBMISSION_EXIT=0' in saved
+
+
+def test_private_settings_error_is_saved_even_before_output_root_is_known(tmp_path):
+    env,log=settings(tmp_path);env['A01_ENV_FILE']=str(tmp_path/'absent.env')
+    result=run(env,'check')
+    assert result.returncode==2 and not log.exists()
+    saved=next(tmp_path.glob('dcu_check_*.log')).read_text()
+    assert '找不到私有设置' in saved and 'A01_SUBMISSION_EXIT=2' in saved
+
+
+def test_sbatch_rejection_keeps_submission_error_in_login_log(tmp_path):
+    env,log=settings(tmp_path);error_logs(env,[0]);gates(env,[0])
+    sbatch=tmp_path/'bin/sbatch'
+    sbatch.write_text('#!/bin/bash\necho "SYNTHETIC_SBATCH_REJECTION" >&2\nexit 1\n');sbatch.chmod(0o755)
+    result=run(env,'retry','failed')
+    assert result.returncode!=0
+    saved=next(tmp_path.glob('dcu_retry_*.log')).read_text()
+    assert 'A01_STAGE=sbatch' in saved and 'SYNTHETIC_SBATCH_REJECTION' in saved
+    operation=next((Path(env['A01_OUTPUT_ROOT'])/'operations').iterdir())
+    assert (operation/'request.txt').is_file() and not (operation/'job.tsv').exists()
+
+
+def test_spooled_batch_uses_shared_launcher_for_remote_steps(tmp_path):
+    env,log=compute_fixture(tmp_path)
+    spool=tmp_path/'local_batch_spool';spool.mkdir();spooled_script=spool/'slurm_script'
+    shutil.copyfile(TOOL,spooled_script)
+    srun=tmp_path/'bin/srun'
+    srun.write_text(srun.read_text().replace('exec "$@"',
+        'if [[ "$2" == "$FAKE_SPOOL_DIR/"* ]]; then echo "SYNTHETIC_REMOTE_NODE_CANNOT_READ_BATCH_SPOOL" >&2;exit 127;fi\nexec "$@"'))
+    env['FAKE_SPOOL_DIR']=str(spool)
+    result=subprocess.run(['bash',str(spooled_script),'_job_retry'],env=env,text=True,capture_output=True)
+    assert result.returncode==0,result.stderr
+    assert 'SYNTHETIC_TRAIN' in log.read_text() and str(spool) not in log.read_text()

@@ -1,6 +1,6 @@
 # A01 train 启动阶段 DCU 不可用：保留成功项，检查并重提失败项
 
-本轮分析基线为 `3ecf060a3334d1c7b48662cf4395a3bab07723ff`，分支
+首轮分析基线为 `3ecf060a3334d1c7b48662cf4395a3bab07723ff`，分支
 `exp/fe01-a01-absolute-amplitude-ablation`。用户报告2项成功、3项失败，错误为
 `AssertionError: DCU unavailable in allocation`。尚未提供这批完整日志、数组作业号或失败索引，
 所以不认证成功任务的epoch，也不猜测故障节点。
@@ -25,6 +25,20 @@ A01 release 内，与 `a01.private.env` 同级。若实际使用其它 release�
 
 ## 登录节点：先检查原失败项
 
+若用户发现operations目录为空，先执行新版的检查模式：
+
+```bash
+bash dcu_recovery.sh check
+```
+
+该模式只读取旧日志和门控、列出实际输出路径与最近operation目录，检查写权限；
+不会调用sbatch/srun或训练，不会新建operations目录。
+所有登录节点入口现在都会先在**上传脚本的同一目录**创建
+`dcu_<模式>_<时间>_<PID>.log`，记录私有设置加载、预检和sbatch之前的错误。
+日志路径打印为 `A01_SUBMISSION_LOG=...`。这些日志和Slurm运行日志是两个阶段。
+若脚本目录本身不可写，使用 `A01_SUBMISSION_LOG_DIR` 指向一个已有可写目录，
+或者在外层把命令输出重定向到已有可写目录。
+
 在上传的文件夹执行：
 
 ```bash
@@ -32,7 +46,7 @@ bash dcu_recovery.sh inspect
 ```
 
 它只读 `jobs.tsv` 中最近一次 train 数组的五份 stderr，并输出发生此断言的索引，
-不会调用sbatch/srun、不会导入torch。若要检查指定数组，执行 `inspect 数组作业号`。
+不会调用sbatch/srun、不会导入torch；只新增自己的提交端日志。若要检查指定数组，执行 `inspect 数组作业号`。
 没有断言的项不自动当作成功；完成训练仍需看原checkpoint和12轮曲线。
 
 ## 两种用户手动提交方式
@@ -74,9 +88,19 @@ bash dcu_recovery.sh retry failed
 下的新独立目录。里面保存out/err、所选索引/资源、JobID、只读启动脚本副本及SHA，
 还有权限600的私有环境快照与原源码manifest副本。
 私有环境含集群路径，应保留在原结果根内；分析通常只需要out/err、request.txt与job.tsv。
+`request.txt` 还记录上传目录中的提交日志位置。没有 `.out/.err` 不足以判定作业崩溃；
+缺少 `job.tsv` 时应先看提交日志，检查是否曾成功调用sbatch并取得JobID。
 正式训练checkpoint仍写回原批次中对应的空run目录，不另建一套研究批次。
 
 原115文件、A01核心源码/config/gate与成功输出保持不变；新增操作启动器的SHA单独记录。
 无需重新environment/audit/diagnostics/pilot，也无需重传数据与权重。
 兼容性和调度器测试均使用本地假环境/假调度器；生产节点实际可用性仍为NOT_RUN。
 本轮未自动提交超算任务。
+
+## 2026-10-09：多节点路径修复
+
+11f634a版本从 `BASH_SOURCE[0]` 推导自身路径。sbatch执行暂存副本时，这可能成为batch
+节点本地的spool路径，不能让其它节点直接运行。该错误已在本地假Slurm复现，退出127；
+尚未获得用户本次实际失败日志，不能认定这就是空目录的原因。
+新版在提交时显式导出共享的只读启动器路径 `A01_RECOVERY_LAUNCHER`，batch与所有step
+都使用该路径，并继续单独记录启动器SHA。不改旧A01核心源码或锁，也无需重做audit。

@@ -1,0 +1,22 @@
+{
+  "base_commit": "11f634a82de1ca925fdf1400130c30694dc535d5",
+  "original115_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "A01_core_code_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "original_worktrees_unchanged": true,
+  "A01_core_source_and_configs_unchanged": true,
+  "bash_syntax": "PASS",
+  "python39_syntax_compile": "PASS",
+  "embedded_python_programs": 3,
+  "launcher_sha256": "c637c56e65267ada34f70df8d87ec4e78b5cb3cefbaeb000634d5e14fe8ba658",
+  "pytest": "28 passed, 1 warning in 11.82s",
+  "user_observation": "directory empty; exact path, JobID and full current logs not provided",
+  "reproduced_bug": {
+    "status": "REPRODUCED_IN_FAKE_SLURM_ONLY",
+    "exit_code": 127,
+    "error": "SYNTHETIC_REMOTE_NODE_CANNOT_READ_BATCH_SPOOL",
+    "real_HPC_evidence": "NOT_PROVIDED"
+  },
+  "observed_empty_directory_cause": "NOT_ESTABLISHED",
+  "real_HPC_device_and_filesystem_checks": "NOT_RUN",
+  "new_HPC_jobs": "NOT_SUBMITTED"
+}
