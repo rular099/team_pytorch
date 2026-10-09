@@ -1,0 +1,24 @@
+{
+  "base_commit": "3ecf060a3334d1c7b48662cf4395a3bab07723ff",
+  "source_branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "original115_and_A01_runtime_paths_unchanged": true,
+  "three_original_worktrees_unchanged": true,
+  "bash_syntax": "PASS",
+  "python39_syntax_and_compile": "PASS",
+  "embedded_python_programs": 2,
+  "launcher_sha256": "8e0af7081d06ace8245a6f3ca015a97142905a55f903dfc691ff67cd5c9c784e",
+  "real_HPC_log_files_available": false,
+  "user_report": {
+    "successful": 2,
+    "failed": 3,
+    "error": "AssertionError: DCU unavailable in allocation",
+    "indices": "NOT_PROVIDED",
+    "array_job_id": "NOT_PROVIDED"
+  },
+  "real_DCU_step_probe": "NOT_RUN",
+  "new_HPC_jobs": "NOT_SUBMITTED",
+  "formal_train_and_evaluation": "NOT_RUN",
+  "original115_code_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "A01_runtime_code_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "pytest": "23 passed, 1 warning in 11.72s; only fake scheduler/device fixtures, no HPC submissions"
+}
