@@ -1,0 +1,109 @@
+{
+  "archive": "../chaosuan_res/dcu_retry_20261009T161342_soCC3y.zip",
+  "archive_sha256": "f232b956108c1f5aafafbae31ace0ca07636fa6f8cb4b47fcd6152e42f53d3e3",
+  "members": [
+    {
+      "name": "29953137_1.err",
+      "bytes": 18805,
+      "sha256": "fa4bf351639bdcf5f9f2637a77510e7ac368cb987843d8dc644d70714219084c"
+    },
+    {
+      "name": "29953137_1.out",
+      "bytes": 18250,
+      "sha256": "e7296cb34f993909eb37e526d1722b8d787b2fff1af8a3d15cc7afa6cdf826b6"
+    },
+    {
+      "name": "29953137_3.err",
+      "bytes": 18163,
+      "sha256": "c5f2bc8e008f607f246588b85eed59da31c0ee3f7399cfe7c53a6a9dd5815de8"
+    },
+    {
+      "name": "29953137_3.out",
+      "bytes": 14528,
+      "sha256": "6aff92d4a9b8c1d5e4ffe410d8dbda6f3f412f4a3902724c2551288fffcc3430"
+    },
+    {
+      "name": "29953137_4.err",
+      "bytes": 18201,
+      "sha256": "8bdc1031aae898bc273b0bcf4701c2e9b789c83b9d634d2c9a5d1d87053573a9"
+    },
+    {
+      "name": "29953137_4.out",
+      "bytes": 12956,
+      "sha256": "cb16c6a5fad59c1dce309ff8235fff90e1238874fdee020a6deef4ca35dc29f8"
+    }
+  ],
+  "baseline_commit": "be8cc1d9f240bd7da56b6ca174d78b03fa842a1e",
+  "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "runs": [
+    {
+      "index": 1,
+      "family": "PhaseNet OFF",
+      "device_probes": 16,
+      "device_pass": 16,
+      "nodes": 4,
+      "logged_epochs": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "last_logged_updates": 2544,
+      "time_limit_termination": false,
+      "rsmi_mutex_error": false,
+      "traceback": false,
+      "normal_communicator_shutdowns": 16,
+      "mean_logged_epoch_seconds": 2813.4738200649176
+    },
+    {
+      "index": 3,
+      "family": "DiTing ON",
+      "device_probes": 16,
+      "device_pass": 16,
+      "nodes": 4,
+      "logged_epochs": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "last_logged_updates": 1060,
+      "time_limit_termination": true,
+      "rsmi_mutex_error": false,
+      "traceback": false,
+      "normal_communicator_shutdowns": 0,
+      "mean_logged_epoch_seconds": 17199.265379781
+    },
+    {
+      "index": 4,
+      "family": "DiTing OFF",
+      "device_probes": 16,
+      "device_pass": 16,
+      "nodes": 4,
+      "logged_epochs": [],
+      "last_logged_updates": null,
+      "time_limit_termination": true,
+      "rsmi_mutex_error": true,
+      "traceback": false,
+      "normal_communicator_shutdowns": 0,
+      "mean_logged_epoch_seconds": null
+    }
+  ],
+  "evidence_limits": [
+    "No sacct supplied for 29953137",
+    "No checkpoint bytes or internal metadata supplied",
+    "No complete run-directory listings supplied",
+    "No launcher SHA/private settings supplied in this zip",
+    "RSMI mutex error observed; exact faulty host/driver root cause not established"
+  ],
+  "new_jobs": "NOT_SUBMITTED"
+}

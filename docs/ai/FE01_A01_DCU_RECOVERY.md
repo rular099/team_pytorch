@@ -104,3 +104,12 @@ bash dcu_recovery.sh retry failed
 尚未获得用户本次实际失败日志，不能认定这就是空目录的原因。
 新版在提交时显式导出共享的只读启动器路径 `A01_RECOVERY_LAUNCHER`，batch与所有step
 都使用该路径，并继续单独记录启动器SHA。不改旧A01核心源码或锁，也无需重做audit。
+
+## 2026-10-11：真实日志与DiTing续训
+
+后续用户提供的29933642日志已确认上述spool路径错误。新数组29953137的三项设备检查
+全部通过；PhaseNet OFF记录12轮，DiTing ON记录5轮后超时，DiTing OFF有RSMI锁错误后超时。
+这一批不能继续使用仅允许空目录的`retry failed`。应使用新增
+`continue 3,4`及同目录的`continue_training.py`，详见
+[续训说明](FE01_A01_CONTINUE_TRAINING.md)与
+[实际日志报告](../../reports/fe01_a01_retry_20261011/README.md)。

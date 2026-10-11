@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Standalone operations launcher. Does not edit authenticated A01 source/gates.
-# LOGIN: inspect [ARRAY_JOB_ID] | check [failed OR 0,2,4] | probe | retry failed
+# LOGIN: inspect | check | probe | retry INDICES | continue INDICES
 set -Eeuo pipefail
 mode=${1:-inspect}
 invoked_file=$(readlink -f "${BASH_SOURCE[0]}")
@@ -98,6 +98,14 @@ PY
 }
 
 case "$mode" in
+  _rank_collective|_rank_continue)
+    : "${SLURM_JOB_ID:?}" "${A01_RECOVERY_HELPER:?}"
+    source "$A01_CODE_ROOT/scripts/fe01_a01/env.sh"
+    if [[ "$mode" == _rank_collective ]]; then
+      exec bash "$A01_CODE_ROOT/scripts/fe01_a01/rank_exec.sh" "$A01_PYTHON" "$A01_RECOVERY_HELPER" collective
+    fi
+    exec bash "$A01_CODE_ROOT/scripts/fe01_a01/rank_exec.sh" "$A01_PYTHON" "$A01_RECOVERY_HELPER" supervise --index "${SLURM_ARRAY_TASK_ID:?}"
+    ;;
   _context)
     : "${SLURM_JOB_ID:?Compute allocation required}"
     export A01_PROBE_CONTEXT=${2:?batch|step}
@@ -114,10 +122,23 @@ case "$mode" in
       scripts/fe01_a01/run.py train --index "$index" --output "$A01_OUTPUT_ROOT" --device cuda \
       --world "$A01_WORLD_SIZE" --probe-cap "${A01_PROBE_CAP:-2}"
     ;;
-  _job_probe|_job_retry)
+  _job_probe|_job_retry|_job_continue)
     : "${SLURM_JOB_ID:?}"
     [[ "${SLURM_JOB_NUM_NODES:?}" == "$A01_TRAIN_NODES" ]] || { echo '实际节点数与已认证资源不符。' >&2;exit 2; }
     step=(srun --nodes="$A01_TRAIN_NODES" --ntasks="$A01_WORLD_SIZE" --ntasks-per-node="$A01_DEVICES_PER_NODE" --gres="$A01_GRES")
+    if [[ "$mode" == _job_continue ]]; then
+      # Shared lock prevents simultaneous continuations of the same run.
+      exec 9>"$A01_OUTPUT_ROOT/operations/continue_index${SLURM_ARRAY_TASK_ID:?}.lock"
+      flock -n 9 || { echo 'Another continuation owns this training index.' >&2;exit 2; }
+      export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+      export MASTER_PORT=$((A01_MASTER_PORT+SLURM_ARRAY_TASK_ID+32))
+      # Bound env setup and RCCL init even if the native library never returns.
+      "${step[@]}" --time=00:05:00 --kill-on-bad-exit=1 timeout --signal=TERM --kill-after=15s 240s bash "$self" _rank_collective
+      export MASTER_PORT=$((A01_MASTER_PORT+SLURM_ARRAY_TASK_ID))
+      # Keep the batch shell alive so it holds the shared lock for the whole run.
+      "${step[@]}" --kill-on-bad-exit=1 bash "$self" _rank_continue
+      exit 0
+    fi
     if [[ "$mode" == _job_probe ]]; then
       set +e
       bash "$self" _context batch
@@ -138,6 +159,14 @@ case "$mode" in
     exit 0
     ;;
   probe) indices='';;
+  continue)
+    indices=${2:?Usage: continue 3,4; resume last.pth or start only an empty run}
+    [[ "$indices" =~ ^[0-4](,[0-4])*$ ]] || { echo 'Use comma-separated indices 0..4.' >&2;exit 2; }
+    helper="$tool_dir/continue_training.py"
+    [[ -f "$helper" ]] || { echo "Missing continuation helper: $helper" >&2;exit 2; }
+    "${A01_CONFIG_PYTHON:-python3}" "$helper" plan --indices "$indices"
+    continue_time=$("${A01_CONFIG_PYTHON:-python3}" "$helper" walltime)
+    ;;
   check|retry)
     indices=${2:-failed}
     [[ "$indices" != failed ]] || indices=$(scan "" indices)
@@ -166,7 +195,7 @@ PY
       exit 0
     fi
     ;;
-  *) echo 'Usage: inspect [ARRAY_JOB_ID] | check [failed OR 0,2,4] | probe | retry failed | retry 0,2,4' >&2;exit 2;;
+  *) echo 'Usage: inspect [ARRAY_JOB_ID] | check [failed OR 0,2,4] | probe | retry failed | retry 0,2,4 | continue 3,4' >&2;exit 2;;
 esac
 
 # This part runs only for a user-invoked probe/retry, never for inspect/compute.
@@ -180,21 +209,33 @@ chmod 500 "$operation/dcu_recovery.sh"
 chmod 600 "$operation/a01.private.env"
 export A01_ENV_FILE="$operation/a01.private.env"
 export A01_RECOVERY_LAUNCHER="$operation/dcu_recovery.sh"
+export A01_OPERATION_DIRECTORY="$operation"
+if [[ "$mode" == continue ]]; then
+  cp "$helper" "$operation/continue_training.py"
+  chmod 400 "$operation/continue_training.py"
+  export A01_RECOVERY_HELPER="$operation/continue_training.py"
+  sha256sum "$A01_RECOVERY_HELPER" > "$operation/helper.sha256"
+  "${A01_CONFIG_PYTHON:-python3}" "$A01_RECOVERY_HELPER" plan --indices "$indices" > "$operation/continuation_plan.json"
+fi
 sha256sum "$operation/dcu_recovery.sh" > "$operation/launcher.sha256"
 sha256sum "$operation/a01.private.env" > "$operation/private_settings.sha256"
 if [[ -f "$A01_CODE_ROOT/FE01_A01_SOURCE_IDENTITY.json" ]]; then
   cp "$A01_CODE_ROOT/FE01_A01_SOURCE_IDENTITY.json" "$operation/core_source_identity.json"
 fi
+exclude=${A01_RECOVERY_EXCLUDE_NODES:-${A01_EXCLUDE_NODES:-}}
 printf 'mode=%s\nindices=%s\ncode=%s\noutput=%s\nnodes=%s\ndevices_per_node=%s\nworld=%s\ngres=%s\nexclude=%s\nsubmission_log=%s\n' \
   "$mode" "$indices" "$A01_CODE_ROOT" "$A01_OUTPUT_ROOT" "$A01_TRAIN_NODES" "$A01_DEVICES_PER_NODE" \
-  "$A01_WORLD_SIZE" "$A01_GRES" "${A01_EXCLUDE_NODES:-}" "$submit_log" > "$operation/request.txt"
+  "$A01_WORLD_SIZE" "$A01_GRES" "$exclude" "$submit_log" > "$operation/request.txt"
 args=(--parsable --chdir="$A01_CODE_ROOT" --export=ALL --job-name="a01_dcu_$mode" \
   --nodes="$A01_TRAIN_NODES" --ntasks-per-node="$A01_DEVICES_PER_NODE" --cpus-per-task="$A01_CPUS_PER_TASK" \
   --gres="$A01_GRES" --mem="${A01_TRAIN_MEM:-64G}" --output="$operation/%A_%a.out" --error="$operation/%A_%a.err")
 [[ -z "${A01_PARTITION:-}" ]] || args+=(--partition="$A01_PARTITION")
-[[ -z "${A01_EXCLUDE_NODES:-}" ]] || args+=(--exclude="$A01_EXCLUDE_NODES")
+[[ -z "$exclude" ]] || args+=(--exclude="$exclude")
 if [[ "$mode" == probe ]]; then
   args+=(--time=00:10:00);action=_job_probe
+elif [[ "$mode" == continue ]]; then
+  args+=(--time="$continue_time" --array="$indices%2");action=_job_continue
+  printf 'time=%s\n' "$continue_time" >> "$operation/request.txt"
 else
   args+=(--time="$A01_TRAIN_TIME" --array="$indices%3");action=_job_retry
 fi

@@ -1,0 +1,20 @@
+{
+  "base_commit": "be8cc1d9f240bd7da56b6ca174d78b03fa842a1e",
+  "original115_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "A01_core_code_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "original_worktrees_unchanged": true,
+  "A01_core_source_and_configs_unchanged": true,
+  "python39_syntax": "PASS",
+  "bash_syntax": "PASS",
+  "embedded_python_programs": 3,
+  "new_HPC_jobs": "NOT_SUBMITTED",
+  "real_HPC_continue": "NOT_RUN",
+  "real_checkpoints": "NOT_PROVIDED",
+  "local_checks": "synthetic checkpoints/fake scheduler/local watchdog children only",
+  "pytest": "34 passed, 1 warning in 5.43s",
+  "delivery_zip_sha256": "69754d3aa378bc1c438585094b43678b42b3b26f8fa92e7d2596c2315d272242",
+  "launcher_sha256": "5949ddd21896989aa486c66efb637a5c47380562cc497f7fb606cc0933bb027c",
+  "helper_sha256": "d675fd5a61f4f814c9b414bdedfa9d7bbd9e69473f3f389703709470775c3ba9",
+  "extracted_package_fake_scheduler": "PASS",
+  "corrupted_delivery_blocked": "PASS"
+}
