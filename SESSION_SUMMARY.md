@@ -680,3 +680,16 @@ TEAM 0.241817/0.003011；epoch依次为PhaseNet12/10/12、EQT10/10/10、TEAM11/1
 RT55/RT61曝光UNKNOWN。尚无本轮旧系统成绩、随机/长时刻补评、场地评分/图或回放。
 实际identity/verify/reference Job 29351785/29354874/29354884；没有sacct State/ExitCode证据。
 环境DTK/MPI问题已由实际Torch初始化日志排除，TEAM错误发生于其后。
+
+## 2026-10-11 A01 数组30265280恢复修复
+
+A01独立分支 `exp/fe01-a01-absolute-amplitude-ablation`，基线
+`fdab9e23c7dd73066f4d2032f23ab99d8f9190b6`。用户提供4份续训out/err，
+两个DiTing任务均16/16通信PASS。ON检查epoch5后，在原引擎恢复DCU RNG时报
+ByteTensor类型错误；OFF20分钟无新采样记录，16rank启动超时，确切卡点未知。
+新恢复入口采用经过AST差异与依赖对象身份检查的独立静态循环，只改RNG列表先迁CPU，
+并加逐rank阶段/周期调用栈及自动小型return_bundle。旧115文件、A01核心/config和门控
+不变，新执行源码SHA另记execution_identity，必须与后续checkpoint一起审阅。
+仅未提交、未采样的OFF初始化残留可整体存档后fresh；ON必须使用合法last恢复。
+本地52通过/1设备测试跳过；未自动提交真实超算作业。最新操作见
+`docs/ai/FE01_A01_RESUME_FIX.md`，证据见`reports/fe01_a01_continue_20261011/`。

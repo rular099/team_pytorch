@@ -112,7 +112,7 @@ def test_checkpoint_validation_rejects_incompatible_or_incomplete_resume(bad):
         ct.checkpoint_gate(payload, cfg, lock, 16)
 
 
-def test_resume_calls_original_engine_and_preserves_old_checkpoint_after_atomic_publish(tmp_path, monkeypatch):
+def test_resume_dispatches_explicit_compatibility_entry_and_preserves_old_checkpoint_after_atomic_publish(tmp_path, monkeypatch):
     from fe01_a01 import engine
     cfg, lock, payload = checkpoint()
     cfg['output_root'] = str(tmp_path/'out')
@@ -127,13 +127,15 @@ def test_resume_calls_original_engine_and_preserves_old_checkpoint_after_atomic_
     monkeypatch.setattr(engine, 'check_audit', lambda *a: lock)
     monkeypatch.setattr(engine, 'check_matched_pair', lambda *a: None)
     calls = []
-    def existing_engine(config, audit, resume=False):
+    def compatibility_entry(config, audit, resume, trace, index):
         calls.append(resume)
         (run/'last.pth.tmp').write_bytes(b'SYNTHETIC_NEXT_ATOMIC_PUBLICATION')
         os.replace(run/'last.pth.tmp', run/'last.pth')
-    monkeypatch.setattr(engine, 'train', existing_engine)
+    original_train, original_load = engine.train, torch.load
+    monkeypatch.setattr(ct, 'execute_training', compatibility_entry)
     ct.train_one(3)
     assert calls == [True] and (operation/'checkpoint_before_3/last.pth').read_bytes() == before
+    assert engine.train is original_train and torch.load is original_load
     assert torch.load(operation/'checkpoint_before_3/last.pth',weights_only=False)['optimizer']['SYNTHETIC'].item() == 5.
 
 
@@ -154,6 +156,8 @@ def test_spooled_continuation_uses_shared_helper_and_probes_before_training(tmp_
     env, log = compute_fixture(tmp_path)
     (Path(env['A01_OUTPUT_ROOT'])/'operations').mkdir(parents=True)
     env['A01_RECOVERY_HELPER'] = str(HELPER)
+    # Batch-only prepare/bundle do not need a GPU; capture their dispatch too.
+    env['A01_CONFIG_PYTHON'] = str(tmp_path/'probe_python')
     python = tmp_path/'probe_python'
     python.write_text('#!/bin/bash\nprintf "SYNTHETIC_HELPER %s\\n" "$*" >> "$FAKE_SCHEDULER_LOG"\n')
     srun = tmp_path/'bin/srun'
@@ -195,6 +199,19 @@ def test_training_startup_watchdog_releases_after_new_rank_progress(tmp_path, mo
         return real_popen([sys.executable, '-c', 'import time;time.sleep(0.2)'])
     monkeypatch.setattr(subprocess, 'Popen', progresses)
     assert ct.supervise(3) == 0  # total exceeds startup limit; progress disables it
+
+
+def test_completed_first_update_releases_watchdog_even_before_journal_buffer_flush(tmp_path, monkeypatch):
+    operation = tmp_path/'operation';(operation/'startup').mkdir(parents=True)
+    monkeypatch.setattr(ct, 'config', lambda index: dict(output_root=str(tmp_path),run_id='SYNTHETIC'))
+    monkeypatch.setenv('RANK','0');monkeypatch.setenv('A01_STARTUP_TIMEOUT_SECONDS','0.1')
+    monkeypatch.setenv('A01_OPERATION_DIRECTORY',str(operation))
+    real_popen = subprocess.Popen
+    def progresses(*a, **k):
+        (operation/'startup/index4_rank0.jsonl').write_text('{"stage": "first_update.complete"}\n')
+        return real_popen([sys.executable, '-c', 'import time;time.sleep(0.2)'])
+    monkeypatch.setattr(subprocess, 'Popen', progresses)
+    assert ct.supervise(4) == 0
 
 
 def test_existing_shared_lock_blocks_another_continuation_before_srun(tmp_path):

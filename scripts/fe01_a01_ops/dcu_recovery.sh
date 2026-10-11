@@ -97,6 +97,16 @@ PY
   exit "$rc"
 }
 
+continue_exit() {
+  local rc=$?
+  trap - EXIT
+  set +e
+  "${A01_CONFIG_PYTHON:-python3}" "$A01_RECOVERY_HELPER" bundle --index "$SLURM_ARRAY_TASK_ID" --exit-code "$rc"
+  local pack_rc=$?
+  [[ "$pack_rc" == 0 ]] || printf 'A01_RETURN_BUNDLE_FAILED rc=%s operation=%s\n' "$pack_rc" "${A01_OPERATION_DIRECTORY:-unknown}" >&2
+  exit "$rc"
+}
+
 case "$mode" in
   _rank_collective|_rank_continue)
     : "${SLURM_JOB_ID:?}" "${A01_RECOVERY_HELPER:?}"
@@ -130,10 +140,13 @@ case "$mode" in
       # Shared lock prevents simultaneous continuations of the same run.
       exec 9>"$A01_OUTPUT_ROOT/operations/continue_index${SLURM_ARRAY_TASK_ID:?}.lock"
       flock -n 9 || { echo 'Another continuation owns this training index.' >&2;exit 2; }
+      trap continue_exit EXIT
       export MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
       export MASTER_PORT=$((A01_MASTER_PORT+SLURM_ARRAY_TASK_ID+32))
       # Bound env setup and RCCL init even if the native library never returns.
       "${step[@]}" --time=00:05:00 --kill-on-bad-exit=1 timeout --signal=TERM --kill-after=15s 240s bash "$self" _rank_collective
+      # Stdlib only; lock is held. Preserve a strictly uncommitted failed OFF.
+      "${A01_CONFIG_PYTHON:-python3}" "$A01_RECOVERY_HELPER" prepare --index "$SLURM_ARRAY_TASK_ID"
       export MASTER_PORT=$((A01_MASTER_PORT+SLURM_ARRAY_TASK_ID))
       # Keep the batch shell alive so it holds the shared lock for the whole run.
       "${step[@]}" --kill-on-bad-exit=1 bash "$self" _rank_continue
@@ -214,6 +227,12 @@ if [[ "$mode" == continue ]]; then
   cp "$helper" "$operation/continue_training.py"
   chmod 400 "$operation/continue_training.py"
   export A01_RECOVERY_HELPER="$operation/continue_training.py"
+  : > "$operation/compatibility_files.sha256"
+  for companion in compatibility_contract.py training_compat.py startup_trace.py; do
+    cp "$tool_dir/$companion" "$operation/$companion"
+    chmod 400 "$operation/$companion"
+    sha256sum "$operation/$companion" >> "$operation/compatibility_files.sha256"
+  done
   sha256sum "$A01_RECOVERY_HELPER" > "$operation/helper.sha256"
   "${A01_CONFIG_PYTHON:-python3}" "$A01_RECOVERY_HELPER" plan --indices "$indices" > "$operation/continuation_plan.json"
 fi
@@ -236,6 +255,7 @@ if [[ "$mode" == probe ]]; then
 elif [[ "$mode" == continue ]]; then
   args+=(--time="$continue_time" --array="$indices%2");action=_job_continue
   printf 'time=%s\n' "$continue_time" >> "$operation/request.txt"
+  printf 'archive_uncommitted_diting_off=%s\n' "${A01_ARCHIVE_UNCOMMITTED_DITING_OFF:-0}" >> "$operation/request.txt"
 else
   args+=(--time="$A01_TRAIN_TIME" --array="$indices%3");action=_job_retry
 fi

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Operations only: stdlib login checks; allocated-rank communication/resume.
 
-This file is deliberately outside the authenticated A01 training source.
-It calls the existing engine.train(resume=True); it does not change that loop.
+This file is outside the authenticated A01 source. An explicitly checked static
+loop copy fixes CPU RNG restoration; original gates and source stay immutable.
 """
 import argparse
 import copy
@@ -17,6 +17,39 @@ import socket
 import subprocess
 import sys
 import time
+import zipfile
+
+
+COMPATIBILITY_FILES = ('compatibility_contract.py', 'training_compat.py', 'startup_trace.py')
+
+
+def sibling(name):
+    path = Path(__file__).with_name(name+'.py')
+    spec = importlib.util.spec_from_file_location('a01_operations_'+name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def uncommitted_off(run, index):
+    """Narrow restart policy: no committed checkpoint, epoch, or sampled batch."""
+    if index != 4 or os.environ.get('A01_ARCHIVE_UNCOMMITTED_DITING_OFF') != '1' or run.is_symlink():
+        return False
+    allowed = {'init.pth', 'model_interface_audit.json', 'resolved_config.json',
+               'runtime.json', 'protocol.lock.json', 'training_curves.csv'}
+    for path in run.iterdir():
+        if path.is_symlink():
+            return False
+        if path.name == 'sample_journals' and path.is_dir():
+            if any(p.is_symlink() or not p.is_file() or p.suffix != '.jsonl' or p.stat().st_size
+                   for p in path.iterdir()):
+                return False
+        elif path.is_file() and (path.name in allowed or
+                                  path.name.startswith('runtime_') and path.suffix == '.json'):
+            continue
+        else:
+            return False
+    return True
 
 
 def core():
@@ -38,6 +71,7 @@ def config(index):
 def plan(indices):
     """Retain every original prerequisite; replace only the empty-run rule."""
     root, pf = core()
+    sibling('compatibility_contract').verify(root)
     output = Path(os.environ['A01_OUTPUT_ROOT']).resolve()
     code_sha = pf.current_code_sha()
     env = pf.read(output/'environment/environment.json')
@@ -73,12 +107,43 @@ def plan(indices):
             pf.require(int(curves[-1]['epoch']) < cfg['training']['epochs'], 'Completed run; will not retrain: '+cfg['run_id'])
         last = run/'last.pth'
         nonempty = run.exists() and any(run.iterdir())
-        pf.require(last.is_file() or not nonempty,
+        archive = nonempty and not last.is_file() and not curves and uncommitted_off(run, index)
+        pf.require(last.is_file() or not nonempty or archive,
                    'Nonempty run without last.pth; preserve it for inspection: '+str(run))
-        rows.append(dict(index=index, run_id=cfg['run_id'], action='resume' if last.is_file() else 'fresh',
+        rows.append(dict(index=index, run_id=cfg['run_id'], action='resume' if last.is_file() else
+                         'archive_then_fresh' if archive else 'fresh',
                          curve_epoch=int(curves[-1]['epoch']) if curves else None,
                          checkpoint=str(last) if last.is_file() else None))
     return rows
+
+
+def inventory(directory):
+    return [dict(path=str(p.relative_to(directory)), bytes=p.stat().st_size)
+            for p in sorted(directory.rglob('*')) if p.is_file() and not p.is_symlink()]
+
+
+def prepare(index):
+    """Batch shell holds the shared index lock; preserve failed OFF before ranks."""
+    if not os.environ.get('SLURM_JOB_ID'):
+        raise ValueError('prepare requires a user-submitted compute allocation')
+    row = plan([index])[0]
+    if row['action'] != 'archive_then_fresh':
+        return
+    cfg = config(index)
+    run = Path(cfg['output_root'])/cfg['run_id']
+    operation = Path(os.environ['A01_OPERATION_DIRECTORY']).resolve()
+    if operation.parent != (Path(cfg['output_root'])/'operations').resolve():
+        raise ValueError('Archive must stay inside the output operations directory')
+    destination = operation/('uncommitted_before_index'+str(index))
+    if destination.exists():
+        raise FileExistsError(destination)
+    records = inventory(run)
+    os.rename(run, destination)
+    (operation/('archive_index'+str(index)+'.json')).write_text(json.dumps(dict(
+        original_path=str(run), preserved_path=str(destination), files=records,
+        reason='No checkpoint, epoch curve or nonempty sample journal; preserve before fresh audited initialization',
+    ), indent=2))
+    print('A01_ARCHIVED_UNCOMMITTED_RUN '+str(destination), flush=True)
 
 
 def seconds(value):
@@ -175,9 +240,37 @@ def checkpoint_gate(payload, cfg, lock, world):
 
 
 def train_one(index):
+    trace_class = sibling('startup_trace').StartupTrace
+    with trace_class(os.environ['A01_OPERATION_DIRECTORY'], index, int(os.environ['RANK'])) as trace:
+        trace.stage('torch_import.begin')
+        _train_one(index, trace)
+
+
+def execute_training(cfg, audit, resume, trace, index):
+    from fe01_a01 import engine
+    from fe01.config import sha256, write_json
+    contract = sibling('compatibility_contract')
+    proof = contract.verify(os.environ['A01_CODE_ROOT'])
+    compatibility = sibling('training_compat')
+    contract.verify_bindings(engine, compatibility)
+    if int(os.environ['RANK']) == 0:
+        write_json(Path(os.environ['A01_OPERATION_DIRECTORY'])/f'execution_identity_index{index}.json', dict(
+            authenticated_core_sha256=engine.source_identity()['a01_code_sha256'],
+            compatibility=proof,
+            operations_files_sha256={name: sha256(Path(__file__).with_name(name))
+                                    for name in ('continue_training.py',)+COMPATIBILITY_FILES},
+            checkpoint_core_identity_meaning='Immutable audited core; executed compatibility source recorded separately here',
+        ))
+    trace.stage('compatibility_verified')
+    compatibility.train(cfg, audit, resume=resume, observe=trace.stage)
+
+
+def _train_one(index, trace):
     import torch
     from fe01_a01 import engine
     from fe01.config import sha256, write_json
+    trace.stage('torch_import.complete')
+    trace.stage('gates.begin')
     cfg = config(index)
     row = plan([index])[0]
     root = Path(cfg['output_root'])
@@ -187,9 +280,13 @@ def train_one(index):
     rank = int(os.environ['RANK'])
     if int(os.environ['WORLD_SIZE']) != lock['world_size']:
         raise ValueError('Training world differs from audit')
+    if row['action'] == 'archive_then_fresh':
+        raise ValueError('Batch prepare must archive uncommitted OFF before training ranks start')
+    trace.stage('gates.complete')
     if rank == 0:
         operation = Path(os.environ['A01_OPERATION_DIRECTORY'])
         if row['action'] == 'resume':
+            trace.stage('checkpoint_gate_and_backup.begin')
             last = Path(row['checkpoint'])
             payload = torch.load(last, map_location='cpu', weights_only=False)
             epoch = checkpoint_gate(payload, cfg, lock, int(os.environ['WORLD_SIZE']))
@@ -212,11 +309,11 @@ def train_one(index):
             write_json(backup/'manifest.json', dict(index=index, checkpoint_epoch=epoch, files=records))
             del payload
             print('A01_RESUME_FROM_EPOCH='+str(epoch)+' index='+str(index), flush=True)
+            trace.stage('checkpoint_gate_and_backup.complete')
         else:
             print('A01_FRESH_FROM_AUDITED_INIT index='+str(index), flush=True)
         write_json(operation/('train_action_'+str(index)+'.json'), row)
-    # The original engine restores model/Adam/scheduler/rank RNG and journals.
-    engine.train(cfg, audit, resume=row['action'] == 'resume')
+    execute_training(cfg, audit, row['action'] == 'resume', trace, index)
 
 
 def supervise(index):
@@ -226,6 +323,7 @@ def supervise(index):
     journal = Path(cfg['output_root'])/cfg['run_id']/'sample_journals'
     pattern = '*_rank'+str(rank)+'.jsonl'
     previous = set(journal.glob(pattern))
+    progress = Path(os.environ.get('A01_OPERATION_DIRECTORY', '/NONEXISTENT'))/'startup'/f'index{index}_rank{rank}.jsonl'
     limit = float(os.environ.get('A01_STARTUP_TIMEOUT_SECONDS', '1200'))
     if not 0 < limit <= 3600:
         raise ValueError('Startup timeout must be positive and at most one hour')
@@ -239,11 +337,15 @@ def supervise(index):
     try:
         while child.poll() is None:
             current = set(journal.glob(pattern))-previous
-            if any(p.stat().st_size > 0 for p in current):
+            first_update = progress.is_file() and '"stage": "first_update.complete"' in progress.read_text()
+            if first_update or any(p.stat().st_size > 0 for p in current):
                 print(f'A01_TRAIN_STARTED index={index} rank={rank}', flush=True)
                 return child.wait()
             if time.monotonic()-started >= limit:
                 print(f'A01_TRAIN_STARTUP_TIMEOUT index={index} rank={rank} seconds={limit}; preserved all outputs', file=sys.stderr, flush=True)
+                if progress.is_file():
+                    lines = progress.read_text().splitlines()
+                    print('A01_LAST_STARTUP_STAGE '+(lines[-1] if lines else 'none'), file=sys.stderr, flush=True)
                 child.terminate()
                 try:
                     child.wait(timeout=15)
@@ -257,11 +359,57 @@ def supervise(index):
             signal.signal(signum, handler)
 
 
+def bundle(index, exit_code):
+    """Small return ZIP: per-rank stages/stacks, logs and file inventory, no weights/env."""
+    operation = Path(os.environ['A01_OPERATION_DIRECTORY'])
+    cfg = config(index)
+    run = Path(cfg['output_root'])/cfg['run_id']
+    summary = dict(index=index, run_id=cfg['run_id'], batch_exit_code=exit_code,
+                   slurm_job_id=os.environ.get('SLURM_JOB_ID'),
+                   note='Batch exit code; not a sacct final-state assertion', run_path=str(run),
+                   run_files=inventory(run) if run.exists() else [], last_startup_stages={})
+    files = []
+    for path in sorted((operation/'startup').glob(f'index{index}_rank*')):
+        if path.suffix == '.jsonl':
+            lines = path.read_text().splitlines()
+            if lines:
+                summary['last_startup_stages'][path.name] = lines[-1]
+        files.append(path)
+    names = ('request.txt', 'job.tsv', 'continuation_plan.json', 'launcher.sha256',
+             'helper.sha256', 'compatibility_files.sha256', 'core_source_identity.json',
+             f'train_action_{index}.json', f'execution_identity_index{index}.json',
+             f'archive_index{index}.json', f'checkpoint_before_{index}/manifest.json')
+    files.extend(operation/name for name in names if (operation/name).is_file())
+    array = os.environ.get('SLURM_ARRAY_JOB_ID', os.environ.get('SLURM_JOB_ID', ''))
+    files.extend(operation/f'{array}_{index}.{ext}' for ext in ('out', 'err')
+                 if (operation/f'{array}_{index}.{ext}').is_file())
+    curve = run/'training_curves.csv'
+    if curve.is_file():
+        files.append(curve)
+    target = operation/f'return_bundle_index{index}.zip'
+    if target.exists():
+        raise FileExistsError(target)
+    with zipfile.ZipFile(target, 'x', compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr('summary.json', json.dumps(summary, ensure_ascii=False, indent=2))
+        for path in files:
+            if path.is_symlink():
+                continue
+            label = str(path.relative_to(operation)) if operation in path.parents else 'run/'+path.name
+            if path.stat().st_size <= 8*1024*1024:
+                archive.write(path, label)
+            else:
+                with path.open('rb') as stream:
+                    stream.seek(-8*1024*1024, 2)
+                    archive.writestr(label+'.TAIL_8MiB', stream.read())
+    print('A01_RETURN_BUNDLE='+str(target), flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('mode', choices=['plan', 'walltime', 'collective', 'train', 'supervise'])
+    parser.add_argument('mode', choices=['plan', 'walltime', 'collective', 'prepare', 'train', 'supervise', 'bundle'])
     parser.add_argument('--indices', default='3,4')
     parser.add_argument('--index', type=int)
+    parser.add_argument('--exit-code', type=int, default=0)
     args = parser.parse_args()
     if args.mode == 'plan':
         values = args.indices.split(',')
@@ -278,9 +426,14 @@ def main():
         if args.index is None:
             raise ValueError('index required')
         core()
-        if args.mode == 'supervise':
+        if args.mode == 'prepare':
+            prepare(args.index)
+        elif args.mode == 'bundle':
+            bundle(args.index, args.exit_code)
+        elif args.mode == 'supervise':
             raise SystemExit(supervise(args.index))
-        train_one(args.index)
+        else:
+            train_one(args.index)
 
 
 if __name__ == '__main__':

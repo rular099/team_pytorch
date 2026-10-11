@@ -1,0 +1,88 @@
+{
+  "base_commit": "fdab9e23c7dd73066f4d2032f23ab99d8f9190b6",
+  "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "original115_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "A01_core_code_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "original_worktrees_unchanged": {
+    "team_pytorch": {
+      "unchanged": true,
+      "head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+      "branch": "zhangb/native-scale-adapter-scaling"
+    },
+    "team_pytorch_fe01": {
+      "unchanged": true,
+      "head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+      "branch": "exp/fe01-feature-extractor-site-effects"
+    },
+    "team_pytorch_query_geometry_diagnostics": {
+      "unchanged": true,
+      "head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "branch": "exp/v01-velocity-prep-padding-control"
+    }
+  },
+  "A01_core_source_and_configs_unchanged": true,
+  "compatibility_contract": {
+    "original_engine_sha256": "ec437e33a19e7d722a290c96356c0674f494e969ddf7537fd3daad4ddd88324f",
+    "original_train_ast_sha256": "ecb167309b784e1cfef9ba9eb3ee32c72a48c91fc2a41bfa35c505d7cdc98d34",
+    "executed_compatibility_sha256": "2b5c1cb40ccc0ebbda75490d1f01b0a21ff6e81b0fab7a0bde54a858e6e105dc",
+    "allowed_semantic_delta": "torch.cuda.set_rng_state_all([state.cpu() for state in rng['cuda_rng']])",
+    "observer_stages": [
+      "audited_initial_state.begin",
+      "audited_initial_state.complete",
+      "checkpoint_load.begin",
+      "checkpoint_load.complete",
+      "checkpoint_model_restore.begin",
+      "checkpoint_model_restore.complete",
+      "dataset.begin",
+      "dataset.complete",
+      "ddp_constructor.begin",
+      "ddp_constructor.complete",
+      "distributed_init.begin",
+      "distributed_init.complete",
+      "first_batch.ready",
+      "first_update.complete",
+      "init_publish.begin",
+      "init_publish.complete",
+      "initial_barrier.begin",
+      "initial_barrier.complete",
+      "model_build.begin",
+      "model_build.complete",
+      "optimizer.begin",
+      "optimizer.complete",
+      "optimizer_restore.begin",
+      "optimizer_restore.complete",
+      "rng_restore.begin",
+      "rng_restore.complete",
+      "training.complete",
+      "training_loop.enter",
+      "validate.begin",
+      "validate.complete"
+    ],
+    "source_delta_check": "PASS",
+    "original_gates_unchanged": true
+  },
+  "python39_syntax": "PASS",
+  "bash_syntax": "PASS",
+  "embedded_python_programs": 3,
+  "pytest": "52 passed, 1 skipped, 1 warning in 8.28s",
+  "device_regression": "SKIPPED: local CUDA/ROCm unavailable",
+  "byte_tensor_cpu_api_regression": "PASS: old expression fails; new expression preserves state and next draws",
+  "extracted_package_fake_scheduler": "PASS: one 3,4 sbatch array, frozen companions, no Torch on login",
+  "corrupted_delivery_blocked": "PASS",
+  "delivery_zip_sha256": "88824ed5c74a34cbdc8b5b2e55f32a69c01f6ff3f665ba55b4fc0d78d98d1da7",
+  "delivery_files_sha256": {
+    "a01_resume_fix_20261011/README.md": "1f1e19e61cced8297d3e26efe6c5f78e9e3deba585f65500186702d1177a9e80",
+    "a01_resume_fix_20261011/SHA256SUMS": "acb1a1f0c581def9876cc4c3e489c34b58d8c4e025da90645f2cc5b8ec350322",
+    "a01_resume_fix_20261011/compatibility_contract.py": "67876ff5f2aa7da3a70b33d5f4077fa60e9b3dc05eae5a11dfd41c4035fd29c8",
+    "a01_resume_fix_20261011/continue_training.py": "95cdd309e42a124b5f4bc7ae9a1ad35c053cb3aecde9c27306d24a2adaa0b441",
+    "a01_resume_fix_20261011/dcu_recovery.sh": "4236048778980cc08107c5305a6a5f7421276643941ed7165bc648fa59cc1a2e",
+    "a01_resume_fix_20261011/startup_trace.py": "18964879b191e7e70764f1bfca345d68e9b8ff75123118619345caae32395955",
+    "a01_resume_fix_20261011/submit_diting_resume_fix.sh": "57ebfda0b1f55641d0bfc1595123547e1b045af6d102cbb915cdfe673d2c1ee7",
+    "a01_resume_fix_20261011/training_compat.py": "2b5c1cb40ccc0ebbda75490d1f01b0a21ff6e81b0fab7a0bde54a858e6e105dc"
+  },
+  "HPC_resume": "NOT_RUN",
+  "OFF_startup_root_cause": "NOT_ESTABLISHED",
+  "new_HPC_jobs": "NOT_SUBMITTED",
+  "production_evaluation": "NOT_RUN",
+  "held_out_test": "NOT_ACCESSED"
+}

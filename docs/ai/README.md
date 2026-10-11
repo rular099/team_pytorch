@@ -146,3 +146,13 @@ forward PASS。TEAM三组scratch因评价入口无条件比较预训练SHA与原
 本批identity/verify/reference实际Job为29351785/29354874/29354884；未提供sacct，
 后续正式评价/回放未提供结果。14份原阶段seal的30个文件和84个tar成员一致性校验通过。
 第9节及前轮CSV报告为历史训练/性能证据，不应用其“待核验”概括本批已经提供的门。
+
+## 11. FE01-A01 最新恢复入口（2026-10-11）
+
+A01在独立分支 `exp/fe01-a01-absolute-amplitude-ablation`。
+数组30265280两项DiTing均通过16卡通信，ON恢复epoch5时RNG设备类型错误，
+OFF20分钟启动超时且卡点未知。当前使用
+[新恢复包说明](FE01_A01_RESUME_FIX.md)和
+[本批证据报告](../../reports/fe01_a01_continue_20261011/README.md)。
+运营兼容循环独立记录SHA，不修改旧认证源码/门控，不把其核心SHA当成完整执行身份。
+本地验证不等于真实续训成功；本轮未提交真实超算作业，也未进行生产评价或test访问。

@@ -1,5 +1,8 @@
 # A01 DiTing 超时续训（2026-10-11）
 
+**后续修订：数组30265280暴露了旧版Torch的RNG恢复错误及OFF启动超时。
+当前提交请使用[新恢复包与操作说明](FE01_A01_RESUME_FIX.md)；以下是上一版交付的历史记录。**
+
 基线 `be8cc1d9f240bd7da56b6ca174d78b03fa842a1e`，分支
 `exp/fe01-a01-absolute-amplitude-ablation`。
 本次实际日志分析见 [报告](../../reports/fe01_a01_retry_20261011/README.md)。

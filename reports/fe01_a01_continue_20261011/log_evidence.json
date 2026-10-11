@@ -1,0 +1,138 @@
+{
+  "base_commit": "fdab9e23c7dd73066f4d2032f23ab99d8f9190b6",
+  "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "input": "chaosuan_res/dcu_continue_20261011T094505_AiltUR.zip",
+  "zip_sha256": "6dbab6c481f3d07309288b68327d4f7bac81e482d4fa6cae35ea5db477dab326",
+  "members": [
+    {
+      "name": "30265280_4.err",
+      "bytes": 26970,
+      "sha256": "e09b1ad34e1586922d43499c84b3e37ab0750eccd09e03aa139e80c640826bd1"
+    },
+    {
+      "name": "30265280_3.err",
+      "bytes": 54902,
+      "sha256": "04d2381bcb9dd08afc4cb5c7b0c5ffca1779c9d1312fb5a1904957298bf4ee6b"
+    },
+    {
+      "name": "30265280_3.out",
+      "bytes": 5762,
+      "sha256": "5f04e9aa9ebf665f9666c2cfb4c645aa6069e0c29367ca700134f85c24869564"
+    },
+    {
+      "name": "30265280_4.out",
+      "bytes": 4086,
+      "sha256": "2d59b71c3bdc215faf4dd533ded81f394d05c226085162b3affb4cec54732399"
+    }
+  ],
+  "tasks": [
+    {
+      "array_job_id": 30265280,
+      "index": 3,
+      "family": "DiTing ON",
+      "collective_pass_count": 16,
+      "collective_ranks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "collective_sums": [
+        136.0
+      ],
+      "collective_hosts": [
+        "a01r1n18",
+        "a01r1n19",
+        "a01r2n00",
+        "a01r2n01"
+      ],
+      "resume_epoch_marker": [
+        "5"
+      ],
+      "fresh_marker": false,
+      "new_epoch_records": [],
+      "new_training_started_markers": 0,
+      "rng_type_error_count": 16,
+      "startup_timeout_ranks": [],
+      "traceback_count": 16,
+      "rsmi_init_failure": false
+    },
+    {
+      "array_job_id": 30265280,
+      "index": 4,
+      "family": "DiTing OFF",
+      "collective_pass_count": 16,
+      "collective_ranks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "collective_sums": [
+        136.0
+      ],
+      "collective_hosts": [
+        "a02r1n18",
+        "a02r1n19",
+        "a02r2n00",
+        "a02r2n01"
+      ],
+      "resume_epoch_marker": [],
+      "fresh_marker": true,
+      "new_epoch_records": [],
+      "new_training_started_markers": 0,
+      "rng_type_error_count": 0,
+      "startup_timeout_ranks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "traceback_count": 0,
+      "rsmi_init_failure": false
+    }
+  ],
+  "not_provided": [
+    "checkpoint files",
+    "full run directory inventory",
+    "sacct state/exit codes",
+    "operation helper/source hashes",
+    "OFF per-rank startup stack"
+  ]
+}
