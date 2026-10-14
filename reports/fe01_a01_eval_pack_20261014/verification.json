@@ -1,0 +1,41 @@
+{
+  "base_commit": "df371f39d2a69df3c0e32cfbe5c935c8a5678ffd",
+  "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "original115_sha256": "3e537ff6693971d92b139e517f370b998237bd8b29989194e9ddcc06cc9dcfea",
+  "A01_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "original_worktrees": {
+    "team_pytorch": {
+      "unchanged": true,
+      "head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+      "branch": "zhangb/native-scale-adapter-scaling"
+    },
+    "team_pytorch_fe01": {
+      "unchanged": true,
+      "head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+      "branch": "exp/fe01-feature-extractor-site-effects"
+    },
+    "team_pytorch_query_geometry_diagnostics": {
+      "unchanged": true,
+      "head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "branch": "exp/v01-velocity-prep-padding-control"
+    }
+  },
+  "original_core_source_configs_and_locks_changed": false,
+  "pytest": "72 passed, 1 skipped, 1 warning in 12.69s",
+  "skipped": "Actual CUDA/ROCm RNG regression: no local device; real HPC execution not inferred",
+  "python39_syntax_compile": "PASS",
+  "bash_syntax": "PASS",
+  "extracted_delivery_fake_scheduler": "PASS: prepare no Torch/scheduler; 0-3 then gated4 then gated CPU pack; one sbatch per explicit invocation",
+  "corrupted_delivery": "BLOCKED before scheduler",
+  "delivery_zip_sha256": "a9be430118e16d24bd776cf8a13073b721aae3327b56e233004384dc188262bf",
+  "operations_files_sha256": {
+    "eval_pack.sh": "9418235a2e0a56594bfd82b461e7e6495650c1f3a3f694352e3b688d3d97d0cd",
+    "eval_pack.py": "25abba3dfd7960d2d83016d72999f92235934e12e2a5c3e0a20a929be06b732d"
+  },
+  "user_training_completion": "USER_REPORTED; final full checkpoints/logs NOT_PROVIDED",
+  "HPC_prepare": "NOT_RUN",
+  "HPC_eval": "NOT_RUN",
+  "HPC_pack": "NOT_RUN",
+  "new_jobs": "NOT_SUBMITTED",
+  "held_out_test": "NOT_ACCESSED"
+}

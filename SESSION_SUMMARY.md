@@ -693,3 +693,16 @@ ByteTensor类型错误；OFF20分钟无新采样记录，16rank启动超时，�
 仅未提交、未采样的OFF初始化残留可整体存档后fresh；ON必须使用合法last恢复。
 本地52通过/1设备测试跳过；未自动提交真实超算作业。最新操作见
 `docs/ai/FE01_A01_RESUME_FIX.md`，证据见`reports/fe01_a01_continue_20261011/`。
+
+## 2026-10-14 A01 分批训练后的评价与打包入口
+
+用户报告五项train均已完成，但结果分散在不同目录；尚未提供最终完整权重或日志，
+本地不据此认证epoch/身份。基线`df371f39d2a69df3c0e32cfbe5c935c8a5678ffd`。
+新增独立运营入口自动扫描完整训练，冻结每组run/audit/config位置，保留原身份；
+正式eval输出统一写新session，不复制权重、不改原锁，不根据mtime或成绩猜候选。
+按eval_first(0–3)、eval_diting_off(4)、pack三步手动sbatch；前者每项1节点1DCU，
+pack用CPU；GPU环境仅在真实srun step内初始化。失败eval留独立attempt，完成后原子
+发布并seal；重提只补缺项，pack必须等五组完整评价和比较。
+新入口调用原精确MDN/validation/bootstrap与review_package，携带训练兼容入口SHA证据。
+本地72通过/1设备测试跳过；超算扫描、完整eval和pack均NOT_RUN，未自动提交作业。
+当前操作见`docs/ai/FE01_A01_MULTIROOT_EVAL_PACK.md`。
