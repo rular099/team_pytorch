@@ -27,8 +27,9 @@ fi
 : "${A01_EVAL_SESSION:?}"
 export A01_ENV_FILE="$A01_EVAL_SESSION/runtime.private.env"
 source "$A01_ENV_FILE"
-shared="$A01_EVAL_SESSION/tools/eval_pack.sh"
-helper="$A01_EVAL_SESSION/tools/eval_pack.py"
+operations=${A01_EVAL_REVISION_DIRECTORY:-$A01_EVAL_SESSION/tools}
+shared="$operations/eval_pack.sh"
+helper="$operations/eval_pack.py"
 case "$mode" in
   _rank_eval)
     # Initialize DCU inside the actual srun step, never in the batch shell.
@@ -51,7 +52,7 @@ case "$mode" in
     # Stdlib/config/package helpers only: this job requests CPU, no DCU.
     exec "${A01_CONFIG_PYTHON:-python3}" "$helper" pack --session "$A01_EVAL_SESSION"
     ;;
-  eval_first|eval_diting_off|pack) ;;
+  eval_first|eval_diting_off|eval_team|pack) ;;
   *) echo 'Choose prepare, eval_first, eval_diting_off or pack.' >&2;exit 2;;
 esac
 indices=$("${A01_CONFIG_PYTHON:-python3}" "$helper" preflight --session "$A01_EVAL_SESSION" --stage "$mode")

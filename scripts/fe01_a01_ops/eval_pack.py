@@ -171,13 +171,15 @@ def prepare(project, tool_dir, env_file):
     destination=Path(project)/'outputs';destination.mkdir(exist_ok=True)
     session=Path(tempfile.mkdtemp(prefix='a01_eval_'+datetime.datetime.now().strftime('%Y%m%dT%H%M%S')+'_',dir=destination))
     (session/'tools').mkdir();(session/'slurm').mkdir()
-    for name in ('eval_pack.py','eval_pack.sh'):
+    files=('eval_pack.py','eval_pack.sh')
+    if (tool_dir/'eval_revision.py').is_file():files+=('eval_revision.py',)
+    for name in files:
         shutil.copy2(tool_dir/name,session/'tools'/name)
         (session/'tools'/name).chmod(0o500 if name.endswith('.sh') else 0o400)
     root,pf=core()
     manifest=dict(schema=1,status='PREPARED_METADATA_ONLY',source_core_sha256=pf.current_code_sha(),
                   code_root=str(root),session=str(session),runs=rows,
-                  operations_sha256={name:pf.sha256(session/'tools'/name) for name in ('eval_pack.py','eval_pack.sh')})
+                  operations_sha256={name:pf.sha256(session/'tools'/name) for name in files})
     write(session/'plan.json',manifest)
     (session/'plan.json').chmod(0o400)
     # Runtime cache/output settings are a new private snapshot. Input cfgs remain
@@ -206,14 +208,42 @@ def load_plan(session):
     return manifest
 
 
+def revision_module():
+    path=Path(__file__).with_name('eval_revision.py')
+    spec=importlib.util.spec_from_file_location('a01_eval_revision',path)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    return module
+
+
+def execution_identity(session,index=None):
+    manifest=load_plan(session)
+    directory=os.environ.get('A01_EVAL_REVISION_DIRECTORY')
+    if directory:
+        module=revision_module();path=Path(directory)/'revision.json'
+        revision=module.validate_revision(session,path,index=index)
+        _,pf=core()
+        require(pf.sha256(__file__)==revision['operations_sha256']['eval_pack.py'],'Executed revision helper differs')
+        return dict(execution_operations_sha256=revision['operations_sha256'],
+                    operations_revision=dict(path=str(path.relative_to(Path(session))),sha256=pf.sha256(path)))
+    _,pf=core()
+    require(pf.sha256(__file__)==manifest['operations_sha256']['eval_pack.py'],'Executed helper differs from original plan')
+    return dict(execution_operations_sha256=manifest['operations_sha256'])
+
+
 def result_gate(session,index):
     _,pf=core();directory=Path(session)/'results'/f'index{index}'
     gate=read(directory/'EVAL_COMPLETE.json')
     require(gate['status']=='PASS' and gate['index']==index,'Incomplete evaluation gate')
     manifest=load_plan(session)
     require(gate['plan_sha256']==pf.sha256(Path(session)/'plan.json'),'Evaluation plan differs')
+    expected=manifest['operations_sha256']
+    proof=gate.get('operations_revision')
+    if proof:
+        path=(Path(session)/proof['path']).resolve()
+        revision=revision_module().validate_revision(session,path,expected_sha256=proof['sha256'],index=index)
+        expected=revision['operations_sha256']
     require(gate['split']=='validation' and gate['source_core_sha256']==manifest['source_core_sha256'] and
-            gate['execution_operations_sha256']==manifest['operations_sha256'],'Evaluation provenance differs')
+            gate['execution_operations_sha256']==expected,'Evaluation provenance differs')
     run_id=manifest['runs'][index]['run_id'];mandatory=set()
     for label in ('selected','epoch12'):
         mandatory.update(f'evaluation/{run_id}/{label}/{name}' for name in
@@ -236,11 +266,14 @@ def result_gate(session,index):
 
 def preflight(session, stage):
     manifest=load_plan(session)
+    if os.environ.get('A01_EVAL_REVISION_DIRECTORY'):
+        require(stage in ('eval_team','pack'),'TEAM correction supports only eval_team or pack')
+    execution_identity(session,0 if stage=='eval_team' else None)
     if stage=='pack':
         require(not (Path(session)/'review.tar.gz').exists(),'Review package already exists; preserved')
         for index in range(5):result_gate(session,index)
         return
-    indices=(0,1,2,3) if stage=='eval_first' else (4,)
+    indices=(0,) if stage=='eval_team' else (0,1,2,3) if stage=='eval_first' else (4,)
     if stage=='eval_diting_off':result_gate(session,3)
     pending=[]
     for index in indices:
@@ -264,13 +297,29 @@ def checkpoint_metadata(path, row, lock):
     require(checkpoint['a01_code_sha256']==lock['a01_code_sha256'] and checkpoint['world_size']==lock['world_size']==16,'Checkpoint source/world mismatch')
     require(checkpoint['identity']==pf.fingerprint(dict(config=effective,audit_lock=lock,world_size=16)),'Checkpoint protocol identity mismatch')
     require(checkpoint['absolute_amplitude_mode']==effective['absolute_amplitude_mode'],'Checkpoint amplitude mode mismatch')
-    require(checkpoint['encoder_state_sha256']==lock['initial_state']['encoder_sha256'] and
-            checkpoint['common_initial_state_sha256']==lock['initial_state']['common_sha256'],'Checkpoint initialization/encoder mismatch')
+    require(checkpoint['common_initial_state_sha256']==lock['initial_state']['common_sha256'],
+            'Checkpoint common initialization mismatch')
+    family=effective['model_family']
+    encoder_identity=dict(family=family,recorded_state_sha256=checkpoint['encoder_state_sha256'],
+                          initial_state_sha256=lock['initial_state']['encoder_sha256'])
+    if family=='team_original_scratch':
+        from fe01.model import state_fingerprint
+        prefix='waveform_model.encoder.'
+        state={key[len(prefix):]:value for key,value in checkpoint['model_state_dict'].items() if key.startswith(prefix)}
+        require(bool(state),'TEAM encoder state missing')
+        actual=state_fingerprint(state)
+        require(actual==checkpoint['encoder_state_sha256'],'Trained TEAM encoder bytes/metadata mismatch')
+        encoder_identity.update(policy='trainable scratch; authenticate trained bytes',actual_state_sha256=actual)
+    elif family in ('phasenet_pretrained_frozen','eqt_pretrained_frozen','diting_pretrained_frozen'):
+        require(checkpoint['encoder_state_sha256']==lock['initial_state']['encoder_sha256'],'Frozen encoder mismatch')
+        encoder_identity.update(policy='frozen; initial equality plus original loader tensor verification')
+    else:
+        raise ValueError('Unknown checkpoint model family: '+str(family))
     require([r['epoch'] for r in checkpoint['curve_records']]==list(range(1,epoch+1)),'Checkpoint curves incomplete')
     result={k:checkpoint[k] for k in ('epoch','updates','identity','best_epoch','best_selection_score','curve_records',
                                     'a01_code_sha256','a01_source_commit','world_size','absolute_amplitude_mode')}
     del checkpoint
-    result.update(path=str(path),file_sha256=pf.sha256(path))
+    result.update(path=str(path),file_sha256=pf.sha256(path),encoder_identity=encoder_identity)
     return result
 
 
@@ -280,6 +329,7 @@ def evaluate_one(session,index,device='cuda'):
     from fe01_a01.evaluation import export,export_old_ON,compare
     from fe01_review.requests import read_frame
     manifest=load_plan(session);row=manifest['runs'][index]
+    executed=execution_identity(session,index)
     require(candidate(index,row['run_dir'])==row,'Evaluation input metadata changed')
     pair_gate(manifest['runs'])
     final=Path(session)/'results'/f'index{index}'
@@ -308,7 +358,7 @@ def evaluate_one(session,index,device='cuda'):
     _,pf=core()
     records={str(p.relative_to(attempt)):pf.sha256(p) for p in sorted(attempt.rglob('*')) if p.is_file()}
     write(attempt/'EVAL_COMPLETE.json',dict(status='PASS',index=index,split='validation',plan_sha256=pf.sha256(Path(session)/'plan.json'),
-          source_core_sha256=manifest['source_core_sha256'],execution_operations_sha256=manifest['operations_sha256'],files_sha256=records))
+          source_core_sha256=manifest['source_core_sha256'],files_sha256=records,**executed))
     final.parent.mkdir(exist_ok=True);os.rename(attempt,final)
     print('A01_EVAL_COMPLETE index='+str(index)+' output='+str(final),flush=True)
 
@@ -332,6 +382,17 @@ def package(session):
     copy_evidence(Path(session)/'results',evidence/'results')
     copy_evidence(Path(session)/'slurm',evidence/'slurm')
     write(evidence/'evaluation_plan.json',manifest)
+    write(evidence/'package_execution.json',execution_identity(session))
+    proof_paths=set()
+    for index in range(5):
+        gate=read(Path(session)/'results'/f'index{index}'/'EVAL_COMPLETE.json')
+        if gate.get('operations_revision'):proof_paths.add(gate['operations_revision']['path'])
+    package_proof=execution_identity(session).get('operations_revision')
+    if package_proof:proof_paths.add(package_proof['path'])
+    for relative in sorted(proof_paths):
+        path=Path(session)/relative
+        target=evidence/'evaluation_execution'/path.parent.name/'revision.json'
+        target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(path,target)
     if (Path(session)/'jobs.tsv').is_file():shutil.copy2(Path(session)/'jobs.tsv',evidence/'jobs.tsv')
     write(evidence/'PACKAGE_SCOPE.json',dict(
         split='validation',checkpoint_policy='original selected best plus fixed epoch12',
@@ -366,7 +427,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('mode',choices=['prepare','preflight','evaluate','pack','show'])
     parser.add_argument('--project');parser.add_argument('--tool-dir');parser.add_argument('--env-file')
-    parser.add_argument('--session');parser.add_argument('--stage',choices=['eval_first','eval_diting_off','pack'])
+    parser.add_argument('--session');parser.add_argument('--stage',choices=['eval_first','eval_diting_off','eval_team','pack'])
     parser.add_argument('--index',type=int,choices=range(5))
     args=parser.parse_args()
     if args.mode=='prepare':prepare(args.project,args.tool_dir,args.env_file)

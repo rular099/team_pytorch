@@ -1,5 +1,8 @@
 # A01 分批训练后的 eval / pack（2026-10-14）
 
+**本页初版的TEAM身份检查有误，已有session中只修复0的步骤见
+[TEAM eval修复](FE01_A01_TEAM_EVAL_FIX.md)。保留运行中的1/2/3，最终pack使用修复入口。**
+
 不需要合并或搬动best.pth/last.pth。新入口把五组完整训练的位置记录在清单中，
 每组继续使用自己的原config和audit，评价结果写入一个新的统一目录。
 旧retry/continue本身只分开保存operations日志，权重仍在原A01_OUTPUT_ROOT/run_id；

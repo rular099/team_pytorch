@@ -706,3 +706,14 @@ pack用CPU；GPU环境仅在真实srun step内初始化。失败eval留独立att
 新入口调用原精确MDN/validation/bootstrap与review_package，携带训练兼容入口SHA证据。
 本地72通过/1设备测试跳过；超算扫描、完整eval和pack均NOT_RUN，未自动提交作业。
 当前操作见`docs/ai/FE01_A01_MULTIROOT_EVAL_PACK.md`。
+
+## 2026-10-14 TEAM OFF评价身份误判修复
+
+用户最后订正：eval_first中1/2/3运行正常，0在组合initialization/encoder检查退出，
+Step30424637.0。基线e1ad3bf547392738ee5e120b7d4d33f8e42d7d30。
+新增运营检查错误地对可训练TEAM encoder要求audit初态SHA不变；现改为训练后实际张量
+匹配checkpoint记录，公共初始化及三类冻结encoder检查保留。提供独立只重提0的入口，
+不更改旧session/plan/tools，不重新提交运行中的1/2/3，新执行SHA用追加revision记录。
+原4仍用原脚本，最终pack用新版逐项核对新旧seal。真实小TEAM更新已复现旧错误并通过
+新检查及原loader；本地84通过/1设备测试跳过，实际重评/打包仍NOT_RUN。
+操作见docs/ai/FE01_A01_TEAM_EVAL_FIX.md，证据见reports/fe01_a01_team_eval_fix_20261014/。

@@ -192,15 +192,17 @@ def test_spooled_eval_launches_shared_script_and_initializes_environment_only_in
 
 
 def small_checkpoints(directory,cfg,lock):
+    from fe01.model import state_fingerprint
     effective=copy.deepcopy(cfg);effective.update(lock['effective_config'])
     curves=[dict(epoch=i,updates=i*212,validation_selection=abs(i-7)+.1) for i in range(1,13)]
+    trained={'SYNTHETIC_ENCODER_WEIGHT':torch.tensor([2.])}
     common=dict(config=effective,source_config_sha256=fingerprint(cfg),world_size=16,
                 a01_code_sha256=lock['a01_code_sha256'],a01_source_commit='SYNTHETIC_SOURCE',
                 identity=fingerprint(dict(config=effective,audit_lock=lock,world_size=16)),
                 absolute_amplitude_mode=cfg['absolute_amplitude_mode'],
-                encoder_state_sha256=lock['initial_state']['encoder_sha256'],
+                encoder_state_sha256=state_fingerprint(trained),
                 common_initial_state_sha256=lock['initial_state']['common_sha256'],best_epoch=7,best_selection_score=.1,
-                model_state_dict={'SYNTHETIC_ONLY':torch.tensor([1.])})
+                model_state_dict={'waveform_model.encoder.'+k:v for k,v in trained.items()})
     for name,epoch in (('best.pth',7),('last.pth',12)):
         torch.save(dict(common,epoch=epoch,updates=epoch*212,curve_records=curves[:epoch]),directory/name)
 
