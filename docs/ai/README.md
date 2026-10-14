@@ -3,11 +3,12 @@
 本分支最新任务（2026-10-08）：[FE02事件融合协议](FE02_PROTOCOL.md)、
 [超算脚本/手动命令](FE02_HPC_RUNBOOK.md)、[实现交付](CODEX_RESULT_20261008_FE02.md)、
 [ChatGPT审阅要求](FE02_REVIEW_REQUEST.md)。FE02与FE01前端矩阵独立，默认仅5组seed42；
-真实DiTing/HPC门尚未执行，不宣称训练结果。
+当前只收到M/seed42 audit PASS和5轮训练日志，尚无完整五组逐目标结果。
 默认只需 `bash scripts/fe02/submit.sh`，直接提交并返回JobID；登记/audit/训练/validation
 在计算节点内串联，不再要求用户手动分拆。见[简化入口交付](CODEX_RESULT_20261008_FE02_SIMPLE_SUBMIT.md)。
 2026-10-09已修复用户报告的Conda PS1/nounset启动错误；新版包及重提方式见
-[修复交接](CODEX_RESULT_20261009_FE02_CONDA_FIX.md)。无真实训练结果回传。
+[修复交接](CODEX_RESULT_20261009_FE02_CONDA_FIX.md)。2026-10-14续跑RNG错误与保持
+原checkpoint身份的小补丁见[续跑修复交接](CODEX_RESULT_20261014_FE02_RNG_RESUME.md)。
 
 更新日期：2026-09-02
 

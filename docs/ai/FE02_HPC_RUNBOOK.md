@@ -1,5 +1,27 @@
 # FE02 超算手动提交（2026-10-08）
 
+## 2026-10-14：已有5轮任务续跑的RNG修复
+
+日志30444656_4在`torch.cuda.set_rng_state_all(rng['cuda_rng'])`报
+`TypeError: RNG state must be a torch.ByteTensor`。原torch.load(map_location=device)
+把状态也搬至DCU，旧版PyTorch此接口要求CPU ByteTensor。
+29934377_4已完成M/seed42前5轮并保存last，不要重训或更换源/数据/输出根。
+
+上传小补丁包 `fe02_rng_resume_fix_20261014.tar.gz`，在**原超算代码目录**执行：
+
+```bash
+tar -xzf fe02_rng_resume_fix_20261014.tar.gz
+bash resume_fe02_rng_cpu.sh
+```
+
+直接提交M/index4从last恢复。补丁包只新增3个文件，不替换原训练源码、原
+SOURCE_IDENTITY.json、lock或checkpoint；旧源码逐文件SHA和训练code_identity
+仍严格验证。兼容层单独SHA固定在提交快照，每rank核验并在成功恢复后写
+`compatibility_receipts/`，日志含`[FE02-RNG-CPU]`；不改RNG字节/顺序、不重新设seed。
+19项本地合成/提交/环境测试PASS，真实DCU续训尚待验证。
+若再次达到作业时限，继续运行同一个`resume_fe02_rng_cpu.sh`。
+此补丁仅针对9f70371来源已有任务；以下首次启动完整包不能用来改目录恢复旧checkpoint。
+
 本地代码完成不代表真实 DiTing/HPC 验证完成。用户2026-10-09报告首轮Conda初始化失败；
 本地已修复，修复版尚未在超算验证。未取得真实audit/train/eval结果。
 不需要先重复前轮的两组 smoke；五组正式 audit 包含必须的真实前向/梯度/冻结门，

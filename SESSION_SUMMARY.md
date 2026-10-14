@@ -1,6 +1,6 @@
 # TEAM PyTorch 项目交接文档
 
-## 当前入口：FE02（2026-10-09）
+## 当前入口：FE02（2026-10-14）
 
 当前独立工作目录 `team_pytorch_fe02`，分支 `exp/fe02-event-fusion-readout`，
 从FE01指定基点 `ba4fa7740d9fde5fde87a7b0ae0397037209baf4` 新建worktree。
@@ -16,10 +16,19 @@ attention，不是等容量对照。不加人工空间修正、不加载旧训�
 复用FE01采样/全量支持cohort/固定12ep预算/十cell等权noninput选择；
 独立variant-aware概率和空间指标、normal/random、单台多台及配对bootstrap。
 真实audit须记录实际encoder/adapter/YAML/原生feature，完成冻结参数/buffer和梯度门。
-本地unit/mock/synthetic不代表真实encoder或HPC性能。用户2026-10-09报告任务在
-Conda初始化时PS1 unbound退出，尚无真实audit/train/eval结果；不可宣布架构优胜。
+本地unit/mock/synthetic不代表真实encoder或HPC性能。原Conda问题已修复；
+用户回传29934377_4日志，真实M/seed42 audit PASS、完成5/12轮后Slurm TIME LIMIT。
+30444656_4续跑在CUDA RNG恢复处失败（ByteTensor映射至DCU）；其他四组状态未知。
+尚无逐目标结果回传，不可宣布架构优胜或完整五组结果。
 
-下一步用户上传 `artifacts/fe02/fe02_source_20261009_conda_fix.tar.gz` 与 `.sha256` 到全新
+已有9f70371来源任务：使用 `artifacts/fe02/fe02_rng_resume_fix_20261014.tar.gz`
+小补丁**解压到原代码目录**，执行 `bash resume_fe02_rng_cpu.sh`，默认直接续跑M/index4。
+仅新增入口/compat目录/说明，不替换SOURCE_IDENTITY、原训练源码、lock或checkpoint。
+兼容层SHA单独固定/记录，仅把恢复状态搬回CPU，不重置seed；19项回归PASS。
+详见[续跑修复交接](docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md)。
+
+以下是首次启动说明，不用于替换已有任务目录：用户上传
+`artifacts/fe02/fe02_source_20261009_conda_fix.tar.gz` 与 `.sha256` 到全新
 `team_pytorch_fe02` 超算目录，直接运行 `bash scripts/fe02/submit.sh`，自动sbatch提交
 并返回JobID。计算节点自动登记权重、必要audit、训练与normal/random validation；
 无需私有env副本、手动登记、独立audit任务或Job ID依赖。
