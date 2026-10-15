@@ -717,3 +717,13 @@ Step30424637.0。基线e1ad3bf547392738ee5e120b7d4d33f8e42d7d30。
 原4仍用原脚本，最终pack用新版逐项核对新旧seal。真实小TEAM更新已复现旧错误并通过
 新检查及原loader；本地84通过/1设备测试跳过，实际重评/打包仍NOT_RUN。
 操作见docs/ai/FE01_A01_TEAM_EVAL_FIX.md，证据见reports/fe01_a01_team_eval_fix_20261014/。
+
+## 2026-10-15 A01 五项评价状态与 pack 就绪检查
+
+用户报告 TEAM 修复提交入口成功，但无法辨别五项完成情况；本地尚未取得实际结果。
+基线 f29ecdcb4dcc4bdce9eaf560bcbc9453c2b4506e，新增认证核心之外的只读运营状态脚本。
+复用原完整 result_gate，接受 0 修复来源及其余旧来源，逐项核验两套 epoch/比较/文件 SHA；
+结合最新提交记录及只读 Slurm 查询区分排队/运行/失败/未知，不将提交成功当作评价完成。
+3 通过且 4 未见提交时显示原 OFF 提交命令；全部五项通过才显示修复入口 pack 命令。
+不登记新 revision，不修改旧 session/tools/plan/env/checkpoint，也不提交任何真实任务。
+操作见 docs/ai/FE01_A01_EVAL_STATUS.md；状态包与完整交接记录在本地 artifacts/fe01_a01。

@@ -1,0 +1,57 @@
+{
+  "task_id": "20261015-fe01-a01-eval-status",
+  "base_commit": "f29ecdcb4dcc4bdce9eaf560bcbc9453c2b4506e",
+  "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "tests": {
+    "passed": 37,
+    "failed": 0,
+    "warning": "existing timm FutureWarning",
+    "command": "pytest -q tests/test_fe01_a01_eval_status.py tests/test_fe01_a01_team_eval_fix.py tests/test_fe01_a01_eval_pack_ops.py"
+  },
+  "python39_ast": "PASS",
+  "bash_syntax": "PASS",
+  "a01_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "protected_repositories_unchanged": [
+    {
+      "repository": "team_pytorch",
+      "branch": "zhangb/native-scale-adapter-scaling",
+      "head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+      "status_sha256": "fd3a3c822ff2dca43d1025fca47c4ce6b0ef235038ed175901b6133b69a22b92",
+      "status_lines": 351,
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "repository": "team_pytorch_fe01",
+      "branch": "exp/fe01-feature-extractor-site-effects",
+      "head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+      "status_sha256": "f3d5e763d9276ac33811a93cdcda83a8733235fdf500b717f0349253271c109f",
+      "status_lines": 64,
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "repository": "team_pytorch_query_geometry_diagnostics",
+      "branch": "exp/v01-velocity-prep-padding-control",
+      "head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "status_sha256": "0c9304eb2157a009b18488a9134706124b12b70b1472967ea6415eea54a79e13",
+      "status_lines": 176,
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "hpc_status": "NOT_SUBMITTED_BY_CODEX; USER_REPORTED_TEAM_ENTRY_SUCCESS; FIVE_ACTUAL_RESULTS_NOT_AVAILABLE_LOCALLY",
+  "bundle": {
+    "path": "artifacts/fe01_a01/eval_status_20261015/fe01_a01_eval_status_20261015.zip",
+    "bytes": 16528,
+    "sha256": "7fa2cc70ffba07efa3e56ea1a16843a7970be70e094b41caaed6702a9cb51632",
+    "files_sha256": {
+      "README.md": "ae64d44be3289f1ba44b9249b358f1ea5f9385be15b5932a076a627136113bfa",
+      "check_eval_status.sh": "65b630c7fcdea76b422bdb6f4a91fa6ab78e816b9473a806d43cc8e7ca794ede",
+      "eval_pack.py": "a08f40d4fd0069b033e8b57a8013ac680538bfa2ce31e14717f203b335f38bac",
+      "eval_revision.py": "0c983d35475f6630db8bbde66085de015767e5042ed56ffd5a4ea491aef27cf5",
+      "eval_status.py": "8237c1fd829a6cdca22f1241ec3118975b8594bd068a357934d4cbbf3db19a6f"
+    }
+  },
+  "scope": "Read-only status outside authenticated core; no new revision, results or scientific metrics"
+}
