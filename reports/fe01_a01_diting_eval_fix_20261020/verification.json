@@ -1,0 +1,111 @@
+{
+  "task_id": "20261020-fe01-a01-diting-off-eval-fix",
+  "base_commit": "236f72797ef4ccdec584cfbba952987e64a26437",
+  "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "user_supplied_logs": [
+    {
+      "path": "outputs/eval_diting_off_30516145_4.err",
+      "bytes": 2077,
+      "sha256": "775541d1a1c0f100583525092a564eea9af58bf4001b32b3ed3692d11dad15ce"
+    },
+    {
+      "path": "outputs/eval_diting_off_30516145_4.out",
+      "bytes": 157,
+      "sha256": "1b8e757bb7d863baad04b653f62ff365ee22a8d9de277c481a4a774e3d81faac"
+    }
+  ],
+  "user_reported_artifact_gate": {
+    "passed": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "missing": [
+      4
+    ],
+    "pack_ready": false,
+    "pack_status": "NOT_STARTED",
+    "evidence": "User-pasted full checker output, not a locally examined complete result tree"
+  },
+  "verified_log_facts": [
+    "Job30516145_4 failed in strict_pair/population_audit",
+    "A01_ENV_READY shows Torch/DCU available",
+    "sacct rejects --array per user output"
+  ],
+  "inference": "ON CSV reread is implicated by data flow: OFF export already passed same gate; actual ON prediction bytes not supplied locally",
+  "precision_reproduction": {
+    "pandas": "2.2.3",
+    "synthetic": true,
+    "seed": 42,
+    "rows": 50000,
+    "source": "uniform(-5,1) cast float32 then float64; first default CSV read, serialize, second read",
+    "default_changed_values": 483,
+    "round_trip_changed_values": 0
+  },
+  "tests": {
+    "command": "python -m unittest discover -s tests -p test_fe01_a01_diting_eval_fix.py -v",
+    "runner": "/home/zhangb/software/miniconda/envs/ai/bin/python",
+    "passed": 17,
+    "failed": 0,
+    "inference_and_statistics": "Explicit substitutes; real pandas parsing, SHA, frozen historical tools/revisions and CPU packing exercised",
+    "original_Torch_suite": "NOT_RUN: old interpreter path no longer exists and current environment has no Torch"
+  },
+  "python39_ast": "PASS",
+  "bash_syntax": "PASS",
+  "a01_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "protected_repositories_before": [
+    {
+      "repository": "team_pytorch",
+      "branch": "zhangb/native-scale-adapter-scaling",
+      "head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+      "status_sha256": "fd3a3c822ff2dca43d1025fca47c4ce6b0ef235038ed175901b6133b69a22b92",
+      "status_lines": 351,
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "repository": "team_pytorch_fe01",
+      "branch": "exp/fe01-feature-extractor-site-effects",
+      "head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+      "status_sha256": "f3d5e763d9276ac33811a93cdcda83a8733235fdf500b717f0349253271c109f",
+      "status_lines": 64,
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "repository": "team_pytorch_query_geometry_diagnostics",
+      "branch": "exp/v01-velocity-prep-padding-control",
+      "head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "status_sha256": "0c9304eb2157a009b18488a9134706124b12b70b1472967ea6415eea54a79e13",
+      "status_lines": 176,
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "repository": "team_pytorch_fe02",
+      "branch": "exp/fe02-event-fusion-readout",
+      "head": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status_lines": 0,
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "hpc_status": "NOT_SUBMITTED_BY_CODEX; USER_REPORTED_0_TO_3_GATE_PASS_AND_4_FAILURE; ACTUAL_RETRY_AND_PACK_NOT_RUN",
+  "bundle": {
+    "path": "artifacts/fe01_a01/diting_eval_fix_20261020/fe01_a01_diting_eval_fix_20261020.zip",
+    "bytes": 21686,
+    "sha256": "364e195db8b0dbbb8fac1a76456fb9bc105eacb778fcdc0cdac2fa008c46cf84",
+    "files_sha256": {
+      "README.md": "de1b2149d3761e52b92efef4002502c19e0dbc8b83c34d1943925186471496ea",
+      "check_eval_status.sh": "65b630c7fcdea76b422bdb6f4a91fa6ab78e816b9473a806d43cc8e7ca794ede",
+      "eval_pack.py": "5fed4c0d12f54cf94d6d3c0adcc9bfd79a40ed813ddea48847a2e6234d8a5577",
+      "eval_pack.sh": "d6039c7e422d1c63c92e5674879773fd3d9c0717b76dd01ee4efc50ca8e02554",
+      "eval_revision.py": "cdf7c377ed90c15c03df6f010593c729e5b9b6a4f30ba96dea6a8dcb1c1b5296",
+      "eval_status.py": "f7ead70806e8b81183a9da65998faf0e86ecac2ad0aaaa9ed0dd892e8f9c10b1",
+      "serialized_on.py": "3e66dbf1e85f782812c93938c81790f05c8898fc060be92a4fa29c71564e1a99",
+      "submit_diting_eval_fix.sh": "4163ec999f7ac3b9f680e7cf7e4ca5a70120fd87fc15023f2fa8dfb343aff61a"
+    }
+  }
+}

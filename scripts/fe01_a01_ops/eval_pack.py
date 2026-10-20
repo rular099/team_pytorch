@@ -173,6 +173,7 @@ def prepare(project, tool_dir, env_file):
     (session/'tools').mkdir();(session/'slurm').mkdir()
     files=('eval_pack.py','eval_pack.sh')
     if (tool_dir/'eval_revision.py').is_file():files+=('eval_revision.py',)
+    if (tool_dir/'serialized_on.py').is_file():files+=('serialized_on.py',)
     for name in files:
         shutil.copy2(tool_dir/name,session/'tools'/name)
         (session/'tools'/name).chmod(0o500 if name.endswith('.sh') else 0o400)
@@ -238,14 +239,19 @@ def result_gate(session,index):
     require(gate['plan_sha256']==pf.sha256(Path(session)/'plan.json'),'Evaluation plan differs')
     expected=manifest['operations_sha256']
     proof=gate.get('operations_revision')
+    diting_revision=False
     if proof:
         path=(Path(session)/proof['path']).resolve()
-        revision=revision_module().validate_revision(session,path,expected_sha256=proof['sha256'],index=index)
+        module=revision_module()
+        revision=module.validate_revision(session,path,expected_sha256=proof['sha256'],index=index)
         expected=revision['operations_sha256']
+        diting_revision=revision['purpose']==module.DITING_PURPOSE
     require(gate['split']=='validation' and gate['source_core_sha256']==manifest['source_core_sha256'] and
             gate['execution_operations_sha256']==expected,'Evaluation provenance differs')
     run_id=manifest['runs'][index]['run_id'];mandatory=set()
     for label in ('selected','epoch12'):
+        if diting_revision:
+            mandatory.add(f'paired_input_checks/{label}.json')
         mandatory.update(f'evaluation/{run_id}/{label}/{name}' for name in
                          ('predictions.csv.gz','support.csv','population.json','scores.csv','fields.csv.gz','checkpoint_identity.json'))
         if index<3:
@@ -261,14 +267,27 @@ def result_gate(session,index):
     if index!=3:
         for label in ('selected','epoch12'):
             require(read(directory/'comparisons'/label/'comparison.json')['status']=='PASS','Comparison did not pass')
+    if diting_revision:
+        for label in ('selected','epoch12'):
+            check=read(directory/'paired_input_checks'/f'{label}.json')
+            on_run=manifest['runs'][3]['run_id']
+            on_relative=f'evaluation/{on_run}/{label}/predictions.csv.gz'
+            on_gate=read(Path(session)/'results/index3/EVAL_COMPLETE.json')
+            digest=on_gate['files_sha256'][on_relative]
+            require(check['status']=='PASS' and check['parser']==dict(engine='c',float_precision='round_trip') and
+                    check['source_expected_sha256']==check['source_actual_sha256']==digest,
+                    'Serialized ON check did not pass or source differs')
     return directory
 
 
 def preflight(session, stage):
     manifest=load_plan(session)
     if os.environ.get('A01_EVAL_REVISION_DIRECTORY'):
-        require(stage in ('eval_team','pack'),'TEAM correction supports only eval_team or pack')
-    execution_identity(session,0 if stage=='eval_team' else None)
+        module=revision_module()
+        revision=module.validate_revision(session,Path(os.environ['A01_EVAL_REVISION_DIRECTORY'])/'revision.json')
+        allowed='eval_team' if revision['allowed_eval_indices']==[0] else 'eval_diting_off'
+        require(stage in (allowed,'pack'),'This correction supports only '+allowed+' or pack')
+    execution_identity(session,0 if stage=='eval_team' else 4 if stage=='eval_diting_off' else None)
     if stage=='pack':
         require(not (Path(session)/'review.tar.gz').exists(),'Review package already exists; preserved')
         for index in range(5):result_gate(session,index)
@@ -327,7 +346,6 @@ def evaluate_one(session,index,device='cuda'):
     core()
     from fe01_a01.engine import check_audit
     from fe01_a01.evaluation import export,export_old_ON,compare
-    from fe01_review.requests import read_frame
     manifest=load_plan(session);row=manifest['runs'][index]
     executed=execution_identity(session,index)
     require(candidate(index,row['run_dir'])==row,'Evaluation input metadata changed')
@@ -345,6 +363,15 @@ def evaluate_one(session,index,device='cuda'):
     attempts=Path(session)/'attempts';attempts.mkdir(exist_ok=True)
     attempt=Path(tempfile.mkdtemp(prefix=f'eval_index{index}_',dir=attempts))
     for label,metadata in (('selected',best),('epoch12',last)):
+        if index==4:
+            path=Path(__file__).with_name('serialized_on.py')
+            spec=importlib.util.spec_from_file_location('a01_serialized_on',path)
+            reader=importlib.util.module_from_spec(spec);spec.loader.exec_module(reader)
+            on_id=manifest['runs'][3]['run_id']
+            relative=f'evaluation/{on_id}/{label}/predictions.csv.gz'
+            seal=read(Path(session)/'results/index3/EVAL_COMPLETE.json')
+            on=reader.read_serialized_on(Path(session)/'results/index3'/relative,seal['files_sha256'][relative],
+                                       attempt/'paired_input_checks'/f'{label}.json')
         target=attempt/'evaluation'/cfg['run_id']/label
         frame=export(cfg,audit,Path(metadata['path']),metadata['epoch'],target,device)
         write(target/'checkpoint_identity.json',metadata)
@@ -352,8 +379,6 @@ def evaluate_one(session,index,device='cuda'):
             on=export_old_ON(cfg,audit,label,attempt/'evaluation'/(cfg['run_id']+'_reused_ON')/label,device)
             compare(on,frame,attempt/'comparisons'/label)
         elif index==4:
-            on_id=manifest['runs'][3]['run_id']
-            on=read_frame(Path(session)/'results/index3/evaluation'/on_id/label/'predictions.csv.gz')
             compare(on,frame,attempt/'comparisons'/label)
     _,pf=core()
     records={str(p.relative_to(attempt)):pf.sha256(p) for p in sorted(attempt.rglob('*')) if p.is_file()}

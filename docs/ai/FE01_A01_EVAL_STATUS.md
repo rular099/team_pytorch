@@ -1,5 +1,10 @@
 # A01 五项评价状态检查与 pack 时机（2026-10-15）
 
+2026-10-20 更新：用户确认 0–3 完整通过，4 配对失败。当前使用
+[DiTing OFF 单项修复包](FE01_A01_DITING_EVAL_FIX.md)内的 status/重提/pack 入口；
+它兼容不支持 sacct --array 的集群，并识别 4 的新增执行来源。
+下文旧包及旧 pack 命令是 2026-10-15 的历史交付，不用于本次修复后的 4。
+
 适用分支 `exp/fe01-a01-absolute-amplitude-ablation`；实现基线
 `f29ecdcb4dcc4bdce9eaf560bcbc9453c2b4506e`。
 用户报告 TEAM 修复入口执行成功；本地尚未取得本批实际评价输出，不能据此判定五项均完成。

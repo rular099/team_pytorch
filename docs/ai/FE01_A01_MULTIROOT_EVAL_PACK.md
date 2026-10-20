@@ -1,5 +1,9 @@
 # A01 分批训练后的 eval / pack（2026-10-14）
 
+2026-10-20 当前进度：用户检查 0–3 完整通过，只需
+[DiTing OFF 单项修复重提及新版 pack](FE01_A01_DITING_EVAL_FIX.md)。
+保留本页原 session，使用该新入口处理 4 和最终 pack；下面是初版历史操作。
+
 **本页初版的TEAM身份检查有误，已有session中只修复0的步骤见
 [TEAM eval修复](FE01_A01_TEAM_EVAL_FIX.md)。保留运行中的1/2/3，最终pack使用修复入口。**
 

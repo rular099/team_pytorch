@@ -122,7 +122,7 @@ def test_scheduler_uses_array_task_ids_and_live_queue_overrides_accounting(monke
     monkeypatch.setattr(status.subprocess, 'run', run)
     value, warnings = status.scheduler({0: {'job': '100', 'task': '100_0'}})
     assert value['100_0']['state'] == 'RUNNING' and value['100_1']['state'] == 'COMPLETED'
-    assert '--array' in calls[0] and '-r' in calls[1] and not warnings
+    assert '--array' not in calls[0] and '-r' in calls[1] and not warnings
 
 
 def test_unavailable_scheduler_keeps_submitted_tasks_unknown(monkeypatch):

@@ -727,3 +727,18 @@ Step30424637.0。基线e1ad3bf547392738ee5e120b7d4d33f8e42d7d30。
 3 通过且 4 未见提交时显示原 OFF 提交命令；全部五项通过才显示修复入口 pack 命令。
 不登记新 revision，不修改旧 session/tools/plan/env/checkpoint，也不提交任何真实任务。
 操作见 docs/ai/FE01_A01_EVAL_STATUS.md；状态包与完整交接记录在本地 artifacts/fe01_a01。
+
+## 2026-10-20 DiTing OFF 配对读取修复
+
+用户状态输出确认 0–3 完整通过；Job30516145_4 在 strict_pair 人口门处失败，
+设备 ready，未见资源/环境错误。日志同行包含两侧检查，数据流指向 ON 重读侧：
+ON 来自已封存 CSV，OFF 此前通过同一导出人口检查且身份列未再改变。
+基线 236f72797ef4ccdec584cfbba952987e64a26437。pandas2.2.3 合成标签 CSV 二次读取复现
+50000 行中 483 个默认解析浮点变化，round_trip 无变化；实际超算 CSV 仍未提供。
+新增认证核心之外的 round_trip 读取 helper，每轮 OFF 推理前验证 ON 字节和原生产人口门，
+不改标签/容差/交集；检查 JSON 随新 seal 固定。仅 4 新增 [4] revision，兼容旧 TEAM [0]
+和其余原 seal；新入口手动只重提 4，后续 CPU pack 也必须用该入口。
+status 去掉集群不支持的 sacct --array；仍未知时不据父作业或队列消失认定完成。
+本地无可用旧 Torch 环境，使用可用 pandas2.2.3 和 unittest 验证运营路径，
+未重跑 Torch 模型测试，未改核心，未自动运行真实训练/eval/pack/test。
+当前操作见 docs/ai/FE01_A01_DITING_EVAL_FIX.md。

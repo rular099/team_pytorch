@@ -11,8 +11,8 @@ ACTIVE = {'PENDING', 'RUNNING', 'CONFIGURING', 'COMPLETING', 'SUSPENDED',
           'RESIZING', 'REQUEUED', 'REQUEUE_HOLD', 'SIGNALING', 'STAGE_OUT'}
 FAILED = {'FAILED', 'CANCELLED', 'TIMEOUT', 'NODE_FAIL', 'OUT_OF_MEMORY',
           'PREEMPTED', 'BOOT_FAIL', 'DEADLINE', 'REVOKED', 'SPECIAL_EXIT'}
-OFF_COMMAND = 'bash a01_eval_pack_20261014/eval_pack.sh eval_diting_off'
-PACK_COMMAND = 'bash a01_team_eval_fix_20261014/submit_team_eval_fix.sh pack'
+OFF_COMMAND = 'bash a01_diting_eval_fix_20261020/submit_diting_eval_fix.sh'
+PACK_COMMAND = 'bash a01_diting_eval_fix_20261020/submit_diting_eval_fix.sh pack'
 
 
 def helper():
@@ -63,7 +63,9 @@ def scheduler(latest):
         return {}, []
     states, warnings = {}, []
     queries = (
-        ['sacct', '-n', '-P', '-X', '--array', '-j', jobs,
+        # Older cluster sacct rejects --array. JobID already identifies each
+        # recorded task; never infer a task's state from its array parent.
+        ['sacct', '-n', '-P', '-X', '-j', jobs,
          '--format=JobID%64,State%40,ExitCode'],
         ['squeue', '-h', '-r', '-j', jobs, '-o', '%i|%T'],
     )
