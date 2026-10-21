@@ -1,0 +1,12 @@
+{
+  "execution_operations_sha256": {
+    "eval_pack.py": "5fed4c0d12f54cf94d6d3c0adcc9bfd79a40ed813ddea48847a2e6234d8a5577",
+    "eval_pack.sh": "d6039c7e422d1c63c92e5674879773fd3d9c0717b76dd01ee4efc50ca8e02554",
+    "eval_revision.py": "cdf7c377ed90c15c03df6f010593c729e5b9b6a4f30ba96dea6a8dcb1c1b5296",
+    "serialized_on.py": "3e66dbf1e85f782812c93938c81790f05c8898fc060be92a4fa29c71564e1a99"
+  },
+  "operations_revision": {
+    "path": "operations/diting_eval_fix_2331ebdb1081/revision.json",
+    "sha256": "670e525795e3f353fe3e0963a406075b4e0533b54899642eae7b9f79397506cd"
+  }
+}

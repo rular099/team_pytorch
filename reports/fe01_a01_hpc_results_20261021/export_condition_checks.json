@@ -1,0 +1,261 @@
+{
+  "status": "PASS",
+  "exports": [
+    {
+      "family": "TEAM",
+      "mode": "OFF",
+      "checkpoint_policy": "selected",
+      "source": "results/index0/evaluation/a01__team_original_scratch__off__seed42/selected/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "team_original_scratch",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "TEAM",
+      "mode": "ON",
+      "checkpoint_policy": "selected",
+      "source": "results/index0/evaluation/a01__team_original_scratch__off__seed42_reused_ON/selected/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "team_original_scratch",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "comparison_kind": "reused_trained_ON_frozen_epoch"
+      }
+    },
+    {
+      "family": "TEAM",
+      "mode": "OFF",
+      "checkpoint_policy": "epoch12",
+      "source": "results/index0/evaluation/a01__team_original_scratch__off__seed42/epoch12/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "team_original_scratch",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "TEAM",
+      "mode": "ON",
+      "checkpoint_policy": "epoch12",
+      "source": "results/index0/evaluation/a01__team_original_scratch__off__seed42_reused_ON/epoch12/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "team_original_scratch",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "comparison_kind": "reused_trained_ON_frozen_epoch"
+      }
+    },
+    {
+      "family": "PhaseNet",
+      "mode": "OFF",
+      "checkpoint_policy": "selected",
+      "source": "results/index1/evaluation/a01__phasenet_pretrained_frozen__off__seed42/selected/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "phasenet_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "PhaseNet",
+      "mode": "ON",
+      "checkpoint_policy": "selected",
+      "source": "results/index1/evaluation/a01__phasenet_pretrained_frozen__off__seed42_reused_ON/selected/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "phasenet_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "comparison_kind": "reused_trained_ON_frozen_epoch"
+      }
+    },
+    {
+      "family": "PhaseNet",
+      "mode": "OFF",
+      "checkpoint_policy": "epoch12",
+      "source": "results/index1/evaluation/a01__phasenet_pretrained_frozen__off__seed42/epoch12/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "phasenet_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "PhaseNet",
+      "mode": "ON",
+      "checkpoint_policy": "epoch12",
+      "source": "results/index1/evaluation/a01__phasenet_pretrained_frozen__off__seed42_reused_ON/epoch12/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "phasenet_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "comparison_kind": "reused_trained_ON_frozen_epoch"
+      }
+    },
+    {
+      "family": "EQT",
+      "mode": "OFF",
+      "checkpoint_policy": "selected",
+      "source": "results/index2/evaluation/a01__eqt_pretrained_frozen__off__seed42/selected/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "eqt_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "EQT",
+      "mode": "ON",
+      "checkpoint_policy": "selected",
+      "source": "results/index2/evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/selected/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "eqt_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "comparison_kind": "reused_trained_ON_frozen_epoch"
+      }
+    },
+    {
+      "family": "EQT",
+      "mode": "OFF",
+      "checkpoint_policy": "epoch12",
+      "source": "results/index2/evaluation/a01__eqt_pretrained_frozen__off__seed42/epoch12/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "eqt_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "EQT",
+      "mode": "ON",
+      "checkpoint_policy": "epoch12",
+      "source": "results/index2/evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/epoch12/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "eqt_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "comparison_kind": "reused_trained_ON_frozen_epoch"
+      }
+    },
+    {
+      "family": "DiTing",
+      "mode": "ON",
+      "checkpoint_policy": "selected",
+      "source": "results/index3/evaluation/a01__diting_pretrained_frozen__on__seed42/selected/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "diting_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "DiTing",
+      "mode": "ON",
+      "checkpoint_policy": "epoch12",
+      "source": "results/index3/evaluation/a01__diting_pretrained_frozen__on__seed42/epoch12/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "diting_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "DiTing",
+      "mode": "OFF",
+      "checkpoint_policy": "selected",
+      "source": "results/index4/evaluation/a01__diting_pretrained_frozen__off__seed42/selected/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "diting_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    },
+    {
+      "family": "DiTing",
+      "mode": "OFF",
+      "checkpoint_policy": "epoch12",
+      "source": "results/index4/evaluation/a01__diting_pretrained_frozen__off__seed42/epoch12/predictions.csv.gz",
+      "status": "PASS",
+      "rows": 194265,
+      "expected": {
+        "seed": 42,
+        "model_family": "diting_pretrained_frozen",
+        "split": "val",
+        "units": "log10(m/s^2)",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "comparison_kind": "trained_ablation"
+      }
+    }
+  ]
+}

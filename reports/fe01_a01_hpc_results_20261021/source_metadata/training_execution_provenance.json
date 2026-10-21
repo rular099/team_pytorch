@@ -1,0 +1,50 @@
+{
+  "records": [
+    {
+      "index": 3,
+      "path": "PRIVATE_PATH/train_action_3.json",
+      "sha256": "ce684141efa1204d1b3b032135b4a5e4cebd2f3f38da857a871ee15a1ae3c24c"
+    },
+    {
+      "index": 3,
+      "path": "PRIVATE_PATH/manifest.json",
+      "sha256": "f53c650f978c5f47c49441df1fd137ff9784c1b43883a7ede3463f7841569c07"
+    },
+    {
+      "index": 3,
+      "path": "PRIVATE_PATH/execution_identity_index3.json",
+      "sha256": "59eabeb6c42aeb45f4ce8ea6881df2ffe254e600d639220322a008d63a8aa036"
+    },
+    {
+      "index": 3,
+      "path": "PRIVATE_PATH/train_action_3.json",
+      "sha256": "ce684141efa1204d1b3b032135b4a5e4cebd2f3f38da857a871ee15a1ae3c24c"
+    },
+    {
+      "index": 3,
+      "path": "PRIVATE_PATH/manifest.json",
+      "sha256": "f53c650f978c5f47c49441df1fd137ff9784c1b43883a7ede3463f7841569c07"
+    },
+    {
+      "index": 4,
+      "path": "PRIVATE_PATH/train_action_4.json",
+      "sha256": "ef52e7bdec0e24760a2fe2a29297ec26e0c0ca0b8922e75e7e68b35367c43c7f"
+    },
+    {
+      "index": 4,
+      "path": "PRIVATE_PATH/execution_identity_index4.json",
+      "sha256": "59eabeb6c42aeb45f4ce8ea6881df2ffe254e600d639220322a008d63a8aa036"
+    },
+    {
+      "index": 4,
+      "path": "PRIVATE_PATH/train_action_4.json",
+      "sha256": "ef52e7bdec0e24760a2fe2a29297ec26e0c0ca0b8922e75e7e68b35367c43c7f"
+    },
+    {
+      "index": 4,
+      "path": "PRIVATE_PATH/archive_index4.json",
+      "sha256": "60b1c779363c82f6f1df7cc03ff49ba9eee1c54fa9f73aeeffa0c0fcb09bf51a"
+    }
+  ],
+  "limitation": "Collected operation evidence; absence never implies identical executed source or successful training."
+}

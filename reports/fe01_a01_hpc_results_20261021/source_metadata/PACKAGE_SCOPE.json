@@ -1,0 +1,14 @@
+{
+  "split": "validation",
+  "checkpoint_policy": "original selected best plus fixed epoch12",
+  "source_seals": "EVAL_COMPLETE files_sha256 refer to original unredacted evaluation artifacts",
+  "archive_seal": "A01_REVIEW_MANIFEST refers to actual redacted bytes inside this tar",
+  "excluded": [
+    "weights",
+    "raw waveforms",
+    "failed evaluation attempts",
+    "sample journals",
+    "trace arrays",
+    "private env files"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "population_sha256": "e96284780cb5f72b952c1697d4d264d307e7139a153201fa222566015aec7f69",
+  "truth_input_clock_sha256": "f204deca06725af5513895416d5b0691c75c12221127854c32d1d497855155bb",
+  "rows": 194265,
+  "roles": {
+    "observed_input": 54825,
+    "triggered_noninput": 43850,
+    "untriggered_noninput": 95590
+  },
+  "events": 1310,
+  "identity_float_canonicalization": "original CSV decimal display after exact float32 label and integer-clock checks; all keys mandatory"
+}

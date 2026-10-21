@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "scope": "one local microbatch update, NOT formal training/selection",
+  "loss": 1.8828494548797607,
+  "audit_lock_sha256": "8306bfe6e3c3ccb857557603c42d438d037006b10341cccc948aba45f0167673",
+  "a01_code_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f"
+}

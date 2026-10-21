@@ -1,0 +1,24 @@
+{
+  "host": "a01r1n18",
+  "job_id": "30270604",
+  "python": "3.9.21 (main, Dec 11 2024, 16:24:11) \n[GCC 11.2.0]",
+  "versions": {
+    "torch": "1.13.1+git55d300e.abi0.dtk2304",
+    "seisbench": "0.10.1",
+    "numpy": "1.26.4",
+    "scipy": "1.13.1",
+    "h5py": "3.13.0"
+  },
+  "rocm": "5.4.23191-0e6bf66b",
+  "device": "Device 66a1",
+  "git_commit": "unknown source identity",
+  "git_dirty": null,
+  "base_commit": "9c95dbfaf92f36b2673d816026cd3f25b91eec66",
+  "command": [
+    "PRIVATE_PATH/continue_training.py",
+    "train",
+    "--index",
+    "3"
+  ],
+  "recorded_utc": "2026-10-11T04:48:12.651763+00:00"
+}

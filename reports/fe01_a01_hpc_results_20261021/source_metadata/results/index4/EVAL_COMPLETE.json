@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "index": 4,
+  "split": "validation",
+  "plan_sha256": "8120b1647b8067879b3f783e1c14e1efca708bc1179ecc0ad0acc0ce9bb90cd2",
+  "source_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "files_sha256": {
+    "comparisons/epoch12/OFF_scores.csv": "72fb0915ef1b3ce8fa7a4deb9919b950efbc8e03afc74aa02492532d3a9c842b",
+    "comparisons/epoch12/ON_scores.csv": "2c6c23f199d54ecd10c9d30552356dfb9aaf4d9da7e21d9186e47954982ab1b7",
+    "comparisons/epoch12/comparison.json": "8d5aca5de49582b5d7ed5bfbb5a528f72269c36e3974be9fc5e3ba4d8f8c44ce",
+    "comparisons/epoch12/paired_event_bootstrap.csv": "e04c42b0134038ef4cf6072da343c1f2d487a1671f205a19ea7ecba334697cae",
+    "comparisons/epoch12/spatial_fields.csv.gz": "fcb461d13b03b3bcaf80164170de05c95d1f08707960a76883ddb2be5ae1eccc",
+    "comparisons/selected/OFF_scores.csv": "c3f774059f6e897242c88cb6e7543c5b3c47934a82e3288c0b40f129dbdd21e3",
+    "comparisons/selected/ON_scores.csv": "6dd99a121fcb22b1284f6519136823a1c68bbe199797c265ca95f86d0cac6968",
+    "comparisons/selected/comparison.json": "8d5aca5de49582b5d7ed5bfbb5a528f72269c36e3974be9fc5e3ba4d8f8c44ce",
+    "comparisons/selected/paired_event_bootstrap.csv": "fca5609f017b91b10df7ea94dc6b0b5a787ac1f2a6d4b95d8495353331556e75",
+    "comparisons/selected/spatial_fields.csv.gz": "c4dddd36db56d658db4b62436516787427f92fcb462292a4876adfe47b4af275",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/epoch12/checkpoint_identity.json": "e0c1e860c86bf5cc4900b23f03fd6de7e56de65a0de5bce0de30bbbb356d4129",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/epoch12/fields.csv.gz": "152d156d74dabead3bd2a781200d99a83caad1400fdce2d67c4ad5199ea42c4e",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/epoch12/population.json": "9134475b07d44f8331a21df183c06d293129498a0612d85c69ab9374070acfb9",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/epoch12/predictions.csv.gz": "dff61a1c4e0067371076084e8ff7565cfa0987471dc94faedfe3342b23fae557",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/epoch12/scores.csv": "72fb0915ef1b3ce8fa7a4deb9919b950efbc8e03afc74aa02492532d3a9c842b",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/epoch12/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/selected/checkpoint_identity.json": "3964bf4f5273e9fc538414d94b3728a60ef90949cdc673dc174077a655686e0a",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/selected/fields.csv.gz": "8f788d31e81e0cf3b0eb067521d1be5453f6da875c2ec7fbf6d690f2e38b4eb8",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/selected/population.json": "9134475b07d44f8331a21df183c06d293129498a0612d85c69ab9374070acfb9",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/selected/predictions.csv.gz": "95b4117f7490892082cdb3e9ec1fb909eb542b80031c1c22a4f696e51a63e97f",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/selected/scores.csv": "c3f774059f6e897242c88cb6e7543c5b3c47934a82e3288c0b40f129dbdd21e3",
+    "evaluation/a01__diting_pretrained_frozen__off__seed42/selected/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "paired_input_checks/epoch12.json": "f711ec88f0f9b8019ca7671c838ddfa9fe0b4d56b5e578545a6d298bc52cb910",
+    "paired_input_checks/selected.json": "ffdb60577ef1a9b8086257f88fa6c2e49d87dc18ce1a4e67b715aaa7a223abbd"
+  },
+  "execution_operations_sha256": {
+    "eval_pack.py": "5fed4c0d12f54cf94d6d3c0adcc9bfd79a40ed813ddea48847a2e6234d8a5577",
+    "eval_pack.sh": "d6039c7e422d1c63c92e5674879773fd3d9c0717b76dd01ee4efc50ca8e02554",
+    "eval_revision.py": "cdf7c377ed90c15c03df6f010593c729e5b9b6a4f30ba96dea6a8dcb1c1b5296",
+    "serialized_on.py": "3e66dbf1e85f782812c93938c81790f05c8898fc060be92a4fa29c71564e1a99"
+  },
+  "operations_revision": {
+    "path": "operations/diting_eval_fix_2331ebdb1081/revision.json",
+    "sha256": "670e525795e3f353fe3e0963a406075b4e0533b54899642eae7b9f79397506cd"
+  }
+}

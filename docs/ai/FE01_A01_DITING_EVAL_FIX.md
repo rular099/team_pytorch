@@ -1,5 +1,10 @@
 # A01 DiTing OFF 配对读取修复（2026-10-20）
 
+2026-10-21：用户已完成4号和pack，实际结果见
+[中立结果报告](../../reports/fe01_a01_hpc_results_20261021/README.md)。
+五项seal及16份预测均已核验；实际两份ON读取检查各记录174个默认解析truth变化，round_trip通过。
+本页后续“尚未取得/待执行”描述为2026-10-20历史交付状态，不应据此要求重新提交。
+
 分支 `exp/fe01-a01-absolute-amplitude-ablation`，基线
 `236f72797ef4ccdec584cfbba952987e64a26437`。
 

@@ -742,3 +742,22 @@ status 去掉集群不支持的 sacct --array；仍未知时不据父作业或�
 本地无可用旧 Torch 环境，使用可用 pandas2.2.3 和 unittest 验证运营路径，
 未重跑 Torch 模型测试，未改核心，未自动运行真实训练/eval/pack/test。
 当前操作见 docs/ai/FE01_A01_DITING_EVAL_FIX.md。
+
+## 2026-10-21 A01 完整实际结果已整理
+
+用户提供 outputs/review.tar.gz 及sha256，输入SHA为
+7a6ecf2260f1fd8d7f1d188c48d6b0f19bbdc433bb861879fb51ac549f209986。
+整理基线59f3eb30d6c955ffe2904aee40693af71dc0a440。373个成员/372条manifest全部通过，
+五项seal成功，4号重评30828523、pack30864996；jobs.tsv不是sacct退出码证据。
+16份预测各为同一1310事件/194265请求，noninput139440；均validation seed42。
+960个cell指标复算与保存表一致，1040条MDN抽样误差<=8.9e-16，8个主bootstrap区间复现，
+240个空间配对点估计复核。原JSON脱敏与seal字节语义单列，不篡改旧SHA。
+实际4号ON检查确认两个epoch导出默认解析各有174个truth变化，round_trip通过冻结门。
+
+中立事实表/来源/分析任务在 reports/fe01_a01_hpc_results_20261021/；逐事件汇总入Git，
+原1.1GB归档和逐目标预测仅保留本地artifacts。Codex独立判断单独封存于
+artifacts/fe01_a01/review_20261021/CODEX_INDEPENDENT_ANALYSIS.md及SHA，排除在中立Git报告和上传ZIP之外。
+用户将自行取得ChatGPT分析再对照，因此此入口不预置Codex研究判断。
+注意：前三诊断是旧ON权重的推理时OFF干预，DiTing诊断是未训练初态；
+K1 field的2000个bootstrap仅1253有效，空cell排除37.35%，不能忽略。
+未加载模型/波形，未提交新超算任务或访问test。

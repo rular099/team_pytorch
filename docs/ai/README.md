@@ -185,3 +185,13 @@ OFF20分钟启动超时且卡点未知。当前使用
 仍执行原严格生产人口门，新增独立 [4] revision，不改旧 seal/核心，不重跑前四项。
 同包 status 去掉旧集群不支持的 sacct --array。最终 pack 必须使用本次新入口。
 真实 CSV 尚未本地取得，精度复现为合成证据；若实际身份仍不符会停止并写小型诊断 JSON。
+
+## 16. A01 实际结果已整理供独立分析（2026-10-21）
+
+用户下载的 `outputs/review.tar.gz` 已完整核验，五项评价完成证据齐全。
+当前入口为[中立事实报告](../../reports/fe01_a01_hpc_results_20261021/README.md)及
+[ChatGPT独立分析任务](../../reports/fe01_a01_hpc_results_20261021/CHATGPT_ANALYSIS_PROMPT.md)。
+16份导出、960个score cell和8个noninput主区间均从保存数据复核通过；全部为validation、seed42。
+报告显式区分selected/epoch12、目标/field权重及诊断checkpoint状态和稀疏bootstrap支持。
+本地Codex独立分析另外封存，未混入中立报告或上传ZIP，以便用户收到ChatGPT结论后对照。
+没有加载模型/波形、追加训练/eval或访问test。

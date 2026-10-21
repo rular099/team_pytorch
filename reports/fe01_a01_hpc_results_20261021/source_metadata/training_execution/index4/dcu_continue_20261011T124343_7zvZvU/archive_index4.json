@@ -1,0 +1,95 @@
+{
+  "original_path": "PRIVATE_PATH/a01__diting_pretrained_frozen__off__seed42",
+  "preserved_path": "PRIVATE_PATH/uncommitted_before_index4",
+  "files": [
+    {
+      "path": "init.pth",
+      "bytes": 5121058187
+    },
+    {
+      "path": "model_interface_audit.json",
+      "bytes": 7429
+    },
+    {
+      "path": "protocol.lock.json",
+      "bytes": 810246
+    },
+    {
+      "path": "resolved_config.json",
+      "bytes": 724775
+    },
+    {
+      "path": "runtime.json",
+      "bytes": 792
+    },
+    {
+      "path": "runtime_20261011T014819766445_rank0.json",
+      "bytes": 792
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803429691_rank1.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803435040_rank2.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803435903_rank3.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803443841_rank9.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803443850_rank8.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803443868_rank10.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803445962_rank6.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803447628_rank4.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803448554_rank11.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803451037_rank7.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803453079_rank15.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803453089_rank13.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803454201_rank5.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803456718_rank12.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014803456977_rank14.jsonl",
+      "bytes": 0
+    },
+    {
+      "path": "sample_journals/epoch0001_20261011T014819766445_rank0.jsonl",
+      "bytes": 0
+    }
+  ],
+  "reason": "No checkpoint, epoch curve or nonempty sample journal; preserve before fresh audited initialization"
+}

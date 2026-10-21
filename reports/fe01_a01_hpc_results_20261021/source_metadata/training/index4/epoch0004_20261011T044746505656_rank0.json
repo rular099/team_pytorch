@@ -1,0 +1,12 @@
+{
+  "epoch": 4,
+  "updates": 848,
+  "train_loss_rank0": 1.0526718159891524,
+  "validation_selection": 0.26476763628533717,
+  "lr": 0.000750000000000002,
+  "elapsed_seconds": 17017.376785225002,
+  "global_batch": 128,
+  "planned_samples": 27252,
+  "actual_samples": 27136,
+  "dropped_for_equal_update_budget": 116
+}

@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+  "probe_count": 78,
+  "cap_per_stratum": 2,
+  "audit_lock_sha256": "1f18d04b40b909c3da7548c15962f46c77e54dce667e07e1f6c4658f9255c379",
+  "a01_code_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "upstream_status": "UPSTREAM_CAUSALITY_UNKNOWN",
+  "trace_query_rule": "first native query-cap station IDs, full population retained in probe manifest"
+}

@@ -1,0 +1,1553 @@
+{
+  "schema": 1,
+  "status": "PREPARED_METADATA_ONLY",
+  "source_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "code_root": "PRIVATE_PATH/3ecf060a3334",
+  "session": "PRIVATE_PATH/a01_eval_20261014T102355__51fzm5p",
+  "runs": [
+    {
+      "index": 0,
+      "family": "TEAM",
+      "mode": "OFF",
+      "run_id": "a01__team_original_scratch__off__seed42",
+      "run_dir": "PRIVATE_PATH/a01__team_original_scratch__off__seed42",
+      "audit_dir": "PRIVATE_PATH/a01__team_original_scratch__off__seed42",
+      "gate_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+      "config": {
+        "fe01": {
+          "enabled": true,
+          "version": 2
+        },
+        "seed": 42,
+        "sampling_seed": 42,
+        "model_family": "team_original_scratch",
+        "native_n_samples": 10000,
+        "query_chunk_size": 15,
+        "query_independence_verified": false,
+        "pretrained_manifest": "PRIVATE_PATH/pretrained_manifest.json",
+        "diting_config": "PRIVATE_PATH/diting_1200m_backbone_attnpool.yml",
+        "output_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+        "model_params": {
+          "waveform_model_dims": [
+            1000,
+            1000,
+            1000
+          ],
+          "output_mlp_dims": [
+            64
+          ],
+          "output_location_dims": [
+            150,
+            50
+          ],
+          "wavelength": [
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              10
+            ]
+          ],
+          "mad_params": {
+            "n_heads": 10,
+            "att_dropout": 0.0,
+            "initializer_range": 0.02
+          },
+          "ffn_params": {
+            "hidden_dim": 2000
+          },
+          "transformer_layers": 2,
+          "hidden_dropout": 0.0,
+          "activation": "relu",
+          "n_pga_targets": 15,
+          "location_mixture": 3,
+          "pga_mixture": 3,
+          "magnitude_mixture": 1,
+          "borehole": false,
+          "max_stations": 25,
+          "bias_mag_mu": 5.0,
+          "bias_mag_sigma": 0.5,
+          "bias_loc_mu": 0,
+          "bias_loc_sigma": 2,
+          "event_token_init_range": 0.02,
+          "no_event_token": false,
+          "diting_station_adapter": "legacy",
+          "diting_station_pool_queries": 4,
+          "diting_station_pool_temperature": 1.0,
+          "diting_station_pool_dropout": 0.0,
+          "waveform_scale_gain": 1.0,
+          "waveform_scale_log_divisor": 10.0,
+          "waveform_scale_init_gate": 0.1,
+          "use_amplitude_info": true,
+          "disable_waveform_scale": false,
+          "use_coords_rel": false,
+          "use_coords_abs": true,
+          "use_coords_rel_abs_fusion": false,
+          "coords_abs_weight": 0.1,
+          "coord_fusion_mode": "add",
+          "output_distribution": "mdn",
+          "rotation_anchor": [
+            37,
+            140
+          ],
+          "pga_readout_mode": "target_cross_attention",
+          "event_readout_mode": "event_cross_attention",
+          "query_token_init_range": 0.02,
+          "pga_attention_diagnostics": false,
+          "pga_mask_sanity_check": false,
+          "pga_readout_layers": 4,
+          "event_readout_layers": 1,
+          "readout_ffn_hidden_dim": 1000,
+          "readout_residual_gates": true,
+          "readout_residual_gate_init": 0.0,
+          "readout_ffn_gate_init": 0.0,
+          "readout_first_residual": true,
+          "station_context_gate_init": 0.0,
+          "use_vs30": false,
+          "vs30_reference_mps": 760.0,
+          "vs30_init_gate": 0.0,
+          "rope_coord_mode": "relative_xy_km",
+          "rope_coord_scale": 100.0,
+          "rope_base": 10000.0,
+          "rope_lat_origin": 37.0,
+          "station_context_mode": "off",
+          "use_rope": false,
+          "pga_layerwise_refinement": false,
+          "pga_delta_gate_init": 0.001,
+          "station_delta_gate_init": 0.001,
+          "station_delta_ffn_gate_init": 0.001,
+          "use_target_temporal_pooling": false,
+          "temporal_pool_dim": 256,
+          "temporal_pool_geom_hidden_dim": 128,
+          "temporal_pool_time_basis": 32,
+          "temporal_pool_gate_init": 0.001,
+          "pga_use_event_context": false,
+          "vs30_injection_mode": "additive",
+          "vs30_site_affine_hidden_dim": 64,
+          "vs30_site_affine_scale": 0.1,
+          "vs30_site_affine_sigma_shift": false,
+          "diting_frontend": "vit_adapter",
+          "station_token_weight_mode": "none",
+          "temporal_token_weight_mode": "none",
+          "token_weight_floor": 0.0001,
+          "token_weight_scale": 4.0,
+          "dpk_checkpoint_path": null,
+          "dpk_share_encoder_if_identical": false,
+          "dpk_compare_encoder": false,
+          "dpk_encoder_policy": "current",
+          "dpk_weight_temperature": 1.0,
+          "dpk_weight_resample": "max",
+          "use_pga_temporal_residual": false,
+          "pga_temporal_residual_zero_init": false,
+          "temporal_token_dim": 256,
+          "pga_temporal_residual_mode": "residual",
+          "pga_temporal_residual_use_event_context": false,
+          "pga_temporal_residual_query_source": "readout",
+          "pga_temporal_residual_station_weighting": "attention",
+          "pga_temporal_residual_token_control": "none"
+        },
+        "data": {
+          "root": "PRIVATE_PATH/origin_corrected_diting_vel_acc_vs30",
+          "split_manifest": "PRIVATE_PATH/split_events.csv",
+          "station_filter": "knet",
+          "sampling_rate": 100,
+          "component_order": "NEZ",
+          "units": "m/s^2",
+          "upstream_processing": "legacy offline resampling/filtering; online causality not certified"
+        },
+        "window": {
+          "protocol": "native_prefix_v2",
+          "pre_p_seconds": 5,
+          "strict_causal": true,
+          "rolling_trained": false
+        },
+        "realtime": {
+          "bins": [
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.15,
+            0.15,
+            0.1
+          ],
+          "draws_per_event": 3,
+          "fixed_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ],
+          "common_times": [
+            1,
+            3,
+            5,
+            10,
+            20
+          ]
+        },
+        "geometry": {
+          "random_station_counts": [
+            1,
+            3,
+            5,
+            8,
+            12,
+            16
+          ],
+          "train_random_probability": 0.5
+        },
+        "training": {
+          "epochs": 12,
+          "max_updates": null,
+          "global_batch": 128,
+          "microbatch": 8,
+          "lr": 0.001,
+          "weight_decay": 0,
+          "gradient_clip": 5,
+          "scheduler": "cosine_fixed_updates",
+          "validation_frequency_epochs": 1,
+          "workers": 0,
+          "early_stopping": false,
+          "res_comps": [
+            "mag",
+            "loc",
+            "pga"
+          ],
+          "res_weight": [
+            0.02,
+            0.02,
+            1.0
+          ],
+          "distribution_mean_loss": {
+            "enabled": true,
+            "weight": 0.1,
+            "loss_type": "huber",
+            "huber_delta": 1.0
+          }
+        },
+        "target_normalization": {
+          "enabled": true,
+          "mean": -1.1228067351176172,
+          "std": 0.4312468402225416,
+          "count": 146842,
+          "source": "2000-2024 default event-level train split, source_network=knt, finite pga_norm_resampled_mps2"
+        },
+        "selection": {
+          "rule": "equal protocols / equal common fixed times / noninput MAE; tie earlier epoch",
+          "threshold_log10_pga": -1.2
+        },
+        "spatial": {
+          "enabled": false,
+          "manifest": "PRIVATE_PATH/spatial_manifest.csv",
+          "buffer_km": 20
+        },
+        "transfer_model_path": null,
+        "load_model_path": null,
+        "run_id": "a01__team_original_scratch__off__seed42",
+        "stage": "a01",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "a01": {
+          "original_run": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+          "population_audit": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+          "original_selected_epoch": 11,
+          "comparison_kind": "trained_ablation",
+          "original_checkpoint_pins": {
+            "init": {
+              "file_sha256": "5b1cb5367540d6e241de7d773192810a4bf9e2ab76740813a71e26d4e0866c29",
+              "state_sha256": "44cb036fd504ffdb3c43b9dea7cf086572475cc3d72b92cca52c6688af025f41"
+            },
+            "selected": {
+              "file_sha256": "dd73663d5ce4dc19ad24c118318755c0a08c4a0831f1812b38ea2c1078a48d37",
+              "state_sha256": "2abece3f37073e4011d430f0a53c47f42f8ee3e24b3093b0fbf1c427def4ed15"
+            },
+            "last": {
+              "file_sha256": "60cccb697afcf1f6e0ee487b38745d641811c51290ac764fec5a9e6d005d0e41",
+              "state_sha256": "590fa33ac46726b6040cf521025dffbb616d0ad0881be6db57cea01787312466"
+            }
+          },
+          "original_common_initial_sha256": "98c3efb9e55a8c5b0afd3dc204b095d2cb3449519e44b78726adcc9b6da1d569",
+          "original_request_csv_sha256": "d58a7b410e8d8df5bf46ba6e7022d07740b57bb9d932140c4754d2d57149c8bc"
+        }
+      },
+      "audit_lock_sha256": "8da719a0e58b4cb45db59227a6bbf91ad1eb8e99b6528f76cff5aa89c28aab76",
+      "checkpoint_stats": {
+        "best.pth": {
+          "bytes": 452538329,
+          "mtime_ns": 1791453899000000000
+        },
+        "last.pth": {
+          "bytes": 452538329,
+          "mtime_ns": 1791453898000000000
+        }
+      },
+      "curve_sha256": "d54ea85439e2a6fa6d6fb9fb5a512d63dd4fa2c92a3e5820f17ac85101762d54",
+      "metadata_epoch": 12,
+      "metadata_updates": 2544
+    },
+    {
+      "index": 1,
+      "family": "PhaseNet",
+      "mode": "OFF",
+      "run_id": "a01__phasenet_pretrained_frozen__off__seed42",
+      "run_dir": "PRIVATE_PATH/a01__phasenet_pretrained_frozen__off__seed42",
+      "audit_dir": "PRIVATE_PATH/a01__phasenet_pretrained_frozen__off__seed42",
+      "gate_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+      "config": {
+        "fe01": {
+          "enabled": true,
+          "version": 2
+        },
+        "seed": 42,
+        "sampling_seed": 42,
+        "model_family": "phasenet_pretrained_frozen",
+        "native_n_samples": 3001,
+        "query_chunk_size": 15,
+        "query_independence_verified": false,
+        "pretrained_manifest": "PRIVATE_PATH/pretrained_manifest.json",
+        "diting_config": "PRIVATE_PATH/diting_1200m_backbone_attnpool.yml",
+        "output_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+        "model_params": {
+          "waveform_model_dims": [
+            1000,
+            1000,
+            1000
+          ],
+          "output_mlp_dims": [
+            64
+          ],
+          "output_location_dims": [
+            150,
+            50
+          ],
+          "wavelength": [
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              10
+            ]
+          ],
+          "mad_params": {
+            "n_heads": 10,
+            "att_dropout": 0.0,
+            "initializer_range": 0.02
+          },
+          "ffn_params": {
+            "hidden_dim": 2000
+          },
+          "transformer_layers": 2,
+          "hidden_dropout": 0.0,
+          "activation": "relu",
+          "n_pga_targets": 15,
+          "location_mixture": 3,
+          "pga_mixture": 3,
+          "magnitude_mixture": 1,
+          "borehole": false,
+          "max_stations": 25,
+          "bias_mag_mu": 5.0,
+          "bias_mag_sigma": 0.5,
+          "bias_loc_mu": 0,
+          "bias_loc_sigma": 2,
+          "event_token_init_range": 0.02,
+          "no_event_token": false,
+          "diting_station_adapter": "legacy",
+          "diting_station_pool_queries": 4,
+          "diting_station_pool_temperature": 1.0,
+          "diting_station_pool_dropout": 0.0,
+          "waveform_scale_gain": 1.0,
+          "waveform_scale_log_divisor": 10.0,
+          "waveform_scale_init_gate": 0.1,
+          "use_amplitude_info": true,
+          "disable_waveform_scale": false,
+          "use_coords_rel": false,
+          "use_coords_abs": true,
+          "use_coords_rel_abs_fusion": false,
+          "coords_abs_weight": 0.1,
+          "coord_fusion_mode": "add",
+          "output_distribution": "mdn",
+          "rotation_anchor": [
+            37,
+            140
+          ],
+          "pga_readout_mode": "target_cross_attention",
+          "event_readout_mode": "event_cross_attention",
+          "query_token_init_range": 0.02,
+          "pga_attention_diagnostics": false,
+          "pga_mask_sanity_check": false,
+          "pga_readout_layers": 4,
+          "event_readout_layers": 1,
+          "readout_ffn_hidden_dim": 1000,
+          "readout_residual_gates": true,
+          "readout_residual_gate_init": 0.0,
+          "readout_ffn_gate_init": 0.0,
+          "readout_first_residual": true,
+          "station_context_gate_init": 0.0,
+          "use_vs30": false,
+          "vs30_reference_mps": 760.0,
+          "vs30_init_gate": 0.0,
+          "rope_coord_mode": "relative_xy_km",
+          "rope_coord_scale": 100.0,
+          "rope_base": 10000.0,
+          "rope_lat_origin": 37.0,
+          "station_context_mode": "off",
+          "use_rope": false,
+          "pga_layerwise_refinement": false,
+          "pga_delta_gate_init": 0.001,
+          "station_delta_gate_init": 0.001,
+          "station_delta_ffn_gate_init": 0.001,
+          "use_target_temporal_pooling": false,
+          "temporal_pool_dim": 256,
+          "temporal_pool_geom_hidden_dim": 128,
+          "temporal_pool_time_basis": 32,
+          "temporal_pool_gate_init": 0.001,
+          "pga_use_event_context": false,
+          "vs30_injection_mode": "additive",
+          "vs30_site_affine_hidden_dim": 64,
+          "vs30_site_affine_scale": 0.1,
+          "vs30_site_affine_sigma_shift": false,
+          "diting_frontend": "vit_adapter",
+          "station_token_weight_mode": "none",
+          "temporal_token_weight_mode": "none",
+          "token_weight_floor": 0.0001,
+          "token_weight_scale": 4.0,
+          "dpk_checkpoint_path": null,
+          "dpk_share_encoder_if_identical": false,
+          "dpk_compare_encoder": false,
+          "dpk_encoder_policy": "current",
+          "dpk_weight_temperature": 1.0,
+          "dpk_weight_resample": "max",
+          "use_pga_temporal_residual": false,
+          "pga_temporal_residual_zero_init": false,
+          "temporal_token_dim": 256,
+          "pga_temporal_residual_mode": "residual",
+          "pga_temporal_residual_use_event_context": false,
+          "pga_temporal_residual_query_source": "readout",
+          "pga_temporal_residual_station_weighting": "attention",
+          "pga_temporal_residual_token_control": "none"
+        },
+        "data": {
+          "root": "PRIVATE_PATH/origin_corrected_diting_vel_acc_vs30",
+          "split_manifest": "PRIVATE_PATH/split_events.csv",
+          "station_filter": "knet",
+          "sampling_rate": 100,
+          "component_order": "NEZ",
+          "units": "m/s^2",
+          "upstream_processing": "legacy offline resampling/filtering; online causality not certified"
+        },
+        "window": {
+          "protocol": "native_prefix_v2",
+          "pre_p_seconds": 5,
+          "strict_causal": true,
+          "rolling_trained": false
+        },
+        "realtime": {
+          "bins": [
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.15,
+            0.15,
+            0.1
+          ],
+          "draws_per_event": 3,
+          "fixed_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ],
+          "common_times": [
+            1,
+            3,
+            5,
+            10,
+            20
+          ]
+        },
+        "geometry": {
+          "random_station_counts": [
+            1,
+            3,
+            5,
+            8,
+            12,
+            16
+          ],
+          "train_random_probability": 0.5
+        },
+        "training": {
+          "epochs": 12,
+          "max_updates": null,
+          "global_batch": 128,
+          "microbatch": 8,
+          "lr": 0.001,
+          "weight_decay": 0,
+          "gradient_clip": 5,
+          "scheduler": "cosine_fixed_updates",
+          "validation_frequency_epochs": 1,
+          "workers": 0,
+          "early_stopping": false,
+          "res_comps": [
+            "mag",
+            "loc",
+            "pga"
+          ],
+          "res_weight": [
+            0.02,
+            0.02,
+            1.0
+          ],
+          "distribution_mean_loss": {
+            "enabled": true,
+            "weight": 0.1,
+            "loss_type": "huber",
+            "huber_delta": 1.0
+          }
+        },
+        "target_normalization": {
+          "enabled": true,
+          "mean": -1.1228067351176172,
+          "std": 0.4312468402225416,
+          "count": 146842,
+          "source": "2000-2024 default event-level train split, source_network=knt, finite pga_norm_resampled_mps2"
+        },
+        "selection": {
+          "rule": "equal protocols / equal common fixed times / noninput MAE; tie earlier epoch",
+          "threshold_log10_pga": -1.2
+        },
+        "spatial": {
+          "enabled": false,
+          "manifest": "PRIVATE_PATH/spatial_manifest.csv",
+          "buffer_km": 20
+        },
+        "transfer_model_path": null,
+        "load_model_path": null,
+        "run_id": "a01__phasenet_pretrained_frozen__off__seed42",
+        "stage": "a01",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "a01": {
+          "original_run": "PRIVATE_PATH/formal__phasenet_pretrained_frozen__seed42",
+          "population_audit": "PRIVATE_PATH/formal__phasenet_pretrained_frozen__seed42",
+          "original_selected_epoch": 12,
+          "comparison_kind": "trained_ablation",
+          "original_checkpoint_pins": {
+            "init": {
+              "file_sha256": "ff33a79efb10a71feff74ac58618b4905785e479867d06b397d773be021f4318",
+              "state_sha256": "c29caf452e11a95dcfe802bfcd36754c163f3fa717c0c56f2dd346bb2a6e8121"
+            },
+            "selected": {
+              "file_sha256": "6b672a9ac2a71bf6cb2086db09ca06438f2b517e7558ad2b785e690782259089",
+              "state_sha256": "0bb69dfc3d1b65b3eb210e2ec1304c4a17c13c56da2a0de1efbf979114a3f4be"
+            },
+            "last": {
+              "file_sha256": "1358eae21ba8972ea3dcf929b14251856d79b865adb00be5ecc59f96d73ef439",
+              "state_sha256": "0bb69dfc3d1b65b3eb210e2ec1304c4a17c13c56da2a0de1efbf979114a3f4be"
+            }
+          },
+          "original_common_initial_sha256": "98c3efb9e55a8c5b0afd3dc204b095d2cb3449519e44b78726adcc9b6da1d569",
+          "original_request_csv_sha256": "046d86abe5c43ac30af1ae5d0dcbc247c61596ddd562c80523a5860c47117efe"
+        }
+      },
+      "audit_lock_sha256": "8306bfe6e3c3ccb857557603c42d438d037006b10341cccc948aba45f0167673",
+      "checkpoint_stats": {
+        "best.pth": {
+          "bytes": 384544306,
+          "mtime_ns": 1791564597000000000
+        },
+        "last.pth": {
+          "bytes": 384545522,
+          "mtime_ns": 1791567560000000000
+        }
+      },
+      "curve_sha256": "3d102e46390fcf4d2af0e553a0c12ffd7d10e073fa68fc23fcdad04c0741c95f",
+      "metadata_epoch": 12,
+      "metadata_updates": 2544
+    },
+    {
+      "index": 2,
+      "family": "EQT",
+      "mode": "OFF",
+      "run_id": "a01__eqt_pretrained_frozen__off__seed42",
+      "run_dir": "PRIVATE_PATH/a01__eqt_pretrained_frozen__off__seed42",
+      "audit_dir": "PRIVATE_PATH/a01__eqt_pretrained_frozen__off__seed42",
+      "gate_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+      "config": {
+        "fe01": {
+          "enabled": true,
+          "version": 2
+        },
+        "seed": 42,
+        "sampling_seed": 42,
+        "model_family": "eqt_pretrained_frozen",
+        "native_n_samples": 6000,
+        "query_chunk_size": 15,
+        "query_independence_verified": false,
+        "pretrained_manifest": "PRIVATE_PATH/pretrained_manifest.json",
+        "diting_config": "PRIVATE_PATH/diting_1200m_backbone_attnpool.yml",
+        "output_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+        "model_params": {
+          "waveform_model_dims": [
+            1000,
+            1000,
+            1000
+          ],
+          "output_mlp_dims": [
+            64
+          ],
+          "output_location_dims": [
+            150,
+            50
+          ],
+          "wavelength": [
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              10
+            ]
+          ],
+          "mad_params": {
+            "n_heads": 10,
+            "att_dropout": 0.0,
+            "initializer_range": 0.02
+          },
+          "ffn_params": {
+            "hidden_dim": 2000
+          },
+          "transformer_layers": 2,
+          "hidden_dropout": 0.0,
+          "activation": "relu",
+          "n_pga_targets": 15,
+          "location_mixture": 3,
+          "pga_mixture": 3,
+          "magnitude_mixture": 1,
+          "borehole": false,
+          "max_stations": 25,
+          "bias_mag_mu": 5.0,
+          "bias_mag_sigma": 0.5,
+          "bias_loc_mu": 0,
+          "bias_loc_sigma": 2,
+          "event_token_init_range": 0.02,
+          "no_event_token": false,
+          "diting_station_adapter": "legacy",
+          "diting_station_pool_queries": 4,
+          "diting_station_pool_temperature": 1.0,
+          "diting_station_pool_dropout": 0.0,
+          "waveform_scale_gain": 1.0,
+          "waveform_scale_log_divisor": 10.0,
+          "waveform_scale_init_gate": 0.1,
+          "use_amplitude_info": true,
+          "disable_waveform_scale": false,
+          "use_coords_rel": false,
+          "use_coords_abs": true,
+          "use_coords_rel_abs_fusion": false,
+          "coords_abs_weight": 0.1,
+          "coord_fusion_mode": "add",
+          "output_distribution": "mdn",
+          "rotation_anchor": [
+            37,
+            140
+          ],
+          "pga_readout_mode": "target_cross_attention",
+          "event_readout_mode": "event_cross_attention",
+          "query_token_init_range": 0.02,
+          "pga_attention_diagnostics": false,
+          "pga_mask_sanity_check": false,
+          "pga_readout_layers": 4,
+          "event_readout_layers": 1,
+          "readout_ffn_hidden_dim": 1000,
+          "readout_residual_gates": true,
+          "readout_residual_gate_init": 0.0,
+          "readout_ffn_gate_init": 0.0,
+          "readout_first_residual": true,
+          "station_context_gate_init": 0.0,
+          "use_vs30": false,
+          "vs30_reference_mps": 760.0,
+          "vs30_init_gate": 0.0,
+          "rope_coord_mode": "relative_xy_km",
+          "rope_coord_scale": 100.0,
+          "rope_base": 10000.0,
+          "rope_lat_origin": 37.0,
+          "station_context_mode": "off",
+          "use_rope": false,
+          "pga_layerwise_refinement": false,
+          "pga_delta_gate_init": 0.001,
+          "station_delta_gate_init": 0.001,
+          "station_delta_ffn_gate_init": 0.001,
+          "use_target_temporal_pooling": false,
+          "temporal_pool_dim": 256,
+          "temporal_pool_geom_hidden_dim": 128,
+          "temporal_pool_time_basis": 32,
+          "temporal_pool_gate_init": 0.001,
+          "pga_use_event_context": false,
+          "vs30_injection_mode": "additive",
+          "vs30_site_affine_hidden_dim": 64,
+          "vs30_site_affine_scale": 0.1,
+          "vs30_site_affine_sigma_shift": false,
+          "diting_frontend": "vit_adapter",
+          "station_token_weight_mode": "none",
+          "temporal_token_weight_mode": "none",
+          "token_weight_floor": 0.0001,
+          "token_weight_scale": 4.0,
+          "dpk_checkpoint_path": null,
+          "dpk_share_encoder_if_identical": false,
+          "dpk_compare_encoder": false,
+          "dpk_encoder_policy": "current",
+          "dpk_weight_temperature": 1.0,
+          "dpk_weight_resample": "max",
+          "use_pga_temporal_residual": false,
+          "pga_temporal_residual_zero_init": false,
+          "temporal_token_dim": 256,
+          "pga_temporal_residual_mode": "residual",
+          "pga_temporal_residual_use_event_context": false,
+          "pga_temporal_residual_query_source": "readout",
+          "pga_temporal_residual_station_weighting": "attention",
+          "pga_temporal_residual_token_control": "none"
+        },
+        "data": {
+          "root": "PRIVATE_PATH/origin_corrected_diting_vel_acc_vs30",
+          "split_manifest": "PRIVATE_PATH/split_events.csv",
+          "station_filter": "knet",
+          "sampling_rate": 100,
+          "component_order": "NEZ",
+          "units": "m/s^2",
+          "upstream_processing": "legacy offline resampling/filtering; online causality not certified"
+        },
+        "window": {
+          "protocol": "native_prefix_v2",
+          "pre_p_seconds": 5,
+          "strict_causal": true,
+          "rolling_trained": false
+        },
+        "realtime": {
+          "bins": [
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.15,
+            0.15,
+            0.1
+          ],
+          "draws_per_event": 3,
+          "fixed_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ],
+          "common_times": [
+            1,
+            3,
+            5,
+            10,
+            20
+          ]
+        },
+        "geometry": {
+          "random_station_counts": [
+            1,
+            3,
+            5,
+            8,
+            12,
+            16
+          ],
+          "train_random_probability": 0.5
+        },
+        "training": {
+          "epochs": 12,
+          "max_updates": null,
+          "global_batch": 128,
+          "microbatch": 8,
+          "lr": 0.001,
+          "weight_decay": 0,
+          "gradient_clip": 5,
+          "scheduler": "cosine_fixed_updates",
+          "validation_frequency_epochs": 1,
+          "workers": 0,
+          "early_stopping": false,
+          "res_comps": [
+            "mag",
+            "loc",
+            "pga"
+          ],
+          "res_weight": [
+            0.02,
+            0.02,
+            1.0
+          ],
+          "distribution_mean_loss": {
+            "enabled": true,
+            "weight": 0.1,
+            "loss_type": "huber",
+            "huber_delta": 1.0
+          }
+        },
+        "target_normalization": {
+          "enabled": true,
+          "mean": -1.1228067351176172,
+          "std": 0.4312468402225416,
+          "count": 146842,
+          "source": "2000-2024 default event-level train split, source_network=knt, finite pga_norm_resampled_mps2"
+        },
+        "selection": {
+          "rule": "equal protocols / equal common fixed times / noninput MAE; tie earlier epoch",
+          "threshold_log10_pga": -1.2
+        },
+        "spatial": {
+          "enabled": false,
+          "manifest": "PRIVATE_PATH/spatial_manifest.csv",
+          "buffer_km": 20
+        },
+        "transfer_model_path": null,
+        "load_model_path": null,
+        "run_id": "a01__eqt_pretrained_frozen__off__seed42",
+        "stage": "a01",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "a01": {
+          "original_run": "PRIVATE_PATH/formal__eqt_pretrained_frozen__seed42",
+          "population_audit": "PRIVATE_PATH/formal__eqt_pretrained_frozen__seed42",
+          "original_selected_epoch": 10,
+          "comparison_kind": "trained_ablation",
+          "original_checkpoint_pins": {
+            "init": {
+              "file_sha256": "59bd33cfa6f556400cda68de9180e8bacabd02ac96e2e56e8accd9275475e982",
+              "state_sha256": "2a662f04d8093d715683e64d5cde2f4508b05bf50dc9880e8c6fa3d6c19794a1"
+            },
+            "selected": {
+              "file_sha256": "19a9e50151bfd38bb547207ea3015225bde78e857fb1f20ac664799b5bee8714",
+              "state_sha256": "4c722b8ef9b1e185ae41703432506b9aa1778054beb15f04b6d8ff4225907faf"
+            },
+            "last": {
+              "file_sha256": "1e338ef3a2acbd56cb12f82403c539a5e708fb26909265dfb36320e211bf84f5",
+              "state_sha256": "895dbe2cbb10e04a95602c0d93a00a616e42a9d29f7ec3070516b49905263cee"
+            }
+          },
+          "original_common_initial_sha256": "98c3efb9e55a8c5b0afd3dc204b095d2cb3449519e44b78726adcc9b6da1d569",
+          "original_request_csv_sha256": "f06ce3542c3e8070db35b20b5440e6650e0d21449c8f7de680a2f0ac8e54b5f4"
+        }
+      },
+      "audit_lock_sha256": "678c9e2b8311c838b17b4e24ddfc00497926684eff2f448d16615f4319d7120f",
+      "checkpoint_stats": {
+        "best.pth": {
+          "bytes": 383694888,
+          "mtime_ns": 1791475568000000000
+        },
+        "last.pth": {
+          "bytes": 383696104,
+          "mtime_ns": 1791480160000000000
+        }
+      },
+      "curve_sha256": "bd80710a0277c45aa720bcca4323c32bbfd419bdfb00327e859432bdbe70f007",
+      "metadata_epoch": 12,
+      "metadata_updates": 2544
+    },
+    {
+      "index": 3,
+      "family": "DiTing",
+      "mode": "ON",
+      "run_id": "a01__diting_pretrained_frozen__on__seed42",
+      "run_dir": "PRIVATE_PATH/a01__diting_pretrained_frozen__on__seed42",
+      "audit_dir": "PRIVATE_PATH/a01__diting_pretrained_frozen__on__seed42",
+      "gate_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+      "config": {
+        "fe01": {
+          "enabled": true,
+          "version": 2
+        },
+        "seed": 42,
+        "sampling_seed": 42,
+        "model_family": "diting_pretrained_frozen",
+        "native_n_samples": 10000,
+        "query_chunk_size": 15,
+        "query_independence_verified": false,
+        "pretrained_manifest": "PRIVATE_PATH/diting_manifest.json",
+        "diting_config": "PRIVATE_PATH/diting_1200m_backbone_attnpool.yml",
+        "output_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+        "model_params": {
+          "waveform_model_dims": [
+            1000,
+            1000,
+            1000
+          ],
+          "output_mlp_dims": [
+            64
+          ],
+          "output_location_dims": [
+            150,
+            50
+          ],
+          "wavelength": [
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              10
+            ]
+          ],
+          "mad_params": {
+            "n_heads": 10,
+            "att_dropout": 0.0,
+            "initializer_range": 0.02
+          },
+          "ffn_params": {
+            "hidden_dim": 2000
+          },
+          "transformer_layers": 2,
+          "hidden_dropout": 0.0,
+          "activation": "relu",
+          "n_pga_targets": 15,
+          "location_mixture": 3,
+          "pga_mixture": 3,
+          "magnitude_mixture": 1,
+          "borehole": false,
+          "max_stations": 25,
+          "bias_mag_mu": 5.0,
+          "bias_mag_sigma": 0.5,
+          "bias_loc_mu": 0,
+          "bias_loc_sigma": 2,
+          "event_token_init_range": 0.02,
+          "no_event_token": false,
+          "diting_station_adapter": "legacy",
+          "diting_station_pool_queries": 4,
+          "diting_station_pool_temperature": 1.0,
+          "diting_station_pool_dropout": 0.0,
+          "waveform_scale_gain": 1.0,
+          "waveform_scale_log_divisor": 10.0,
+          "waveform_scale_init_gate": 0.1,
+          "use_amplitude_info": true,
+          "disable_waveform_scale": false,
+          "use_coords_rel": false,
+          "use_coords_abs": true,
+          "use_coords_rel_abs_fusion": false,
+          "coords_abs_weight": 0.1,
+          "coord_fusion_mode": "add",
+          "output_distribution": "mdn",
+          "rotation_anchor": [
+            37,
+            140
+          ],
+          "pga_readout_mode": "target_cross_attention",
+          "event_readout_mode": "event_cross_attention",
+          "query_token_init_range": 0.02,
+          "pga_attention_diagnostics": false,
+          "pga_mask_sanity_check": false,
+          "pga_readout_layers": 4,
+          "event_readout_layers": 1,
+          "readout_ffn_hidden_dim": 1000,
+          "readout_residual_gates": true,
+          "readout_residual_gate_init": 0.0,
+          "readout_ffn_gate_init": 0.0,
+          "readout_first_residual": true,
+          "station_context_gate_init": 0.0,
+          "use_vs30": false,
+          "vs30_reference_mps": 760.0,
+          "vs30_init_gate": 0.0,
+          "rope_coord_mode": "relative_xy_km",
+          "rope_coord_scale": 100.0,
+          "rope_base": 10000.0,
+          "rope_lat_origin": 37.0,
+          "station_context_mode": "off",
+          "use_rope": false,
+          "pga_layerwise_refinement": false,
+          "pga_delta_gate_init": 0.001,
+          "station_delta_gate_init": 0.001,
+          "station_delta_ffn_gate_init": 0.001,
+          "use_target_temporal_pooling": false,
+          "temporal_pool_dim": 256,
+          "temporal_pool_geom_hidden_dim": 128,
+          "temporal_pool_time_basis": 32,
+          "temporal_pool_gate_init": 0.001,
+          "pga_use_event_context": false,
+          "vs30_injection_mode": "additive",
+          "vs30_site_affine_hidden_dim": 64,
+          "vs30_site_affine_scale": 0.1,
+          "vs30_site_affine_sigma_shift": false,
+          "diting_frontend": "vit_adapter",
+          "station_token_weight_mode": "none",
+          "temporal_token_weight_mode": "none",
+          "token_weight_floor": 0.0001,
+          "token_weight_scale": 4.0,
+          "dpk_checkpoint_path": null,
+          "dpk_share_encoder_if_identical": false,
+          "dpk_compare_encoder": false,
+          "dpk_encoder_policy": "current",
+          "dpk_weight_temperature": 1.0,
+          "dpk_weight_resample": "max",
+          "use_pga_temporal_residual": false,
+          "pga_temporal_residual_zero_init": false,
+          "temporal_token_dim": 256,
+          "pga_temporal_residual_mode": "residual",
+          "pga_temporal_residual_use_event_context": false,
+          "pga_temporal_residual_query_source": "readout",
+          "pga_temporal_residual_station_weighting": "attention",
+          "pga_temporal_residual_token_control": "none"
+        },
+        "data": {
+          "root": "PRIVATE_PATH/origin_corrected_diting_vel_acc_vs30",
+          "split_manifest": "PRIVATE_PATH/split_events.csv",
+          "station_filter": "knet",
+          "sampling_rate": 100,
+          "component_order": "NEZ",
+          "units": "m/s^2",
+          "upstream_processing": "legacy offline resampling/filtering; online causality not certified"
+        },
+        "window": {
+          "protocol": "native_prefix_v2",
+          "pre_p_seconds": 5,
+          "strict_causal": true,
+          "rolling_trained": false
+        },
+        "realtime": {
+          "bins": [
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.15,
+            0.15,
+            0.1
+          ],
+          "draws_per_event": 3,
+          "fixed_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ],
+          "common_times": [
+            1,
+            3,
+            5,
+            10,
+            20
+          ]
+        },
+        "geometry": {
+          "random_station_counts": [
+            1,
+            3,
+            5,
+            8,
+            12,
+            16
+          ],
+          "train_random_probability": 0.5
+        },
+        "training": {
+          "epochs": 12,
+          "max_updates": null,
+          "global_batch": 128,
+          "microbatch": 8,
+          "lr": 0.001,
+          "weight_decay": 0,
+          "gradient_clip": 5,
+          "scheduler": "cosine_fixed_updates",
+          "validation_frequency_epochs": 1,
+          "workers": 0,
+          "early_stopping": false,
+          "res_comps": [
+            "mag",
+            "loc",
+            "pga"
+          ],
+          "res_weight": [
+            0.02,
+            0.02,
+            1.0
+          ],
+          "distribution_mean_loss": {
+            "enabled": true,
+            "weight": 0.1,
+            "loss_type": "huber",
+            "huber_delta": 1.0
+          }
+        },
+        "target_normalization": {
+          "enabled": true,
+          "mean": -1.1228067351176172,
+          "std": 0.4312468402225416,
+          "count": 146842,
+          "source": "2000-2024 default event-level train split, source_network=knt, finite pga_norm_resampled_mps2"
+        },
+        "selection": {
+          "rule": "equal protocols / equal common fixed times / noninput MAE; tie earlier epoch",
+          "threshold_log10_pga": -1.2
+        },
+        "spatial": {
+          "enabled": false,
+          "manifest": "PRIVATE_PATH/spatial_manifest.csv",
+          "buffer_km": 20
+        },
+        "transfer_model_path": null,
+        "load_model_path": null,
+        "run_id": "a01__diting_pretrained_frozen__on__seed42",
+        "stage": "a01",
+        "absolute_amplitude_mode": "physical_scale_keep_duration",
+        "a01": {
+          "original_run": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+          "population_audit": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+          "original_selected_epoch": 11,
+          "comparison_kind": "trained_ablation",
+          "original_request_csv_sha256": "d58a7b410e8d8df5bf46ba6e7022d07740b57bb9d932140c4754d2d57149c8bc"
+        }
+      },
+      "audit_lock_sha256": "fff19ab1e98096fb0a558d12b0125ca503f791d2a0e5b0b1eeaba8231a672eea",
+      "checkpoint_stats": {
+        "best.pth": {
+          "bytes": 5361349746,
+          "mtime_ns": 1791813813000000000
+        },
+        "last.pth": {
+          "bytes": 5361349746,
+          "mtime_ns": 1791813802000000000
+        }
+      },
+      "curve_sha256": "4b58356c1c8bc68b47047813327d9c388a7247faad2f67ef5ced6f675f0694da",
+      "metadata_epoch": 12,
+      "metadata_updates": 2544
+    },
+    {
+      "index": 4,
+      "family": "DiTing",
+      "mode": "OFF",
+      "run_id": "a01__diting_pretrained_frozen__off__seed42",
+      "run_dir": "PRIVATE_PATH/a01__diting_pretrained_frozen__off__seed42",
+      "audit_dir": "PRIVATE_PATH/a01__diting_pretrained_frozen__off__seed42",
+      "gate_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+      "config": {
+        "fe01": {
+          "enabled": true,
+          "version": 2
+        },
+        "seed": 42,
+        "sampling_seed": 42,
+        "model_family": "diting_pretrained_frozen",
+        "native_n_samples": 10000,
+        "query_chunk_size": 15,
+        "query_independence_verified": false,
+        "pretrained_manifest": "PRIVATE_PATH/diting_manifest.json",
+        "diting_config": "PRIVATE_PATH/diting_1200m_backbone_attnpool.yml",
+        "output_root": "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+        "model_params": {
+          "waveform_model_dims": [
+            1000,
+            1000,
+            1000
+          ],
+          "output_mlp_dims": [
+            64
+          ],
+          "output_location_dims": [
+            150,
+            50
+          ],
+          "wavelength": [
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              15
+            ],
+            [
+              0.01,
+              10
+            ]
+          ],
+          "mad_params": {
+            "n_heads": 10,
+            "att_dropout": 0.0,
+            "initializer_range": 0.02
+          },
+          "ffn_params": {
+            "hidden_dim": 2000
+          },
+          "transformer_layers": 2,
+          "hidden_dropout": 0.0,
+          "activation": "relu",
+          "n_pga_targets": 15,
+          "location_mixture": 3,
+          "pga_mixture": 3,
+          "magnitude_mixture": 1,
+          "borehole": false,
+          "max_stations": 25,
+          "bias_mag_mu": 5.0,
+          "bias_mag_sigma": 0.5,
+          "bias_loc_mu": 0,
+          "bias_loc_sigma": 2,
+          "event_token_init_range": 0.02,
+          "no_event_token": false,
+          "diting_station_adapter": "legacy",
+          "diting_station_pool_queries": 4,
+          "diting_station_pool_temperature": 1.0,
+          "diting_station_pool_dropout": 0.0,
+          "waveform_scale_gain": 1.0,
+          "waveform_scale_log_divisor": 10.0,
+          "waveform_scale_init_gate": 0.1,
+          "use_amplitude_info": true,
+          "disable_waveform_scale": false,
+          "use_coords_rel": false,
+          "use_coords_abs": true,
+          "use_coords_rel_abs_fusion": false,
+          "coords_abs_weight": 0.1,
+          "coord_fusion_mode": "add",
+          "output_distribution": "mdn",
+          "rotation_anchor": [
+            37,
+            140
+          ],
+          "pga_readout_mode": "target_cross_attention",
+          "event_readout_mode": "event_cross_attention",
+          "query_token_init_range": 0.02,
+          "pga_attention_diagnostics": false,
+          "pga_mask_sanity_check": false,
+          "pga_readout_layers": 4,
+          "event_readout_layers": 1,
+          "readout_ffn_hidden_dim": 1000,
+          "readout_residual_gates": true,
+          "readout_residual_gate_init": 0.0,
+          "readout_ffn_gate_init": 0.0,
+          "readout_first_residual": true,
+          "station_context_gate_init": 0.0,
+          "use_vs30": false,
+          "vs30_reference_mps": 760.0,
+          "vs30_init_gate": 0.0,
+          "rope_coord_mode": "relative_xy_km",
+          "rope_coord_scale": 100.0,
+          "rope_base": 10000.0,
+          "rope_lat_origin": 37.0,
+          "station_context_mode": "off",
+          "use_rope": false,
+          "pga_layerwise_refinement": false,
+          "pga_delta_gate_init": 0.001,
+          "station_delta_gate_init": 0.001,
+          "station_delta_ffn_gate_init": 0.001,
+          "use_target_temporal_pooling": false,
+          "temporal_pool_dim": 256,
+          "temporal_pool_geom_hidden_dim": 128,
+          "temporal_pool_time_basis": 32,
+          "temporal_pool_gate_init": 0.001,
+          "pga_use_event_context": false,
+          "vs30_injection_mode": "additive",
+          "vs30_site_affine_hidden_dim": 64,
+          "vs30_site_affine_scale": 0.1,
+          "vs30_site_affine_sigma_shift": false,
+          "diting_frontend": "vit_adapter",
+          "station_token_weight_mode": "none",
+          "temporal_token_weight_mode": "none",
+          "token_weight_floor": 0.0001,
+          "token_weight_scale": 4.0,
+          "dpk_checkpoint_path": null,
+          "dpk_share_encoder_if_identical": false,
+          "dpk_compare_encoder": false,
+          "dpk_encoder_policy": "current",
+          "dpk_weight_temperature": 1.0,
+          "dpk_weight_resample": "max",
+          "use_pga_temporal_residual": false,
+          "pga_temporal_residual_zero_init": false,
+          "temporal_token_dim": 256,
+          "pga_temporal_residual_mode": "residual",
+          "pga_temporal_residual_use_event_context": false,
+          "pga_temporal_residual_query_source": "readout",
+          "pga_temporal_residual_station_weighting": "attention",
+          "pga_temporal_residual_token_control": "none"
+        },
+        "data": {
+          "root": "PRIVATE_PATH/origin_corrected_diting_vel_acc_vs30",
+          "split_manifest": "PRIVATE_PATH/split_events.csv",
+          "station_filter": "knet",
+          "sampling_rate": 100,
+          "component_order": "NEZ",
+          "units": "m/s^2",
+          "upstream_processing": "legacy offline resampling/filtering; online causality not certified"
+        },
+        "window": {
+          "protocol": "native_prefix_v2",
+          "pre_p_seconds": 5,
+          "strict_causal": true,
+          "rolling_trained": false
+        },
+        "realtime": {
+          "bins": [
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              20
+            ],
+            [
+              20,
+              40
+            ],
+            [
+              40,
+              90
+            ]
+          ],
+          "probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.15,
+            0.15,
+            0.1
+          ],
+          "draws_per_event": 3,
+          "fixed_times": [
+            1,
+            3,
+            5,
+            10,
+            20,
+            40,
+            90
+          ],
+          "common_times": [
+            1,
+            3,
+            5,
+            10,
+            20
+          ]
+        },
+        "geometry": {
+          "random_station_counts": [
+            1,
+            3,
+            5,
+            8,
+            12,
+            16
+          ],
+          "train_random_probability": 0.5
+        },
+        "training": {
+          "epochs": 12,
+          "max_updates": null,
+          "global_batch": 128,
+          "microbatch": 8,
+          "lr": 0.001,
+          "weight_decay": 0,
+          "gradient_clip": 5,
+          "scheduler": "cosine_fixed_updates",
+          "validation_frequency_epochs": 1,
+          "workers": 0,
+          "early_stopping": false,
+          "res_comps": [
+            "mag",
+            "loc",
+            "pga"
+          ],
+          "res_weight": [
+            0.02,
+            0.02,
+            1.0
+          ],
+          "distribution_mean_loss": {
+            "enabled": true,
+            "weight": 0.1,
+            "loss_type": "huber",
+            "huber_delta": 1.0
+          }
+        },
+        "target_normalization": {
+          "enabled": true,
+          "mean": -1.1228067351176172,
+          "std": 0.4312468402225416,
+          "count": 146842,
+          "source": "2000-2024 default event-level train split, source_network=knt, finite pga_norm_resampled_mps2"
+        },
+        "selection": {
+          "rule": "equal protocols / equal common fixed times / noninput MAE; tie earlier epoch",
+          "threshold_log10_pga": -1.2
+        },
+        "spatial": {
+          "enabled": false,
+          "manifest": "PRIVATE_PATH/spatial_manifest.csv",
+          "buffer_km": 20
+        },
+        "transfer_model_path": null,
+        "load_model_path": null,
+        "run_id": "a01__diting_pretrained_frozen__off__seed42",
+        "stage": "a01",
+        "absolute_amplitude_mode": "no_absolute_scale_keep_duration",
+        "a01": {
+          "original_run": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+          "population_audit": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+          "original_selected_epoch": 11,
+          "comparison_kind": "trained_ablation",
+          "original_request_csv_sha256": "d58a7b410e8d8df5bf46ba6e7022d07740b57bb9d932140c4754d2d57149c8bc"
+        }
+      },
+      "audit_lock_sha256": "1f18d04b40b909c3da7548c15962f46c77e54dce667e07e1f6c4658f9255c379",
+      "checkpoint_stats": {
+        "best.pth": {
+          "bytes": 5361347058,
+          "mtime_ns": 1791883020000000000
+        },
+        "last.pth": {
+          "bytes": 5361348274,
+          "mtime_ns": 1791900040000000000
+        }
+      },
+      "curve_sha256": "485957f9c6da6b026a5c437b5f4db9884e789a3a629971a996b99293c887ef59",
+      "metadata_epoch": 12,
+      "metadata_updates": 2544
+    }
+  ],
+  "operations_sha256": {
+    "eval_pack.py": "25abba3dfd7960d2d83016d72999f92235934e12e2a5c3e0a20a929be06b732d",
+    "eval_pack.sh": "9418235a2e0a56594bfd82b461e7e6495650c1f3a3f694352e3b688d3d97d0cd"
+  }
+}

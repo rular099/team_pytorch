@@ -1,0 +1,26 @@
+{
+  "index": 3,
+  "checkpoint_epoch": 5,
+  "files": {
+    "last.pth": {
+      "sha256": "ed8d69d9a79f6c5fe7c43645ac6381a2169f3c1f4433c08f2bb4d19659f0e2d6",
+      "bytes": 5361339762
+    },
+    "best.pth": {
+      "sha256": "2d25733ec607e370245b5de900af878c89c9eef15056b4aeb3d17465278730ef",
+      "bytes": 5361339762
+    },
+    "training_curves.csv": {
+      "sha256": "e49ad65c350b2846edfcc300949a92d5835a308e3d866eacd82f05de1b3674cb",
+      "bytes": 667
+    },
+    "resolved_config.json": {
+      "sha256": "a2456c65e1daa1be1a24f25ef490668b27f62e9297a24bb137c2ce87fc2719ea",
+      "bytes": 724771
+    },
+    "protocol.lock.json": {
+      "sha256": "fff19ab1e98096fb0a558d12b0125ca503f791d2a0e5b0b1eeaba8231a672eea",
+      "bytes": 810244
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "authenticated_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "compatibility": {
+    "original_engine_sha256": "ec437e33a19e7d722a290c96356c0674f494e969ddf7537fd3daad4ddd88324f",
+    "original_train_ast_sha256": "ecb167309b784e1cfef9ba9eb3ee32c72a48c91fc2a41bfa35c505d7cdc98d34",
+    "executed_compatibility_sha256": "2b5c1cb40ccc0ebbda75490d1f01b0a21ff6e81b0fab7a0bde54a858e6e105dc",
+    "allowed_semantic_delta": "torch.cuda.set_rng_state_all([state.cpu() for state in rng['cuda_rng']])",
+    "observer_stages": [
+      "audited_initial_state.begin",
+      "audited_initial_state.complete",
+      "checkpoint_load.begin",
+      "checkpoint_load.complete",
+      "checkpoint_model_restore.begin",
+      "checkpoint_model_restore.complete",
+      "dataset.begin",
+      "dataset.complete",
+      "ddp_constructor.begin",
+      "ddp_constructor.complete",
+      "distributed_init.begin",
+      "distributed_init.complete",
+      "first_batch.ready",
+      "first_update.complete",
+      "init_publish.begin",
+      "init_publish.complete",
+      "initial_barrier.begin",
+      "initial_barrier.complete",
+      "model_build.begin",
+      "model_build.complete",
+      "optimizer.begin",
+      "optimizer.complete",
+      "optimizer_restore.begin",
+      "optimizer_restore.complete",
+      "rng_restore.begin",
+      "rng_restore.complete",
+      "training.complete",
+      "training_loop.enter",
+      "validate.begin",
+      "validate.complete"
+    ],
+    "source_delta_check": "PASS",
+    "original_gates_unchanged": true
+  },
+  "operations_files_sha256": {
+    "continue_training.py": "95cdd309e42a124b5f4bc7ae9a1ad35c053cb3aecde9c27306d24a2adaa0b441",
+    "compatibility_contract.py": "67876ff5f2aa7da3a70b33d5f4077fa60e9b3dc05eae5a11dfd41c4035fd29c8",
+    "training_compat.py": "2b5c1cb40ccc0ebbda75490d1f01b0a21ff6e81b0fab7a0bde54a858e6e105dc",
+    "startup_trace.py": "18964879b191e7e70764f1bfca345d68e9b8ff75123118619345caae32395955"
+  },
+  "checkpoint_core_identity_meaning": "Immutable audited core; executed compatibility source recorded separately here"
+}

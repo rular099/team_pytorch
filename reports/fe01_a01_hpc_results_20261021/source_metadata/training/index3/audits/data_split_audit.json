@@ -1,0 +1,131 @@
+{
+  "split_manifest_sha256": "a914fa361dc51af957aca32396d992219dd04c665a7ccffc46ec18769c491108",
+  "shards": {
+    "PRIVATE_PATH/japan_2000.hdf5": {
+      "bytes": 1586259746,
+      "mtime_ns": 1786166373000000000,
+      "sha256": "5df775a4cb82f0848ecfe3ed5499c3db67e088ce2fd8908a968438aaa9e0d8aa"
+    },
+    "PRIVATE_PATH/japan_2001.hdf5": {
+      "bytes": 1787638481,
+      "mtime_ns": 1786166295000000000,
+      "sha256": "ae9a0a05afdee5c26a863ecc3bc224420042d35e0e5ed753477c16f1b83873ca"
+    },
+    "PRIVATE_PATH/japan_2002.hdf5": {
+      "bytes": 1607067372,
+      "mtime_ns": 1786166214000000000,
+      "sha256": "0b7970595d1105f50941c62472ca90f96ef08b84ce65193540e0e2919462123b"
+    },
+    "PRIVATE_PATH/japan_2003.hdf5": {
+      "bytes": 3807648842,
+      "mtime_ns": 1786166138000000000,
+      "sha256": "b6f2cbeea604a84ce3c0b6a0154434561183edc5a8b64a4a4dd49fd7ff6769e9"
+    },
+    "PRIVATE_PATH/japan_2004.hdf5": {
+      "bytes": 4197192452,
+      "mtime_ns": 1786165965000000000,
+      "sha256": "69bb5d2523ebd4b01896c31834c77d4002bdad2d581965ab0ffdbe4c9c71e9b2"
+    },
+    "PRIVATE_PATH/japan_2005.hdf5": {
+      "bytes": 3164690848,
+      "mtime_ns": 1786165784000000000,
+      "sha256": "9540f1bba4d2e8bbc9b1f1d114a7086b016fdd94da353ffcd99de90cf652f0b7"
+    },
+    "PRIVATE_PATH/japan_2006.hdf5": {
+      "bytes": 1892545704,
+      "mtime_ns": 1786165649000000000,
+      "sha256": "e89603bd6c26df54cc393710bd907fcf4e0ff2b6c6f8d6c4bd7f080f5e8d84ab"
+    },
+    "PRIVATE_PATH/japan_2007.hdf5": {
+      "bytes": 2500301900,
+      "mtime_ns": 1786165570000000000,
+      "sha256": "7387c4159c92cb98e9ee8351be72725b305e9f65b4c9065584ff28312c505f67"
+    },
+    "PRIVATE_PATH/japan_2008.hdf5": {
+      "bytes": 2148091040,
+      "mtime_ns": 1786165463000000000,
+      "sha256": "29daeefc7e5a7770c710fca0f39a31790b22ae59da24e1a0d2badf6b6efdc52d"
+    },
+    "PRIVATE_PATH/japan_2009.hdf5": {
+      "bytes": 1319745565,
+      "mtime_ns": 1786165370000000000,
+      "sha256": "0eaa875e3948d938f4812acdb1e8ab050a498590998ee870421e78c34fa862f8"
+    },
+    "PRIVATE_PATH/japan_2010.hdf5": {
+      "bytes": 1363039707,
+      "mtime_ns": 1786165309000000000,
+      "sha256": "36fbd67a054434490252519f4cdf0d1b437787d0d34217b3a984d8cb55ed588f"
+    },
+    "PRIVATE_PATH/japan_2011.hdf5": {
+      "bytes": 8337182420,
+      "mtime_ns": 1786165251000000000,
+      "sha256": "7021cb662117543c166e39a7d4919ad8ad979cc3009f95e865f5f88ecc955b09"
+    },
+    "PRIVATE_PATH/japan_2012.hdf5": {
+      "bytes": 4388945299,
+      "mtime_ns": 1786164860000000000,
+      "sha256": "32fcf02730044ce8004e9185e6f7d48b0054bfdf9e658823a25839a8d13d092e"
+    },
+    "PRIVATE_PATH/japan_2013.hdf5": {
+      "bytes": 2942089604,
+      "mtime_ns": 1786164658000000000,
+      "sha256": "7b84dbaea43968ab04f693d1561f8a7b9942e10f258d2f3735f24b643018935b"
+    },
+    "PRIVATE_PATH/japan_2014.hdf5": {
+      "bytes": 2193025397,
+      "mtime_ns": 1786164531000000000,
+      "sha256": "b8886d0688ecd22d8585a907d84149188f4e9407f09d8037eee709fa5cc865b9"
+    },
+    "PRIVATE_PATH/japan_2015.hdf5": {
+      "bytes": 1971169206,
+      "mtime_ns": 1786164439000000000,
+      "sha256": "1fd4bd4fc54201bb6a275194283c032d20d23bc49ac098e08c59a5b180b58c61"
+    },
+    "PRIVATE_PATH/japan_2016.hdf5": {
+      "bytes": 3567406332,
+      "mtime_ns": 1786164356000000000,
+      "sha256": "db2cfc55c8767a87bbd5aadf6af80fdb9b9de1d120e0f610121ad4eec2e9668c"
+    },
+    "PRIVATE_PATH/japan_2017.hdf5": {
+      "bytes": 1756413760,
+      "mtime_ns": 1786164206000000000,
+      "sha256": "6f2ec8c59d7f7d0abdab0ae85c20a50f1d22f13fd71647cdbf056cb908fba672"
+    },
+    "PRIVATE_PATH/japan_2018.hdf5": {
+      "bytes": 2295708110,
+      "mtime_ns": 1786164128000000000,
+      "sha256": "c94b65c51868a59cd9f372c40bbf035fddbf5fe4318d3cfd2984549a0569eee6"
+    },
+    "PRIVATE_PATH/japan_2019.hdf5": {
+      "bytes": 1505461178,
+      "mtime_ns": 1786164031000000000,
+      "sha256": "ac2095f0b28f24c64eb7eabbad7a4bc792b7df31e0a4806c7937b6b22bf1199d"
+    },
+    "PRIVATE_PATH/japan_2020.hdf5": {
+      "bytes": 1516948817,
+      "mtime_ns": 1786163965000000000,
+      "sha256": "ddc0c0c15f4e7de65ac193d9769aba28556f1fdc431c5136b3365cb56386789b"
+    },
+    "PRIVATE_PATH/japan_2021.hdf5": {
+      "bytes": 2055049946,
+      "mtime_ns": 1786163903000000000,
+      "sha256": "050a90a26106c3627d1d9bf51f40de233e6f6b4f7b57b06bfcae43fb3927928d"
+    },
+    "PRIVATE_PATH/japan_2022.hdf5": {
+      "bytes": 2029513567,
+      "mtime_ns": 1786163818000000000,
+      "sha256": "be9dd7ac3430d2cf8d89230232053ea5aa655fbfd9636ed4b76ac08a1b60b278"
+    },
+    "PRIVATE_PATH/japan_2023.hdf5": {
+      "bytes": 1351188536,
+      "mtime_ns": 1786163725000000000,
+      "sha256": "2d615facc78bf012f0deb7aaa13e93302ea58f3dd8bc4b1d04490555d4b20f11"
+    },
+    "PRIVATE_PATH/japan_2024.hdf5": {
+      "bytes": 2378613764,
+      "mtime_ns": 1786163664000000000,
+      "sha256": "e44869e9f7e3fc38c5836dba0a3190d075278708e3f95669d4dcaf7b7cb98e59"
+    }
+  },
+  "spatial_manifest_sha256": null
+}

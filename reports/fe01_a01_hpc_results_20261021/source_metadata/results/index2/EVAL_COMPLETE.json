@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "index": 2,
+  "split": "validation",
+  "plan_sha256": "8120b1647b8067879b3f783e1c14e1efca708bc1179ecc0ad0acc0ce9bb90cd2",
+  "source_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "execution_operations_sha256": {
+    "eval_pack.py": "25abba3dfd7960d2d83016d72999f92235934e12e2a5c3e0a20a929be06b732d",
+    "eval_pack.sh": "9418235a2e0a56594bfd82b461e7e6495650c1f3a3f694352e3b688d3d97d0cd"
+  },
+  "files_sha256": {
+    "comparisons/epoch12/OFF_scores.csv": "d2588f0f11a5d4d58c9450f9541e84fb6e10f9d5745595fcb631d02a625e631b",
+    "comparisons/epoch12/ON_scores.csv": "b54160ec545c85f3ff791f5e8caf1029af51158d936050ee3de79566d04537bb",
+    "comparisons/epoch12/comparison.json": "8d5aca5de49582b5d7ed5bfbb5a528f72269c36e3974be9fc5e3ba4d8f8c44ce",
+    "comparisons/epoch12/paired_event_bootstrap.csv": "aa02e7f1d9e30781ae5da358480d486b758a9047f8c3ecd901763044b2c05c9e",
+    "comparisons/epoch12/spatial_fields.csv.gz": "9ed3c9f407794fda3826a1d8ac3223d10ee3e83a19b98f98fad44573c219d628",
+    "comparisons/selected/OFF_scores.csv": "0ba24c72a7e5cb830d4873579fdde637b4e02393397847a77ddc90be77955179",
+    "comparisons/selected/ON_scores.csv": "9afc1771cc3f42d71d6b57b0e912b702c85fa76fe5c174d28e008aed070d2699",
+    "comparisons/selected/comparison.json": "8d5aca5de49582b5d7ed5bfbb5a528f72269c36e3974be9fc5e3ba4d8f8c44ce",
+    "comparisons/selected/paired_event_bootstrap.csv": "7249579b0cbaca9f3cf58b4c3d523e33e3e07dd826f9a474719b3f49b9583366",
+    "comparisons/selected/spatial_fields.csv.gz": "eae2f1e38d96b55065c9b589e1944f02d2d3d5b5430f949668e20026ffc1813e",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/epoch12/checkpoint_identity.json": "695294054f86e13076ccd9a7272265b72ee61d97638b1d02d1c6e93885a19e99",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/epoch12/fields.csv.gz": "80a7469ba3fe0338b9db52a0fd0be0413c7e6314ef9c743db935f27739ddf08c",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/epoch12/population.json": "9134475b07d44f8331a21df183c06d293129498a0612d85c69ab9374070acfb9",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/epoch12/predictions.csv.gz": "c601c33081c72596b043604ccadc672281a024bd6f56d2eff0d68891ddc7c834",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/epoch12/scores.csv": "d2588f0f11a5d4d58c9450f9541e84fb6e10f9d5745595fcb631d02a625e631b",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/epoch12/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/selected/checkpoint_identity.json": "3da952efb06f8cf8d46470aaadb0dcfd713d99bea60633374ef33452590a3992",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/selected/fields.csv.gz": "1b36fb93f9ceb49263c92b1fdb9cf2466e99efcb9306830d45351c8fcd8b97ea",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/selected/population.json": "9134475b07d44f8331a21df183c06d293129498a0612d85c69ab9374070acfb9",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/selected/predictions.csv.gz": "f2135a2dbdd0413e800f2f1f33025384f9ce67c5bc5d201ba035cdfe1d603bcf",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/selected/scores.csv": "0ba24c72a7e5cb830d4873579fdde637b4e02393397847a77ddc90be77955179",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42/selected/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/epoch12/checkpoint_identity.json": "ade76ae054366c1081fb56fba62a7266ed413240a21b6e5c11b98e6ec0493132",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/epoch12/population.json": "ab23a017ce28fd07d334c323533ce21137fe7d00914d5e5fb06b1a954e031d07",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/epoch12/predictions.csv.gz": "d934b586e2e9f76b4da066beb31f60b2131e2908af6bcdd4efc05edf742fc8ff",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/epoch12/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/selected/checkpoint_identity.json": "11f3bd89cec627aafcd6180445f196e565bf402bbafdfdd51dc0736954723d99",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/selected/population.json": "ab23a017ce28fd07d334c323533ce21137fe7d00914d5e5fb06b1a954e031d07",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/selected/predictions.csv.gz": "af120ad1bedf1987a05ab5d9c4fd17d0db2b8c3ef703169bcb8dba5cf2f9c3e0",
+    "evaluation/a01__eqt_pretrained_frozen__off__seed42_reused_ON/selected/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7"
+  }
+}

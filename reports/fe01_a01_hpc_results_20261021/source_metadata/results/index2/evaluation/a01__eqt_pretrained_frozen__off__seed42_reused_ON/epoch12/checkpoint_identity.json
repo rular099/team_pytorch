@@ -1,0 +1,35 @@
+{
+  "path": "PRIVATE_PATH/last.pth",
+  "expected_epoch": 12,
+  "status": "IDENTITY_PASS",
+  "reason": "selected epoch and accessible metadata verified; forward gate still required",
+  "internal_epoch": 12,
+  "checkpoint_sha256": "1e338ef3a2acbd56cb12f82403c539a5e708fb26909265dfb36320e211bf84f5",
+  "bytes": 383694376,
+  "updates": 2544,
+  "best_epoch": 10,
+  "checkpoint_format": "fe01_full_state",
+  "state_structure_sha256": "7ed399e4ae8cfbc455096519fda0b85e36b49cb66c5e00bfd924760390511c4d",
+  "state_content_sha256": "895dbe2cbb10e04a95602c0d93a00a616e42a9d29f7ec3070516b49905263cee",
+  "source_config_sha256": "4e90975a5ce46e90a7e3b6df30edaff135aef1c921731ab32458659e649632fd",
+  "config_sha256": "1efd5305b18c82a9f84a9d53322def3c03934da9f0fcffa130aa6bf44deb07ff",
+  "training_source": "73ae9dec50713805c878b5e4efeb8264c01d0c76",
+  "encoder_source": "unknown",
+  "task_id": "unknown",
+  "parent_lock_sha256": "6bd214104c1a98b9deb8aae41aa10c111d363ec5247db6ccaaaaf925e4ea4602",
+  "config_file_sha256": "70df1271936f39a8a070298ebcad6c2ed8e0c643a9d16f0642e648adb8f0c34c",
+  "state_tensors": 395,
+  "excluded_prefixes": [],
+  "authenticated_world_size": 16,
+  "common_initial_state_sha256": "98c3efb9e55a8c5b0afd3dc204b095d2cb3449519e44b78726adcc9b6da1d569",
+  "committed_journals_count": 192,
+  "committed_journals_present": true,
+  "dependency": {
+    "family": "eqt_pretrained_frozen",
+    "pretrained_manifest_sha256": "6252debf5185283f183dca9fed4b22c2a1a809746cfd0cc82dc5699a9c28609e",
+    "encoder_assets_sha256": {
+      "weights": "a7c0dead4bfc07df2e316e9230c28250f356841135ef13ccd4db33ed1a15c62e",
+      "metadata": "11c8f429dc5c5714ad010389e1824b9b18a6d192db06f413d972dbaa54b3c68a"
+    }
+  }
+}

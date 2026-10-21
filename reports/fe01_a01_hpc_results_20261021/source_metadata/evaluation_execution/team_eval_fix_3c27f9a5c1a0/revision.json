@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "purpose": "TEAM scratch trained encoder identity correction v1",
+  "allowed_eval_indices": [
+    0
+  ],
+  "parent_plan_sha256": "8120b1647b8067879b3f783e1c14e1efca708bc1179ecc0ad0acc0ce9bb90cd2",
+  "parent_operations_sha256": {
+    "eval_pack.py": "25abba3dfd7960d2d83016d72999f92235934e12e2a5c3e0a20a929be06b732d",
+    "eval_pack.sh": "9418235a2e0a56594bfd82b461e7e6495650c1f3a3f694352e3b688d3d97d0cd"
+  },
+  "source_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "operations_sha256": {
+    "eval_pack.py": "a08f40d4fd0069b033e8b57a8013ac680538bfa2ce31e14717f203b335f38bac",
+    "eval_pack.sh": "d6039c7e422d1c63c92e5674879773fd3d9c0717b76dd01ee4efc50ca8e02554",
+    "eval_revision.py": "0c983d35475f6630db8bbde66085de015767e5042ed56ffd5a4ea491aef27cf5"
+  },
+  "changes": [
+    "TEAM: verify trained encoder bytes against its checkpoint SHA",
+    "Every family: preserve common initialization identity",
+    "Frozen families: preserve initial encoder identity",
+    "Preserve live parent plan/tools and accept sealed mixed execution identities for pack"
+  ]
+}

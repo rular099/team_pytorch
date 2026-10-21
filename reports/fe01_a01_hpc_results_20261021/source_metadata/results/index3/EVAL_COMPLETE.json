@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "index": 3,
+  "split": "validation",
+  "plan_sha256": "8120b1647b8067879b3f783e1c14e1efca708bc1179ecc0ad0acc0ce9bb90cd2",
+  "source_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "execution_operations_sha256": {
+    "eval_pack.py": "25abba3dfd7960d2d83016d72999f92235934e12e2a5c3e0a20a929be06b732d",
+    "eval_pack.sh": "9418235a2e0a56594bfd82b461e7e6495650c1f3a3f694352e3b688d3d97d0cd"
+  },
+  "files_sha256": {
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/epoch12/checkpoint_identity.json": "eb9894866c976dde96ef37d2aaaf11639b77debe1c874238c47b8b0ba194b15a",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/epoch12/fields.csv.gz": "966ae1b81c1320875ec8af02716b45344c30db56725502a156dd1732d7571549",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/epoch12/population.json": "9134475b07d44f8331a21df183c06d293129498a0612d85c69ab9374070acfb9",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/epoch12/predictions.csv.gz": "99e1b1878bebf7a1d47d9200ca9e84f75ef4651ca1c7dba30079de55e8f97bf6",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/epoch12/scores.csv": "2c6c23f199d54ecd10c9d30552356dfb9aaf4d9da7e21d9186e47954982ab1b7",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/epoch12/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/selected/checkpoint_identity.json": "fcb3612f7680533c8f85d222c9d38e791108221c593195bb099f4d1a07a48831",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/selected/fields.csv.gz": "718180ace65b4290ed0b88408df68976da200e6b6af3b7b67ec264533d52099f",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/selected/population.json": "9134475b07d44f8331a21df183c06d293129498a0612d85c69ab9374070acfb9",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/selected/predictions.csv.gz": "5a171f306bfcb134870bb599f16b0141db27c84770ed2b4f014eae38f5bd4ce2",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/selected/scores.csv": "6dd99a121fcb22b1284f6519136823a1c68bbe199797c265ca95f86d0cac6968",
+    "evaluation/a01__diting_pretrained_frozen__on__seed42/selected/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7"
+  }
+}

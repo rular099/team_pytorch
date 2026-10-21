@@ -1,0 +1,32 @@
+{
+  "path": "PRIVATE_PATH/last.pth",
+  "expected_epoch": 12,
+  "status": "IDENTITY_PASS",
+  "reason": "selected epoch and accessible metadata verified; forward gate still required",
+  "internal_epoch": 12,
+  "checkpoint_sha256": "60cccb697afcf1f6e0ee487b38745d641811c51290ac764fec5a9e6d005d0e41",
+  "bytes": 452536601,
+  "updates": 2544,
+  "best_epoch": 11,
+  "checkpoint_format": "fe01_full_state",
+  "state_structure_sha256": "ffe20b291a5d00c01d11e4cd1826ad5b5e95eff2b71225c4a0934d33e79b15cc",
+  "state_content_sha256": "590fa33ac46726b6040cf521025dffbb616d0ad0881be6db57cea01787312466",
+  "source_config_sha256": "5aac6ac56213350fa9e484166e725ab519a7d768b131161ecde4b069327c3718",
+  "config_sha256": "af5a0adf9126cebff847f80ef819bbb5b66b7d3528249c809c8afb121677f4d7",
+  "training_source": "73ae9dec50713805c878b5e4efeb8264c01d0c76",
+  "encoder_source": "unknown",
+  "task_id": "unknown",
+  "parent_lock_sha256": "15143a7c0cfc4dc0aacfd35ad489805f09476c75fdc6bbaa4168e97f9f394e54",
+  "config_file_sha256": "bd455f6bfed0be42d88e3d34e385db003fd271082a44d11d88174608e9979a6b",
+  "state_tensors": 164,
+  "excluded_prefixes": [],
+  "authenticated_world_size": 16,
+  "common_initial_state_sha256": "98c3efb9e55a8c5b0afd3dc204b095d2cb3449519e44b78726adcc9b6da1d569",
+  "committed_journals_count": 192,
+  "committed_journals_present": true,
+  "dependency": {
+    "family": "team_original_scratch",
+    "pretrained_manifest_sha256": null,
+    "policy": "scratch: no pretrained dependency"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "index": 3,
+  "run_id": "a01__diting_pretrained_frozen__on__seed42",
+  "action": "resume",
+  "curve_epoch": 5,
+  "checkpoint": "PRIVATE_PATH/last.pth"
+}

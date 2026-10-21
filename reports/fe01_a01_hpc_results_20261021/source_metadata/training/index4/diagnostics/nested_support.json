@@ -1,0 +1,2624 @@
+[
+  {
+    "decision": 0,
+    "dataset_id": "japan_2008.hdf5",
+    "event_id": "20080912082300",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "IWT009"
+    ],
+    "query_ids": [
+      "MYG002"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 1,
+    "dataset_id": "japan_2004.hdf5",
+    "event_id": "20041103114300",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "NIG022"
+    ],
+    "query_ids": [
+      "GNM002"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 2,
+    "dataset_id": "japan_2024.hdf5",
+    "event_id": "20240607213500",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 5,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "MYG018"
+    ],
+    "query_ids": [
+      "IWT007",
+      "IWT008",
+      "IWT009",
+      "MYG003",
+      "MYG015"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 3,
+    "dataset_id": "japan_2017.hdf5",
+    "event_id": "20170910125000",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 22,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "MYG011"
+    ],
+    "query_ids": [
+      "FKS001",
+      "FKS002",
+      "FKS004",
+      "FKS005",
+      "FKS006",
+      "IWT007",
+      "IWT008",
+      "IWT009",
+      "IWT010",
+      "IWT013",
+      "MYG001",
+      "MYG002",
+      "MYG003",
+      "MYG007",
+      "MYG008",
+      "MYG009",
+      "MYG010",
+      "MYG012",
+      "MYG013",
+      "MYG015",
+      "MYG016",
+      "MYG018"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 4,
+    "dataset_id": "japan_2014.hdf5",
+    "event_id": "20140911115300",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "TCG003",
+      "FKS029"
+    ],
+    "query_ids": [
+      "TCG005"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 5,
+    "dataset_id": "japan_2016.hdf5",
+    "event_id": "20160911122200",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "FKS017",
+      "IBR003"
+    ],
+    "query_ids": [
+      "TCG012"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 6,
+    "dataset_id": "japan_2017.hdf5",
+    "event_id": "20170913161300",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 11,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "IWT004",
+      "IWT005"
+    ],
+    "query_ids": [
+      "IWT001",
+      "IWT003",
+      "IWT009",
+      "IWT012",
+      "IWT013",
+      "IWT016",
+      "IWT017",
+      "IWT020",
+      "IWT026",
+      "MYG001",
+      "MYG002"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 7,
+    "dataset_id": "japan_2015.hdf5",
+    "event_id": "20151018083000",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 7,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "TTR004",
+      "OKY015"
+    ],
+    "query_ids": [
+      "HYG005",
+      "OKY005",
+      "OKY009",
+      "TTR002",
+      "TTR003",
+      "TTR006",
+      "TTR007"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 8,
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110915042400",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD108"
+    ],
+    "query_ids": [
+      "HKD109"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 9,
+    "dataset_id": "japan_2014.hdf5",
+    "event_id": "20140915162300",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "SMN016"
+    ],
+    "query_ids": [
+      "SMN009"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 10,
+    "dataset_id": "japan_2008.hdf5",
+    "event_id": "20080902171700",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 9,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD099",
+      "HKD096"
+    ],
+    "query_ids": [
+      "HKD089",
+      "HKD091",
+      "HKD092",
+      "HKD094",
+      "HKD095",
+      "HKD097",
+      "HKD098",
+      "HKD103",
+      "HKD124"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 11,
+    "dataset_id": "japan_2019.hdf5",
+    "event_id": "20190928023300",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 24,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "KMM021"
+    ],
+    "query_ids": [
+      "KGS001",
+      "KGS003",
+      "KGS004",
+      "KGS005",
+      "KGS007",
+      "KGS010",
+      "KGS036",
+      "KGS037",
+      "KMM010",
+      "KMM011",
+      "KMM012",
+      "KMM014",
+      "KMM015",
+      "KMM018",
+      "KMM020",
+      "KMM022",
+      "NGS003",
+      "NGS006",
+      "NGS007",
+      "NGS009",
+      "NGS010",
+      "NGS011",
+      "NGS013",
+      "NGS019"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 12,
+    "dataset_id": "japan_2014.hdf5",
+    "event_id": "20140911115300",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "random",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "TCG003",
+      "FKS029"
+    ],
+    "query_ids": [
+      "TCG005"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 13,
+    "dataset_id": "japan_2014.hdf5",
+    "event_id": "20140906233400",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "random",
+    "input_count": 9,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 9,
+    "common_queries": 3,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "FKS008",
+      "FKS019",
+      "FKS004",
+      "FKS006",
+      "FKS009",
+      "FKS031",
+      "FKS002",
+      "FKS017"
+    ],
+    "query_ids": [
+      "FKS001",
+      "FKS013",
+      "MYG017"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 14,
+    "dataset_id": "japan_2015.hdf5",
+    "event_id": "20150924151900",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "random",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 10,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "AKT011",
+      "AKT006"
+    ],
+    "query_ids": [
+      "AKT003",
+      "AKT005",
+      "AKT012",
+      "AKT016",
+      "AKT019",
+      "AKT022",
+      "AOM015",
+      "IWT021",
+      "IWT022",
+      "IWT025"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 15,
+    "dataset_id": "japan_2024.hdf5",
+    "event_id": "20240603063100",
+    "elapsed_time": 1.0,
+    "geometry_protocol": "random",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 57,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "ISK002",
+      "ISK001"
+    ],
+    "query_ids": [
+      "FKI001",
+      "FKS028",
+      "FKS029",
+      "GIF001",
+      "GIF002",
+      "GIF003",
+      "GIF004",
+      "GIF007",
+      "GNM001",
+      "GNM002",
+      "GNM003",
+      "GNM009",
+      "ISK003",
+      "ISK004",
+      "ISK005",
+      "ISK006",
+      "ISK007",
+      "ISK008",
+      "ISK009",
+      "ISK010",
+      "ISK012",
+      "ISK014",
+      "ISK015",
+      "NGN002",
+      "NGN004",
+      "NGN005",
+      "NGN007",
+      "NGN009",
+      "NGN015",
+      "NIG001",
+      "NIG002",
+      "NIG003",
+      "NIG004",
+      "NIG005",
+      "NIG016",
+      "NIG017",
+      "NIG019",
+      "NIG020",
+      "NIG021",
+      "NIG022",
+      "NIG024",
+      "NIG025",
+      "NIG026",
+      "NIG027",
+      "NIG028",
+      "TYM001",
+      "TYM002",
+      "TYM003",
+      "TYM004",
+      "TYM005",
+      "TYM006",
+      "TYM007",
+      "TYM008",
+      "TYM009",
+      "TYM010",
+      "TYM011",
+      "TYM012"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 16,
+    "dataset_id": "japan_2016.hdf5",
+    "event_id": "20160913052000",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "FKS025"
+    ],
+    "query_ids": [
+      "YMT014"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 17,
+    "dataset_id": "japan_2008.hdf5",
+    "event_id": "20080911044500",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 2,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "WKY003"
+    ],
+    "query_ids": [
+      "NAR008",
+      "NAR009"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 18,
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110921131400",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 4,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "IBR002"
+    ],
+    "query_ids": [
+      "FKS006",
+      "IBR005",
+      "IBR007",
+      "TCG014"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 19,
+    "dataset_id": "japan_2003.hdf5",
+    "event_id": "20030926050500",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 6,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD113"
+    ],
+    "query_ids": [
+      "HKD084",
+      "HKD086",
+      "HKD087",
+      "HKD090",
+      "HKD092",
+      "HKD098"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 20,
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110821171300",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "MYG001",
+      "IWT009"
+    ],
+    "query_ids": [
+      "IWT007"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 21,
+    "dataset_id": "japan_2001.hdf5",
+    "event_id": "20011001024500",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "normal",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 3,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "SMN009",
+      "SMN006",
+      "SMN008"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 22,
+    "dataset_id": "japan_2024.hdf5",
+    "event_id": "20240606090300",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "normal",
+    "input_count": 8,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 8,
+    "common_queries": 7,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "CHB010",
+      "CHB012",
+      "CHB006",
+      "CHB007",
+      "IBR018",
+      "CHB013",
+      "IBR017",
+      "CHB016"
+    ],
+    "query_ids": [
+      "CHB026",
+      "IBR007",
+      "IBR011",
+      "IBR012",
+      "IBR013",
+      "IBR014",
+      "TCG014"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 23,
+    "dataset_id": "japan_2002.hdf5",
+    "event_id": "20020928023100",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 10,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "FKS012",
+      "IBR003"
+    ],
+    "query_ids": [
+      "FKS006",
+      "FKS008",
+      "FKS009",
+      "FKS016",
+      "FKS018",
+      "IBR001",
+      "IBR004",
+      "IBR005",
+      "IBR013",
+      "TCG014"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 24,
+    "dataset_id": "japan_2005.hdf5",
+    "event_id": "20050827154600",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD074",
+      "HKD073"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 25,
+    "dataset_id": "japan_2007.hdf5",
+    "event_id": "20070826143100",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 3,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD074"
+    ],
+    "query_ids": [
+      "HKD069",
+      "HKD072",
+      "IWT001"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 26,
+    "dataset_id": "japan_2018.hdf5",
+    "event_id": "20180922070200",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 3,
+    "unsupported": [
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "KMM022",
+      "KGS001",
+      "KGS037",
+      "KMM021"
+    ],
+    "query_ids": [
+      "KGS006",
+      "KGS018",
+      "KGS019"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 27,
+    "dataset_id": "japan_2012.hdf5",
+    "event_id": "20120901003100",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 13,
+    "unsupported": [
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "FKS010",
+      "FKS011",
+      "FKS007",
+      "FKS031"
+    ],
+    "query_ids": [
+      "FKS001",
+      "FKS002",
+      "FKS004",
+      "FKS006",
+      "FKS008",
+      "FKS009",
+      "FKS013",
+      "FKS015",
+      "FKS017",
+      "FKS018",
+      "FKS019",
+      "MYG015",
+      "MYG017"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 28,
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110819112900",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "random",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD074",
+      "HKD073",
+      "HKD072",
+      "HKD071"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 29,
+    "dataset_id": "japan_2009.hdf5",
+    "event_id": "20091103192300",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "random",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 2,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "KMM002",
+      "FKO015"
+    ],
+    "query_ids": [
+      "KMM009",
+      "NGS012"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 30,
+    "dataset_id": "japan_2008.hdf5",
+    "event_id": "20080822150200",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "random",
+    "input_count": 4,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 19,
+    "unsupported": [
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "AKT023",
+      "IWT011",
+      "IWT012",
+      "IWT010"
+    ],
+    "query_ids": [
+      "AKT011",
+      "IWT006",
+      "IWT007",
+      "IWT009",
+      "IWT013",
+      "IWT014",
+      "IWT016",
+      "IWT021",
+      "IWT025",
+      "MYG001",
+      "MYG002",
+      "MYG003",
+      "MYG004",
+      "MYG005",
+      "MYG006",
+      "MYG007",
+      "MYG008",
+      "MYG010",
+      "MYG014"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 31,
+    "dataset_id": "japan_2017.hdf5",
+    "event_id": "20171003040100",
+    "elapsed_time": 3.0,
+    "geometry_protocol": "random",
+    "input_count": 4,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 39,
+    "unsupported": [
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "FKS014",
+      "IBR002",
+      "FKS012",
+      "FKS015"
+    ],
+    "query_ids": [
+      "CHB004",
+      "FKS004",
+      "FKS006",
+      "FKS008",
+      "FKS009",
+      "FKS010",
+      "FKS016",
+      "FKS017",
+      "FKS019",
+      "FKS023",
+      "FKS024",
+      "FKS029",
+      "GNM001",
+      "GNM009",
+      "GNM010",
+      "IBR005",
+      "IBR006",
+      "IBR007",
+      "IBR008",
+      "IBR009",
+      "IBR010",
+      "IBR011",
+      "IBR012",
+      "IBR013",
+      "IBR014",
+      "IBR016",
+      "IBR017",
+      "TCG001",
+      "TCG003",
+      "TCG005",
+      "TCG006",
+      "TCG007",
+      "TCG009",
+      "TCG011",
+      "TCG012",
+      "TCG013",
+      "TCG014",
+      "TCG015",
+      "TCG016"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 32,
+    "dataset_id": "japan_2008.hdf5",
+    "event_id": "20080911044500",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 2,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "WKY003"
+    ],
+    "query_ids": [
+      "NAR008",
+      "NAR009"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 33,
+    "dataset_id": "japan_2000.hdf5",
+    "event_id": "20001006170500",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "TTR008"
+    ],
+    "query_ids": [
+      "SMN001"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 34,
+    "dataset_id": "japan_2009.hdf5",
+    "event_id": "20091118131300",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 4,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "NAR001"
+    ],
+    "query_ids": [
+      "NAR005",
+      "NAR006",
+      "OSK010",
+      "SIG008"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 35,
+    "dataset_id": "japan_2018.hdf5",
+    "event_id": "20180919152100",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 4,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD125"
+    ],
+    "query_ids": [
+      "HKD120",
+      "HKD130",
+      "HKD131",
+      "HKD139"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 36,
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110908035000",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD108",
+      "HKD109"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 37,
+    "dataset_id": "japan_2004.hdf5",
+    "event_id": "20041103052800",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "NIG019",
+      "NIG028"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 38,
+    "dataset_id": "japan_2016.hdf5",
+    "event_id": "20160815133600",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "normal",
+    "input_count": 25,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 25,
+    "common_queries": 40,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "EHM013",
+      "OIT011",
+      "OIT007",
+      "YMG019",
+      "OIT014",
+      "EHM011",
+      "OIT010",
+      "EHM015"
+    ],
+    "query_ids": [
+      "EHM006",
+      "EHM007",
+      "EHM008",
+      "EHM009",
+      "EHM012",
+      "EHM014",
+      "EHM016",
+      "FKO004",
+      "FKO005",
+      "FKO008",
+      "FKO010",
+      "HRS014",
+      "HRS019",
+      "KMM004",
+      "KMM007",
+      "KMM009",
+      "KOC012",
+      "KOC014",
+      "KOC015",
+      "MYZ001",
+      "MYZ002",
+      "MYZ003",
+      "OIT002",
+      "OIT005",
+      "OIT006",
+      "OIT012",
+      "OIT013",
+      "OIT015",
+      "OIT016",
+      "OIT018",
+      "YMG008",
+      "YMG009",
+      "YMG010",
+      "YMG011",
+      "YMG012",
+      "YMG013",
+      "YMG014",
+      "YMG015",
+      "YMG017",
+      "YMG018"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 39,
+    "dataset_id": "japan_2014.hdf5",
+    "event_id": "20140916122800",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "normal",
+    "input_count": 25,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 25,
+    "common_queries": 109,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "IBR010",
+      "IBR009",
+      "SIT003",
+      "CHB001",
+      "TCG012",
+      "SIT008",
+      "IBR014",
+      "GNM010"
+    ],
+    "query_ids": [
+      "AIC002",
+      "CHB002",
+      "CHB003",
+      "CHB004",
+      "CHB006",
+      "CHB007",
+      "CHB008",
+      "CHB009",
+      "CHB010",
+      "CHB011",
+      "CHB015",
+      "CHB020",
+      "CHB024",
+      "CHB026",
+      "CHB028",
+      "CHB029",
+      "FKS007",
+      "FKS012",
+      "FKS013",
+      "FKS015",
+      "FKS016",
+      "FKS018",
+      "FKS027",
+      "FKS029",
+      "GNM001",
+      "GNM002",
+      "GNM003",
+      "GNM006",
+      "GNM007",
+      "GNM008",
+      "GNM011",
+      "GNM012",
+      "GNM013",
+      "GNM014",
+      "GNM015",
+      "GNM016",
+      "IBR001",
+      "IBR002",
+      "IBR003",
+      "IBR004",
+      "IBR005",
+      "IBR006",
+      "IBR012",
+      "IBR013",
+      "IBR017",
+      "IBR018",
+      "KNG001",
+      "KNG008",
+      "KNG009",
+      "KNG011",
+      "MYG015",
+      "MYG017",
+      "NGN012",
+      "NGN014",
+      "NIG017",
+      "NIG019",
+      "NIG022",
+      "NIG024",
+      "NIG025",
+      "SIT001",
+      "SIT002",
+      "SIT004",
+      "SIT005",
+      "SIT007",
+      "SIT009",
+      "SIT011",
+      "SIT012",
+      "SIT013",
+      "SIT014",
+      "TCG001",
+      "TCG002",
+      "TCG003",
+      "TCG004",
+      "TCG005",
+      "TCG006",
+      "TCG007",
+      "TCG008",
+      "TCG009",
+      "TCG010",
+      "TCG011",
+      "TCG013",
+      "TCG015",
+      "TCG016",
+      "TKY001",
+      "TKY002",
+      "TKY003",
+      "TKY004",
+      "TKY005",
+      "TKY006",
+      "TKY007",
+      "TKY008",
+      "TKY013",
+      "TKY014",
+      "TKY015",
+      "TKY016",
+      "TKY017",
+      "TKY018",
+      "TKY020",
+      "TKY021",
+      "TKY022",
+      "TKY023",
+      "TKY024",
+      "TKY025",
+      "TKY026",
+      "TKY027",
+      "TKY028",
+      "YMN001",
+      "YMN002",
+      "YMN004"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 40,
+    "dataset_id": "japan_2014.hdf5",
+    "event_id": "20141011142000",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD158"
+    ],
+    "query_ids": [
+      "MYG006"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 41,
+    "dataset_id": "japan_2001.hdf5",
+    "event_id": "20010922191600",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "SMN015"
+    ],
+    "query_ids": [
+      "HRS005"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 42,
+    "dataset_id": "japan_2002.hdf5",
+    "event_id": "20021014231300",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 7,
+    "common_queries": 6,
+    "unsupported": [
+      8
+    ],
+    "maximum_input_ids": [
+      "AOM004",
+      "AOM007",
+      "AOM009",
+      "AOM008",
+      "IWT001",
+      "AOM012",
+      "IWT002"
+    ],
+    "query_ids": [
+      "AOM014",
+      "HKD159",
+      "IWT003",
+      "IWT006",
+      "IWT018",
+      "MYG006"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 43,
+    "dataset_id": "japan_2024.hdf5",
+    "event_id": "20240621165600",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 6,
+    "common_queries": 4,
+    "unsupported": [
+      8
+    ],
+    "maximum_input_ids": [
+      "IBR007",
+      "IBR006",
+      "IBR004",
+      "IBR001",
+      "FKS014",
+      "TCG014"
+    ],
+    "query_ids": [
+      "FKS008",
+      "FKS016",
+      "IBR014",
+      "TCG013"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 44,
+    "dataset_id": "japan_2022.hdf5",
+    "event_id": "20220901202100",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "random",
+    "input_count": 4,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 5,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "MYZ018",
+      "MYZ017",
+      "KGS022",
+      "MYZ014",
+      "MYZ013"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 45,
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110902073900",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "random",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "CHB010",
+      "CHB004",
+      "CHB011",
+      "CHB012"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 46,
+    "dataset_id": "japan_2010.hdf5",
+    "event_id": "20101012044200",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "random",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 14,
+    "common_queries": 11,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "YMG018",
+      "YMG010",
+      "HRS014",
+      "YMG009",
+      "HRS019",
+      "HRS013",
+      "EHM007",
+      "EHM008"
+    ],
+    "query_ids": [
+      "EHM005",
+      "EHM009",
+      "EHM010",
+      "EHM012",
+      "EHM016",
+      "HRS008",
+      "HRS009",
+      "HRS012",
+      "OIT004",
+      "SMN008",
+      "YMG013"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 47,
+    "dataset_id": "japan_2014.hdf5",
+    "event_id": "20141016043900",
+    "elapsed_time": 5.0,
+    "geometry_protocol": "random",
+    "input_count": 8,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 16,
+    "common_queries": 38,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "EHM015",
+      "EHM016",
+      "EHM009",
+      "EHM008",
+      "EHM010",
+      "EHM005",
+      "EHM011",
+      "EHM006"
+    ],
+    "query_ids": [
+      "EHM001",
+      "EHM002",
+      "EHM004",
+      "EHM012",
+      "EHM013",
+      "EHM014",
+      "HRS004",
+      "HRS006",
+      "HRS008",
+      "HRS009",
+      "HRS010",
+      "HRS012",
+      "HRS013",
+      "HRS014",
+      "HRS017",
+      "HRS018",
+      "HRS019",
+      "KGW005",
+      "KOC006",
+      "KOC007",
+      "KOC008",
+      "KOC009",
+      "KOC010",
+      "KOC011",
+      "KOC012",
+      "KOC013",
+      "KOC014",
+      "KOC015",
+      "OIT001",
+      "OIT004",
+      "OIT011",
+      "YMG009",
+      "YMG010",
+      "YMG013",
+      "YMG014",
+      "YMG016",
+      "YMG017",
+      "YMG019"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 48,
+    "dataset_id": "japan_2000.hdf5",
+    "event_id": "20001006170500",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "TTR008"
+    ],
+    "query_ids": [
+      "SMN001"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 49,
+    "dataset_id": "japan_2016.hdf5",
+    "event_id": "20160820180100",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "AOM012"
+    ],
+    "query_ids": [
+      "HKD072"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 50,
+    "dataset_id": "japan_2003.hdf5",
+    "event_id": "20030926050500",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 6,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD113"
+    ],
+    "query_ids": [
+      "HKD084",
+      "HKD086",
+      "HKD087",
+      "HKD090",
+      "HKD092",
+      "HKD098"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 51,
+    "dataset_id": "japan_2002.hdf5",
+    "event_id": "20020923084400",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "normal",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "NIG019",
+      "NIG016"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 52,
+    "dataset_id": "japan_2001.hdf5",
+    "event_id": "20010928111600",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "normal",
+    "input_count": 4,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "TCG004",
+      "TCG009",
+      "TCG005",
+      "TCG006"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 53,
+    "dataset_id": "japan_2021.hdf5",
+    "event_id": "20210919190400",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "normal",
+    "input_count": 4,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 5,
+    "unsupported": [
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "GIF004",
+      "NGN013",
+      "NGN009",
+      "GIF003"
+    ],
+    "query_ids": [
+      "FKI011",
+      "NGN002",
+      "NGN022",
+      "NGN023",
+      "NGN024"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 54,
+    "dataset_id": "japan_2019.hdf5",
+    "event_id": "20190929164700",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "normal",
+    "input_count": 24,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 24,
+    "common_queries": 21,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "KMM008",
+      "KMM010",
+      "KMM011",
+      "KMM014",
+      "KMM013",
+      "KMM006",
+      "KMM018",
+      "KMM009"
+    ],
+    "query_ids": [
+      "FKO013",
+      "FKO016",
+      "KGS001",
+      "KGS003",
+      "KGS005",
+      "KGS006",
+      "KMM003",
+      "KMM015",
+      "KMM016",
+      "KMM020",
+      "KMM021",
+      "KMM022",
+      "MYZ001",
+      "MYZ002",
+      "MYZ003",
+      "MYZ004",
+      "MYZ006",
+      "MYZ008",
+      "MYZ019",
+      "MYZ020",
+      "NGS010"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 55,
+    "dataset_id": "japan_2016.hdf5",
+    "event_id": "20160919152300",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "AKT017",
+      "IWT025"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 56,
+    "dataset_id": "japan_2022.hdf5",
+    "event_id": "20220922072400",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "CHB005",
+      "CHB014"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 57,
+    "dataset_id": "japan_2024.hdf5",
+    "event_id": "20240605215400",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 25,
+    "common_queries": 51,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "TCG011",
+      "IBR010",
+      "IBR008",
+      "TCG013",
+      "IBR011",
+      "TCG008",
+      "SIT008",
+      "SIT007"
+    ],
+    "query_ids": [
+      "CHB002",
+      "CHB003",
+      "CHB004",
+      "CHB006",
+      "CHB007",
+      "CHB010",
+      "CHB029",
+      "FKS014",
+      "FKS016",
+      "FKS017",
+      "FKS027",
+      "GNM001",
+      "GNM002",
+      "GNM003",
+      "GNM006",
+      "GNM009",
+      "GNM016",
+      "IBR001",
+      "IBR003",
+      "IBR004",
+      "IBR006",
+      "IBR007",
+      "IBR012",
+      "IBR013",
+      "IBR014",
+      "IBR016",
+      "IBR017",
+      "IBR018",
+      "SIT004",
+      "SIT005",
+      "SIT006",
+      "SIT014",
+      "TCG001",
+      "TCG003",
+      "TCG004",
+      "TCG006",
+      "TCG010",
+      "TCG014",
+      "TCG015",
+      "TCG016",
+      "TKY001",
+      "TKY003",
+      "TKY004",
+      "TKY014",
+      "TKY015",
+      "TKY021",
+      "TKY025",
+      "TKY026",
+      "TKY027",
+      "TKY030",
+      "TKY031"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 58,
+    "dataset_id": "japan_2022.hdf5",
+    "event_id": "20220930145800",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 25,
+    "common_queries": 68,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "IBR010",
+      "CHB001",
+      "TCG012",
+      "IBR016",
+      "IBR008",
+      "SIT010",
+      "IBR012",
+      "SIT007"
+    ],
+    "query_ids": [
+      "CHB002",
+      "CHB003",
+      "CHB004",
+      "CHB007",
+      "CHB008",
+      "CHB010",
+      "CHB011",
+      "CHB024",
+      "CHB029",
+      "FKS013",
+      "FKS014",
+      "FKS016",
+      "FKS027",
+      "GNM001",
+      "GNM002",
+      "GNM003",
+      "GNM006",
+      "GNM010",
+      "GNM012",
+      "GNM015",
+      "GNM016",
+      "IBR001",
+      "IBR002",
+      "IBR003",
+      "IBR004",
+      "IBR005",
+      "IBR006",
+      "IBR007",
+      "IBR017",
+      "IBR018",
+      "KNG001",
+      "KNG002",
+      "KNG004",
+      "KNG011",
+      "SIT004",
+      "SIT006",
+      "SIT012",
+      "SIT013",
+      "SIT014",
+      "TCG002",
+      "TCG003",
+      "TCG004",
+      "TCG005",
+      "TCG006",
+      "TCG007",
+      "TCG014",
+      "TCG015",
+      "TCG016",
+      "TKY001",
+      "TKY002",
+      "TKY003",
+      "TKY004",
+      "TKY005",
+      "TKY014",
+      "TKY015",
+      "TKY016",
+      "TKY017",
+      "TKY018",
+      "TKY021",
+      "TKY023",
+      "TKY024",
+      "TKY025",
+      "TKY026",
+      "TKY027",
+      "TKY028",
+      "YMN001",
+      "YMN002",
+      "YMN004"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 59,
+    "dataset_id": "japan_2012.hdf5",
+    "event_id": "20120910205400",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "random",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 4,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD074",
+      "HKD073",
+      "HKD072",
+      "HKD070"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 60,
+    "dataset_id": "japan_2020.hdf5",
+    "event_id": "20200911191900",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "random",
+    "input_count": 10,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 11,
+    "common_queries": 3,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "CHB004",
+      "IBR017",
+      "IBR018",
+      "IBR013",
+      "IBR014",
+      "IBR016",
+      "IBR011",
+      "IBR007"
+    ],
+    "query_ids": [
+      "IBR003",
+      "IBR005",
+      "TCG014"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 61,
+    "dataset_id": "japan_2008.hdf5",
+    "event_id": "20080903233200",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "random",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 17,
+    "common_queries": 19,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "FKO012",
+      "OIT008",
+      "OIT005",
+      "FKO014",
+      "FKO011",
+      "FKO009",
+      "OIT006",
+      "OIT002"
+    ],
+    "query_ids": [
+      "FKO001",
+      "FKO002",
+      "FKO003",
+      "FKO016",
+      "KMM004",
+      "KMM009",
+      "KMM010",
+      "KMM011",
+      "MYZ001",
+      "NGS014",
+      "OIT001",
+      "OIT003",
+      "OIT004",
+      "SAG002",
+      "SAG003",
+      "SAG007",
+      "YMG006",
+      "YMG011",
+      "YMG013"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 62,
+    "dataset_id": "japan_2023.hdf5",
+    "event_id": "20230826070200",
+    "elapsed_time": 10.0,
+    "geometry_protocol": "random",
+    "input_count": 16,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 25,
+    "common_queries": 24,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "IBR003",
+      "IBR004",
+      "IBR002",
+      "IBR006",
+      "IBR005",
+      "TCG014",
+      "IBR013",
+      "FKS014"
+    ],
+    "query_ids": [
+      "CHB004",
+      "CHB007",
+      "FKS006",
+      "FKS008",
+      "FKS009",
+      "FKS012",
+      "FKS013",
+      "FKS015",
+      "FKS016",
+      "FKS017",
+      "IBR008",
+      "IBR009",
+      "IBR010",
+      "IBR011",
+      "IBR014",
+      "IBR016",
+      "IBR017",
+      "IBR018",
+      "SIT008",
+      "TCG003",
+      "TCG006",
+      "TCG009",
+      "TCG012",
+      "TCG015"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 63,
+    "dataset_id": "japan_2004.hdf5",
+    "event_id": "20041102004000",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 3,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "NIG019"
+    ],
+    "query_ids": [
+      "GNM001",
+      "GNM002",
+      "NIG022"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 64,
+    "dataset_id": "japan_2014.hdf5",
+    "event_id": "20141011142000",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 1,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD158"
+    ],
+    "query_ids": [
+      "MYG006"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 65,
+    "dataset_id": "japan_2003.hdf5",
+    "event_id": "20030926050500",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "normal",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 1,
+    "common_queries": 6,
+    "unsupported": [
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD113"
+    ],
+    "query_ids": [
+      "HKD084",
+      "HKD086",
+      "HKD087",
+      "HKD090",
+      "HKD092",
+      "HKD098"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 66,
+    "dataset_id": "japan_2007.hdf5",
+    "event_id": "20070821200500",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "normal",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 3,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD074",
+      "HKD072",
+      "HKD067"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 67,
+    "dataset_id": "japan_2017.hdf5",
+    "event_id": "20171005114200",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "normal",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 3,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "FKS015",
+      "FKS014",
+      "IBR003"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 68,
+    "dataset_id": "japan_2023.hdf5",
+    "event_id": "20230817205100",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "normal",
+    "input_count": 6,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 6,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "OIT018",
+      "MYZ002",
+      "MYZ003",
+      "OIT014",
+      "OIT011",
+      "KOC015"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 69,
+    "dataset_id": "japan_2007.hdf5",
+    "event_id": "20070816083200",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "normal",
+    "input_count": 22,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 22,
+    "common_queries": 14,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "CHB016",
+      "CHB011",
+      "CHB018",
+      "CHB026",
+      "CHB017",
+      "CHB005",
+      "CHB007",
+      "CHB020"
+    ],
+    "query_ids": [
+      "CHB002",
+      "CHB003",
+      "CHB004",
+      "CHB008",
+      "CHB009",
+      "CHB014",
+      "CHB022",
+      "CHB024",
+      "CHB029",
+      "TKY017",
+      "TKY021",
+      "TKY024",
+      "TKY025",
+      "TKY027"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 70,
+    "dataset_id": "japan_2010.hdf5",
+    "event_id": "20100930140800",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HRS001",
+      "SMN016"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 71,
+    "dataset_id": "japan_2022.hdf5",
+    "event_id": "20220915085100",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 2,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "HKD007",
+      "HKD015"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 72,
+    "dataset_id": "japan_2018.hdf5",
+    "event_id": "20180911205100",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 14,
+    "common_queries": 6,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "HKD104",
+      "HKD105",
+      "HKD128",
+      "HKD125",
+      "HKD103",
+      "HKD184",
+      "HKD124",
+      "HKD185"
+    ],
+    "query_ids": [
+      "HKD130",
+      "HKD131",
+      "HKD132",
+      "HKD134",
+      "HKD145",
+      "HKD181"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 73,
+    "dataset_id": "japan_2009.hdf5",
+    "event_id": "20091012184200",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "random",
+    "input_count": 1,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 22,
+    "common_queries": 14,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "FKS022",
+      "FKS025",
+      "FKS023",
+      "FKS021",
+      "NIG012",
+      "FKS028",
+      "FKS024",
+      "FKS020"
+    ],
+    "query_ids": [
+      "FKS016",
+      "FKS017",
+      "FKS029",
+      "GNM001",
+      "NIG011",
+      "NIG017",
+      "NIG022",
+      "NIG028",
+      "TCG002",
+      "TCG003",
+      "TCG004",
+      "TCG014",
+      "YMT014",
+      "YMT015"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 74,
+    "dataset_id": "japan_2012.hdf5",
+    "event_id": "20120815011500",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "random",
+    "input_count": 2,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 3,
+    "common_queries": 0,
+    "unsupported": [
+      1,
+      3,
+      5,
+      8
+    ],
+    "maximum_input_ids": [
+      "FKS013",
+      "FKS031",
+      "TCG014"
+    ],
+    "query_ids": [],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 75,
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110914235600",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "random",
+    "input_count": 16,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 19,
+    "common_queries": 11,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "MYG011",
+      "FKS005",
+      "MYG010",
+      "MYG015",
+      "MYG017",
+      "FKS010",
+      "MYG012",
+      "FKS004"
+    ],
+    "query_ids": [
+      "FKS002",
+      "FKS006",
+      "FKS008",
+      "FKS009",
+      "FKS011",
+      "FKS012",
+      "MYG001",
+      "MYG002",
+      "MYG003",
+      "MYG007",
+      "MYG016"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 76,
+    "dataset_id": "japan_2001.hdf5",
+    "event_id": "20011002172000",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "random",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 25,
+    "common_queries": 23,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "MYG011",
+      "FKS005",
+      "FKS001",
+      "FKS007",
+      "FKS010",
+      "MYG015",
+      "FKS006",
+      "FKS004"
+    ],
+    "query_ids": [
+      "FKS002",
+      "FKS003",
+      "FKS008",
+      "FKS009",
+      "FKS011",
+      "FKS012",
+      "FKS013",
+      "FKS014",
+      "FKS019",
+      "FKS020",
+      "FKS023",
+      "FKS031",
+      "IBR003",
+      "IBR005",
+      "MYG002",
+      "MYG003",
+      "MYG008",
+      "MYG012",
+      "MYG013",
+      "MYG017",
+      "TCG009",
+      "TCG014",
+      "YMT011"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  },
+  {
+    "decision": 77,
+    "dataset_id": "japan_2017.hdf5",
+    "event_id": "20170917065800",
+    "elapsed_time": 20.0,
+    "geometry_protocol": "random",
+    "input_count": 3,
+    "evidence": "matched_initial_checkpoint_NOT_TRAINED",
+    "available": 25,
+    "common_queries": 24,
+    "unsupported": [],
+    "maximum_input_ids": [
+      "SIT012",
+      "SIT007",
+      "TKY003",
+      "SIT005",
+      "SIT013",
+      "TKY002",
+      "TKY001",
+      "SIT003"
+    ],
+    "query_ids": [
+      "GNM001",
+      "GNM009",
+      "GNM016",
+      "IBR004",
+      "IBR005",
+      "IBR010",
+      "IBR016",
+      "KNG009",
+      "KNG012",
+      "KNG014",
+      "SIT002",
+      "SIT004",
+      "SIT011",
+      "TCG007",
+      "TCG009",
+      "TCG010",
+      "TCG011",
+      "TCG012",
+      "TCG014",
+      "TKY004",
+      "TKY007",
+      "TKY015",
+      "TKY020",
+      "YMN004"
+    ],
+    "rule": "fixed event/T; stable pick+station ID; queries exclude maximum K; never duplicate/move T"
+  }
+]

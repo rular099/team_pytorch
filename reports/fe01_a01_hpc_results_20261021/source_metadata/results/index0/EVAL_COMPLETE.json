@@ -1,0 +1,48 @@
+{
+  "status": "PASS",
+  "index": 0,
+  "split": "validation",
+  "plan_sha256": "8120b1647b8067879b3f783e1c14e1efca708bc1179ecc0ad0acc0ce9bb90cd2",
+  "source_core_sha256": "3e1e4398b01d724f793f88b19be2a2c03ca67a71e881d876c173a8fbc5b8177f",
+  "files_sha256": {
+    "comparisons/epoch12/OFF_scores.csv": "db85d7079b94fa1b118a119f0ca0aff177e2d93dd5299cf106840528406c8ed3",
+    "comparisons/epoch12/ON_scores.csv": "c12086470bbe7f5778a970c8b467395528991427fe17938d3624722edefbd3c5",
+    "comparisons/epoch12/comparison.json": "8d5aca5de49582b5d7ed5bfbb5a528f72269c36e3974be9fc5e3ba4d8f8c44ce",
+    "comparisons/epoch12/paired_event_bootstrap.csv": "108ed4aea00b7281d9026544463c7c8e0a1088683f16d771fee5e7de1be30474",
+    "comparisons/epoch12/spatial_fields.csv.gz": "4165f5ac6e3aef5ceb03b494825aeaaec602ec6f0f9dd7f318344f343789ed33",
+    "comparisons/selected/OFF_scores.csv": "06ea75eb1c089aed88d50bd08e04a83c8f46b71e3fd38a4c3b23218c27bc37c8",
+    "comparisons/selected/ON_scores.csv": "e037dc75abb10d3a1ca6acd09d6718335685705d9e233fef0bdfb43fc6025a17",
+    "comparisons/selected/comparison.json": "8d5aca5de49582b5d7ed5bfbb5a528f72269c36e3974be9fc5e3ba4d8f8c44ce",
+    "comparisons/selected/paired_event_bootstrap.csv": "8b269de7c391b9f148c60019c2c8c324b0131afb82bf60dc6b06162fbd38fbff",
+    "comparisons/selected/spatial_fields.csv.gz": "7cedd3a97f40f6e47224d13b710600755d0acba6eba1c6912012706412ef032a",
+    "evaluation/a01__team_original_scratch__off__seed42/epoch12/checkpoint_identity.json": "d044a3d2fc63853c876d247cf7e3e6d023eab2a9e8364ae9cbf30324900a7c5f",
+    "evaluation/a01__team_original_scratch__off__seed42/epoch12/fields.csv.gz": "ed532d3c1303c25ed2b70d381913c22500d4bf422721e34554186223a953e0a8",
+    "evaluation/a01__team_original_scratch__off__seed42/epoch12/population.json": "9134475b07d44f8331a21df183c06d293129498a0612d85c69ab9374070acfb9",
+    "evaluation/a01__team_original_scratch__off__seed42/epoch12/predictions.csv.gz": "1f953d46de9d2df66f735eff1c975336fcb372c44f1bcf4b2c9f246364a58b14",
+    "evaluation/a01__team_original_scratch__off__seed42/epoch12/scores.csv": "db85d7079b94fa1b118a119f0ca0aff177e2d93dd5299cf106840528406c8ed3",
+    "evaluation/a01__team_original_scratch__off__seed42/epoch12/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "evaluation/a01__team_original_scratch__off__seed42/selected/checkpoint_identity.json": "c61d81f189c6ff66cf0232c005a3a0f60e980a892700a7104ff838b3cbe7ca75",
+    "evaluation/a01__team_original_scratch__off__seed42/selected/fields.csv.gz": "75278027be67e3e46de938196c6b52619aa5bd416697085a5189f9200156daef",
+    "evaluation/a01__team_original_scratch__off__seed42/selected/population.json": "9134475b07d44f8331a21df183c06d293129498a0612d85c69ab9374070acfb9",
+    "evaluation/a01__team_original_scratch__off__seed42/selected/predictions.csv.gz": "00e34ae0099e833f65881d100aa94b367d2b005ee7fa8b3eb42bd1fce67e3a2e",
+    "evaluation/a01__team_original_scratch__off__seed42/selected/scores.csv": "06ea75eb1c089aed88d50bd08e04a83c8f46b71e3fd38a4c3b23218c27bc37c8",
+    "evaluation/a01__team_original_scratch__off__seed42/selected/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "evaluation/a01__team_original_scratch__off__seed42_reused_ON/epoch12/checkpoint_identity.json": "e884fc7a6a71c33c992e86b8607b86430bbe79bf5e91733a1ecddf65c640de23",
+    "evaluation/a01__team_original_scratch__off__seed42_reused_ON/epoch12/population.json": "ab23a017ce28fd07d334c323533ce21137fe7d00914d5e5fb06b1a954e031d07",
+    "evaluation/a01__team_original_scratch__off__seed42_reused_ON/epoch12/predictions.csv.gz": "e42bb80fdb51ed94d9215002135c8a042cc134278b45bd21baae1cf7bf06a348",
+    "evaluation/a01__team_original_scratch__off__seed42_reused_ON/epoch12/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7",
+    "evaluation/a01__team_original_scratch__off__seed42_reused_ON/selected/checkpoint_identity.json": "bb1631348ceb337e68c0861463d35477d8b48f7a650c490c6c9a50e5f41737de",
+    "evaluation/a01__team_original_scratch__off__seed42_reused_ON/selected/population.json": "ab23a017ce28fd07d334c323533ce21137fe7d00914d5e5fb06b1a954e031d07",
+    "evaluation/a01__team_original_scratch__off__seed42_reused_ON/selected/predictions.csv.gz": "3db1e88e6514fd89df11a653862e5f30fd668894218a1d0813190c7c29b166a9",
+    "evaluation/a01__team_original_scratch__off__seed42_reused_ON/selected/support.csv": "3a365e58ab6e4b367426e36fb6b86274aed15df2aeae3606da32d9d2e0b271b7"
+  },
+  "execution_operations_sha256": {
+    "eval_pack.py": "a08f40d4fd0069b033e8b57a8013ac680538bfa2ce31e14717f203b335f38bac",
+    "eval_pack.sh": "d6039c7e422d1c63c92e5674879773fd3d9c0717b76dd01ee4efc50ca8e02554",
+    "eval_revision.py": "0c983d35475f6630db8bbde66085de015767e5042ed56ffd5a4ea491aef27cf5"
+  },
+  "operations_revision": {
+    "path": "operations/team_eval_fix_3c27f9a5c1a0/revision.json",
+    "sha256": "e86b6d18ba9630c65f593ca7f993c376185260a71a0f857a5480dcc2c887b03e"
+  }
+}

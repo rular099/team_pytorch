@@ -1,0 +1,32 @@
+{
+  "host": "a08r3n17",
+  "job_id": "29953140",
+  "python": "3.9.21 (main, Dec 11 2024, 16:24:11) \n[GCC 11.2.0]",
+  "versions": {
+    "torch": "1.13.1+git55d300e.abi0.dtk2304",
+    "seisbench": "0.10.1",
+    "numpy": "1.26.4",
+    "scipy": "1.13.1",
+    "h5py": "3.13.0"
+  },
+  "rocm": "5.4.23191-0e6bf66b",
+  "device": "Device 66a1",
+  "git_commit": "unknown source identity",
+  "git_dirty": null,
+  "base_commit": "9c95dbfaf92f36b2673d816026cd3f25b91eec66",
+  "command": [
+    "scripts/fe01_a01/run.py",
+    "train",
+    "--index",
+    "3",
+    "--output",
+    "PRIVATE_PATH/a01_backend_fix_20261007_3ecf060a3334",
+    "--device",
+    "cuda",
+    "--world",
+    "16",
+    "--probe-cap",
+    "2"
+  ],
+  "recorded_utc": "2026-10-09T08:17:11.717310+00:00"
+}
