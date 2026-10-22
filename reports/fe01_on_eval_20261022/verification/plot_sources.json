@@ -1,0 +1,10 @@
+{
+  "reader": "fe01_a01_compare/report_plots.py",
+  "reader_sha256": "93c4ca4cf05d15576ac7d9f703590645d3ac5614683f5b0a3b668c8822110791",
+  "input_tables_sha256": {
+    "paired_effects.csv": "6dcd11c5bd1d24751b2d1ec4e5d2bd757f9419003c1afd70c8159435e672dd71",
+    "stratified_effects.csv": "6cd1978494a48dfd7f53ac9a83b11ae9b8b50318463384194d71b808d079ab95",
+    "first_second_contributions.csv": "23a0261287f657c4582752f2478548ca30603a0114626be21bba951d62e6504e"
+  },
+  "output_png_files": 16
+}

@@ -5,6 +5,9 @@ __pycache__/
 /offline_weights/
 /artifacts/fe01/
 /vendor/
+/artifacts/fe01_on_eval/
+/on_eval.private.env
+/FE01_ON_EVAL_SOURCE_RELEASE.json
 
 # Notebook cache
 .ipynb_checkpoints/

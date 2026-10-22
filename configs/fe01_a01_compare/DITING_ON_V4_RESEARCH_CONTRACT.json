@@ -1,0 +1,402 @@
+{
+  "schema": "fe01_on_eval_research_contract_v4",
+  "task_id": "20261021-fe01-on-integrated-warning-map-v4",
+  "status": "IMPLEMENTATION_SPEC_NOT_EXECUTED",
+  "repository": "rular099/team_pytorch",
+  "source_branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "base_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+  "execution": {
+    "implement_new_forward": true,
+    "manual_hpc_submission_only": true,
+    "automatic_sbatch": false,
+    "training_allowed": false,
+    "held_out_test_allowed": false,
+    "overwrite_old_outputs": false
+  },
+  "models": [
+    {
+      "family": "DiTing",
+      "mode": "physical_scale_keep_duration",
+      "selected_epoch": 12,
+      "seed": 42,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null
+    },
+    {
+      "family": "PhaseNet",
+      "mode": "physical_scale_keep_duration",
+      "selected_epoch": 12,
+      "seed": 42,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null
+    },
+    {
+      "family": "EQT",
+      "mode": "physical_scale_keep_duration",
+      "selected_epoch": 10,
+      "seed": 42,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null
+    },
+    {
+      "family": "TEAM",
+      "mode": "physical_scale_keep_duration",
+      "selected_epoch": 11,
+      "seed": 42,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null
+    }
+  ],
+  "split": "validation",
+  "checkpoint_policies": {
+    "existing_exports": [
+      "selected",
+      "epoch12"
+    ],
+    "new_dense_replay": [
+      "selected"
+    ]
+  },
+  "legacy_population_expected": {
+    "events": 1310,
+    "all_requests": 194265,
+    "noninput_requests": 139440,
+    "applies_to": "legacy_snapshot_v1_only"
+  },
+  "primary": {
+    "times_first_p_seconds": [
+      1,
+      3,
+      5,
+      10,
+      20
+    ],
+    "geometries": [
+      "normal",
+      "random"
+    ],
+    "target_group": "noninput",
+    "metric": "MAE",
+    "units": "log10(m/s^2)",
+    "weighting": "targets_equal_within_cell_then_10_cells_equal"
+  },
+  "secondary_times": {
+    "first_second": [
+      1
+    ],
+    "early": [
+      1,
+      3,
+      5
+    ]
+  },
+  "paired_statistics": {
+    "effect": "DiTing_minus_comparator",
+    "comparators": [
+      "PhaseNet",
+      "EQT",
+      "TEAM"
+    ],
+    "cluster": [
+      "dataset_id",
+      "event_id"
+    ],
+    "bootstrap_draws": 2000,
+    "bootstrap_seed": 20261007,
+    "min_events_for_non_descriptive_labels": 20,
+    "rmse": "sqrt(mean(cell_mse)); recompute within every replicate",
+    "multiple_testing": "exploratory_uncorrected_unless_full_family_method_declared"
+  },
+  "strata": {
+    "magnitude_bounds": [
+      4,
+      5,
+      6
+    ],
+    "truth_logpga_bounds": [
+      -2,
+      -1.2,
+      0
+    ],
+    "epicentral_distance_km_bounds": [
+      0,
+      25,
+      50,
+      100,
+      200
+    ],
+    "depth_km_bounds": [
+      0,
+      10,
+      30,
+      70,
+      300
+    ],
+    "input_count_groups": [
+      "1",
+      "2",
+      "3-4",
+      "5-8",
+      "9-16",
+      "17-25"
+    ],
+    "nearest_input_distance_km_bounds": [
+      0,
+      5,
+      20,
+      50,
+      100
+    ],
+    "missing_fraction_groups": [
+      "0",
+      "(0,0.25]",
+      "(0.25,0.5]",
+      ">0.5",
+      "Unknown"
+    ],
+    "snr_db_bounds": [
+      0,
+      10,
+      20
+    ],
+    "origin_elapsed_seconds_bounds": [
+      0,
+      5,
+      10,
+      20,
+      40
+    ],
+    "interactions": [
+      [
+        "time",
+        "input_count"
+      ],
+      [
+        "time",
+        "snr"
+      ],
+      [
+        "truth_logpga",
+        "nearest_input_distance"
+      ],
+      [
+        "magnitude",
+        "epicentral_distance"
+      ]
+    ],
+    "unknown_policy": "retain_explicit_no_silent_drop"
+  },
+  "snr": {
+    "name": "causal_first_second_snr_proxy_db",
+    "noise_seconds_relative_to_station_p": [
+      -5,
+      -1
+    ],
+    "signal_seconds_relative_to_station_p": [
+      0,
+      1
+    ],
+    "truncate_signal_at_cutoff": true,
+    "noise_min_valid_seconds": 2,
+    "noise_min_coverage": 0.8,
+    "signal_min_valid_seconds": 0.5,
+    "signal_min_coverage": 0.8,
+    "decision_aggregation": "median",
+    "min_available_input_fraction": 0.8,
+    "zero_noise_or_padding": "Unknown_not_high_SNR"
+  },
+  "replay": {
+    "protocol": "fixed_query_replay_v4",
+    "times_first_p_seconds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "input_geometries": [
+      "normal",
+      "random"
+    ],
+    "fixed_query_panels": [
+      "fixed_all_targets",
+      "fixed_never_input_targets"
+    ],
+    "changing_role_panel": "descriptive_only",
+    "pilot_events": 6,
+    "full_station_cohort": "all_1310_locked_events_with_explicit_support_status",
+    "max_model_event_time_geometry_frames": 209600,
+    "checkpoint_once_per_worker": true,
+    "no_cross_cutoff_feature_cache": true,
+    "window_protocol": "native_prefix_v2"
+  },
+  "grid": {
+    "protocol": "grid_replay_v4",
+    "default_full_geometry": "normal",
+    "additional_full_geometry_stage": "random",
+    "all_events_planned": true,
+    "projection": "declared_local_metric",
+    "base_spacing_km": 10,
+    "max_points_per_event": 4096,
+    "event_station_bounds_buffer_km": 20,
+    "overflow": "deterministic_integer_spacing_multiplier_before_predictions",
+    "third_coordinate": "audit_units_and_use_static_verified_metadata_or_explicit_estimate",
+    "zero_elevation": "demonstration_only",
+    "fallback": "clearly_labeled_station_supported_prediction_display",
+    "ground_truth": "stations_only",
+    "support_display_distance_km": 100
+  },
+  "render": {
+    "pga_log_color_limits": [
+      -4,
+      1
+    ],
+    "error_log_color_limits": [
+      -1,
+      1
+    ],
+    "width95_color_limits": [
+      0,
+      3
+    ],
+    "contour_log_levels": [
+      -2,
+      -1.2,
+      -0.5,
+      0
+    ],
+    "all_times_share_scales": true,
+    "animation": "MP4_if_available_else_GIF_or_HTML",
+    "keyframes_first_p_seconds": [
+      1,
+      3,
+      5,
+      10,
+      20
+    ],
+    "additional_keyframes": "TTUM_before_and_after",
+    "report_cases": 12,
+    "case_selection": "metadata_hash_not_prediction_error"
+  },
+  "map_readiness": {
+    "interpretation": "retrospective_station_supported_research_only",
+    "engineering_acceptance": null,
+    "budgets_dex": [
+      0.15,
+      0.2,
+      0.25
+    ],
+    "minimum_fixed_targets": 5,
+    "station_gate": {
+      "mae_max": "b",
+      "absolute_bias_max": "b/2",
+      "absolute_error_threshold": "2*b",
+      "required_fraction_within": 0.9
+    },
+    "field_additional_gate": {
+      "centered_rmse_max": "b",
+      "range_absolute_error_max": "b",
+      "range_definition": "P95_minus_P05"
+    },
+    "stability_consecutive_frames": 3,
+    "update_period_seconds": 1,
+    "report_times": [
+      "first_observed_pass",
+      "stable_onset_retrospective",
+      "stable_confirmation"
+    ],
+    "nonattainment": "retain_not_reached_by_horizon",
+    "missing_frames": "Unknown_and_break_stability",
+    "single_event_coverage": "descriptive_not_95percent_acceptance_gate"
+  },
+  "shadow": {
+    "interpretation": "threshold_conditioned_effective_warning_blind_zone",
+    "engineering_alert_policy": null,
+    "research_logpga_thresholds": [
+      -1.2,
+      0.0
+    ],
+    "research_probability_thresholds": [
+      0.1,
+      0.3,
+      0.5,
+      0.7,
+      0.9
+    ],
+    "minimum_lead_seconds": [
+      0,
+      3,
+      5,
+      10
+    ],
+    "alert_policy": "first_probability_crossing_latched",
+    "timely": "lead>0 and lead>=tau",
+    "truth_crossing": "first_crossing_of_label_consistent_instantaneous_amplitude",
+    "unknown_policy": "lower_upper_failure_bounds",
+    "false_alarm_metrics_required": true,
+    "area": "only_common_independent_spatial_support_estimate_else_NA"
+  },
+  "latency": {
+    "modes": [
+      "ideal_cutoff_replay",
+      "measured_compute_replay"
+    ],
+    "queue_policy": "sequential_FIFO",
+    "communication_latency": "UNKNOWN_unless_measured_or_declared_scenario",
+    "boundaries": [
+      "numeric_station_ready",
+      "numeric_map_ready",
+      "rendered_map_ready"
+    ],
+    "prohibit_query_amortized_time_as_frame_time": true
+  },
+  "optional_stages": {
+    "origin_replay_seconds": [
+      5,
+      10,
+      15,
+      20,
+      30
+    ],
+    "origin_history_rule": "keep_first_p_prefix_start_and_convert_absolute_cutoff",
+    "long_extension_first_p_seconds": [
+      40,
+      90
+    ],
+    "unsupported": "NA_no_rolling_substitution"
+  },
+  "required_stage_interfaces": [
+    "inventory",
+    "compare_existing",
+    "covariates",
+    "crossing_truth",
+    "model_smoke",
+    "replay_pilot",
+    "replay_stations",
+    "replay_grid",
+    "latency",
+    "analyze",
+    "render",
+    "pack"
+  ],
+  "implementation_notes": [
+    "The Markdown V4 is authoritative for boundaries, endpoints, and acceptance tests.",
+    "Resolve source paths, provenance, threshold contract, and resource settings before execution.",
+    "This template is not evidence that any new analysis or HPC task has been executed."
+  ]
+}

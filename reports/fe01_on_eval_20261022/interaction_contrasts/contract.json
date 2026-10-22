@@ -1,0 +1,82 @@
+{
+  "reference_levels": {
+    "time": "1.0",
+    "input_count": "1",
+    "snr": "<0",
+    "truth_logpga": "y<=-2",
+    "nearest_input_distance": "0-5",
+    "magnitude": "M<=4",
+    "epicentral_distance": "0-25"
+  },
+  "all_levels": {
+    "time": [
+      "1.0",
+      "3.0",
+      "5.0",
+      "10.0",
+      "20.0"
+    ],
+    "input_count": [
+      "1",
+      "2",
+      "3-4",
+      "5-8",
+      "9-16",
+      "17-25"
+    ],
+    "snr": [
+      "<0",
+      "[0,10)",
+      "[10,20)",
+      ">=20"
+    ],
+    "truth_logpga": [
+      "y<=-2",
+      "-2<y<=-1.2",
+      "-1.2<y<=0",
+      "y>0"
+    ],
+    "nearest_input_distance": [
+      "0-5",
+      "5-20",
+      "20-50",
+      "50-100",
+      ">100"
+    ],
+    "magnitude": [
+      "M<=4",
+      "4<M<=5",
+      "5<M<=6",
+      "M>6"
+    ],
+    "epicentral_distance": [
+      "0-25",
+      "25-50",
+      "50-100",
+      "100-200",
+      ">200"
+    ]
+  },
+  "interactions": [
+    [
+      "time",
+      "input_count"
+    ],
+    [
+      "time",
+      "snr"
+    ],
+    [
+      "truth_logpga",
+      "nearest_input_distance"
+    ],
+    [
+      "magnitude",
+      "epicentral_distance"
+    ]
+  ],
+  "support_freeze": "before comparator effect calculation",
+  "bins": "fixed V4; missing/Unknown retained and non-identifiable contrasts NA",
+  "weighting": "common time/K domain standardized difference-of-differences; distinct from original ten-cell main endpoint",
+  "inference": "exploratory uncorrected; event clusters do not cover seed or selection uncertainty"
+}

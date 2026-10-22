@@ -1,0 +1,16 @@
+{
+  "split": "validation",
+  "seed": 42,
+  "protocol": "legacy_snapshot_v1",
+  "draws": 2000,
+  "result_type": "REAL_JAPAN_SAVED_PREDICTION_ANALYSIS",
+  "effect": "DiTing minus comparator",
+  "tails": "P90/P95 pooled descriptive endpoint; no averaging cell quantiles; CIs cover additive metrics and transformed RMSE",
+  "limitations": [
+    "single seed; fixed selected models; no training/selection uncertainty",
+    "exploratory endpoints and strata uncorrected",
+    "SNR/missing/origin Unknown until matching HDF sidecar",
+    "shared downstream comparison does not isolate pretraining causal effect",
+    "UPSTREAM_CAUSALITY_UNKNOWN"
+  ]
+}

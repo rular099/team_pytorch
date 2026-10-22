@@ -1,0 +1,10 @@
+{
+  "status": "COMPLETE",
+  "scope": "REAL_JAPAN_SAVED_PREDICTIONS; mixture68 widths",
+  "files_sha256": {
+    "interpretation.json": "c925a35a1e58024473449b5dd2de65d8dcb9ec38e803e78423d10156194b1345",
+    "source_identity.json": "da1edf75d39644f619cedb249053811d20e6d12f29f20274c6cfdd6fa78c6569",
+    "width68_metrics.csv": "fda652b788439a8552c1419f935e564a658fc347f702ead49e0affff252c2bcb",
+    "width68_paired_effects.csv": "d3aee83e0c991fa3b84994324d045977f106178a3f8d9851239c317da9428da1"
+  }
+}

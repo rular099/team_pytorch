@@ -1,0 +1,22 @@
+{
+  "read_sources": [
+    {
+      "file": "DITING_ON_COMPARISON_HANDOFF_20261021.md",
+      "sha256": "5e0cec472b6f488d2d049b0994fe501307e7a709aa199aa824bfe29ccc1a4c1f",
+      "lines": 111
+    },
+    {
+      "file": "DITING_ON_STRATIFIED_COMPARISON_HANDOFF_V2_20261021.md",
+      "sha256": "3cc36d0eac860842f65e511855dd9ebdd561210efa90ef60bc712b8974e82119",
+      "lines": 336
+    },
+    {
+      "file": "DITING_ON_SHADOW_ADDENDUM_V3_20261021.md",
+      "sha256": "63c65a3007ecd9b1fda98ee4aa022d9d8dea7a30538bbed17a93a9c8138d3ebc",
+      "lines": 264
+    }
+  ],
+  "repository_base": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+  "new_request": "2026-10-21 integrate dynamic PGA maps, TTUM and manual HPC scripts",
+  "status": "design_only_no_repository_mutation_no_hpc_submission"
+}

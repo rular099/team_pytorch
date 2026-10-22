@@ -761,3 +761,24 @@ artifacts/fe01_a01/review_20261021/CODEX_INDEPENDENT_ANALYSIS.md及SHA，排除�
 注意：前三诊断是旧ON权重的推理时OFF干预，DiTing诊断是未训练初态；
 K1 field的2000个bootstrap仅1253有效，空cell排除37.35%，不能忽略。
 未加载模型/波形，未提交新超算任务或访问test。
+
+## 2026-10-22 FE01 ON 综合评价 V4
+
+从A01精确基点29ffb20新建team_pytorch_fe01_on_eval、分支exp/fe01-on-warning-map-evaluation。
+用户V4取代V1–V3，要求实际实现、CPU再分析和手动超算脚本，不重训/续训/OFF扩展/重选checkpoint/调sigma/test。
+四ON selected固定DiTing12、PhaseNet12、EQT10、TEAM11。原五工作区HEAD/status/diff/staged一致；旧115/A01核心与旧tests/docs不改。
+
+新fe01_a01_compare实现source/contract、事件配对与分层、四交互共同域对比、SNR/mask/UTC/越阈truth、固定query逐秒station/grid、
+同cutoff缓存、完整MDN、TTUM/误报伴随shadow、同步cold/warm延迟/FIFO、全量动态图/HTML和轻量review/全图源索引。
+prepare/status不加载模型或提交，提交脚本每次只sbatch指定stage；GPU检查在真实srun step。失败保留attempt、成功原子发布/完整seal、父seal绑定；UNKNOWN不认完成或重提。
+模型每worker一次加载，数据原地只读；共享数据散列缓存避免复制mtime变化时每数组重复散列整套HDF。
+
+实际旧预测CPU完整重跑real_comparison_03通过（前两次SIGKILL137保留，改必要列/共享字符串/流式输出）。
+selected noninput十cell DiTing−PhaseNet MAE−.002838，95%事件CI[−.005120,−.000580]；第一秒−.009990；early123−.003528。
+all/K1/untriggered及部分空间指标不支持普遍优势；第一秒约70.41%只是代数贡献。单seed/validation选轮/方案混杂限制保留。
+1188条主配对effect、288条单因子effect、180条空间effect；交互/68%宽度补表独立实际运行。
+所有当前性能是旧snapshot；新固定query/TTUM/shadow/grid/时延还没有Japan实测。
+
+55项pytest、编译/Torch-free import、12个Bash语法和fake scheduler通过；合成20帧MP4/HTML动态热力图、TTUM/shadow实际跑通，醒目标SYNTHETIC。
+本地无生产checkpoint/Japan HDF/DCU，完整模型级门NOT_RUN，正式HPC任务NOT_SUBMITTED。
+最新入口docs/ai/FE01_ON_EVAL_RUNBOOK.md；报告/ChatGPT任务在reports/fe01_on_eval_20261022/。

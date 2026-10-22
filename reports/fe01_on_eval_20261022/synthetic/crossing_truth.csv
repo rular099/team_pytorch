@@ -1,0 +1,13 @@
+dataset_id,event_id,station_id,threshold_logpga,truth,affected,crossing_first_p_seconds,status
+SYNTHETIC,SYNTHETIC_EVENT,S00,-1.2,-2.2,False,,not_exceeded
+SYNTHETIC,SYNTHETIC_EVENT,S00,0.0,-2.2,False,,not_exceeded
+SYNTHETIC,SYNTHETIC_EVENT,S01,-1.2,-1.7,False,,not_exceeded
+SYNTHETIC,SYNTHETIC_EVENT,S01,0.0,-1.7,False,,not_exceeded
+SYNTHETIC,SYNTHETIC_EVENT,S02,-1.2,-1.0,True,14.0,exact_within_record
+SYNTHETIC,SYNTHETIC_EVENT,S02,0.0,-1.0,False,,not_exceeded
+SYNTHETIC,SYNTHETIC_EVENT,S03,-1.2,-0.3,True,15.0,exact_within_record
+SYNTHETIC,SYNTHETIC_EVENT,S03,0.0,-0.3,False,,not_exceeded
+SYNTHETIC,SYNTHETIC_EVENT,S04,-1.2,0.2,True,16.0,exact_within_record
+SYNTHETIC,SYNTHETIC_EVENT,S04,0.0,0.2,True,16.0,exact_within_record
+SYNTHETIC,SYNTHETIC_EVENT,S05,-1.2,0.5,True,17.0,exact_within_record
+SYNTHETIC,SYNTHETIC_EVENT,S05,0.0,0.5,True,17.0,exact_within_record

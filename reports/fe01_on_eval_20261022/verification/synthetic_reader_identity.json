@@ -1,0 +1,13 @@
+{
+  "status": "PASS_ACTUAL_EXECUTED_SOURCES_MATCH",
+  "used_files": {
+    "synthetic.py": true,
+    "map_readiness.py": true,
+    "shadow.py": true,
+    "plotting.py": true,
+    "io.py": true,
+    "clocks.py": true
+  },
+  "full_start_tree_sha256": "7a5d3704020a42097365ac4aeb5321363bacf6b63eac55a3f5e68dceebbbf868",
+  "note": "Actual numerical and graphical sources match the delivered implementation."
+}

@@ -195,3 +195,13 @@ OFF20分钟启动超时且卡点未知。当前使用
 报告显式区分selected/epoch12、目标/field权重及诊断checkpoint状态和稀疏bootstrap支持。
 本地Codex独立分析另外封存，未混入中立报告或上传ZIP，以便用户收到ChatGPT结论后对照。
 没有加载模型/波形、追加训练/eval或访问test。
+
+## 17. FE01 ON V4 独立评价交付（2026-10-22）
+
+新分支`exp/fe01-on-warning-map-evaluation`、独立工作区`team_pytorch_fe01_on_eval`，基点29ffb20。
+四ON selected固定DiTing12/PhaseNet12/EQT10/TEAM11，不训练、不访问test。
+入口：[完整运行手册](FE01_ON_EVAL_RUNBOOK.md)、[科学协议](FE01_ON_EVAL_PROTOCOL.md)、
+[实际验证](FE01_ON_EVAL_VERIFICATION.md)、[真实CPU结果与复核任务](../../reports/fe01_on_eval_20261022/README.md)。
+已实际完成既有预测跨模型/固定分层/四交互/68%宽度分析和合成动态地图/TTUM/shadow端到端，55项CPU聚焦测试通过。
+原A01和其他实验工作区不变。新的checkpoint/DCU/波形补算需用户用独立release脚本手动提交，正式HPC为NOT_SUBMITTED；
+本地合成证据不代表Japan新逐秒/网格/警报成绩。不要把新固定query人口当旧194265请求。

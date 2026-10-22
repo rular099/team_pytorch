@@ -1,0 +1,12 @@
+{
+  "status": "COMPLETE",
+  "scope": "REAL_JAPAN_EXISTING_PREDICTIONS; joint event interaction contrasts",
+  "files_sha256": {
+    "contract.json": "2b089bc8d167a5282b20268d75ace4d1d75ca65bb7dd39b1a2d7283158c7e709",
+    "interaction_contrast_support.csv": "376eb9eb0a5b8a39cd0c33a3201cce810a2afd7ad15295122792f5edddbec5f8",
+    "interaction_contrasts.csv": "a6467782ea1f85004fe50e809f80a19c615fd8af87c8783daf0103d76bbae1c5",
+    "interaction_support_frozen_epoch12.csv": "97ea9a6c83e815ee33760b47b017bf34cc6ba146d0228d5a211d3816e452fb77",
+    "interaction_support_frozen_selected.csv": "395a3562b479910b0eb0ff239e4a01866d9f168a50fae938c97665472c9ea849",
+    "source_identity.json": "ba3ba7d6ad7c9bc943472abff73ab84af25153cbd3a43aa8e38b3a54ed2fa6df"
+  }
+}

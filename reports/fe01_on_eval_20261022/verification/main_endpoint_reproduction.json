@@ -1,0 +1,64 @@
+{
+  "status": "PASS",
+  "tolerance": 1e-12,
+  "reference_sha256": "8c2e48f19f05f64de1c2f14b712edd63d8177da92fb0fd100eb5b369c64e9a65",
+  "max_abs_difference": 0.0,
+  "rows": [
+    {
+      "family": "DiTing",
+      "checkpoint_policy": "selected",
+      "equal_cell_mae_new": 0.2228594702090994,
+      "equal_cell_mae_old": 0.2228594702090994,
+      "abs_difference": 0.0
+    },
+    {
+      "family": "PhaseNet",
+      "checkpoint_policy": "selected",
+      "equal_cell_mae_new": 0.2256971054501645,
+      "equal_cell_mae_old": 0.2256971054501645,
+      "abs_difference": 0.0
+    },
+    {
+      "family": "EQT",
+      "checkpoint_policy": "selected",
+      "equal_cell_mae_new": 0.2364072702581059,
+      "equal_cell_mae_old": 0.2364072702581059,
+      "abs_difference": 0.0
+    },
+    {
+      "family": "TEAM",
+      "checkpoint_policy": "selected",
+      "equal_cell_mae_new": 0.2451587315401991,
+      "equal_cell_mae_old": 0.2451587315401991,
+      "abs_difference": 0.0
+    },
+    {
+      "family": "DiTing",
+      "checkpoint_policy": "epoch12",
+      "equal_cell_mae_new": 0.2228594700577966,
+      "equal_cell_mae_old": 0.2228594700577966,
+      "abs_difference": 0.0
+    },
+    {
+      "family": "PhaseNet",
+      "checkpoint_policy": "epoch12",
+      "equal_cell_mae_new": 0.2256971055014761,
+      "equal_cell_mae_old": 0.2256971055014761,
+      "abs_difference": 0.0
+    },
+    {
+      "family": "EQT",
+      "checkpoint_policy": "epoch12",
+      "equal_cell_mae_new": 0.2368711945826818,
+      "equal_cell_mae_old": 0.2368711945826818,
+      "abs_difference": 0.0
+    },
+    {
+      "family": "TEAM",
+      "checkpoint_policy": "epoch12",
+      "equal_cell_mae_new": 0.2453311431246617,
+      "equal_cell_mae_old": 0.2453311431246617,
+      "abs_difference": 0.0
+    }
+  ]
+}

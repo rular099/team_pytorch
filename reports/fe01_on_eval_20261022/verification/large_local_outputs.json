@@ -1,0 +1,10 @@
+{
+  "files": [
+    {
+      "path": "artifacts/fe01_on_eval/real_comparison_03/spatial_fields.csv.gz",
+      "bytes": 44411752,
+      "sha256": "79404823c64c72ffa7460daf4c4700c2e6271924bbb803c4ccb275e695ff6ad2"
+    }
+  ],
+  "source": "same sealed actual CPU analysis; excluded from Git as large per-field export"
+}

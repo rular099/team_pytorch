@@ -1,0 +1,25 @@
+{
+  "status": "COMPLETE",
+  "scope": "REAL_JAPAN_SAVED_PREDICTIONS; local CPU only",
+  "files_sha256": {
+    "analysis_scope.json": "4d7fcb02dfa8145d8977334f2de1f4e9fc3e5cea98b590f3a9a74a1526adeaa7",
+    "bootstrap_support.csv": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+    "core_verification.json": "3050e969da1cef5b008f1dba413b6afadb8b15455baff529e5349c8a1f37a7c0",
+    "cross_encoder_metrics.csv": "da26a1381d866a911432638ee68140984c3811ff8102692a339cc1840aabfd5d",
+    "event_effects.csv.gz": "b1095e19f760340b2354b7e2838cf61dbad74aff9585cedd257143dd5520a202",
+    "event_robustness.csv": "b40e7552638121ccfb2708acbd3b350211d90c2390b559dbf53dbeaf5f4ae2fc",
+    "first_second_contributions.csv": "23a0261287f657c4582752f2478548ca30603a0114626be21bba951d62e6504e",
+    "interaction_effects.csv": "8e9f65a5f02c1a306abf9addb867cc371e37e68e1cefe33216d67d59e9f3c31c",
+    "paired_effects.csv": "6dcd11c5bd1d24751b2d1ec4e5d2bd757f9419003c1afd70c8159435e672dd71",
+    "source_export_verification.json": "12d5acbf832fc37d01c9ff526d1e8fff40ac3b7426352dd514243bc9f1360f75",
+    "source_identity.json": "74acfe35217d2e1162e01d69ab2b5682cc530c3158a8cdb3bb89e3f526bfa6c7",
+    "spatial_fields.csv.gz": "79404823c64c72ffa7460daf4c4700c2e6271924bbb803c4ccb275e695ff6ad2",
+    "spatial_paired_effects.csv": "8a8d0f05785ae7edc3b455a892dc1651fb873eddc3ad741369cae53ddfd50329",
+    "strata_support.csv": "b4e71b4a7c1b891f4a3a5c81da5a614391303f09ada5a5dcbf8d6a611934c172",
+    "strata_support_frozen_epoch12.csv": "e57fbca164109592ea7d3d901090f6d874f5b53c1cd986b42ae4c2f4592e3280",
+    "strata_support_frozen_epoch12.json": "fc395e76179ad0cce86d05fbcd34c7749fa015d071666fe0388b276e824dd7c9",
+    "strata_support_frozen_selected.csv": "8c8b9277e9900a6cbdb746fda935145c8126ec2630950e822b82201461f3f935",
+    "strata_support_frozen_selected.json": "910c8379f8656738db6733122a5b58d02f727a0a42cbaeff59964c9ee0b5a0f0",
+    "stratified_effects.csv": "6cd1978494a48dfd7f53ac9a83b11ae9b8b50318463384194d71b808d079ab95"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": "PASS_SYNTHETIC_E2E",
+  "source": "deterministic six stations, four synthetic model conditions,20frames",
+  "real_Japan_result": false,
+  "actual_model_forward": false,
+  "hpc_submitted": false,
+  "frames": 20,
+  "outputs": [
+    "saved prediction storage",
+    "full research shadow grid with false alarms",
+    "fixed-panel TTUM budgets",
+    "dynamic frames/animation/HTML index",
+    "station shadow classifications"
+  ]
+}

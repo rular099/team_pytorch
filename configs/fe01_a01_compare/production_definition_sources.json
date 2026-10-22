@@ -1,0 +1,15 @@
+{
+  "sources_sha256": {
+    "japan_dataset_builder.py": "568469a7669b14dbfc7b6a63702a72591c286e45bc7577c2933e4b3a271c48f5",
+    "build_japan_flat_training_data.py": "32e945356a76668667923506879d2dc81d69cefd40a137016a93e802f689429a",
+    "fe01/data.py": "b560ef9a171fd2380c447b4b5d1dc15c4189a12e6927767f1bc541ccb2f37848",
+    "fe01/windows.py": "d2cb26462e08876b239a79b4769218a5f4c642bd7fff56a801467eeee7ff8dca",
+    "fe01/model.py": "48db6052532a4a517b4632fefcb35dd89fe4aca1798d970e9d0329624f0f8b9e",
+    "fe01/metrics.py": "8a7bb19a5a7c5d8410e56f0bab9bd631db2c092d9fd1b48ccb66620482c12967"
+  },
+  "third_coordinate": "stationheight(m)/1000 -> km above local datum as provided by source metadata",
+  "PGA": "max over full stored record of sqrt(NS^2+EW^2+UD^2); physical acceleration m/s^2; label log10(peak+1e-10)",
+  "processing": "native per-component demeaning; resample_poly if needed; resampled demeaning before storage",
+  "causality": "UPSTREAM_CAUSALITY_UNKNOWN; full-record demeaning/resampling not certified online",
+  "pick": "may be catalog/travel-time/refined offline proxy; no continuous triggering certification"
+}

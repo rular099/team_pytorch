@@ -1,0 +1,32 @@
+{
+  "source_archive_sha256": "7a6ecf2260f1fd8d7f1d188c48d6b0f19bbdc433bb861879fb51ac549f209986",
+  "cpu_attempts": [
+    {
+      "attempt": "real_comparison_01",
+      "exit_code": 137,
+      "status": "FAILED_SIGKILL"
+    },
+    {
+      "attempt": "real_comparison_02",
+      "exit_code": 137,
+      "status": "FAILED_SIGKILL"
+    },
+    {
+      "attempt": "real_comparison_03",
+      "exit_code": 0,
+      "status": "COMPLETE_SEAL_VERIFIED"
+    }
+  ],
+  "failure_fix": "read only required CSV columns, share repeated input strings, stream event/field tables; same population/bins/2000draws",
+  "real_comparison": {
+    "status": "COMPLETE",
+    "paired_effect_rows": 1188,
+    "stratified_effect_rows": 288,
+    "spatial_effect_rows": 180
+  },
+  "actual_CPU_reader_sources_current_match": true,
+  "synthetic": "SYNTHETIC_E2E_ONLY_NOT_JAPAN",
+  "production_model_forward": "NOT_RUN_NO_LOCAL_CHECKPOINT_OR_DCU",
+  "formal_hpc": "NOT_SUBMITTED",
+  "held_out_test": "NOT_ACCESSED"
+}

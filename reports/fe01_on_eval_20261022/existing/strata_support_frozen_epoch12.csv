@@ -1,0 +1,118 @@
+factor,stratum,events,stations,requests,decisions,supported_cells,fields,missing_metadata_fraction,descriptive_only,mask_sha256,cohort_rule,checkpoint_policy
+magnitude,4<M<=5,476,837,74860,4226,10,3297,0.0,False,0f95c4d8520ff0b2c16ffe01a62652b3f826f2d4059654050550526670fad730,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude,5<M<=6,88,584,20564,833,10,644,0.0,False,1929ccc1341355da3cbc2688ba22d59d93b250c2306dd2b6b847e9319ff4328e,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude,M<=4,725,774,39457,5804,10,2699,0.0,False,94b1de3a4cd4f60b162eac4ab090d93e4254e5b937d7a4163cfe42d83d85526e,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude,M>6,21,334,4559,200,10,149,0.0,False,934aee24b0212f907a89d98c61d8b7889b35c8433e320c6d936bc542aafde3d1,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga,-1.2<y<=0,1083,807,63217,7542,10,3517,0.0,False,fc7d4594d2c75c6630aaa8edc32749c57f3eab167038916ca9d69aae2a81ddd6,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga,-2<y<=-1.2,1274,877,74446,10424,10,5420,0.0,False,a958ff2165c84ea33ec4620c0423baa4762f3ea5ef561fa3b628ba74afdc050d,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga,y>0,73,205,1777,386,10,99,0.0,False,1c1108d4398b13f53c58f500b6b81970126178b2a9ed7a2d6ad31b63ba243130,shared before model effect; fixed bins; Unknown retained,epoch12
+epicentral_distance,0-25,561,360,4488,2111,10,153,0.0,False,3acf38cf5700fd2e68e5081b1c7f67d4bb2521d12674509eb61c7507c59f92ae,shared before model effect; fixed bins; Unknown retained,epoch12
+epicentral_distance,100-200,751,568,31213,6486,10,2222,0.0,False,8b7b3e06c212811a54a9dc031eaad450de2f692f6eda2943e8073c7ab1d17433,shared before model effect; fixed bins; Unknown retained,epoch12
+epicentral_distance,25-50,973,661,20571,5259,10,1412,0.0,False,6cf74a8e8e5a9200a01100c3591567e7912dec8e33ef5223195035d4acf013a4,shared before model effect; fixed bins; Unknown retained,epoch12
+epicentral_distance,50-100,1130,842,79938,8858,10,5171,0.0,False,ffceb91a213ea7a7f17acae4b51257c25beb95323f3baa0fc9f56317ca237596,shared before model effect; fixed bins; Unknown retained,epoch12
+epicentral_distance,>200,72,191,3230,704,10,130,0.0,False,f498549254d3f435b5f72050a97a254a576d43773e3e837132fae24acc559ab0,shared before model effect; fixed bins; Unknown retained,epoch12
+depth,0-10,272,570,18069,2228,10,930,0.0,False,39992cf0f5d0a6f97ac44c0939b2011d23a5ccc42ec835ce92393438ed923796,shared before model effect; fixed bins; Unknown retained,epoch12
+depth,10-30,295,792,25613,2459,10,1273,0.0,False,3a7ff5bf3c16ec2ea5aef73d01d0d139c224e8ff726e4d1cb5ce91f31d7b5f51,shared before model effect; fixed bins; Unknown retained,epoch12
+depth,30-70,643,687,81941,5552,10,3993,0.0,False,8116795a540e15436ac9da14105bc7b7436fba0cac45285cf56f5564698fc551,shared before model effect; fixed bins; Unknown retained,epoch12
+depth,70-300,100,366,13817,824,10,593,0.0,False,bdd4e1fe1e98a5f387451ddf18f39b7f3d6ea767d64c88fc099244ea9a2a1026,shared before model effect; fixed bins; Unknown retained,epoch12
+nearest_input_distance,0-5,145,36,1494,475,10,116,0.0,False,a7927acff112ad951bdedcde9f177e24a7c80096e3e8de26c41f7b4274714ed4,shared before model effect; fixed bins; Unknown retained,epoch12
+nearest_input_distance,20-50,1224,890,61680,9568,10,4704,0.0,False,9962804d1ccb757caa1f55726350def7b607d3bef9107ec995ceb3d9676935eb,shared before model effect; fixed bins; Unknown retained,epoch12
+nearest_input_distance,5-20,1036,684,18102,6141,10,1014,0.0,False,a2cf503fdd06919bb511f405ade596d1b8bf5c321d6040140653d6db5703f71e,shared before model effect; fixed bins; Unknown retained,epoch12
+nearest_input_distance,50-100,1114,876,46813,7444,10,3185,0.0,False,d560d99e4c8beb55d5a6f8b9898360590808f8c16624d87ca22cc318f435eef9,shared before model effect; fixed bins; Unknown retained,epoch12
+nearest_input_distance,>100,547,659,11351,2666,10,613,0.0,False,0f2c3a780d8c14b397efa3c3411e4f7cc5bd3c530d37b5662b4d88ef3a334f8d,shared before model effect; fixed bins; Unknown retained,epoch12
+input_count,1,660,865,28535,2519,10,1413,0.0,False,71909a2a94b8777950177f7c0db673b7d21b53f2b3d2a3005d2b354ed19dd7b6,shared before model effect; fixed bins; Unknown retained,epoch12
+input_count,17-25,374,716,14663,798,5,566,0.0,False,eea728b7bd55935754439d46f6c5b06ec6d3e86baaf0592ea6e78448e2c6772a,shared before model effect; fixed bins; Unknown retained,epoch12
+input_count,2,547,786,11858,1328,10,657,0.0,False,a121ed0a85a3e9b4d0a894b9955730385c5ef41df686cc052b328ae963c56156,shared before model effect; fixed bins; Unknown retained,epoch12
+input_count,3-4,839,868,30583,2556,10,1576,0.0,False,227d6496174697e5a738d9f9559659c974bad7c95903e9342f93ed573385d126,shared before model effect; fixed bins; Unknown retained,epoch12
+input_count,5-8,802,880,31939,2325,10,1571,0.0,False,d9174848ed2c2088195d0ecbc738010d83b0f3aec0721df5f6549110de8b0ce6,shared before model effect; fixed bins; Unknown retained,epoch12
+input_count,9-16,649,852,21862,1537,10,1006,0.0,False,3d3b53193dd09a636fffd8ec8f78f277864357ddcbc3ee535c35495f6449211f,shared before model effect; fixed bins; Unknown retained,epoch12
+missing_fraction,Unknown,1310,909,139440,11063,10,6789,1.0,False,6fd162b477158df2b319b08cc567b9406e74db126d279edde7dc4d8b301225bc,shared before model effect; fixed bins; Unknown retained,epoch12
+snr,Unknown,1310,909,139440,11063,10,6789,1.0,False,6fd162b477158df2b319b08cc567b9406e74db126d279edde7dc4d8b301225bc,shared before model effect; fixed bins; Unknown retained,epoch12
+origin_time,Unknown,1310,909,139440,11063,10,6789,1.0,False,6fd162b477158df2b319b08cc567b9406e74db126d279edde7dc4d8b301225bc,shared before model effect; fixed bins; Unknown retained,epoch12
+time,1.0,1310,907,38795,2602,2,1882,0.0,False,3fadb4890fad6051fa9c855ce55712f2e5fd2c99c12298bcde0775dddc862903,shared before model effect; fixed bins; Unknown retained,epoch12
+time,10.0,1310,888,20886,1936,2,950,0.0,False,9738829d83083bdda38559216df222612635b811657d17cbed8e8973d3e6d066,shared before model effect; fixed bins; Unknown retained,epoch12
+time,20.0,1310,888,19665,1622,2,892,0.0,False,512817a0ef70783fc657b55061b1540fd0a62944b7eaff01f55e7b18349a4820,shared before model effect; fixed bins; Unknown retained,epoch12
+time,3.0,1310,903,32602,2513,2,1666,0.0,False,238b5554f14338ec66521dec013baa81afe72697da91131f6f7bbeecc00d861a,shared before model effect; fixed bins; Unknown retained,epoch12
+time,5.0,1310,895,27492,2390,2,1399,0.0,False,b3ffbc7d46ccc095d70f29442c3b93582ca78b45fe787328380aa9813b8b34c8,shared before model effect; fixed bins; Unknown retained,epoch12
+hull_status,degenerate,964,894,40393,3847,10,2070,0.0,False,e004910dc73d9867f1a7cffeaf02d05d3f794f129ec5cdfb5aa7b15717e7aff3,shared before model effect; fixed bins; Unknown retained,epoch12
+hull_status,inside,607,615,7420,1515,10,467,0.0,False,5e35c6db88a419ac4aa2bc28f76ca15753f1148e8fae8f168f6e536793fff1d4,shared before model effect; fixed bins; Unknown retained,epoch12
+hull_status,outside,1129,899,91627,7062,10,4558,0.0,False,de872561f1a58e475cb9b55941de9f2a8ea8f21308af3d012bd9bd2cf4e96ecf,shared before model effect; fixed bins; Unknown retained,epoch12
+post_p_seconds_min,Unknown,1310,909,139440,11063,10,6789,1.0,False,6fd162b477158df2b319b08cc567b9406e74db126d279edde7dc4d8b301225bc,shared before model effect; fixed bins; Unknown retained,epoch12
+input_span,20-50,840,880,26876,2204,10,1347,0.0,False,f3ce8e2810f5b039c1baaff6566360c4230bd9e73125e2664e96b2aefe755296,shared before model effect; fixed bins; Unknown retained,epoch12
+input_span,5-20,166,607,4264,382,8,216,0.0,False,bf1724c6f718366aa5265c3bcf06528ecedc37f90a730eb06f9f0da3a94f6bd7,shared before model effect; fixed bins; Unknown retained,epoch12
+input_span,50-100,972,886,40032,3022,10,1880,0.0,False,2e70309f0c4d47e487bcc9ae285d8451e64760e3bdbe147fbeaeb3b1cc4c38f4,shared before model effect; fixed bins; Unknown retained,epoch12
+input_span,<=5,664,865,28575,2527,10,1417,0.0,False,14c35bb0093cfde0082eb148ccb853ae0fd8782e12178190e0e3ab03a850d04b,shared before model effect; fixed bins; Unknown retained,epoch12
+input_span,>100,818,881,39693,2928,10,1929,0.0,False,1efeabab5558dbde7992029f4cfd2c0601877f6bf10b177c6c79ce919ebba85f,shared before model effect; fixed bins; Unknown retained,epoch12
+azimuth_gap,180-270,914,824,21277,4351,10,1482,0.0,False,f20d2e7401cba0685a9d9aaa236bfdb26092f4927c3027a4d46dc0132503210c,shared before model effect; fixed bins; Unknown retained,epoch12
+azimuth_gap,90-180,603,600,6564,1497,10,427,0.0,False,554686b037339919eea00caef99fe36f6eda19bf4200279039074743dabf5a93,shared before model effect; fixed bins; Unknown retained,epoch12
+azimuth_gap,<=90,153,232,856,299,6,53,0.0,False,3730a8f260a6de6d22e781ad14a7291396bbdf6e9aec751808f9e13fc7b5ef67,shared before model effect; fixed bins; Unknown retained,epoch12
+azimuth_gap,>270,1309,909,110743,10308,10,5839,0.0,False,1323663967edc4b16144286811fc1fb8f2c582a2d670fa10c88d6d46f7786644,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,1.0 | 1,660,863,12906,1172,2,700,0.0,False,02ddba82fe657ae17795abe1f17aa1b189cbc4d556f23350e9a6b290a71e9c26,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,1.0 | 17-25,5,101,208,5,1,5,0.0,True,fa23bfb565e47de93c0f007f313f08316659667ad98282a26ce79cd9dcf8c081,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,1.0 | 2,363,734,9069,664,2,491,0.0,False,396ffdd19cb0e374ccc17d16ea5c0f07b675445cd188440ee3cbb90e4d213152,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,1.0 | 3-4,334,743,11401,595,2,528,0.0,False,e7231eca81d474822fb1a1d7f4ee52534781ed8cc647a9aac33861b1e994e853,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,1.0 | 5-8,80,429,3939,133,2,127,0.0,False,90b196f40089701ccee1ced13d98fb4cf76788f1968bf3b2b4f8dfa80653a207,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,1.0 | 9-16,22,159,1272,33,2,31,0.0,False,9911e93bf329f1f7152892edb157919219c36d8b40d4190c776c2823d5dd1ddb,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,10.0 | 1,288,695,3703,296,2,166,0.0,False,ddcb7c14cf7b83c811e43248c20724e75566bb3f7c6394283e093a37b05ac7ef,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,10.0 | 17-25,344,683,5070,344,1,209,0.0,False,b5a914363ca8da29887f57ca9fbe02a403ddafc5781390df7395e15047bbea6f,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,10.0 | 2,70,62,89,77,2,2,0.0,False,37092b8d4ccac8773d231d64d7cdde3dbc570542b01f5efc1a3c2c8ad96eb929,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,10.0 | 3-4,310,628,3147,347,2,156,0.0,False,c903137acd8edbd85137f76da140ccffb044f3cacd4461495b691848b43f5508,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,10.0 | 5-8,389,762,4579,448,2,215,0.0,False,35402f313d9c4a52e46da2cc33d517b8d5f9b9702964b6320127adb29b778986,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,10.0 | 9-16,371,682,4298,424,2,202,0.0,False,ea9d4c5264f4a9b18ece2f8a6a4cf799f87ec56c979a71201fba4695c6f3a035,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,20.0 | 1,288,691,3701,294,2,166,0.0,False,a20c311f02e21c2d8d6c576b4480c599a974b79428c843e2bd20fcfb57e2d351,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,20.0 | 17-25,280,653,4747,280,1,199,0.0,False,d5c991b872223f6b3b9bf0fe8e564611d8f04faa4288361fdd080ee63b79914e,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,20.0 | 2,67,55,74,70,2,0,0.0,False,7f1e2c5bd99d7295bd51eb2729c8dd803315354c23c5cf0433148b2eced85c9e,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,20.0 | 3-4,305,627,3061,309,2,153,0.0,False,498303cb0f7608f7229c39b2e9150e4fe69e1cf1ac1cfcf2d2e7799efc79460b,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,20.0 | 5-8,367,753,4320,370,2,204,0.0,False,79aa26913b6a0a182dbae7f801a139f319b97face882823ffceac34814321ac1,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,20.0 | 9-16,292,688,3762,299,2,170,0.0,False,e4e797872c24211c1df5bcd32b7fdd6ca67291c1dfb2f4ccd8f1d891a9027b3b,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,3.0 | 1,342,722,4485,441,2,214,0.0,False,d8c28fc8810ad9b23c36699ae1abfb7dcd34c026fa32da94145142e5d6a8fcad,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,3.0 | 17-25,48,210,1672,48,1,45,0.0,False,bf90c6fb92db86fa27f531dce48b6377fd017de34822768b7699b9cad9171393,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,3.0 | 2,207,483,2309,361,2,147,0.0,False,9ca8c89a32a2b11f2fd3f8ed75f6992330d55745cb752989fd584dbff1f8f16b,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,3.0 | 3-4,461,788,8325,753,2,484,0.0,False,6a620f4b6adb2a5235777fe7ec97e15803267e78737e5a79cfeebb4f609898ec,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,3.0 | 5-8,432,801,10903,667,2,560,0.0,False,46b61e3a8b36c47595a68a904204545a600ebb966e1579d87d81e4f9c0f0c5c6,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,3.0 | 9-16,180,557,4908,243,2,216,0.0,False,a54f681d90d2e5c55dbfe0b96a99d149943afd9d378e220870eeb6ff18fd6297,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,5.0 | 1,290,693,3740,316,2,167,0.0,False,80573f449a4da1264ff976239b16067af25c44485d233d11dce9bce890090cb7,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,5.0 | 17-25,121,403,2966,121,1,108,0.0,False,38b31d66ee4391d350a5a3030b5a339348bd5af74fbc11a404179292bee8b215,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,5.0 | 2,103,129,317,156,2,17,0.0,False,c4915db43aeb95a1f93d318e42dbfa1e4875bf459e2f80a93a70fcb231fb1a25,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,5.0 | 3-4,391,719,4649,552,2,255,0.0,False,159d7951a266a25c74140383a13986967879788dd79aeb2e9629a8d6a22f6aac,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,5.0 | 5-8,486,786,8198,707,2,465,0.0,False,2ba950d84a9394baefefa44473cd13c0ac99c243a4c4234e801b28613e7819a1,shared before model effect; fixed bins; Unknown retained,epoch12
+time X input_count,5.0 | 9-16,412,754,7622,538,2,387,0.0,False,59722bdbbbf8ae1a748f502f8590a4d4412a0594bdebd2eaadcc3cf4a3fda887,shared before model effect; fixed bins; Unknown retained,epoch12
+time X snr,1.0 | Unknown,1310,907,38795,2602,2,1882,1.0,False,3fadb4890fad6051fa9c855ce55712f2e5fd2c99c12298bcde0775dddc862903,shared before model effect; fixed bins; Unknown retained,epoch12
+time X snr,10.0 | Unknown,1310,888,20886,1936,2,950,1.0,False,9738829d83083bdda38559216df222612635b811657d17cbed8e8973d3e6d066,shared before model effect; fixed bins; Unknown retained,epoch12
+time X snr,20.0 | Unknown,1310,888,19665,1622,2,892,1.0,False,512817a0ef70783fc657b55061b1540fd0a62944b7eaff01f55e7b18349a4820,shared before model effect; fixed bins; Unknown retained,epoch12
+time X snr,3.0 | Unknown,1310,903,32602,2513,2,1666,1.0,False,238b5554f14338ec66521dec013baa81afe72697da91131f6f7bbeecc00d861a,shared before model effect; fixed bins; Unknown retained,epoch12
+time X snr,5.0 | Unknown,1310,895,27492,2390,2,1399,1.0,False,b3ffbc7d46ccc095d70f29442c3b93582ca78b45fe787328380aa9813b8b34c8,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-1.2<y<=0 | 0-5,90,34,813,292,10,64,0.0,False,18a3dbf9f46b3f0316df4f1da1d0b97e0a73dd4a5bc91145c514fb360815f2bc,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-1.2<y<=0 | 20-50,975,757,28815,6412,10,2118,0.0,False,e407b74571585b2a60227cfd5740f2d4ecccc5c901f58032002b4feec7082531,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-1.2<y<=0 | 5-20,810,555,10244,4061,10,506,0.0,False,3f45ae35f2905f6ef6fde8cf8adaa3332ad16106aa97f045177b5b1e24197453,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-1.2<y<=0 | 50-100,705,696,18010,3804,10,1244,0.0,False,70ca5ec9cab4477280cd9f3ffa126c217d3981983983337f24b6707be3144231,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-1.2<y<=0 | >100,277,429,5335,1201,10,291,0.0,False,8954eaedc2b21acaa0d250b13ac519a0f409b65a2983ac30b866219126a4bf40,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-2<y<=-1.2 | 0-5,86,28,669,282,10,28,0.0,False,0d249662a33265a395dc48f8a27532d2969b87f853fe462608676b742ee880dc,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-2<y<=-1.2 | 20-50,1160,843,32076,8355,10,2402,0.0,False,0a1bd48e859591e161c3c8a9c92972aa90b9ae99c8904d732bea1713af252e28,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-2<y<=-1.2 | 5-20,849,576,7559,3859,10,281,0.0,False,cc72aee6205a86472b20daa502dbef61f7931423fd7f26dca4bcbcb55799eab9,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-2<y<=-1.2 | 50-100,1070,820,28373,6850,10,2125,0.0,False,56f885b0959f5045f0fcb79d1acc249e7e42215d513ef3be9743e6804231cbd5,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,-2<y<=-1.2 | >100,495,530,5769,2304,10,314,0.0,False,10eeaefdcf0caf584223672c44b8e5352d5070f3d5afd003920370250be96c2c,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,y>0 | 0-5,4,3,12,12,9,0,0.0,True,0e72d29cd9e4a3309e9d1f2708e97a37e06e13dfeabc5f5d6c6d68c9be9b944b,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,y>0 | 20-50,61,164,789,270,10,53,0.0,False,e526f974c1f8bcc3588abc45c54e30dd8cce6743980864d03a7454689794a4bf,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,y>0 | 5-20,44,101,299,157,10,9,0.0,False,b6af87110400e1600d8c4ba93732998baf7c96e62eb3d57eb2636a167572da24,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,y>0 | 50-100,36,108,430,147,10,27,0.0,False,22dfe216f32ecfc887ddd0da045d21eef8ddc1e6b42d9032bd66e78e89b26b3f,shared before model effect; fixed bins; Unknown retained,epoch12
+truth_logpga X nearest_input_distance,y>0 | >100,11,49,247,48,10,17,0.0,True,fdf6010c95d146855e9d4fea2dfff3602d6575db78e78fdd4b1a6032c7d95d5a,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,4<M<=5 | 0-25,193,208,2140,761,10,117,0.0,False,ffbaf5c3d9ffeaa632fc605e7daf18eda79bd8887b3d3e5ba5a22866d76ddf1b,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,4<M<=5 | 100-200,386,416,17232,3396,10,1432,0.0,False,4948b3d9b205c4b48ec20b938d9779086a3651978a662e1b3ff9088bf4ecfbed,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,4<M<=5 | 25-50,337,457,10191,1906,10,771,0.0,False,e934076f2fb51365c378e52cf7ea59994244f7f5da3e0f21b882d6f9a4c2ea84,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,4<M<=5 | 50-100,463,748,45139,3726,10,2768,0.0,False,6cc168cd9a3b95d158b0ce6876e20d2608be0f6c665befb079d1f77332f69194,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,4<M<=5 | >200,15,13,158,148,10,0,0.0,True,c2766804f9e1f6c5739ed0d0eb44d02ee22666274b0edb7e36dc7ea11015d580,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,5<M<=6 | 0-25,30,69,321,126,7,11,0.0,False,53d969e4807fab636c2992a22b1d8323bf2eae98bd36d43799fe3d9876624027,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,5<M<=6 | 100-200,78,329,7564,711,10,478,0.0,False,66337533933e0399c0bcda597922abb63c70ab36df46432f42687b0244b91c4d,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,5<M<=6 | 25-50,45,185,1822,274,10,151,0.0,False,b8723a5343ff2f115b4a28a32008500c3c9c4c09e403c6721e6781106eb08428,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,5<M<=6 | 50-100,71,435,9962,582,10,469,0.0,False,aaf034279f195bb5321be2a7d6c32b8f70db3ba317ea3801e288b3c1e3d4cfd4,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,5<M<=6 | >200,38,65,895,372,10,30,0.0,False,0b31bf8a45b6889e09f04674adbd6bb1f3f83afa934624655d37be682adc81b1,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M<=4 | 0-25,336,266,2004,1215,10,25,0.0,False,db25a98b642b5cfbdfb879f8848c3acd828759b765a7d90bcf8aa996739aea1f,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M<=4 | 100-200,269,203,4740,2221,10,199,0.0,False,8e8381b42af5c152f9cb9b17663b43327eb2202597a316a767767b10e47023d2,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M<=4 | 25-50,588,531,8426,3060,10,477,0.0,False,1ce2a71da0a54b901a20f211e219182a13f699d2b13fafd09e6279ed64153cd1,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M<=4 | 50-100,584,620,24287,4482,10,1893,0.0,False,ea64cb35c6f6995a0a465aab6449c978017ac2e8d529addc0ce2bdf58c2617d0,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M>6 | 0-25,2,6,23,9,6,0,0.0,True,7a2387490344cccd44f6b23712bb0c16db342b20eab9cd9715e409d587810537,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M>6 | 100-200,18,154,1677,158,10,113,0.0,True,326e3fb14a7f671d4556fc92381b9ba53962c3d49114052a77d58796d5c803c2,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M>6 | 25-50,3,23,132,19,8,13,0.0,True,13de6a2217745c9e41f5542b1311734201d11b448522a084f9900773d47b5856,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M>6 | 50-100,12,85,550,68,10,41,0.0,True,2638a2d5373314c4795c588b98919fde7c0838856bf06787fd4ec3ab85460e25,shared before model effect; fixed bins; Unknown retained,epoch12
+magnitude X epicentral_distance,M>6 | >200,19,158,2177,184,10,100,0.0,True,4328c29e9eac5c3b850769d945eba8f6052893007f5a7b1f74c803d0afbd782b,shared before model effect; fixed bins; Unknown retained,epoch12
