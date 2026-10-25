@@ -99,6 +99,7 @@ def metadata_gate(payload, spec, cfg, lock):
 
 def inspect(spec, return_payload=False):
     """CPU checkpoint content authentication, before any model construction."""
+    print('INVENTORY_CHECK', spec['family'], spec['policy'], 'epoch', spec['epoch'], flush=True)
     import torch
     from fe01.model import state_fingerprint
     from fe01_review.provenance import training_identity, TRAIN_CODE
@@ -133,20 +134,51 @@ def inspect(spec, return_payload=False):
     if spec['family'] == 'DiTing':
         require(encoder_sha == p['encoder_state_sha256'] == lock['initial_state']['encoder_sha256'], 'Frozen encoder mismatch')
     # The whole original trained TEAM state is pinned above. It is never compared to epoch0.
+    dependency = None
     if spec['family'] != 'TEAM':
         from fe01_a01.identity import check_family
-        check_family(runtime_config(cfg), lock)
+        runtime = runtime_config(cfg, lock)
+        dependency = dict(check_family(runtime, lock), recorded_manifest=cfg['pretrained_manifest'],
+                          runtime_manifest=runtime['pretrained_manifest'])
     result = dict(**spec, status='IDENTITY_PASS', config_sha256=fingerprint(cfg),
                   lock_sha256=sha256(spec['lock_path']), state_sha256=state_fingerprint(state),
                   encoder_sha256=encoder_sha, encoder_policy='trained scratch' if spec['family'] == 'TEAM' else 'frozen pretrained',
-                  normalization=cfg['target_normalization'])
+                  normalization=cfg['target_normalization'], pretrained_dependency=dependency)
+    print('INVENTORY_PASS', spec['family'], spec['policy'], flush=True)
     return (result, p) if return_payload else result
 
 
-def runtime_config(recorded):
-    """Relocate path fields only, after the original config has been authenticated."""
-    from fe01_review.runners import relocate
-    return relocate(recorded)
+def runtime_config(recorded, lock=None):
+    """Preserve an accessible authenticated manifest; relocate only missing paths.
+
+    DiTing uses diting_manifest.json; PhaseNet/EQT use pretrained_manifest.json.
+    A01 may store its manifest outside FE01_WEIGHTS_ROOT. The legacy relocate
+    helper hardcodes the general manifest, so it is unsuitable for mixed runs.
+    Never try alternate files after a SHA failure.
+    """
+    cfg = copy.deepcopy(recorded)
+    manifest = Path(recorded['pretrained_manifest'])
+    if manifest.is_file():
+        pass  # Original HPC runs are still present, including A01's private weights directory.
+    elif cfg['model_family'] == FAMILIES['DiTing'] and os.environ.get('A01_DITING_MANIFEST'):
+        cfg['pretrained_manifest'] = os.environ['A01_DITING_MANIFEST']
+    elif 'FE01_WEIGHTS_ROOT' in os.environ:
+        cfg['pretrained_manifest'] = str(Path(os.environ['FE01_WEIGHTS_ROOT']) /
+                                         manifest.name)
+    if 'FE01_CODE_ROOT' in os.environ:
+        cfg['diting_config'] = str(Path(os.environ['FE01_CODE_ROOT']) /
+                                   'diting/config/diting_1200m_backbone_attnpool.yml')
+    for key, env in (('root', 'DATA_ROOT'), ('split_manifest', 'FE01_SPLIT_MANIFEST')):
+        if env in os.environ:
+            cfg['data'][key] = os.environ[env]
+    if lock is not None and cfg['model_family'] != FAMILIES['TEAM']:
+        path = Path(cfg['pretrained_manifest'])
+        expected = lock.get('pretrained_manifest_sha256')
+        require(path.is_file(), 'Pretrained manifest missing: ' + str(path))
+        actual = sha256(path)
+        require(actual == expected, 'Pretrained manifest SHA differs: family=' + cfg['model_family'] +
+                ' path=' + str(path) + ' expected=' + str(expected) + ' actual=' + actual)
+    return cfg
 
 
 def load_spatial_export(source,family,policy):

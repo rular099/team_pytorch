@@ -782,3 +782,17 @@ all/K1/untriggered及部分空间指标不支持普遍优势；第一秒约70.41
 55项pytest、编译/Torch-free import、12个Bash语法和fake scheduler通过；合成20帧MP4/HTML动态热力图、TTUM/shadow实际跑通，醒目标SYNTHETIC。
 本地无生产checkpoint/Japan HDF/DCU，完整模型级门NOT_RUN，正式HPC任务NOT_SUBMITTED。
 最新入口docs/ai/FE01_ON_EVAL_RUNBOOK.md；报告/ChatGPT任务在reports/fe01_on_eval_20261022/。
+
+## 2026-10-25 FE01 ON V4 inventory 清单路径修复
+
+用户提供 outputs/fe01_v4/inventory_31089276_0.err/.out；a5c677c 原 release 的 inventory 首家族 DiTing
+在 sources.inspect → check_family 报 Pretrained manifest SHA differs，无设备不可用证据。
+通用 relocate 将独立 A01 diting_manifest.json 改成 FE01_WEIGHTS_ROOT/pretrained_manifest.json。
+新 runtime_config 保留原文件实际路径，缺失时复用已有 A01_DITING_MANIFEST 或仅搬目录不改文件名，
+所选文件仍严格匹配原 SHA/asset；原 checkpoint/config/encoder 门不变，旧核心不改。
+新增 recover_inventory.sh 在新 run on_v4_20261025_inventory_fix 中只手动 sbatch inventory。
+恢复门逐一校验原 release/execution/plan/contract；除模型身份函数外 CPU AST/依赖必须不变。
+已 seal 的 compare_existing/covariates/crossing_truth 附原 seal/attempt/来源收据导入，旧运行不动；
+仍在跑的旧 CPU 后续完成后再次恢复可补入，成功和在跑 inventory 不重复提交。
+操作入口 docs/ai/FE01_ON_EVAL_INVENTORY_FIX.md；本轮修复重提 NOT_SUBMITTED，真实模型验证 NOT_RUN。
+实际本地69项测试通过；编译/Torch-free import/Bash语法及原release到修复执行树的CPU兼容门通过。

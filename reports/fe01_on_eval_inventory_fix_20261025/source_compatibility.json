@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "original_execution_sha256": "7a5d3704020a42097365ac4aeb5321363bacf6b63eac55a3f5e68dceebbbf868",
+  "execution_sha256": "b9dd0368adc7041bb0c1e36a6899d49014ac9545ae7f44850274099bab6dc15c",
+  "permitted_function_changes": [
+    "sources.inspect",
+    "sources.runtime_config"
+  ],
+  "unchanged_cpu_stages": [
+    "compare_existing",
+    "covariates",
+    "crossing_truth"
+  ]
+}

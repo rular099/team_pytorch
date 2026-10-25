@@ -1,0 +1,134 @@
+{
+  "base_commit": "a5c677c06ae67ed5c47b0cab0905908e1275cf81",
+  "input_logs": {
+    "inventory_31089276_0.err": {
+      "bytes": 1888,
+      "sha256": "302b5a4c8e288cf807fbcdf2973e91edafeafde0e1369b175658415dce80f859"
+    },
+    "inventory_31089276_0.out": {
+      "bytes": 260,
+      "sha256": "81f07b82aef3b031cd76b60347f2712af132dab09fe88820fa0e0f731a26b832"
+    }
+  },
+  "published_model_manifests": [
+    {
+      "model_family": "team_original_scratch",
+      "manifest_basename": "pretrained_manifest.json",
+      "pretrained_manifest_sha256": null,
+      "provenance": "published prior A01 training metadata, not a new inventory result"
+    },
+    {
+      "model_family": "phasenet_pretrained_frozen",
+      "manifest_basename": "pretrained_manifest.json",
+      "pretrained_manifest_sha256": "6252debf5185283f183dca9fed4b22c2a1a809746cfd0cc82dc5699a9c28609e",
+      "provenance": "published prior A01 training metadata, not a new inventory result"
+    },
+    {
+      "model_family": "eqt_pretrained_frozen",
+      "manifest_basename": "pretrained_manifest.json",
+      "pretrained_manifest_sha256": "6252debf5185283f183dca9fed4b22c2a1a809746cfd0cc82dc5699a9c28609e",
+      "provenance": "published prior A01 training metadata, not a new inventory result"
+    },
+    {
+      "model_family": "diting_pretrained_frozen",
+      "manifest_basename": "diting_manifest.json",
+      "pretrained_manifest_sha256": "d80ab473026112ca473fe28a82419b5ac8031b72353ad94da47dbb79fbd5b31b",
+      "provenance": "published prior A01 training metadata, not a new inventory result"
+    }
+  ],
+  "local_tests": "69 PASS in 55.71s",
+  "compile_import_bash": "PASS; all modules Torch-free on import",
+  "core_verification": {
+    "status": "PASS_LOCAL_FILES",
+    "checked": 96,
+    "dtbench_not_locally_verified": [
+      "dtbench/benchmarking_scripts/dpk_ditingV3.py",
+      "dtbench/benchmarking_scripts/dpk_pde2024.py",
+      "dtbench/benchmarking_scripts/dpk_pickerXL.py",
+      "dtbench/benchmarking_scripts/eew_case_traceback.py",
+      "dtbench/data/events/default_event.py",
+      "dtbench/data/stream/default_stream.py",
+      "dtbench/data/datasets/default_dataset.py",
+      "dtbench/evaluation/eval.py",
+      "dtbench/misc/fdsn_data_download.py",
+      "dtbench/training/__init__.py",
+      "dtbench/training/losses.py",
+      "dtbench/training/meters.py",
+      "dtbench/training/modeling.py",
+      "dtbench/training/checkpoint.py",
+      "dtbench/training/cli.py",
+      "dtbench/training/data.py",
+      "dtbench/training/engine.py",
+      "dtbench/training/metrics.py",
+      "dtbench/tutorial/load_model_example.py",
+      "dtbench/tutorial/tmp.py",
+      "dtbench/visualization/waveform_vis/array_plot.py",
+      "dtbench/inference/dt_infer.py",
+      "dtbench/inference/direct_inference/data_augmentation.py",
+      "dtbench/inference/direct_inference/dpk_infer.py",
+      "dtbench/models/__init__.py",
+      "dtbench/models/model_loader.py",
+      "dtbench/models/diting/utils.py",
+      "dtbench/models/diting/diting100m.py",
+      "dtbench/models/diting/diting1200m.py",
+      "dtbench/models/diting/LSD/misc.py",
+      "dtbench/models/diting/LSD/models/backbone_ablation.py",
+      "dtbench/models/diting/LSD/models/head.py",
+      "dtbench/models/diting/LSD/models/uper_head.py",
+      "dtbench/models/diting/LSD/models/vit_adapter.py",
+      "dtbench/models/diting/LSD/models/adapter_modules.py",
+      "dtbench/models/diting/LSD/models/backbone_abla_models.py",
+      "dtbench/models/diting/LSD/models/conv_module.py",
+      "dtbench/models/diting/LSD/models/pale_transformer.py",
+      "dtbench/models/diting/LSD/models/psp_head.py",
+      "dtbench/models/diting/models/backbone_abla_models.py",
+      "dtbench/models/diting/models/backbone_ablation.py",
+      "dtbench/models/diting/models/psp_head.py",
+      "dtbench/models/diting/models/vit_adapter.py",
+      "dtbench/models/diting/models/__init__.py",
+      "dtbench/models/diting/models/adapter_modules.py",
+      "dtbench/models/diting/models/conv_module.py",
+      "dtbench/models/diting/models/head.py",
+      "dtbench/models/diting/models/pale_transformer.py",
+      "dtbench/models/diting/models/uper_head.py",
+      "dtbench/models/others/other_supported_models.py",
+      "dtbench/models/others/PRIMEDP/primedp_middle.py",
+      "dtbench/models/others/PickerXL/get_pickerxl.py",
+      "dtbench/models/others/SeisT/get_seist.py",
+      "dtbench/models/others/SeisT/models/_factory.py",
+      "dtbench/models/others/SeisT/models/distpt_network.py",
+      "dtbench/models/others/SeisT/models/eqtransformer.py",
+      "dtbench/models/others/SeisT/models/magnet.py",
+      "dtbench/models/others/SeisT/models/phasenet.py",
+      "dtbench/models/others/SeisT/models/seist.py",
+      "dtbench/models/others/SeisT/models/__init__.py",
+      "dtbench/models/others/SeisT/models/baz_network.py",
+      "dtbench/models/others/SeisT/models/ditingmotion.py",
+      "dtbench/models/others/SeisT/models/loss.py",
+      "dtbench/models/seisbench_supported/seisbench_io.py",
+      "dtbench/models/seisbench_supported/seisbench_supported_models.py"
+    ],
+    "runtime_dependency_gate": "required before model use"
+  },
+  "actual_source_compatibility_gate": {
+    "status": "PASS",
+    "original_execution_sha256": "7a5d3704020a42097365ac4aeb5321363bacf6b63eac55a3f5e68dceebbbf868",
+    "execution_sha256": "b9dd0368adc7041bb0c1e36a6899d49014ac9545ae7f44850274099bab6dc15c",
+    "permitted_function_changes": [
+      "sources.inspect",
+      "sources.runtime_config"
+    ],
+    "unchanged_cpu_stages": [
+      "compare_existing",
+      "covariates",
+      "crossing_truth"
+    ]
+  },
+  "protected_sources": "No changes to original115, fe01_a01, fe01_review, old configs/locks/seals",
+  "hpc_observed": {
+    "inventory_31089276_0": "FAILED; log shows pretrained manifest SHA rejection",
+    "other_original_tasks": "NOT_PROVIDED; recovery checks actual seals on HPC"
+  },
+  "repair_submission": "NOT_SUBMITTED",
+  "production_checkpoint_and_forward": "NOT_RUN; checkpoint/HDF/DCU absent locally"
+}

@@ -4,6 +4,10 @@
 `team_pytorch_fe01_on_eval`、分支 `exp/fe01-on-warning-map-evaluation`；基点
 `29ffb20ba0effc0c345a0329ba3f8c658dc8cef0`。本轮正式超算状态 **NOT_SUBMITTED**。
 
+**2026-10-25 恢复更新：** 用户已提交原 a5c677c 运行，其 inventory Job31089276_0 清单路径认证失败。
+已有 `on_v4_20261022` 结果时使用[独立修复与结果复用入口](FE01_ON_EVAL_INVENTORY_FIX.md)，
+不要覆盖旧 release 或重复初始化旧运行。本页以下为首次完整流程；恢复后用修复文档的新 run/env。
+
 ## 1. 哪些已经在本地做，哪些需要你在超算做
 
 本地完成实现、已有 Japan validation 保存预测的 CPU 统计、聚焦测试、合成动态地图/TTUM/shadow。

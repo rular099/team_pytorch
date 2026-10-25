@@ -205,3 +205,10 @@ OFF20分钟启动超时且卡点未知。当前使用
 已实际完成既有预测跨模型/固定分层/四交互/68%宽度分析和合成动态地图/TTUM/shadow端到端，55项CPU聚焦测试通过。
 原A01和其他实验工作区不变。新的checkpoint/DCU/波形补算需用户用独立release脚本手动提交，正式HPC为NOT_SUBMITTED；
 本地合成证据不代表Japan新逐秒/网格/警报成绩。不要把新固定query人口当旧194265请求。
+
+## 18. V4 inventory 清单路径修复（2026-10-25）
+
+实际 Job31089276_0 在校验预训练 manifest 时失败；通用 relocation 错把 DiTing 的独立清单改成
+PhaseNet/EQT 的通用 manifest。修复保留可访问的原路径、原 SHA 与 asset 门，旧核心不变。
+使用[新 release 恢复脚本](FE01_ON_EVAL_INVENTORY_FIX.md)只提交新 inventory，已封存 CPU 项附原始身份复用，
+旧 run 和在跑作业不动。修复重提尚未由本地自动提交，真实通过状态仍待用户运行。
