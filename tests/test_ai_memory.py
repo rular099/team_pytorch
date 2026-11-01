@@ -101,6 +101,10 @@ class MemoryWorkflowTests(unittest.TestCase):
 
     def test_bootstrap_and_global_contradiction_detection(self):
         self.assertEqual(check(self.root)[0], [])
+        (self.root / 'SESSION_SUMMARY.md').write_text('# SYNTHETIC memory navigation\n')
+        git(self.root, 'add', 'SESSION_SUMMARY.md')
+        git(self.root, 'commit', '-qm', 'SYNTHETIC session navigation')
+        self.assertFalse(any('newer non-memory' in w for w in check(self.root)[1]))
         snapshot = self.root / MEMORY / 'snapshot.json'
         data = load(snapshot)
         data['tracks'][0]['current_state'] = 'unknown'

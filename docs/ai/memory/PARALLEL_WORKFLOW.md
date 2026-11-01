@@ -16,11 +16,12 @@ FE01后续A01/ON另有较新远端HEAD，见CURRENT_STATUS，不能用原FE01头
 ```bash
 git fetch origin
 git worktree add -b memory/fe01-adoption ../fe01-memory-adoption origin/exp/fe01-feature-extractor-site-effects
-git -C ../fe01-memory-adoption cherry-pick <已审阅的公共记忆提交完整SHA>
+git -C ../fe01-memory-adoption cherry-pick ba4fa7740d9fde5fde87a7b0ae0397037209baf4..<已审阅的最终交付HEAD完整SHA>
 git worktree add -b memory/fe02-adoption ../fe02-memory-adoption origin/exp/fe02-event-fusion-readout
-git -C ../fe02-memory-adoption cherry-pick <已审阅的公共记忆提交完整SHA>
+git -C ../fe02-memory-adoption cherry-pick ba4fa7740d9fde5fde87a7b0ae0397037209baf4..<已审阅的最终交付HEAD完整SHA>
 ```
 
+该范围带入本轮所有初始化、检查修正与发布回执提交，不能只挑最后一份回执。
 逐个检查文档冲突并保留新旧来源；不使用ours/theirs一键覆盖。通过审阅后由各线正常合并adoption分支。
 所有长期实例的实际科研分支应与其record.branch一致；更新工具会拒绝在其他分支执行本线写入。
 每实例只暂存 `docs/ai/memory/tracks/<ID>/`；FE01/FE02实例无权改全局，A01/ON也独立选ID。
