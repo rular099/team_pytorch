@@ -2,8 +2,9 @@
 
 Repository：`rular099/team_pytorch`。Branch：`chore/project-memory-bootstrap`。
 实现base：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`。
-已测试实现result commit：`PENDING_PUBLICATION`。
-该精确SHA将在实现发布后由单独文档回执填入；回执提交只补发布身份，不改已测代码。
+已测试实现result commit：`6dd42b960c2df3f6ea90ec7825841add403ae5d8`。
+该实现提交已通过GitHub连接器发布，远端文件树与本地暂存树均为2fcbbef57ecb3ebfbcb799994d1bc788f0d20c77。
+本回执只补精确发布身份，不改已测工具或记忆事实；承载回执的HEAD在最终CODEX-RESULT提供。
 请回报实际读取的repo/branch/commit，比较此base与实现result的diff，不默认读取默认分支。
 
 ## 请求与阅读顺序

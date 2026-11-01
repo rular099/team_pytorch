@@ -6,8 +6,8 @@ task_id: PROJECT_MEMORY_BOOTSTRAP_WITH_FE_ISOLATION
 repo: rular099/team_pytorch
 branch: chore/project-memory-bootstrap
 base_commit: ba4fa7740d9fde5fde87a7b0ae0397037209baf4
-result_commit: PENDING_PUBLICATION
-result_commit_scope: 已测试实现提交；发布后用独立文档回执补入精确SHA，避免自引用
+result_commit: 6dd42b960c2df3f6ea90ec7825841add403ae5d8
+result_commit_scope: 已测试并发布的实现提交；后续仅补发布身份的文档回执，避免自引用
 changed_files:
   - docs/ai/memory/: 长期记忆、12条独立线、14实验/14决策、汇总/补录/并行规范及审计
   - tools/ai_memory_lib.py / ai_memory_check.py / ai_memory_update.py: 标准库检查、渲染、隔离汇总
@@ -40,6 +40,9 @@ review_request:
   - 按CHATGPT_REVIEW_REQUEST_PROJECT_MEMORY.md审阅事实、作用域与验收，再决定引入公共文档
 [/CODEX-RESULT]
 ```
+
+实现含初始化40fb23a69ed7439bb5984ac9e7b29281dcac63c2及导航检查修正6dd42b960c2df3f6ea90ec7825841add403ae5d8；
+本回执仅补精确发布身份，工具/测试均已在后者版本通过。
 
 GitHub连接器已独立核验远端分支，发现A01在10月21日已经完整回传，ON在10月25日
 更新inventory恢复方案；本地10月15日A01状态已过时。全局没有把10月6日V01当最新全仓库状态。
