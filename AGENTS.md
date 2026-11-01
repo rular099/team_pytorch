@@ -5,9 +5,15 @@ current task take precedence.
 
 ## Start here
 
+For cross-conversation recovery, first read `docs/ai/memory/PROJECT_MEMORY.md`,
+`CURRENT_STATUS.md`, `CHAT_HANDOFF.md`, then the relevant `tracks/<ID>/STATUS.md`.
+Check the actual branch/HEAD against that line's recorded source. A memory-only
+descendant is expected; newer scientific changes require a status review. These
+global files are coordinator snapshots, not one universal project HEAD.
+
 Before analysing or changing the project, read these files in order:
 
-1. `docs/ai/PROJECT_CONTEXT.md` for the compact, current RT55/RT56 snapshot;
+1. `docs/ai/PROJECT_CONTEXT.md` for the dated historical RT55/RT56 snapshot;
 2. `docs/ai/README.md` for the ChatGPT Project and Codex handoff protocol;
 3. `SESSION_SUMMARY.md` for the longer engineering history;
 4. the config, launcher, implementation, tests, and result provenance that are
@@ -15,6 +21,17 @@ Before analysing or changing the project, read these files in order:
 
 Always record the repository, branch, and commit used for an analysis. Do not
 assume that the default branch contains the active experiments.
+
+Memory ownership: a track instance updates only `docs/ai/memory/tracks/<ID>/`
+using `record.json` and `tools/ai_memory_update.py --track <ID>`. FE01 and FE02
+use independent worktrees/branches; derived A01/ON tracks also keep separate
+records. Only the designated coordinator updates global files/observations using
+`--coordinator --source ID=REF`; a missing source retains the previous record.
+After a result commit, review status, append significant decisions and experiment
+entries, refresh that track's handoff, and run `tools/ai_memory_check.py` (plus
+`--scope ID --base <task-base>` for a track-only change). Preserve historical IDs;
+use superseded links instead of deletion. Include `memory_updates` in CODEX-RESULT.
+See `docs/ai/memory/PARALLEL_WORKFLOW.md` for adoption, namespaces and recovery.
 
 ## Non-negotiable project constraints
 

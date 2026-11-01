@@ -1,0 +1,36 @@
+# V01 CHAT_HANDOFF
+
+<!-- ai-memory:begin -->
+track_id: `V01`
+
+branch: `exp/v01-velocity-prep-padding-control`
+
+commit_sha: `d8f2436273fbe990e77f7151d86a6b629e99c5c1`
+
+last_verified_at: `2026-11-01T07:24:10+00:00`
+
+current_state: `verified_complete`
+
+原证据日期：2026-10-06；本次只核验可见来源，不代表重新跑过实验。
+
+完成范围：validation工程闭环与证据包完成；限定科学负机制结论待独立收尾审阅。
+
+速度/P前缺失控制闭环已完成；MM总体优于FF但高PGA更差，不能据此证明padding无害或速度上限。
+
+已核验：
+
+- 报告核验10格导出、4750个metric值和400行CI；fixed epoch8/单seed/非输入query-only，不能与RT55 normal-all混排。 来源：[reports/v01_validation_closure_20261006/RESULT_REVIEW.md](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/RESULT_REVIEW.md)；[reports/v01_validation_closure_20261006/verification.json](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/verification.json)
+- MM总体MAE更低但高PGA退化；A/V common-available MM−AA区间跨零，不证明等效或模态普遍胜出。 来源：[reports/v01_validation_closure_20261006/RESULT_REVIEW.md](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/RESULT_REVIEW.md)；[reports/v01_validation_closure_20261006/headline_metrics.csv](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/headline_metrics.csv)
+
+下一步：
+
+- 按原独立审阅请求判定能否限定收尾；不默认重训、扫参数或打开test。
+
+证据范围：
+
+- 仅开发validation/单seed；不等于held-out test、跨seed显著性或未见台站泛化。
+- 历史训练runtime/encoder身份与完整采样轨迹仍未认证。
+- 上游全记录centering/cutout+1的严格在线因果性未认证；无sacct不宣称调度COMPLETED。
+<!-- ai-memory:end -->
+
+<!-- 人工补充写在生成区外；record.json 是结构化事实源。 -->

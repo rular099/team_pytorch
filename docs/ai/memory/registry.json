@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "repository": "rular099/team_pytorch",
+  "track_ids": [
+    "RT55_RT56",
+    "RT57",
+    "RT58",
+    "RT59",
+    "RT60",
+    "RT61",
+    "FE01",
+    "FE01_A01",
+    "FE01_ON",
+    "FE02",
+    "V01",
+    "LEGACY"
+  ]
+}

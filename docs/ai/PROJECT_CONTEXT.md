@@ -1,5 +1,9 @@
 # RT55 / RT56 项目上下文快照
 
+历史范围提示：本文是2026-09-02的RT55/RT56快照，不代表全项目当前进度。
+跨线当前入口为 [memory/CURRENT_STATUS.md](memory/CURRENT_STATUS.md)，
+新对话先读 [memory/CHAT_HANDOFF.md](memory/CHAT_HANDOFF.md)。
+
 更新日期：2026-09-02（Asia/Shanghai）
 
 这是给 GitHub 连接器和新 AI 对话使用的紧凑入口。它不替代原始 metrics、NPZ、checkpoint 或 resolved config。定量分析前仍须核验具体 provenance。

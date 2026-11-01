@@ -1,0 +1,71 @@
+{
+  "track_id": "RT60",
+  "branch": "rt60-final-contrast-readout",
+  "commit_sha": "00d624d2fb01c6dd98cac150043dd15b7d8366ff",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-09-23",
+  "current_state": "verified_complete",
+  "completion_scope": "epoch8验证与mechanism/legacy门已归档。",
+  "summary": "final-contrast readout空间改善很小且normal非输入误差变差；保留RT59 parent。",
+  "verified_results": [
+    {
+      "text": "mechanism 8/14、legacy 18/25；按预注册行动保留RT59，并归档RT60部分机制/负结果。",
+      "evidence_ids": [
+        "report",
+        "result"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "不自动延长训练；与RT61结论分开保存。"
+  ],
+  "limitations": [
+    "仅开发validation/单seed；不等于held-out test、跨seed显著性或未见台站泛化。",
+    "导出与checkpoint元数据已归档，不等于本地重载训练权重。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "report",
+      "path": "docs/ai/CODEX_RESULT_20260923_RT60_CONTRAST_READOUT_VALIDATION.md",
+      "kind": "report",
+      "commit_sha": "00d624d2fb01c6dd98cac150043dd15b7d8366ff"
+    },
+    {
+      "evidence_id": "result",
+      "path": "reports/rt60_contrast_readout_validation_20260923/summary.json",
+      "kind": "result",
+      "commit_sha": "00d624d2fb01c6dd98cac150043dd15b7d8366ff"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-RT60-001",
+      "date": "2026-09-23",
+      "problem": "空间弱改善但normal远程误差变差。",
+      "options": "保留RT59并归档部分机制/负结果；或自动扩大当前训练。预注册行动为前者。",
+      "decision": "保留RT59，不自动续训RT60。",
+      "evidence_ids": [
+        "report",
+        "result"
+      ],
+      "applies_to": "RT60收尾",
+      "superseded_by": null,
+      "history_status": "source_recorded"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "RT60-CONTRAST",
+      "scientific_question": "仅final readout能否恢复空间contrast并保护normal？",
+      "dataset_protocol": "Japan KNET，固定event-disjoint split；random 1310events/75654targets，normal 1383events/89770targets；seed42；log10(m/s²)。固定epoch8。",
+      "result_nature": "mechanism NO_GO；normal退化。",
+      "evidence_ids": [
+        "report",
+        "result"
+      ],
+      "relationship": "RT59→RT60；RT61继续检验另一干预",
+      "state": "verified_complete",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "track_id": "V01",
+  "branch": "exp/v01-velocity-prep-padding-control",
+  "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-10-06",
+  "current_state": "verified_complete",
+  "completion_scope": "validation工程闭环与证据包完成；限定科学负机制结论待独立收尾审阅。",
+  "summary": "速度/P前缺失控制闭环已完成；MM总体优于FF但高PGA更差，不能据此证明padding无害或速度上限。",
+  "verified_results": [
+    {
+      "text": "报告核验10格导出、4750个metric值和400行CI；fixed epoch8/单seed/非输入query-only，不能与RT55 normal-all混排。",
+      "evidence_ids": [
+        "report",
+        "checks"
+      ]
+    },
+    {
+      "text": "MM总体MAE更低但高PGA退化；A/V common-available MM−AA区间跨零，不证明等效或模态普遍胜出。",
+      "evidence_ids": [
+        "report",
+        "headline"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "按原独立审阅请求判定能否限定收尾；不默认重训、扫参数或打开test。"
+  ],
+  "limitations": [
+    "仅开发validation/单seed；不等于held-out test、跨seed显著性或未见台站泛化。",
+    "历史训练runtime/encoder身份与完整采样轨迹仍未认证。",
+    "上游全记录centering/cutout+1的严格在线因果性未认证；无sacct不宣称调度COMPLETED。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "report",
+      "path": "reports/v01_validation_closure_20261006/RESULT_REVIEW.md",
+      "kind": "report",
+      "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1"
+    },
+    {
+      "evidence_id": "checks",
+      "path": "reports/v01_validation_closure_20261006/verification.json",
+      "kind": "result",
+      "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1"
+    },
+    {
+      "evidence_id": "headline",
+      "path": "reports/v01_validation_closure_20261006/headline_metrics.csv",
+      "kind": "result",
+      "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1"
+    },
+    {
+      "evidence_id": "config",
+      "path": "reports/v01_validation_closure_20261006/evidence/configs/vfull__vfull__normal.json",
+      "kind": "config",
+      "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1"
+    },
+    {
+      "evidence_id": "review",
+      "path": "docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md",
+      "kind": "report",
+      "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-V01-001",
+      "date": "2026-10-06",
+      "problem": "旧AA重复替代请求与缺失人口。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "严格一对一sensor/UTC匹配，缺失请求计入弃权，不以邻居替代。",
+      "evidence_ids": [
+        "report",
+        "checks"
+      ],
+      "applies_to": "V01 closure；历史旧AA结果被该范围替代",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    },
+    {
+      "decision_id": "D-V01-002",
+      "date": "2026-10-06",
+      "problem": "工程闭环是否足以证明padding机制。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "仅报告当前干预/预算下的条件性结果，保留高PGA trade-off，不推断速度上限/正则化因果机制。",
+      "evidence_ids": [
+        "review",
+        "headline"
+      ],
+      "applies_to": "V01科学审阅",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "V01-CLOSURE",
+      "scientific_question": "速度输入/P前缺失是否解释空间场问题？",
+      "dataset_protocol": "val epoch8 seed42；每geometry1194events/84259 query-only targets；5000事件簇draws。",
+      "result_nature": "有限负机制结果待独立判定；工程闭环完整。",
+      "evidence_ids": [
+        "report",
+        "checks",
+        "config",
+        "headline"
+      ],
+      "relationship": "FF/FM/MF/MM与strict AA；非RT55含输入normal人口",
+      "state": "verified_complete",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}

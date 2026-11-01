@@ -1,5 +1,9 @@
 # TEAM PyTorch 项目交接文档
 
+跨线恢复请先读 [项目记忆](docs/ai/memory/README.md) 和
+[全局状态](docs/ai/memory/CURRENT_STATUS.md)。本文保留原分支的带日期工程历史；
+旧P0/下一会话指令仅适用于当时，不能覆盖其他实验线的较新证据。
+
 更新时间：2026-08-25（Asia/Shanghai）
 
 本文档是下一次全新 agent 会话的权威入口。先读完本文，再检查超算端状态和 Git

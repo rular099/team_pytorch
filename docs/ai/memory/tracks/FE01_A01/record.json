@@ -1,0 +1,78 @@
+{
+  "track_id": "FE01_A01",
+  "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+  "commit_sha": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-10-21",
+  "current_state": "verified_complete",
+  "completion_scope": "完整validation封包已发布；独立研究解释待审阅。",
+  "summary": "10月21日五项seal和16份validation预测已归档；已取代10月15日等待pack的旧进度。",
+  "verified_results": [
+    {
+      "text": "已发布中立报告记录16份导出：各1310events/194265请求，noninput139440；selected和epoch12不是独立重复。",
+      "evidence_ids": [
+        "report"
+      ]
+    },
+    {
+      "text": "报告四家族OFF−ON主MAE差均为正；需同时保留概率/空间分层与K1 field仅1253/2000有效draw的限制。",
+      "evidence_ids": [
+        "report",
+        "review"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "按中立CHATGPT_ANALYSIS_PROMPT独立审阅，尊重原任务中Codex判断另行封存的边界。",
+    "不要按旧10月15日状态重交评价或pack。"
+  ],
+  "limitations": [
+    "本次从固定commit读取报告，没有重新读取1.1GB逐目标归档/模型权重。",
+    "validation seed42；旧ON推理时OFF干预与DiTing未训练初态诊断不能混作新训练因果证据。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "report",
+      "path": "reports/fe01_a01_hpc_results_20261021/README.md",
+      "kind": "report",
+      "commit_sha": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0"
+    },
+    {
+      "evidence_id": "review",
+      "path": "reports/fe01_a01_hpc_results_20261021/CHATGPT_ANALYSIS_PROMPT.md",
+      "kind": "report",
+      "commit_sha": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-FE01-A01-001",
+      "date": "2026-10-21",
+      "problem": "如何解释幅值ON/OFF和诊断。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "报告保持中立事实/来源；独立判断与真实训练结果、推理干预、未训练初态严格分开。",
+      "evidence_ids": [
+        "report",
+        "review"
+      ],
+      "applies_to": "FE01-A01审阅与后续ON评价",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "FE01-A01",
+      "scientific_question": "显式绝对幅值旁路对PGA预测贡献多少？",
+      "dataset_protocol": "val seed42；5新训+3复用ON；16导出；10cell等权noninput MAE；2000 dataset/event draws。",
+      "result_nature": "真实封包已发布；报告审阅≠本轮复算权重。",
+      "evidence_ids": [
+        "report",
+        "review"
+      ],
+      "relationship": "继承FE01；FE01_ON复用四ON导出",
+      "state": "verified_complete",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}

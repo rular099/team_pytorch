@@ -1,0 +1,104 @@
+{
+  "track_id": "FE02",
+  "branch": "exp/fe02-event-fusion-readout",
+  "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-10-14",
+  "current_state": "blocked",
+  "completion_scope": "五组代码/协议已实现；已知M组5/12轮，续跑失败后的兼容修复未获得真实验证。",
+  "summary": "事件融合R0/A/B/C/M独立于FE01；M组5/12轮后超时，CPU RNG续跑兼容层已交付，真实恢复待证。",
+  "verified_results": [
+    {
+      "text": "M/seed42 audit及5轮记录存在；续跑在RNG恢复时报错，没有进入新一轮，不能写成12轮完成。",
+      "evidence_ids": [
+        "resume"
+      ]
+    },
+    {
+      "text": "兼容层只修复传入set_rng_state_all的CPU ByteTensor，独立SHA/receipt保留；原源码与source lock不重签。",
+      "evidence_ids": [
+        "resume",
+        "protocol"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "核验真实兼容receipt、后续epoch与last身份；不自动提交、重训或修改预算。",
+    "其他四组状态unknown；有新回执再更新，不从M组推断其余组。"
+  ],
+  "limitations": [
+    "只有M组日志，没有完整checkpoint/逐目标结果下载。",
+    "本地19项合成CPU测试不构成ROCm真实恢复成功。",
+    "当前blocked描述已知执行缺口，不影响FE01继续工作。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "resume",
+      "path": "docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md",
+      "kind": "report",
+      "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7"
+    },
+    {
+      "evidence_id": "protocol",
+      "path": "docs/ai/FE02_PROTOCOL.md",
+      "kind": "protocol",
+      "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7"
+    },
+    {
+      "evidence_id": "io",
+      "path": "scripts/fe02/job.sh",
+      "kind": "launcher",
+      "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7"
+    },
+    {
+      "evidence_id": "cache",
+      "path": "scripts/fe02/env.sh",
+      "kind": "launcher",
+      "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-FE02-001",
+      "date": "2026-10-08",
+      "problem": "事件摘要以什么路径进入PGA？",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "固定R0/A/B/C/M五组；C非严格等容量，M只增加key不增加独立观测信息。",
+      "evidence_ids": [
+        "protocol"
+      ],
+      "applies_to": "FE02矩阵",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    },
+    {
+      "decision_id": "D-FE02-002",
+      "date": "2026-10-14",
+      "problem": "直接改受锁engine会破坏已有resume身份。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "通过opt-in独立hash-pinned兼容层保持RNG字节/顺序，并保留原lock与last-only恢复。",
+      "evidence_ids": [
+        "resume"
+      ],
+      "applies_to": "已知9f70371来源任务",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "FE02-FUSION",
+      "scientific_question": "事件memory能否改善单输入query空间场且保护normal？",
+      "dataset_protocol": "FE01 V2 prefix/split/归一化；seed42五组各计划12轮；十cell等权noninput选轮；固定预算。",
+      "result_nature": "实现与部分M训练日志；未形成完成矩阵或性能结论。",
+      "evidence_ids": [
+        "resume",
+        "protocol",
+        "io"
+      ],
+      "relationship": "与FE01并行；共享基础代码但独立输出",
+      "state": "blocked",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}

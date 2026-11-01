@@ -1,0 +1,97 @@
+{
+  "track_id": "FE01_ON",
+  "branch": "exp/fe01-on-warning-map-evaluation",
+  "commit_sha": "50672e131d876a604432b283162d5b0189d40cf0",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-10-25",
+  "current_state": "in_progress",
+  "completion_scope": "真实CPU旧导出再分析已完成；生产inventory恢复/模型回放尚无完成回执。",
+  "summary": "四ON旧导出CPU比较已发布；10月25日修复inventory清单路径，真实修复inventory与新回放结果待核验。",
+  "verified_results": [
+    {
+      "text": "真实CPU比较与合成动态图均存在，但合成图醒目标SYNTHETIC，不能当Japan新前向结果。",
+      "evidence_ids": [
+        "report"
+      ]
+    },
+    {
+      "text": "旧inventory报Pretrained manifest SHA differs；修复保留认证manifest原路径与SHA，新run只手动恢复inventory，生产模型级验证尚未运行。",
+      "evidence_ids": [
+        "fix",
+        "protocol"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "核对新inventory run的seal与真实回执；沿用新run/source，不自动重提CPU或启动后续阶段。",
+    "只有取得真实模型级门后才能解释TTUM/shadow、生产网格与实测时延。"
+  ],
+  "limitations": [
+    "本次仅核验固定commit文档，不验证生产checkpoint/HDF5/DCU。",
+    "低noninput MAE不自动意味着更早TTUM或更小shadow；通信与上游因果性仍UNKNOWN。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "report",
+      "path": "reports/fe01_on_eval_20261022/README.md",
+      "kind": "report",
+      "commit_sha": "50672e131d876a604432b283162d5b0189d40cf0"
+    },
+    {
+      "evidence_id": "fix",
+      "path": "docs/ai/FE01_ON_EVAL_INVENTORY_FIX.md",
+      "kind": "report",
+      "commit_sha": "50672e131d876a604432b283162d5b0189d40cf0"
+    },
+    {
+      "evidence_id": "protocol",
+      "path": "docs/ai/FE01_ON_EVAL_PROTOCOL.md",
+      "kind": "protocol",
+      "commit_sha": "50672e131d876a604432b283162d5b0189d40cf0"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-FE01-ON-001",
+      "date": "2026-10-25",
+      "problem": "inventory路径搬迁破坏清单身份。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "保留认证manifest文件名/路径与SHA；新run恢复inventory并导入已seal的CPU结果，原run不改。",
+      "evidence_ids": [
+        "fix"
+      ],
+      "applies_to": "FE01 ON V4 inventory恢复",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    },
+    {
+      "decision_id": "D-FE01-ON-002",
+      "date": "2026-10-22",
+      "problem": "固定query回放与旧snapshot人口不同。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "fixed_query_replay_v4独立人口/hash；TTUM/shadow共用交付时钟，不从MAE推导警报收益。",
+      "evidence_ids": [
+        "protocol"
+      ],
+      "applies_to": "ON V4评价",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "FE01-ON-V4",
+      "scientific_question": "四ON在精度、条件分层与真实回放地图方面差异如何？",
+      "dataset_protocol": "旧val seed42/1310events/194265请求CPU比较；新fixed_query_replay_v4单独身份。",
+      "result_nature": "CPU真实结果；新模型回放NOT_RUN；合成演示明确隔离。",
+      "evidence_ids": [
+        "report",
+        "fix",
+        "protocol"
+      ],
+      "relationship": "复用A01 ON结果；不加入RT55/61历史标量排名",
+      "state": "in_progress",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "track_id": "RT55_RT56",
+  "branch": "query-geometry-diagnostics",
+  "commit_sha": "e74f977271b0bcde42c7ac7a18cb77ac60107e34",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-09-07",
+  "current_state": "verified_complete",
+  "completion_scope": "完成范围为已归档基线/随机几何诊断，不代表整体科研目标完成。",
+  "summary": "RT55确实使用匹配波形；RT56随机几何适配有收益也有normal遗忘，任意查询空间辨识仍未解决。",
+  "verified_results": [
+    {
+      "text": "9月快照核验的是RT55 epoch20 test；含ep32_retry的目录不能证明epoch32 test。epoch32 validation roll证明系统使用匹配波形，不能证明adapter不collapse。",
+      "evidence_ids": [
+        "snapshot"
+      ]
+    },
+    {
+      "text": "RT56 epoch6 random非输入validation改善，同时normal非输入validation退化；不能把validation改名test。",
+      "evidence_ids": [
+        "snapshot",
+        "analysis"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "历史指标用原provenance核对；新实验优先进入自己的实验线，不续写RT55兼容基线。"
+  ],
+  "limitations": [
+    "RT55 epoch32 later identity在FE01 EVAL1中另有核验；仍不构成新的test结果。",
+    "原本地RT55/56详细报告为未跟踪产物，本轮未加入Git。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "snapshot",
+      "path": "docs/ai/PROJECT_CONTEXT.md",
+      "kind": "report",
+      "commit_sha": "8bde65cb64fd860adf552dfe56505b4b31a78b13"
+    },
+    {
+      "evidence_id": "analysis",
+      "path": "docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md",
+      "kind": "report",
+      "commit_sha": "e74f977271b0bcde42c7ac7a18cb77ac60107e34"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-RT-001",
+      "date": "2026-09-02",
+      "problem": "RT56迁移必须保留RT55行为与严格非输入query定义。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "weight-only初始化；50%原任务/50%因果随机几何，validation固定random seed，query排除input。",
+      "evidence_ids": [
+        "snapshot"
+      ],
+      "applies_to": "RT56与后续兼容路径",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "RT55",
+      "scientific_question": "匹配波形是否影响最终系统？",
+      "dataset_protocol": "固定split；epoch20 test与epoch32 validation分别报告，MDN mixture mean。",
+      "result_nature": "系统依赖波形证据；空间外推能力未认证。",
+      "evidence_ids": [
+        "snapshot"
+      ],
+      "relationship": "RT56–RT61兼容基线",
+      "state": "verified_complete",
+      "review_status": "needs_independent_review"
+    },
+    {
+      "experiment_id": "RT56",
+      "scientific_question": "随机非输入查询训练是否改善空间任务？",
+      "dataset_protocol": "epoch6 random/normal validation，严格逐目标配对。",
+      "result_nature": "随机任务收益与normal遗忘同时存在。",
+      "evidence_ids": [
+        "snapshot",
+        "analysis"
+      ],
+      "relationship": "RT55迁移",
+      "state": "verified_complete",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}

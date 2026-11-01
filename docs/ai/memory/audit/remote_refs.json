@@ -1,0 +1,145 @@
+{
+  "repository": "rular099/team_pytorch",
+  "verified_at": "2026-11-01T07:24:10+00:00",
+  "method": "GitHub connector GET branches and pinned contents; no live HPC access",
+  "branches": [
+    {
+      "branch": "codex_train_debug_ddp_overfit",
+      "commit_sha": "5f1534eee1b5a8f383e28b30ee0c9b77bd895289"
+    },
+    {
+      "branch": "diting",
+      "commit_sha": "e8def9ce9addb8dfa0f7d88a7a1837f79338af3f"
+    },
+    {
+      "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+      "commit_sha": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0"
+    },
+    {
+      "branch": "exp/fe01-feature-extractor-site-effects",
+      "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4"
+    },
+    {
+      "branch": "exp/fe01-on-warning-map-evaluation",
+      "commit_sha": "50672e131d876a604432b283162d5b0189d40cf0"
+    },
+    {
+      "branch": "exp/fe02-event-fusion-readout",
+      "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7"
+    },
+    {
+      "branch": "exp/v01-velocity-prep-padding-control",
+      "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1"
+    },
+    {
+      "branch": "master",
+      "commit_sha": "bbd9791c8a58c93301af0245a72da905ab2ff690"
+    },
+    {
+      "branch": "query-geometry-diagnostics",
+      "commit_sha": "e74f977271b0bcde42c7ac7a18cb77ac60107e34"
+    },
+    {
+      "branch": "reproduce_tf_behavior",
+      "commit_sha": "cd89be34cd601ffd7c6a531e4a730ee63abcff9d"
+    },
+    {
+      "branch": "rt57-geo-temporal-neural-process",
+      "commit_sha": "143b63af5d0a477ac388d310dc470eb7349b5c90"
+    },
+    {
+      "branch": "rt58-waveform-anchor-transfer-field",
+      "commit_sha": "40830acd475bd40347fef03427b52c4a04432dc3"
+    },
+    {
+      "branch": "rt59-dual-objective-transport-v3",
+      "commit_sha": "d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd"
+    },
+    {
+      "branch": "rt60-final-contrast-readout",
+      "commit_sha": "00d624d2fb01c6dd98cac150043dd15b7d8366ff"
+    },
+    {
+      "branch": "rt61-wave-geometry-residual-conditioning",
+      "commit_sha": "9c95dbfaf92f36b2673d816026cd3f25b91eec66"
+    },
+    {
+      "branch": "team_collab_baseline",
+      "commit_sha": "5f1534eee1b5a8f383e28b30ee0c9b77bd895289"
+    },
+    {
+      "branch": "zhangb/diting-1200m-pretrain-team",
+      "commit_sha": "94db6f124510857574c0b11b644844bfbec5f960"
+    },
+    {
+      "branch": "zhangb/diting-backbone-attnpool-team",
+      "commit_sha": "f86f4a58b14780b66a91507bb1c3e94973140c45"
+    },
+    {
+      "branch": "zhangb/diting-station-adapter",
+      "commit_sha": "b7be063218cda2dfb7373a93413a65319435880f"
+    },
+    {
+      "branch": "zhangb/graph-pga-experiment",
+      "commit_sha": "62c821042baeb435a9345af4e323314d14784c8c"
+    },
+    {
+      "branch": "zhangb/layerwise-station-temporal",
+      "commit_sha": "8d0131db09f9d89e215b27dda77399b481b3a92a"
+    },
+    {
+      "branch": "zhangb/native-scale-adapter-scaling",
+      "commit_sha": "8bde65cb64fd860adf552dfe56505b4b31a78b13"
+    },
+    {
+      "branch": "zhangb/realtime-pga-training",
+      "commit_sha": "6bf3809598ba3c53ffaa8807931392a321643828"
+    },
+    {
+      "branch": "zhangb/realtime-probabilistic-output",
+      "commit_sha": "2c42e76102ff683cb04cf7ad1f9801afc12ee927"
+    }
+  ],
+  "remote_files": [
+    {
+      "commit_sha": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+      "path": "reports/fe01_a01_hpc_results_20261021/README.md",
+      "blob_sha": "aa7c035f136c9d9649877c7f918f32ca90cdf70f",
+      "snapshot_path": "docs/ai/memory/audit/sources/29ffb20ba0effc0c345a0329ba3f8c658dc8cef0/reports/fe01_a01_hpc_results_20261021/README.md",
+      "verified_at": "2026-11-01T07:24:10+00:00",
+      "url": "https://github.com/rular099/team_pytorch/blob/29ffb20ba0effc0c345a0329ba3f8c658dc8cef0/reports/fe01_a01_hpc_results_20261021/README.md"
+    },
+    {
+      "commit_sha": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+      "path": "reports/fe01_a01_hpc_results_20261021/CHATGPT_ANALYSIS_PROMPT.md",
+      "blob_sha": "9c9cbe88df34b0511eb1559181d152ad5a164b3f",
+      "snapshot_path": "docs/ai/memory/audit/sources/29ffb20ba0effc0c345a0329ba3f8c658dc8cef0/reports/fe01_a01_hpc_results_20261021/CHATGPT_ANALYSIS_PROMPT.md",
+      "verified_at": "2026-11-01T07:24:10+00:00",
+      "url": "https://github.com/rular099/team_pytorch/blob/29ffb20ba0effc0c345a0329ba3f8c658dc8cef0/reports/fe01_a01_hpc_results_20261021/CHATGPT_ANALYSIS_PROMPT.md"
+    },
+    {
+      "commit_sha": "50672e131d876a604432b283162d5b0189d40cf0",
+      "path": "docs/ai/FE01_ON_EVAL_INVENTORY_FIX.md",
+      "blob_sha": "7c85c3ddf7e53706dd43dbbb16f0d335ebd04c2e",
+      "snapshot_path": "docs/ai/memory/audit/sources/50672e131d876a604432b283162d5b0189d40cf0/docs/ai/FE01_ON_EVAL_INVENTORY_FIX.md",
+      "verified_at": "2026-11-01T07:24:10+00:00",
+      "url": "https://github.com/rular099/team_pytorch/blob/50672e131d876a604432b283162d5b0189d40cf0/docs/ai/FE01_ON_EVAL_INVENTORY_FIX.md"
+    },
+    {
+      "commit_sha": "50672e131d876a604432b283162d5b0189d40cf0",
+      "path": "docs/ai/FE01_ON_EVAL_PROTOCOL.md",
+      "blob_sha": "540ac448164aad20da930c545c7139887d2b80ab",
+      "snapshot_path": "docs/ai/memory/audit/sources/50672e131d876a604432b283162d5b0189d40cf0/docs/ai/FE01_ON_EVAL_PROTOCOL.md",
+      "verified_at": "2026-11-01T07:24:10+00:00",
+      "url": "https://github.com/rular099/team_pytorch/blob/50672e131d876a604432b283162d5b0189d40cf0/docs/ai/FE01_ON_EVAL_PROTOCOL.md"
+    },
+    {
+      "commit_sha": "50672e131d876a604432b283162d5b0189d40cf0",
+      "path": "reports/fe01_on_eval_20261022/README.md",
+      "blob_sha": "be05fd356365ece82bf9323c402e31b99ff67864",
+      "snapshot_path": "docs/ai/memory/audit/sources/50672e131d876a604432b283162d5b0189d40cf0/reports/fe01_on_eval_20261022/README.md",
+      "verified_at": "2026-11-01T07:24:10+00:00",
+      "url": "https://github.com/rular099/team_pytorch/blob/50672e131d876a604432b283162d5b0189d40cf0/reports/fe01_on_eval_20261022/README.md"
+    }
+  ]
+}

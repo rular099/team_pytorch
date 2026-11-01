@@ -1,0 +1,104 @@
+{
+  "track_id": "FE01",
+  "branch": "exp/fe01-feature-extractor-site-effects",
+  "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-10-06",
+  "current_state": "in_progress",
+  "completion_scope": "九组训练结果已归档；EVAL1身份/前向门部分完成，完整补评未全部取得。",
+  "summary": "三家族×三seed原比较已完成；EVAL1八组forward PASS、TEAM三组被评价清单条件阻挡，后续A01/ON另线推进。",
+  "verified_results": [
+    {
+      "text": "原九组各12轮的报告与EVAL1 summary均已归档；本轮只核验保存文件，未重算大型原始产物。",
+      "evidence_ids": [
+        "report",
+        "gate"
+      ]
+    },
+    {
+      "text": "EVAL1 identity 11组通过、forward 8 PASS/3 BLOCKED；缺预训练清单SHA的TEAM scratch在前向前被阻挡，不证明权重损坏。",
+      "evidence_ids": [
+        "gate"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "按FE01_A01与FE01_ON各自新来源审阅后续，不能把旧EVAL1阻挡当新线仍未完成。",
+    "站点泛化、场地效应、回放和held-out test要逐项查实际证据。"
+  ],
+  "limitations": [
+    "原比较跨encoder仍有原生窗口/能力条件化采样混杂。",
+    "validation站点全部在训练曝光表中，不支持未见台站泛化。",
+    "缺sacct不能声称调度器COMPLETED。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "report",
+      "path": "reports/fe01_hpc_results_20261004/README.md",
+      "kind": "report",
+      "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4"
+    },
+    {
+      "evidence_id": "gate",
+      "path": "reports/fe01_eval1_hpc_gates_20261006/summary.json",
+      "kind": "result",
+      "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4"
+    },
+    {
+      "evidence_id": "protocol",
+      "path": "docs/ai/FE01_PROTOCOL.md",
+      "kind": "protocol",
+      "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4"
+    },
+    {
+      "evidence_id": "config",
+      "path": "configs/fe01/formal/formal__phasenet_pretrained_frozen__seed42.json",
+      "kind": "config",
+      "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-FE01-001",
+      "date": "2026-10-06",
+      "problem": "跨模型比较与实时/场地解释的边界。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "使用共同train-only参照；回顾性catalog参照不作为实时竞争模型；不从站点曝光推出站点泛化。",
+      "evidence_ids": [
+        "gate",
+        "protocol"
+      ],
+      "applies_to": "FE01及后续评价",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "FE01-ENCODER",
+      "scientific_question": "不同冻结前端在共同下游下表现如何？",
+      "dataset_protocol": "val 1310events/139440 noninput请求/十cell等权；3家族×seed42/43/44；选轮来自validation。",
+      "result_nature": "九组12轮验证比较，非test。",
+      "evidence_ids": [
+        "report",
+        "protocol",
+        "config"
+      ],
+      "relationship": "A01显式幅值研究的来源",
+      "state": "verified_complete",
+      "review_status": "needs_independent_review"
+    },
+    {
+      "experiment_id": "FE01-EVAL1",
+      "scientific_question": "既有系统能否通过真实身份与包装器前向门？",
+      "dataset_protocol": "11组identity，8组各32 decisions/544 targets forward通过；3 TEAM未前向。",
+      "result_nature": "身份/等价核验与train-only参照，非新完整性能表。",
+      "evidence_ids": [
+        "gate"
+      ],
+      "relationship": "连接既有RT55/61，未合并比较排名",
+      "state": "in_progress",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}

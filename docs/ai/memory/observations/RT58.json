@@ -1,0 +1,78 @@
+{
+  "track_id": "RT58",
+  "branch": "rt58-waveform-anchor-transfer-field",
+  "commit_sha": "40830acd475bd40347fef03427b52c4a04432dc3",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-09-15",
+  "current_state": "verified_complete",
+  "completion_scope": "固定epoch8验证与十项门检查已归档。",
+  "summary": "WATF相对相同gamma=1.66基线的random MAE变差，准确input anchor未转成空间幅度收益。",
+  "verified_results": [
+    {
+      "text": "报告给出anchor correction相对相同gamma基线random MAE +0.000458 dex；不能把gamma收益算作新anchor收益。",
+      "evidence_ids": [
+        "report",
+        "result"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "保留负结果，追溯RT59重新设计；不因总指标好看而改对照。"
+  ],
+  "limitations": [
+    "仅开发validation/单seed；不等于held-out test、跨seed显著性或未见台站泛化。",
+    "归档缺checkpoint body与训练标量，不能本地复查权重或epoch轨迹。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "report",
+      "path": "docs/ai/CODEX_RESULT_20260915_RT58_WATF_VALIDATION.md",
+      "kind": "report",
+      "commit_sha": "40830acd475bd40347fef03427b52c4a04432dc3"
+    },
+    {
+      "evidence_id": "result",
+      "path": "reports/rt58_waveform_anchor_transfer_validation_20260915/summary.json",
+      "kind": "result",
+      "commit_sha": "40830acd475bd40347fef03427b52c4a04432dc3"
+    },
+    {
+      "evidence_id": "config",
+      "path": "pga_configs/transformer_japan_full_2000_2024_rt58_waveform_anchor_transfer_seed42_chaosuan.json",
+      "kind": "config",
+      "commit_sha": "40830acd475bd40347fef03427b52c4a04432dc3"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-RT58-001",
+      "date": "2026-09-15",
+      "problem": "如何隔离已知scale收益和新增anchor收益。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "以相同gamma=1.66 frozen base比较新增anchor，并保留原十项门。",
+      "evidence_ids": [
+        "report",
+        "config"
+      ],
+      "applies_to": "RT58",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "RT58-WATF",
+      "scientific_question": "局部幅值anchor能否改善远程空间场？",
+      "dataset_protocol": "Japan KNET，固定event-disjoint split；random 1310events/75654targets，normal 1383events/89770targets；seed42；log10(m/s²)。固定epoch8；5000 event-cluster draws。",
+      "result_nature": "新anchor相对同gamma对照未取得所需空间收益。",
+      "evidence_ids": [
+        "report",
+        "result",
+        "config"
+      ],
+      "relationship": "RT57(gamma1.66)→RT58；RT59重新设计",
+      "state": "verified_complete",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}

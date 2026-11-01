@@ -1,5 +1,11 @@
 # ChatGPT Project 与 Codex 协作约定
 
+跨实验线入口：[项目记忆](memory/README.md)、[当前状态](memory/CURRENT_STATUS.md)、
+[新对话交接](memory/CHAT_HANDOFF.md)。下文2026-09-02分支快照保留历史语境；
+当前活跃分支及证据以逐线记录为准。FE01/FE02并行规则见
+[PARALLEL_WORKFLOW](memory/PARALLEL_WORKFLOW.md)。CODEX-RESULT补充
+`memory_updates: <更新的实验线/全局文件、检查结果或不更新原因>`。
+
 更新日期：2026-09-02
 
 ## 1. 协作边界

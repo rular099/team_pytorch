@@ -1,0 +1,78 @@
+{
+  "track_id": "RT61",
+  "branch": "rt61-wave-geometry-residual-conditioning",
+  "commit_sha": "9c95dbfaf92f36b2673d816026cd3f25b91eec66",
+  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "evidence_as_of": "2026-09-28",
+  "current_state": "verified_complete",
+  "completion_scope": "epoch8验证报告已完成；轻量delta权重归档缺口仍在。",
+  "summary": "wave-geometry conditioning机制门13/14、联合有用进展0/4；未达到预定成功条件，保留RT59。",
+  "verified_results": [
+    {
+      "text": "mechanism 13/14、useful 0/4、legacy 18/25；adapter-off是同checkpoint反事实，不能当独立训练消融。",
+      "evidence_ids": [
+        "report",
+        "result"
+      ]
+    }
+  ],
+  "pending_tasks": [
+    "如需可重建归档，核对epoch8 trainable-delta；不为此重训或打开test。"
+  ],
+  "limitations": [
+    "仅开发validation/单seed；不等于held-out test、跨seed显著性或未见台站泛化。",
+    "提供的归档未含full_model_last.rt61_delta.pth，不宣称已归档可重建权重。"
+  ],
+  "evidence_paths": [
+    {
+      "evidence_id": "report",
+      "path": "docs/ai/CODEX_RESULT_20260928_RT61_WAVE_GEOMETRY_VALIDATION.md",
+      "kind": "report",
+      "commit_sha": "9c95dbfaf92f36b2673d816026cd3f25b91eec66"
+    },
+    {
+      "evidence_id": "result",
+      "path": "reports/rt61_wave_geometry_validation_20260928/summary.json",
+      "kind": "result",
+      "commit_sha": "9c95dbfaf92f36b2673d816026cd3f25b91eec66"
+    },
+    {
+      "evidence_id": "config",
+      "path": "pga_configs/transformer_japan_full_2000_2024_rt61_wave_geometry_residual_seed42_chaosuan.json",
+      "kind": "config",
+      "commit_sha": "9c95dbfaf92f36b2673d816026cd3f25b91eec66"
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "D-RT61-001",
+      "date": "2026-09-28",
+      "problem": "微小空间收益是否达到事先要求。",
+      "options": "原来源未完整保存候选讨论；不补造历史理由。",
+      "decision": "保留RT59；不得把0.385% pairwise改善称为达到2%预注册阈值。",
+      "evidence_ids": [
+        "report",
+        "result"
+      ],
+      "applies_to": "RT61与后续解释",
+      "superseded_by": null,
+      "history_status": "needs_history_review"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_id": "RT61-WAVE-GEOMETRY",
+      "scientific_question": "wave/geometry小残差能否保护normal并恢复单输入空间场？",
+      "dataset_protocol": "Japan KNET，固定event-disjoint split；random 1310events/75654targets，normal 1383events/89770targets；seed42；log10(m/s²)。固定epoch8，99621个可训练scalars。",
+      "result_nature": "机制部分通过；有用联合进展失败。",
+      "evidence_ids": [
+        "report",
+        "result",
+        "config"
+      ],
+      "relationship": "RT59 parent；adapter-off仅反事实",
+      "state": "verified_complete",
+      "review_status": "needs_independent_review"
+    }
+  ]
+}
