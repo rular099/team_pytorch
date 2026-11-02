@@ -43,3 +43,27 @@ see*.txt
 /reports/technical_exchange/*/.slide_run_state.json.lock
 /reports/technical_exchange/*/slide_jobs.json
 /reports/technical_exchange/*/slide_run_state.json
+
+
+# Local-only artifacts: retain for USB transfer, not Git.
+*.pth
+*.pt
+*.ckpt
+*.npz
+*.h5
+*.hdf5
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+.pytest_cache/
+/external_ai_review_rt55_rt56_20260902/
+/reports/rt55_rt56_current_results/**/*.pdf
+/reports/rt55_rt56_current_results/**/*.svg
+/reports/rt55_rt56_current_results/rt55/figures/rt55_data_distribution.csv
+/reports/rt55_rt56_current_results/rt55/figures/rt55_scatter_truth_prediction.csv
+/reports/rt55_rt56_current_results/rt55/tables/rt55_flat_output_sample_details.csv
+/reports/rt55_rt56_current_results/rt56/figures/rt56_base_data_distribution.csv
+/reports/rt55_rt56_current_results/rt56/figures/rt56_paired_delta.csv
+/reports/rt55_rt56_current_results/rt56/figures/rt56_random_geometry_distribution.csv
+/reports/rt55_rt56_current_results/rt56/figures/rt56_scatter_truth_prediction.csv

@@ -1,0 +1,56 @@
+{
+  "checkpoint": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best_ep20.pth",
+  "checkpoint_metadata": {
+    "checkpoint_format": "non_encoder_v1",
+    "encoder_source": "/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt",
+    "epoch": 20,
+    "loss": 0.05455583706498146
+  },
+  "config": "/public/home/test_bigmodel/seismogram/zb/team_pytorch/team_pytorch-zhangb-diting-backbone-attnpool-team/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/config.json",
+  "metric_protocol": {
+    "brier": "unweighted mean squared probability error at the configured PGA threshold",
+    "coverage": "|predictive_mean-target| <= k * predictive_mixture_std",
+    "nll": "unweighted mean MDN NLL over valid PGA targets in log10(m/s^2)",
+    "pga_coordinate": "log10(m/s^2)",
+    "point_estimate": "predictive_mixture_mean"
+  },
+  "metrics": {
+    "test": {
+      "pga": {
+        "bias": 0.011645981297929434,
+        "brier": 0.09092827580561735,
+        "brier_positive_rate": 0.40661837474453494,
+        "brier_threshold_log10_mps2": -1.2,
+        "coordinate": "log10(m/s^2)",
+        "correlation": 0.8714039822838447,
+        "coverage_1sigma": 0.7003519415343714,
+        "coverage_2sigma": 0.9543588632464117,
+        "events": 2769,
+        "intercept": -0.2623810951493552,
+        "mae": 0.11507582860720891,
+        "nll": -0.8720389047156177,
+        "nll_log10_mps2": -0.8720389047156177,
+        "nll_model_space": -0.03096426703201395,
+        "point_estimate": "predictive_mixture_mean",
+        "predictive_sigma_mean": 0.1424602311543302,
+        "predictive_sigma_median": 0.155021533370018,
+        "probability_mean": 0.43454884323574594,
+        "r2": 0.7578331394428978,
+        "realtime_samples": 19383,
+        "rmse": 0.17767597692486883,
+        "slope": 0.778263380772343,
+        "target_slots": 290745,
+        "targets": 170767,
+        "valid_target_fraction": 0.5873428605822972
+      }
+    }
+  },
+  "num_shards": 1,
+  "schema_version": 1,
+  "shard_id": 0,
+  "splits": [
+    "test"
+  ],
+  "waveform_station_permutation": "none",
+  "waveform_station_permutation_seed": 12345
+}
