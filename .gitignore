@@ -47,3 +47,18 @@ see*.txt
 /reports/technical_exchange/*/.slide_run_state.json.lock
 /reports/technical_exchange/*/slide_jobs.json
 /reports/technical_exchange/*/slide_run_state.json
+
+
+# Local-only artifacts: retain for USB transfer, not Git.
+*.pth
+*.pt
+*.ckpt
+*.npz
+*.h5
+*.hdf5
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+.pytest_cache/
+/artifacts/fe01_eval1_mpi_29351034/
