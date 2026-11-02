@@ -796,3 +796,15 @@ all/K1/untriggered及部分空间指标不支持普遍优势；第一秒约70.41
 仍在跑的旧 CPU 后续完成后再次恢复可补入，成功和在跑 inventory 不重复提交。
 操作入口 docs/ai/FE01_ON_EVAL_INVENTORY_FIX.md；本轮修复重提 NOT_SUBMITTED，真实模型验证 NOT_RUN。
 实际本地69项测试通过；编译/Torch-free import/Bash语法及原release到修复执行树的CPU兼容门通过。
+
+## 2026-11-02 V4 TEAM model_smoke 受控单项重试
+
+用户提供根目录 model_smoke_32163754_3.err/.out：DCU可见、TEAM selected ep11身份通过，
+在future encoder features绝对1e-5门失败；此前实际forward tensor/normalization hash门已通过。
+旧日志无实际feature差值/blank重复，不能证明泄漏或设备波动任一根因。
+新增 scripts/fe01_v4_team_smoke_fix 外部小包，只sbatch TEAM task3，沿用原50672e1 release/run/env，
+不改原V4 execution tree/旧115/A01/review/plan/锁/seal，不影响其他三个模型任务。
+同一原runner bytecode仅在私有globals副本绑定audit callback；模型/事件/推理与全部原gate照用。
+audit局部复用已有A01 paired_execution并恢复设置/RNG，补同输入严格重复和每future特征诊断，不放宽阈值、不以CPU替代DCU。
+新增运营源码SHA/commit随结果独立seal；原status和下游父seal继续认证完整混合执行证据。
+本轮真实受控重试NOT_SUBMITTED；生产checkpoint/DCU验证NOT_RUN。操作见docs/ai/FE01_V4_TEAM_SMOKE_FIX.md。

@@ -212,3 +212,11 @@ OFF20分钟启动超时且卡点未知。当前使用
 PhaseNet/EQT 的通用 manifest。修复保留可访问的原路径、原 SHA 与 asset 门，旧核心不变。
 使用[新 release 恢复脚本](FE01_ON_EVAL_INVENTORY_FIX.md)只提交新 inventory，已封存 CPU 项附原始身份复用，
 旧 run 和在跑作业不动。修复重提尚未由本地自动提交，真实通过状态仍待用户运行。
+
+## 19. V4 TEAM model_smoke 单项受控重试（2026-11-02）
+
+实际 Job32163754_3 DCU可见、TEAM ep11身份通过，失败在future encoder feature绝对一致性门；
+此前实际输入/归一化hash门通过。旧日志缺blank重复与实际差值，原因暂不能定为泄漏或设备数值波动。
+使用[独立TEAM重试小包](FE01_V4_TEAM_SMOKE_FIX.md)，沿用原50672e1 release和原run，仅sbatch 3号。
+原runner/gates不改，新增audit采用既有A01 paired_execution并补同输入重复对照和逐future诊断；原阈值不放宽。
+新增运营身份随原stage seal独立保存，其他模型/成功结果保留。实际受控DCU重试尚未提交。
