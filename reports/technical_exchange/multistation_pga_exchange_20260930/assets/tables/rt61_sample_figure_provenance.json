@@ -1,0 +1,134 @@
+{
+  "repository": "rular099/team_pytorch",
+  "branch": "exp/v01-velocity-prep-padding-control",
+  "analysis_base_commit": "8f54477ed11bf2623f40121648f7fcc756ada1a2",
+  "split": "validation",
+  "epoch": 8,
+  "training_seed": 42,
+  "coordinate": "log10(m/s^2)",
+  "point_estimate": "predictive mixture mean in log10 PGA coordinate",
+  "aggregation": "target weighted; all valid target slots across realtime rows",
+  "source_npz_sha256": {
+    "random": "ace4310564a4dfba2af061ebee8134846e1aeb5fc7b10a0d6a5a363f1fbc0f8b",
+    "normal": "e2fcba599345d18a23064f8ceaf39197f19052fdfb768320db99fd5f38e34599"
+  },
+  "formal_summary_sha256": "49e2761d3a041def61f8e34f5fdde8b0bcf3354664ef0504a5796054a17dbfd2",
+  "formal_group_metrics_sha256": "0a9a6dea8c8d3f6b4d7c0da1d9c5a045d2f6e39e3c590a54e0243b06574214ae",
+  "plot_script_sha256": "19abe9e4ca2858518150d4d4b28bb53abf0d4b15a30b37396c7bc895041b0dac",
+  "rendering": {
+    "all_valid_points": true,
+    "subsampling": false,
+    "point_alpha": 0.08,
+    "point_size_pt2": 4.0,
+    "draw_order_seed": 20260930,
+    "axis_limits_both_dimensions": [
+      -2.1,
+      1.1
+    ],
+    "equal_aspect": true,
+    "density": "105x105 histogram, Gaussian sigma=1.3 bins",
+    "contour_enclosed_probability": [
+      0.5,
+      0.8,
+      0.95
+    ],
+    "fit_line": "OLS prediction versus truth; all valid targets"
+  },
+  "panels": [
+    {
+      "targets": 75654,
+      "mae": 0.23732372496781431,
+      "rmse": 0.31011264767366226,
+      "bias": 0.009707523189780609,
+      "r2": 0.39940791079965343,
+      "slope": 0.4113167520291103,
+      "intercept": -0.6802395299362702,
+      "p90_abs_error": 0.4895226418972015,
+      "p95_abs_error": 0.6108613073825836,
+      "within_0p1": 0.2765352790334946,
+      "within_0p2": 0.5192455124646417,
+      "population": "random",
+      "events": 1310,
+      "realtime_rows": 9681
+    },
+    {
+      "targets": 89770,
+      "mae": 0.12498944104184562,
+      "rmse": 0.18607889688415438,
+      "bias": 0.040829541266793605,
+      "r2": 0.7388267426000484,
+      "slope": 0.7446264169920184,
+      "intercept": -0.27203333470011565,
+      "p90_abs_error": 0.31450015306472784,
+      "p95_abs_error": 0.3992297142744065,
+      "within_0p1": 0.5809958783557981,
+      "within_0p2": 0.7718725632171104,
+      "population": "normal_all",
+      "events": 1383,
+      "realtime_rows": 9681
+    },
+    {
+      "targets": 63651,
+      "mae": 0.09451995479400042,
+      "rmse": 0.14832156592519807,
+      "bias": 0.02813271935023458,
+      "r2": 0.8405057136913502,
+      "slope": 0.8257033743983093,
+      "intercept": -0.1806126156007279,
+      "p90_abs_error": 0.25257426500320435,
+      "p95_abs_error": 0.33322930335998535,
+      "within_0p1": 0.689038663964431,
+      "within_0p2": 0.8474965043754222,
+      "population": "normal_input",
+      "events": 1383,
+      "realtime_rows": 9681
+    },
+    {
+      "targets": 26119,
+      "mae": 0.19924240896410886,
+      "rmse": 0.2557236810192093,
+      "bias": 0.07177120870470846,
+      "r2": 0.42232551707850097,
+      "slope": 0.5154324187021183,
+      "intercept": -0.554325037134345,
+      "p90_abs_error": 0.40779186487197877,
+      "p95_abs_error": 0.49656469821929927,
+      "within_0p1": 0.3176997587962786,
+      "within_0p2": 0.5875799226616639,
+      "population": "normal_noninput",
+      "events": 1290,
+      "realtime_rows": 4523
+    }
+  ],
+  "ranges": {
+    "random": {
+      "truth_min": -1.9368785619735718,
+      "truth_max": 0.9949355125427246,
+      "prediction_min": -1.7690953016281128,
+      "prediction_max": 0.5689032077789307,
+      "points_outside_axes": 0
+    },
+    "normal_all": {
+      "truth_min": -1.9368785619735718,
+      "truth_max": 0.8626272082328796,
+      "prediction_min": -1.9062782526016235,
+      "prediction_max": 0.6443012952804565,
+      "points_outside_axes": 0
+    },
+    "normal_input": {
+      "truth_min": -1.9368785619735718,
+      "truth_max": 0.8626272082328796,
+      "prediction_min": -1.9062782526016235,
+      "prediction_max": 0.6443012952804565,
+      "points_outside_axes": 0
+    },
+    "normal_noninput": {
+      "truth_min": -1.9368785619735718,
+      "truth_max": 0.5503823161125183,
+      "prediction_min": -1.790553092956543,
+      "prediction_max": 0.2807687520980835,
+      "points_outside_axes": 0
+    }
+  },
+  "figure_png_sha256": "21b06cc52b5deee714d99f6e33a9cfcb942b8915de299bf4e91483f3db4a5252"
+}

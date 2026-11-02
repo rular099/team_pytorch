@@ -1,0 +1,5 @@
+population,targets,r2,residual_std_ln,coordinate_conversion
+random,75654,0.39940791079965343,0.71371082296218,std(error_log10) * ln(10)
+normal_all,89770,0.7388267426000484,0.4180210185606524,std(error_log10) * ln(10)
+normal_input,63651,0.8405057136913502,0.33532341258273474,std(error_log10) * ln(10)
+normal_noninput,26119,0.42232551707850097,0.5651591549062471,std(error_log10) * ln(10)

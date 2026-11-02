@@ -43,3 +43,27 @@ see*.txt
 /reports/technical_exchange/*/.slide_run_state.json.lock
 /reports/technical_exchange/*/slide_jobs.json
 /reports/technical_exchange/*/slide_run_state.json
+
+
+# Local-only artifacts: retain for USB transfer, not Git.
+*.pth
+*.pt
+*.ckpt
+*.npz
+*.h5
+*.hdf5
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+.pytest_cache/
+/reports/technical_exchange/multistation_pga_exchange_20260930/preview/
+/reports/technical_exchange/multistation_pga_exchange_20260930/drafts/
+/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/
+/reports/technical_exchange/multistation_pga_exchange_20260930/*.pdf
+/reports/technical_exchange/multistation_pga_exchange_20260930/*.pptx
+/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/
+/reports/technical_exchange/multistation_pga_exchange_20260930_v2/drafts/
+/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/
+/reports/technical_exchange/multistation_pga_exchange_20260930_v2/*.pdf
+/reports/technical_exchange/multistation_pga_exchange_20260930_v2/*.pptx
