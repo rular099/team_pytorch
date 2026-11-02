@@ -1,0 +1,156 @@
+{
+  "backend": "native python-pptx; no generative full-slide images",
+  "user_authorization": "2026-09-30 native editable PPT and old scatter comparison",
+  "pptx": "multistation_pga_exchange_20260930.pptx",
+  "slides": 26,
+  "main_slides": 20,
+  "appendix_slides": 6,
+  "font": "Noto Sans CJK SC",
+  "cover_rule": "title and date only; two text shapes",
+  "chart_embedding": "original image bytes, uniform scaling, zero crop",
+  "image_records": [
+    {
+      "slide": 11,
+      "shape": "Evidence paired_mae_progress.png",
+      "path": "assets/figures/paired_mae_progress.png",
+      "sha256": "2cc99999380ea025582b4c343a2521b5c2a2adc46a6160f970a13a3a2c9c445c",
+      "source_width_px": 3360,
+      "source_height_px": 1176,
+      "shape_width_emu": 11756571,
+      "shape_height_emu": 4114800,
+      "crop": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "slide": 12,
+      "shape": "Evidence old_vs_rt61_scatter.png",
+      "path": "assets/figures/old_vs_rt61_scatter.png",
+      "sha256": "92d68b311d94ec1389463d9c51937711a3eb50c98de03dce3eb0beac39446cb7",
+      "source_width_px": 3720,
+      "source_height_px": 1272,
+      "shape_width_emu": 13807440,
+      "shape_height_emu": 4721253,
+      "crop": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "slide": 13,
+      "shape": "Evidence rt61_scatter_four_populations.png",
+      "path": "assets/figures/rt61_scatter_four_populations.png",
+      "sha256": "21b06cc52b5deee714d99f6e33a9cfcb942b8915de299bf4e91483f3db4a5252",
+      "source_width_px": 3072,
+      "source_height_px": 2520,
+      "shape_width_emu": 7423882,
+      "shape_height_emu": 6089904,
+      "crop": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "slide": 14,
+      "shape": "Evidence rt61_stratified_scatter.png",
+      "path": "assets/figures/rt61_stratified_scatter.png",
+      "sha256": "4fb1182bc1a37c35f9e4c44254446c26917ac46eb5845c0de2c40b127a09ea3e",
+      "source_width_px": 3480,
+      "source_height_px": 2040,
+      "shape_width_emu": 10123483,
+      "shape_height_emu": 5934456,
+      "crop": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "slide": 15,
+      "shape": "Evidence rt61_error_strata.png",
+      "path": "assets/figures/rt61_error_strata.png",
+      "sha256": "8c3953a2ccc3f4995adf1d410a3544a445e7d8883845525cabf5762e96dfb952",
+      "source_width_px": 3120,
+      "source_height_px": 1824,
+      "shape_width_emu": 10088478,
+      "shape_height_emu": 5897880,
+      "crop": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "slide": 16,
+      "shape": "Evidence field_gate_progress.png",
+      "path": "assets/figures/field_gate_progress.png",
+      "sha256": "9595f125eda5192546121b4a945d218bdf6ad8dc3a07dbdc1d4e81e72709499a",
+      "source_width_px": 3504,
+      "source_height_px": 1128,
+      "shape_width_emu": 12725335,
+      "shape_height_emu": 4096512,
+      "crop": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "slide": 17,
+      "shape": "Evidence coverage_comparison.png",
+      "path": "assets/figures/coverage_comparison.png",
+      "sha256": "55d4619510903493700970eb93adb8a137e8c424d29478f1c0ba8cb959fe81ab",
+      "source_width_px": 2880,
+      "source_height_px": 1104,
+      "shape_width_emu": 9235440,
+      "shape_height_emu": 3540252,
+      "crop": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "slide_titles": [
+    "多台站波形驱动的任意目标位置 PGA 估计",
+    "结论先行——点预测改善，空间场目标尚未完成",
+    "任务升级——随机观测台站，预测随机目标位置",
+    "相关工作——与 TEAM 最接近，与 QuakeFormer 任务可相互启发",
+    "训练使用 25 年全量 shards；当前新结果仍全部是 validation",
+    "技术演进——从容量诊断到点预测与空间场的联合验收",
+    "当前系统架构——波形站点状态、目标查询与残差双路由",
+    "RT59 双路由——RT61 只检验远程波形 × 几何增量",
+    "训练目标——点误差、空间反差、概率与保留能力联合验收",
+    "最新总体指标——random 小幅最优，normal 保留但尚未晋级",
+    "严格同口径提升——RT57 γ=1.66 → RT59 → RT61",
+    "旧版散点图对照——点误差更低，但远程目标仍有压缩",
+    "真实 PGA 与预测 PGA——输入站更准，远程目标仍有压缩",
+    "散点分层——多站改善明显，时间收益不是单调关系",
+    "误差分层——少站、高 PGA 与高震级仍是主要难点",
+    "空间场指标——小幅恢复反差，仍未达到预注册目标",
+    "概率输出与校准——概率分数改善，coverage 保真仍不够",
+    "文献指标对照——用于定位差距，不构成直接排名",
+    "当前问题——空间压缩、单站、长尾与独立泛化证据",
+    "阶段结论——保留 RT59，下一步先完成 V01 受控数据实验",
+    "附录｜RT55–RT61 的实验身份与模型决策",
+    "附录｜RT61 完整指标、formal counts 与概率输出",
+    "附录｜TEAM 风格阈值指标——固定 cutoff 与时间快照",
+    "附录｜RT61 参数边界——99,621 scalars，其余冻结",
+    "附录｜统计、门槛与复现边界",
+    "附录｜参考文献与结果来源"
+  ],
+  "base_commit": "8f54477ed11bf2623f40121648f7fcc756ada1a2",
+  "pptx_sha256": "a1b7a43f13b05f136d3c3c7df9ab30ff859722979b97988c8c5d569c0a959f80",
+  "script_sha256": "4c47f897b5398c7011bf7a1666dc05d33bff0c3d799e8c1daaba0263683698f0"
+}

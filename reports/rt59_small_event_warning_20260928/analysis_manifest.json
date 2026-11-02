@@ -1,0 +1,22 @@
+{
+  "npz": {
+    "file": "eval_validation_epoch8_random.npz",
+    "sha256": "ace4310564a4dfba2af061ebee8134846e1aeb5fc7b10a0d6a5a363f1fbc0f8b"
+  },
+  "metrics": {
+    "file": "eval_validation_epoch8_random.metrics.json",
+    "sha256": "62175283efd74c34647160f70eb2ffd04946c88dade9df0559f015ac85be7bd6"
+  },
+  "submitted_source_manifest_sha256": "cba3c2bdcded908ef42280efe97f78d3525c1c50b4b03206a322f504187012f7",
+  "checkpoint_identity": {
+    "epoch": 8,
+    "loss": 0.6470828652381897,
+    "checkpoint_format": "non_encoder_v1",
+    "task_id": "20260925-rt61-wave-geometry-residual-conditioning"
+  },
+  "reference_identity": {
+    "parent_checkpoint_sha256": "5dbc15c6af5b8d341dfd4a377a68217b1e1aa3589550690997c02e81332aa1cd",
+    "readout_sha256": "db11b3c6152ea8ea76d78441769da04e6f03bb313050d70c64e4d12e1259f021",
+    "parent_shared_fingerprint": "9af5406450d7810dc2e29a6febfbaf13ac9072c6f25cfd6ea5eb73b8ad4e864b"
+  }
+}

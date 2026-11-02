@@ -1,0 +1,9 @@
+Edit input image 1, the complete generated scientific slide. Input image 2 is the strict original four-panel scientific evidence figure.
+
+Make one targeted correction: restore the ORIGINAL ASPECT RATIO OF THE SCIENTIFIC EVIDENCE FIGURE. In image 1 all four plot boxes were stretched horizontally. The source figure in image 2 has perfectly square data axes with identical x/y coordinate limits; its 1:1 reference line therefore has a 45-degree angle. This is mandatory scientific accuracy.
+
+Replace the entire plot group with the intact supplied image 2, preserving it pixel-for-pixel in content and scaling UNIFORMLY only. Do not redraw graphs. Do not invent new points, omit outliers, change contours, move plotted points, change fit lines or alter any number, label, tick or title. All four plot boxes MUST look square, with 1:1 lines at 45 degrees. Preserve all source plot axes. Use the original four-panel figure's 3072:2520 aspect ratio.
+
+You may rebalance the surrounding layout to fit the scientific image: use the left about 54–56% of the slide for the intact figure and the right about 40% for the same three summary cards and compact legend. A narrower intact plot image is scientifically preferable to a wider distorted plot image. Preserve the top title, RT61 epoch-8 seed42 validation tag, all right-column text and metrics, bottom conclusion and protocol line. Keep the background, colour palette and typography coherent with image 1. Keep Chinese crisp. No page number, logo or new decorative object.
+
+Output exactly one full 16:9 landscape slide. Required counts/values: random n=75,654, MAE 0.2373, R² 0.3994, slope 0.4113; normal all n=89,770, MAE 0.1250, R² 0.7388, slope 0.7446; normal input n=63,651, MAE 0.0945, R² 0.8405, slope 0.8257; normal non-input n=26,119, MAE 0.1992, R² 0.4223, slope 0.5154. Do not change them.

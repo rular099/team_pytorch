@@ -1,0 +1,60 @@
+{
+  "checks": "PASS",
+  "slides": 26,
+  "main": 20,
+  "appendix": 6,
+  "cover_two_text_objects_only": true,
+  "notes_slides": 26,
+  "editable_text_shapes": 273,
+  "editable_tables": 12,
+  "shapes_outside_canvas": [],
+  "scientific_images": [
+    {
+      "slide": 11,
+      "path": "assets/figures/paired_mae_progress.png",
+      "sha256_matches": true,
+      "relative_aspect_error": 3.6453776663947224e-08
+    },
+    {
+      "slide": 12,
+      "path": "assets/figures/old_vs_rt61_scatter.png",
+      "sha256_matches": true,
+      "relative_aspect_error": 1.4348295995780802e-07
+    },
+    {
+      "slide": 13,
+      "path": "assets/figures/rt61_scatter_four_populations.png",
+      "sha256_matches": true,
+      "relative_aspect_error": 1.308518164933048e-07
+    },
+    {
+      "slide": 14,
+      "path": "assets/figures/rt61_stratified_scatter.png",
+      "sha256_matches": true,
+      "relative_aspect_error": 7.55378187777822e-08
+    },
+    {
+      "slide": 15,
+      "path": "assets/figures/rt61_error_strata.png",
+      "sha256_matches": true,
+      "relative_aspect_error": 9.390597188740912e-08
+    },
+    {
+      "slide": 16,
+      "path": "assets/figures/field_gate_progress.png",
+      "sha256_matches": true,
+      "relative_aspect_error": 1.1703909397198231e-08
+    },
+    {
+      "slide": 17,
+      "path": "assets/figures/coverage_comparison.png",
+      "sha256_matches": true,
+      "relative_aspect_error": 0.0
+    }
+  ],
+  "pptx_sha256": "a1b7a43f13b05f136d3c3c7df9ab30ff859722979b97988c8c5d569c0a959f80",
+  "generative_drafts_used_in_ppt": false,
+  "visual_review": "PASS: all 26 rendered pages reviewed",
+  "rendered_pdf_pages": 26,
+  "pdf_sha256": "385f5cc0e4d38f48d3a60dc0c5a5707a7cf44c5e29fa2e9e4d37f8ffae0c3d2a"
+}

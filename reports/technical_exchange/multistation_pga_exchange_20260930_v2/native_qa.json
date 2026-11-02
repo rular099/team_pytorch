@@ -1,0 +1,63 @@
+{
+  "checks": "PASS",
+  "slides": 28,
+  "main": 22,
+  "appendix": 6,
+  "editable_text": 285,
+  "native_tables": 11,
+  "charts": [
+    {
+      "slide": 11,
+      "source": "assets/figures/meeting_point_progress.png",
+      "byte_hash_matches": true,
+      "aspect_error": 4.322582214388859e-08
+    },
+    {
+      "slide": 12,
+      "source": "assets/figures/meeting_scatter_comparison.png",
+      "byte_hash_matches": true,
+      "aspect_error": 6.230083982039503e-08
+    },
+    {
+      "slide": 13,
+      "source": "assets/figures/rt61_scatter_four_populations.png",
+      "byte_hash_matches": true,
+      "aspect_error": 1.308518164933048e-07
+    },
+    {
+      "slide": 14,
+      "source": "assets/figures/rt61_stratified_scatter.png",
+      "byte_hash_matches": true,
+      "aspect_error": 7.55378187777822e-08
+    },
+    {
+      "slide": 15,
+      "source": "assets/figures/normal_geometry_stratified_scatter.png",
+      "byte_hash_matches": true,
+      "aspect_error": 7.55378187777822e-08
+    },
+    {
+      "slide": 16,
+      "source": "assets/figures/rt61_error_strata.png",
+      "byte_hash_matches": true,
+      "aspect_error": 9.390597188740912e-08
+    },
+    {
+      "slide": 17,
+      "source": "assets/figures/meeting_spatial_range.png",
+      "byte_hash_matches": true,
+      "aspect_error": 7.39959098439158e-08
+    },
+    {
+      "slide": 18,
+      "source": "assets/figures/meeting_calibration_progress.png",
+      "byte_hash_matches": true,
+      "aspect_error": 1.3255919029120378e-08
+    }
+  ],
+  "pptx_sha256": "b24944f04ed666e615bc84598442dc1dffb53184e87dddd336a7685fb62c00b7",
+  "visual_review": "PASS",
+  "v1_preserved": true,
+  "pdf_pages": 28,
+  "pdf_sha256": "2af4f0b136038084f0d782463c4221271099108fe35ff7e82205f01d74e7225a"
+}

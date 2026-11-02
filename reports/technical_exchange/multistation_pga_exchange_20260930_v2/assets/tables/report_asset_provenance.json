@@ -1,0 +1,60 @@
+{
+  "repo": "rular099/team_pytorch",
+  "branch": "exp/v01-velocity-prep-padding-control",
+  "base_commit": "8f54477ed11bf2623f40121648f7fcc756ada1a2",
+  "date": "2026-09-30",
+  "backend": "matplotlib scientific figures; native python-pptx slide composition",
+  "old_npz": {
+    "sha256": "389cfafd0fddbee6a5e7ebf6fc4df44cec7301775ac776e62058b515859a6403",
+    "original_july_slide": 11,
+    "rows": 101,
+    "targets": 1393,
+    "mae": 0.29657060662531864,
+    "rmse": 0.3874600209579159,
+    "bias": 0.0014554904265715676,
+    "r2": 0.5220562610964439,
+    "slope": 0.5930814849942925,
+    "intercept": -0.6532191963004716,
+    "p90_abs_error": 0.6337769865989685,
+    "p95_abs_error": 0.7973789691925047,
+    "within_0p1": 0.22684852835606603,
+    "within_0p2": 0.42857142857142855
+  },
+  "rt61_npz_sha256": {
+    "random": "ace4310564a4dfba2af061ebee8134846e1aeb5fc7b10a0d6a5a363f1fbc0f8b",
+    "normal": "e2fcba599345d18a23064f8ceaf39197f19052fdfb768320db99fd5f38e34599"
+  },
+  "checks": {
+    "all_points_no_subsampling": true,
+    "old_metrics_match_july": true,
+    "station_mask_counts_match": true,
+    "mdn_mean_matches_export": true,
+    "common_old_new_axis_limits": [
+      -3.0,
+      1.1
+    ],
+    "source_axes_equal_aspect": true
+  },
+  "old_new_comparison": "historical context only: unmatched datasets, times and target protocols",
+  "threshold_protocol": {
+    "g_mps2": 9.80665,
+    "time": "requested elapsed seconds",
+    "probability": "MDN mixture exceedance probability, denormalized component means/sigmas",
+    "decision_cutoff": 0.5,
+    "cutoff_optimization": false,
+    "pr_auc": "tie-aware trapezoidal PR area",
+    "ap": "separately exported, not substituted for PR-AUC",
+    "split": "validation",
+    "no_warning_time_evaluation": true
+  },
+  "script_sha256": "171f345e98951bfb7b05fe65474b2f6577d8b39492199a42629d6a632c8fe4d6",
+  "figure_sha256": {
+    "coverage_comparison.png": "55d4619510903493700970eb93adb8a137e8c424d29478f1c0ba8cb959fe81ab",
+    "rt61_scatter_four_populations.png": "21b06cc52b5deee714d99f6e33a9cfcb942b8915de299bf4e91483f3db4a5252",
+    "paired_mae_progress.png": "2cc99999380ea025582b4c343a2521b5c2a2adc46a6160f970a13a3a2c9c445c",
+    "rt61_error_strata.png": "8c3953a2ccc3f4995adf1d410a3544a445e7d8883845525cabf5762e96dfb952",
+    "old_vs_rt61_scatter.png": "92d68b311d94ec1389463d9c51937711a3eb50c98de03dce3eb0beac39446cb7",
+    "field_gate_progress.png": "9595f125eda5192546121b4a945d218bdf6ad8dc3a07dbdc1d4e81e72709499a",
+    "rt61_stratified_scatter.png": "4fb1182bc1a37c35f9e4c44254446c26917ac46eb5845c0de2c40b127a09ea3e"
+  }
+}

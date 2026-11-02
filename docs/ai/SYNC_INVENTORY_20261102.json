@@ -1,0 +1,629 @@
+{
+  "source_branch": "exp/v01-velocity-prep-padding-control",
+  "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+  "sync_branch": "sync/v01",
+  "exported_at": "2026-11-02T08:37:15+00:00",
+  "files": [
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/CODEX_RESULT_20260930_NATIVE_TECHNICAL_REPORT.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/CODEX_RESULT_20260930_NATIVE_TECHNICAL_REPORT.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "a006f753754fda72ffdfcf02cab44706425c41a1f4ab0e35f26275efe2541f23",
+      "published_sha256": "a006f753754fda72ffdfcf02cab44706425c41a1f4ab0e35f26275efe2541f23",
+      "bytes": 2706,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/QA.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/QA.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9d50b91217ada333842ab0e6fa59cd2fec6a71493fd6038e3029d386dd40ca63",
+      "published_sha256": "9d50b91217ada333842ab0e6fa59cd2fec6a71493fd6038e3029d386dd40ca63",
+      "bytes": 3061,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/README.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/README.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "8f066add033dd0876410a37af2f7d8177bd1910ca2cea231a0f76ce3db1001fc",
+      "published_sha256": "97a0cb711b23e742fb5b50e27ea156f3a9f365561377e5d92db35f33b9b20633",
+      "bytes": 4700,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/old_vs_rt61_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/old_vs_rt61_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "c6712c286b7e94d7ea970f3eebc8c8f6ac1778e4a22b25a8bb3b00ab46d023da",
+      "published_sha256": "c6712c286b7e94d7ea970f3eebc8c8f6ac1778e4a22b25a8bb3b00ab46d023da",
+      "bytes": 785,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/report_asset_provenance.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/report_asset_provenance.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "6d59f9440706227697d172c590ec8daa3d0e370cd9269bf90cbcd9b44db00600",
+      "published_sha256": "6d59f9440706227697d172c590ec8daa3d0e370cd9269bf90cbcd9b44db00600",
+      "bytes": 2594,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_error_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_error_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7a88806da19038fad8f9202d64dc37f1aeccab50becb0803893e0f65a17878ac",
+      "published_sha256": "7a88806da19038fad8f9202d64dc37f1aeccab50becb0803893e0f65a17878ac",
+      "bytes": 3634,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_literature_residual_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_literature_residual_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "f1ed9fff0540bba27b99aa632eb50bc04455b7e6683949f4581db53fe7234df3",
+      "published_sha256": "f1ed9fff0540bba27b99aa632eb50bc04455b7e6683949f4581db53fe7234df3",
+      "bytes": 393,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_sample_figure_provenance.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_sample_figure_provenance.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9135928e67ba1e1d982ab829a4f3eaf5ecdac8130120000c140468f760cad2c5",
+      "published_sha256": "9135928e67ba1e1d982ab829a4f3eaf5ecdac8130120000c140468f760cad2c5",
+      "bytes": 4388,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_sample_panel_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_sample_panel_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "4e7d2c96b011b57c469dd94fa56bb79e1672cf9bac416bcab5d9dfd726a3ecd2",
+      "published_sha256": "4e7d2c96b011b57c469dd94fa56bb79e1672cf9bac416bcab5d9dfd726a3ecd2",
+      "bytes": 1022,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_scatter_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_scatter_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9a47905bff916d7f7ea19cfe4019b753543691410eeec946bac6689b6976f011",
+      "published_sha256": "9a47905bff916d7f7ea19cfe4019b753543691410eeec946bac6689b6976f011",
+      "bytes": 1388,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_threshold_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_threshold_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7825b05dbbb9ad3dc250f186b658ec6c9b3204816d64a078d27d3ddac5076c9f",
+      "published_sha256": "7825b05dbbb9ad3dc250f186b658ec6c9b3204816d64a078d27d3ddac5076c9f",
+      "bytes": 3099,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/build_native_deck.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/build_native_deck.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "4c47f897b5398c7011bf7a1666dc05d33bff0c3d799e8c1daaba0263683698f0",
+      "published_sha256": "10e12dac03f77f6b71da8590f65660810268889f3af01dcd802da9cde1bf6801",
+      "bytes": 50680,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/native_deck_manifest.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/native_deck_manifest.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "38b83ecc26b622a3e63403ba5a27210cc7a0413008efb8444684967ba737c7bd",
+      "published_sha256": "38b83ecc26b622a3e63403ba5a27210cc7a0413008efb8444684967ba737c7bd",
+      "bytes": 5643,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/native_qa.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/native_qa.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "c28620ef1994bad6aad42027f5bb170096db41bbf97299ceed383d3f7510cbda",
+      "published_sha256": "c28620ef1994bad6aad42027f5bb170096db41bbf97299ceed383d3f7510cbda",
+      "bytes": 1738,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/outline.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/outline.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "64381cbed0faf1599c3cd335ee14daf73a1827c76213c8e55c19b07f60c2915f",
+      "published_sha256": "a7eae58a52a410af85ed86559c5ebdd455fe03f127c3582d948eae252b98d5af",
+      "bytes": 17277,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prepare_report_assets.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prepare_report_assets.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "171f345e98951bfb7b05fe65474b2f6577d8b39492199a42629d6a632c8fe4d6",
+      "published_sha256": "113fc065a736b7d4855c66dae411f0ba8758a52267e47429b197afd92cf3371d",
+      "bytes": 17212,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prepare_sample_scatter.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prepare_sample_scatter.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "19abe9e4ca2858518150d4d4b28bb53abf0d4b15a30b37396c7bc895041b0dac",
+      "published_sha256": "c458654c5a45f4fec9d78c0057b8b20cf6f64300a54998e77e0d9e17e42c9402",
+      "bytes": 11600,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/progress.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/progress.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "611c3acd030dcd8590a4b524d29c75b0b545afa85c50ef829d18ec16cb001cf1",
+      "published_sha256": "611c3acd030dcd8590a4b524d29c75b0b545afa85c50ef829d18ec16cb001cf1",
+      "bytes": 1940,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "fd21fa54aae75b617a5698f7a29fdc303ba5c479ef2c77cd7dfc1ad2441c3f8f",
+      "published_sha256": "fd21fa54aae75b617a5698f7a29fdc303ba5c479ef2c77cd7dfc1ad2441c3f8f",
+      "bytes": 3502,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13_repair.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13_repair.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7d042049c450edc81b8c315b13318b38259129f3ad5af87d78bb24e08e42e26d",
+      "published_sha256": "7d042049c450edc81b8c315b13318b38259129f3ad5af87d78bb24e08e42e26d",
+      "bytes": 1851,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13_strict_asset.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13_strict_asset.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7885bfd46a76cad479d2dd1bbeee6e65ac362606fcd286f873c116aa2078fda2",
+      "published_sha256": "7885bfd46a76cad479d2dd1bbeee6e65ac362606fcd286f873c116aa2078fda2",
+      "bytes": 2954,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/qa_native_deck.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/qa_native_deck.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "84d0c20988bb37e4c48154a202408ca741f5e86b63c7e1a696e96b8b9886d2d1",
+      "published_sha256": "0f02ad069714a98090682e747d5db7b02e7b398991988c2373baf3bbbbd6941f",
+      "bytes": 4811,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/sample_qa.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/sample_qa.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "5c2ff0e07db793e4f823a6f12c7ae9dbb8078bad6edf2a8a68725e65de86b6e9",
+      "published_sha256": "5c2ff0e07db793e4f823a6f12c7ae9dbb8078bad6edf2a8a68725e65de86b6e9",
+      "bytes": 4056,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/sources.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/sources.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "dbfceb6040c98c73141043b2f56a7c92c364c4021bab62f4cf2e9f194c63d2a4",
+      "published_sha256": "dbfceb6040c98c73141043b2f56a7c92c364c4021bab62f4cf2e9f194c63d2a4",
+      "bytes": 6944,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/speech.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/speech.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "ed1d58aec626033de2b8b5f0cf2536a532a00ab865292ecc0f654e137f8056b5",
+      "published_sha256": "ed1d58aec626033de2b8b5f0cf2536a532a00ab865292ecc0f654e137f8056b5",
+      "bytes": 16435,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/test_report_assets.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/test_report_assets.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7105c1c68bdebc3b7c1e5eefdb1873574c8e9ceb852e9cf6ae80d8f1af57def3",
+      "published_sha256": "7105c1c68bdebc3b7c1e5eefdb1873574c8e9ceb852e9cf6ae80d8f1af57def3",
+      "bytes": 1562,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/CODEX_RESULT_20260930_REPORT_REVISION.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/CODEX_RESULT_20260930_REPORT_REVISION.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7403156458594477012be7b32738fce6aeab9ec36de791206243ce698367c104",
+      "published_sha256": "7403156458594477012be7b32738fce6aeab9ec36de791206243ce698367c104",
+      "bytes": 2980,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/QA.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/QA.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "5ec92d8fd93a1dfa483979ca5677991a7fd5f91541e8b4edb6a66b049d46dea7",
+      "published_sha256": "5ec92d8fd93a1dfa483979ca5677991a7fd5f91541e8b4edb6a66b049d46dea7",
+      "bytes": 2637,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/README.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/README.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "1db670decd3d7f5279fee677b7b5b4d1236b1e55e31354f852f94cbf1a3554af",
+      "published_sha256": "6bcfaf77d0041a0f65dd118d8285090aa8d03b28df88426a81ada6e24586c1ed",
+      "bytes": 5507,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/TECHNICAL_DETAILS.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/TECHNICAL_DETAILS.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "a9dd3afc130928d98adf648f96fc465628a33debf5c43c63d589d1663817ebba",
+      "published_sha256": "a9dd3afc130928d98adf648f96fc465628a33debf5c43c63d589d1663817ebba",
+      "bytes": 16104,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_comparison_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_comparison_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "ef9cb7c21231527e80570238c914d710c12e3fc9d62661737645f29a7c8357f1",
+      "published_sha256": "ef9cb7c21231527e80570238c914d710c12e3fc9d62661737645f29a7c8357f1",
+      "bytes": 2857,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_field_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_field_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "c097273ce1a0f8c94d061967acff1bb6b31a9c5fb416f50febee5f929d26242e",
+      "published_sha256": "c097273ce1a0f8c94d061967acff1bb6b31a9c5fb416f50febee5f929d26242e",
+      "bytes": 2014,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_threshold_comparison.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_threshold_comparison.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "d75469f2773b7d1182c1e097134746684aa9e7c35332fbebc8b17f9fdc450fce",
+      "published_sha256": "d75469f2773b7d1182c1e097134746684aa9e7c35332fbebc8b17f9fdc450fce",
+      "bytes": 2706,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/normal_geometry_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/normal_geometry_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "8b07a5620b3b7f6438d9229c5a7bb752153ea13aaf205bc742c47c1d60f37d41",
+      "published_sha256": "8b07a5620b3b7f6438d9229c5a7bb752153ea13aaf205bc742c47c1d60f37d41",
+      "bytes": 3794,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/old_vs_rt61_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/old_vs_rt61_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "c6712c286b7e94d7ea970f3eebc8c8f6ac1778e4a22b25a8bb3b00ab46d023da",
+      "published_sha256": "c6712c286b7e94d7ea970f3eebc8c8f6ac1778e4a22b25a8bb3b00ab46d023da",
+      "bytes": 785,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/report_asset_provenance.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/report_asset_provenance.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "6d59f9440706227697d172c590ec8daa3d0e370cd9269bf90cbcd9b44db00600",
+      "published_sha256": "6d59f9440706227697d172c590ec8daa3d0e370cd9269bf90cbcd9b44db00600",
+      "bytes": 2594,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/revision_summary.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/revision_summary.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "66b9c311fa226d7eb50389ca6d98ba3116a5fef8000a67c02802a7adc476c1cd",
+      "published_sha256": "66b9c311fa226d7eb50389ca6d98ba3116a5fef8000a67c02802a7adc476c1cd",
+      "bytes": 20902,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_error_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_error_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7a88806da19038fad8f9202d64dc37f1aeccab50becb0803893e0f65a17878ac",
+      "published_sha256": "7a88806da19038fad8f9202d64dc37f1aeccab50becb0803893e0f65a17878ac",
+      "bytes": 3634,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_literature_residual_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_literature_residual_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "f1ed9fff0540bba27b99aa632eb50bc04455b7e6683949f4581db53fe7234df3",
+      "published_sha256": "f1ed9fff0540bba27b99aa632eb50bc04455b7e6683949f4581db53fe7234df3",
+      "bytes": 393,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_sample_figure_provenance.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_sample_figure_provenance.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9135928e67ba1e1d982ab829a4f3eaf5ecdac8130120000c140468f760cad2c5",
+      "published_sha256": "9135928e67ba1e1d982ab829a4f3eaf5ecdac8130120000c140468f760cad2c5",
+      "bytes": 4388,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_sample_panel_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_sample_panel_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "4e7d2c96b011b57c469dd94fa56bb79e1672cf9bac416bcab5d9dfd726a3ecd2",
+      "published_sha256": "4e7d2c96b011b57c469dd94fa56bb79e1672cf9bac416bcab5d9dfd726a3ecd2",
+      "bytes": 1022,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_scatter_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_scatter_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9a47905bff916d7f7ea19cfe4019b753543691410eeec946bac6689b6976f011",
+      "published_sha256": "9a47905bff916d7f7ea19cfe4019b753543691410eeec946bac6689b6976f011",
+      "bytes": 1388,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_threshold_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_threshold_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7825b05dbbb9ad3dc250f186b658ec6c9b3204816d64a078d27d3ddac5076c9f",
+      "published_sha256": "7825b05dbbb9ad3dc250f186b658ec6c9b3204816d64a078d27d3ddac5076c9f",
+      "bytes": 3099,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/build_revision_deck.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/build_revision_deck.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "d67a1e63e72e2041308c055a005b36cb19883213578e4de4a0d8c5cb123726d6",
+      "published_sha256": "d67a1e63e72e2041308c055a005b36cb19883213578e4de4a0d8c5cb123726d6",
+      "bytes": 21283,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/native_deck_manifest.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/native_deck_manifest.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "cb1f1f0968bdccd4d8384fa76ab57fd101d602cf1c7c0bf4761bc571b43e1c4e",
+      "published_sha256": "cb1f1f0968bdccd4d8384fa76ab57fd101d602cf1c7c0bf4761bc571b43e1c4e",
+      "bytes": 5355,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/native_qa.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/native_qa.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "f7d5e784b8cae7f704bff92d651cdc8f29b755a1959774b9b3c60897e13adc4f",
+      "published_sha256": "f7d5e784b8cae7f704bff92d651cdc8f29b755a1959774b9b3c60897e13adc4f",
+      "bytes": 1756,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/prepare_revision_assets.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/prepare_revision_assets.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "b78c3eafbbd7e9cfe2076493aa144a1346a951a94c93c2cfe4efe4209578b137",
+      "published_sha256": "b78c3eafbbd7e9cfe2076493aa144a1346a951a94c93c2cfe4efe4209578b137",
+      "bytes": 14092,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/qa_revision.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/qa_revision.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "6220f55c1d78f3e60cf763d49a14d1f633ea9e2f678d52abf7100cc4f4dafbbf",
+      "published_sha256": "916ed8996a1cea66c8f547bfe6f0d2d0c3a450ba77b55ded162276b9c30659c9",
+      "bytes": 3736,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/sources.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/sources.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "3bf35619e121f64993cf3d3b5f72081f9002479f415063321eb61e70e214cf2a",
+      "published_sha256": "3bf35619e121f64993cf3d3b5f72081f9002479f415063321eb61e70e214cf2a",
+      "bytes": 5604,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/speech.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/speech.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "ea8ff0ead071276ddaba5837929cacc9ec899175265238e1b605d07023575688",
+      "published_sha256": "ea8ff0ead071276ddaba5837929cacc9ec899175265238e1b605d07023575688",
+      "bytes": 16170,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/test_revision_assets.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/test_revision_assets.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "b1f3286177534fbe75c1c0143b1edc29e271d2533586301b911e84717c63f095",
+      "published_sha256": "b1f3286177534fbe75c1c0143b1edc29e271d2533586301b911e84717c63f095",
+      "bytes": 1408,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/rt59_small_event_strata.svg",
+      "published_path": "reports/rt59_small_event_warning_20260928/rt59_small_event_strata.svg",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "0c93f9d4bc520049bf3ecb206f97bd742bec6c9881b36536823f971a5d997f29",
+      "published_sha256": "0c93f9d4bc520049bf3ecb206f97bd742bec6c9881b36536823f971a5d997f29",
+      "bytes": 90827,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/QA_NOTES.md",
+      "published_path": "reports/rt59_small_event_warning_20260928/QA_NOTES.md",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "6402a97d46dd3eccbd82426a03387bf1ce13999c64f0e1fe6e16fca0cc055df2",
+      "published_sha256": "5c404f1db0421c1540b4bc4688096a4219dd08496959ddafc2f4b62d49b60876",
+      "bytes": 1060,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/REPORT.md",
+      "published_path": "reports/rt59_small_event_warning_20260928/REPORT.md",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "769014f606b2bcac5d273f30af52aad8aaefc752ab2ecc5a1a98fbf095f5075c",
+      "published_sha256": "769014f606b2bcac5d273f30af52aad8aaefc752ab2ecc5a1a98fbf095f5075c",
+      "bytes": 3524,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/joint_strata.csv",
+      "published_path": "reports/rt59_small_event_warning_20260928/joint_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "b1d6788d332e722e22f3f66a17e61669a50a9a65a80e8032cd950d5c4077b907",
+      "published_sha256": "b1d6788d332e722e22f3f66a17e61669a50a9a65a80e8032cd950d5c4077b907",
+      "bytes": 6913,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/FIGURE_CONTRACT.md",
+      "published_path": "reports/rt59_small_event_warning_20260928/FIGURE_CONTRACT.md",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "b9702971162154ea79474577f8b00d23e829d9692c369e9610402893459d65e7",
+      "published_sha256": "b485d55dc43d3e99a2eebc40c858d28513b6205a84f3a3851765ed7f6c516d25",
+      "bytes": 1315,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/analyze_rt59_small_events.py",
+      "published_path": "reports/rt59_small_event_warning_20260928/analyze_rt59_small_events.py",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "cfacdcabfa4cf265179ed3f6b649985655ea41ac7d02be0f9aa59c7ace2de588",
+      "published_sha256": "cfacdcabfa4cf265179ed3f6b649985655ea41ac7d02be0f9aa59c7ace2de588",
+      "bytes": 27117,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/time_strata.csv",
+      "published_path": "reports/rt59_small_event_warning_20260928/time_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "07ee82566ee0bb1c15b649468f0ad71140377beb8acccc2daf346b878b8f7eb6",
+      "published_sha256": "07ee82566ee0bb1c15b649468f0ad71140377beb8acccc2daf346b878b8f7eb6",
+      "bytes": 2611,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/analysis_manifest.json",
+      "published_path": "reports/rt59_small_event_warning_20260928/analysis_manifest.json",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "8cd387c937bc53447608fb805b53a8f82855c24bfd780dc0c5f7065c38881117",
+      "published_sha256": "8cd387c937bc53447608fb805b53a8f82855c24bfd780dc0c5f7065c38881117",
+      "bytes": 925,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/station_strata.csv",
+      "published_path": "reports/rt59_small_event_warning_20260928/station_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "161fe33d2e53be5f7182b82ce1145e38588295be883e67532874bacac5c947a7",
+      "published_sha256": "161fe33d2e53be5f7182b82ce1145e38588295be883e67532874bacac5c947a7",
+      "bytes": 1350,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/summary.json",
+      "published_path": "reports/rt59_small_event_warning_20260928/summary.json",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "ade27ef85e17aa3e91156c72a4889565f6566be0cf6c8b25e43767e5ce6bd7d1",
+      "published_sha256": "ade27ef85e17aa3e91156c72a4889565f6566be0cf6c8b25e43767e5ce6bd7d1",
+      "bytes": 4096,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/rt59_small_event_strata.png",
+      "published_path": "reports/rt59_small_event_warning_20260928/rt59_small_event_strata.png",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "3a4b2dd576a11b91f0cc30ce9a4a01a0877855640178f3cb5274a5a4d93637b1",
+      "published_sha256": "3a4b2dd576a11b91f0cc30ce9a4a01a0877855640178f3cb5274a5a4d93637b1",
+      "bytes": 368697,
+      "export_transform": "byte_identical"
+    }
+  ],
+  "scope": "Existing offline artifacts only; no scientific rerun; path-normalized copies retain numeric fields and original SHA"
+}

@@ -1,0 +1,113 @@
+{
+  "pptx": "multistation_pga_exchange_20260930_v2.pptx",
+  "slides": 28,
+  "main_slides": 22,
+  "appendix_slides": 6,
+  "slide_titles": [
+    "多台站波形驱动的任意目标位置 PGA 估计",
+    "从上次交流到本次——normal 精度大幅改善，新增 random 挑战",
+    "任务升级——随机观测台站，预测随机目标位置",
+    "相关工作——与 TEAM 最接近，与 QuakeFormer 任务可相互启发",
+    "训练使用 25 年全量 shards；当前新结果仍全部是 validation",
+    "技术演进——每轮解决什么问题，而不只是实验名字",
+    "当前系统架构——波形站点状态、目标查询与残差双路由",
+    "RT59 双路由——RT61 只检验远程波形 × 几何增量",
+    "训练目标——点误差、空间反差、概率与保留能力联合验收",
+    "总体指标——上次基线、本次 normal 与新增 random 同页呈现",
+    "交流间的主要增量——更大规模、常规场景精度与任务范围",
+    "旧版散点对照——normal 更贴近真实值，random 仍有明显压缩",
+    "真实 PGA 与预测 PGA——输入站更准，远程目标仍有压缩",
+    "Random geometry 分层——台站数与截止时刻（RT61）",
+    "Normal geometry 分层——多站与后期预测显著改善（RT61）",
+    "Random 误差分层——少站、高 PGA 与高震级仍是主要难点",
+    "空间强弱反差——normal 恢复较好，random 仍明显压缩",
+    "概率输出的交流间进展——明显缓解上次的过度自信",
+    "文献与两次交流对照——补齐 normal，并复现旧评分规则",
+    "为什么上一版文献表显得变差——三种口径混在了视觉主线里",
+    "当前问题——空间压缩、单站、长尾与独立泛化证据",
+    "阶段结论——保留 RT59，下一步先完成 V01 受控数据实验",
+    "附录｜RT55–RT61 的实验身份与模型决策",
+    "附录｜RT61 完整指标、formal counts 与概率输出",
+    "附录｜TEAM 风格阈值指标——固定 cutoff 与时间快照",
+    "附录｜RT61 参数边界——99,621 scalars，其余冻结",
+    "附录｜统计、门槛与复现边界",
+    "附录｜参考文献与结果来源"
+  ],
+  "image_records": [
+    {
+      "slide": 11,
+      "shape": "Evidence meeting_point_progress.png",
+      "path": "assets/figures/meeting_point_progress.png",
+      "sha256": "22bac42ef95f006521e9f8f8dea7146b1bd9cefdf66ef56d55270b78729e1eb1",
+      "source_width_px": 3696,
+      "source_height_px": 1248
+    },
+    {
+      "slide": 12,
+      "shape": "Evidence meeting_scatter_comparison.png",
+      "path": "assets/figures/meeting_scatter_comparison.png",
+      "sha256": "48d28bafb0eca96d9b2a549fd5ea6d93b9f7bf65cd43d51a8300ad17d13f1dd8",
+      "source_width_px": 3840,
+      "source_height_px": 1116
+    },
+    {
+      "slide": 13,
+      "shape": "Evidence rt61_scatter_four_populations.png",
+      "path": "assets/figures/rt61_scatter_four_populations.png",
+      "sha256": "21b06cc52b5deee714d99f6e33a9cfcb942b8915de299bf4e91483f3db4a5252",
+      "source_width_px": 3072,
+      "source_height_px": 2520
+    },
+    {
+      "slide": 14,
+      "shape": "Evidence rt61_stratified_scatter.png",
+      "path": "assets/figures/rt61_stratified_scatter.png",
+      "sha256": "4fb1182bc1a37c35f9e4c44254446c26917ac46eb5845c0de2c40b127a09ea3e",
+      "source_width_px": 3480,
+      "source_height_px": 2040
+    },
+    {
+      "slide": 15,
+      "shape": "Evidence normal_geometry_stratified_scatter.png",
+      "path": "assets/figures/normal_geometry_stratified_scatter.png",
+      "sha256": "a56a80879a132b7f346b9a3ae7ba4345e8817a756d565a3d88fc0f4907eabca7",
+      "source_width_px": 3480,
+      "source_height_px": 2040
+    },
+    {
+      "slide": 16,
+      "shape": "Evidence rt61_error_strata.png",
+      "path": "assets/figures/rt61_error_strata.png",
+      "sha256": "8c3953a2ccc3f4995adf1d410a3544a445e7d8883845525cabf5762e96dfb952",
+      "source_width_px": 3120,
+      "source_height_px": 1824
+    },
+    {
+      "slide": 17,
+      "shape": "Evidence meeting_spatial_range.png",
+      "path": "assets/figures/meeting_spatial_range.png",
+      "sha256": "c148c83258cd279f9475b7ecb4d3627560ceccaaefd1480a656c790c6163872e",
+      "source_width_px": 2568,
+      "source_height_px": 1104
+    },
+    {
+      "slide": 18,
+      "shape": "Evidence meeting_calibration_progress.png",
+      "path": "assets/figures/meeting_calibration_progress.png",
+      "sha256": "0f134f5106caa3e68868871b8fd3bb2d1899547fc141523ed0971516a0a8d61f",
+      "source_width_px": 2736,
+      "source_height_px": 1080
+    }
+  ],
+  "font": "Noto Sans CJK SC",
+  "base_commit": "8f54477ed11bf2623f40121648f7fcc756ada1a2",
+  "pptx_sha256": "b24944f04ed666e615bc84598442dc1dffb53184e87dddd336a7685fb62c00b7",
+  "script_sha256": "d67a1e63e72e2041308c055a005b36cb19883213578e4de4a0d8c5cb123726d6",
+  "backend": "native editable; historical scientific PNGs embedded unchanged",
+  "v1_preserved": true,
+  "normal_representative": "RT55 ep20 validation",
+  "normal_stratified": "RT61 ep8 validation; all-target plus remote numeric companion",
+  "random_representative": "RT61 ep8 validation",
+  "historical_baseline": "July full-data + rt48 KNET / threshold diagnostics",
+  "literature_point_f1_star_is_validation_oracle_not_deployment": true
+}
