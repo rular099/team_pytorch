@@ -27,7 +27,7 @@ def check(root, max_age_days=45):
     git(root, 'cat-file', '-e', commit + '^{commit}')
     # A memory-only descendant is expected after committing the rendered snapshot.
     since = git(root, 'diff', '--name-only', commit, 'HEAD').splitlines()
-    if any(not (p.startswith('docs/ai/') or p.startswith('tools/ai_memory') or p.startswith('tests/test_ai_memory') or p in {'AGENTS.md', 'SESSION_SUMMARY.md'}) for p in since):
+    if any(not (p.startswith('docs/ai/') or p.startswith('tools/ai_memory') or p.startswith('tests/test_ai_memory') or p in {'AGENTS.md', 'SESSION_SUMMARY.md', 'START_HERE.md', 'tools/workspace_sync.py', 'tests/test_workspace_sync.py'}) for p in since):
         warnings.append('Coordinator HEAD contains newer non-memory changes; review snapshot freshness')
     all_records = []
     for track in registry:

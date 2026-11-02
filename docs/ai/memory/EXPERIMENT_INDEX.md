@@ -1,11 +1,11 @@
 # EXPERIMENT_INDEX
 
 <!-- ai-memory:begin -->
-更新时间：2026-11-01T07:35:39+00:00
+更新时间：2026-11-02T08:55:53+00:00
 
-生成所依据的协调分支 commit：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`
+生成所依据的协调分支 commit：`328550fa7ea2164739009c0cd61c6a2fd70830e6`
 
-协调分支：`chore/project-memory-bootstrap`
+协调分支：`chore/workspace-sync`
 
 此 SHA 是生成输入，不是整个科研项目的单一 HEAD；各线见下表。
 
@@ -76,6 +76,18 @@
 - 审阅：needs_independent_review
 - 关系：RT58后重新设计；RT60/61 reference
 - 原始入口：[docs/ai/CODEX_RESULT_20260920_RT59_DUAL_OBJECTIVE_TRANSPORT_V3_VALIDATION.md](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/docs/ai/CODEX_RESULT_20260920_RT59_DUAL_OBJECTIVE_TRANSPORT_V3_VALIDATION.md)；[reports/rt59_dual_objective_transport_v3_validation_20260920/gates.csv](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/reports/rt59_dual_objective_transport_v3_validation_20260920/gates.csv)；[pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json)
+
+### RT59-SMALL-EVENT-20260928
+
+- 科学问题：既有random validation中的M=3.0小震远端PGA表现如何？
+- branch：`rt59-dual-objective-transport-v3`
+- commit：`d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd`
+- 状态：`verified_complete`
+- 数据/协议：历史离线报告，validation单seed，23个M=3.0事件、211个有效非输入目标；事件簇bootstrap5000次。
+- 结果性质：9月28日已有分析；本轮仅同步报告/源表/代码。报告位于sync/v01的固定证据commit，科研parent仍RT59。
+- 审阅：needs_independent_review
+- 关系：RT59 same-forward reference的条件子群；非新训练、非M<3泛化。
+- 原始入口：[reports/rt59_small_event_warning_20260928/REPORT.md](https://github.com/rular099/team_pytorch/blob/52ea935249e490033f49209e106eecdedaa9275a/reports/rt59_small_event_warning_20260928/REPORT.md)
 
 ## RT60
 

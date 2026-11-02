@@ -2,7 +2,7 @@
   "track_id": "RT59",
   "branch": "rt59-dual-objective-transport-v3",
   "commit_sha": "d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd",
-  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "last_verified_at": "2026-11-02T08:55:52+00:00",
   "evidence_as_of": "2026-09-20",
   "current_state": "verified_complete",
   "completion_scope": "epoch8报告及29项门已归档；假设未全面通过。",
@@ -41,6 +41,12 @@
       "path": "pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json",
       "kind": "config",
       "commit_sha": "d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd"
+    },
+    {
+      "evidence_id": "small_event_archive",
+      "commit_sha": "52ea935249e490033f49209e106eecdedaa9275a",
+      "path": "reports/rt59_small_event_warning_20260928/REPORT.md",
+      "kind": "report"
     }
   ],
   "decisions": [
@@ -73,6 +79,18 @@
       "relationship": "RT58后重新设计；RT60/61 reference",
       "state": "verified_complete",
       "review_status": "needs_independent_review"
+    },
+    {
+      "experiment_id": "RT59-SMALL-EVENT-20260928",
+      "scientific_question": "既有random validation中的M=3.0小震远端PGA表现如何？",
+      "dataset_protocol": "历史离线报告，validation单seed，23个M=3.0事件、211个有效非输入目标；事件簇bootstrap5000次。",
+      "result_nature": "9月28日已有分析；本轮仅同步报告/源表/代码。报告位于sync/v01的固定证据commit，科研parent仍RT59。",
+      "review_status": "needs_independent_review",
+      "relationship": "RT59 same-forward reference的条件子群；非新训练、非M<3泛化。",
+      "evidence_ids": [
+        "small_event_archive"
+      ],
+      "state": "verified_complete"
     }
   ]
 }

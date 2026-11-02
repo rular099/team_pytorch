@@ -1,0 +1,42 @@
+{
+  "captured_at": "2026-11-02T08:37:15+00:00",
+  "transfer_status": "unverified",
+  "manifests": [
+    {
+      "path": "docs/ai/sync/local_artifacts/team_pytorch.json",
+      "files": 636,
+      "bytes": 1057863938
+    },
+    {
+      "path": "docs/ai/sync/local_artifacts/team_pytorch_fe01.json",
+      "files": 570,
+      "bytes": 347908978
+    },
+    {
+      "path": "docs/ai/sync/local_artifacts/team_pytorch_fe01_a01.json",
+      "files": 710,
+      "bytes": 55901911
+    },
+    {
+      "path": "docs/ai/sync/local_artifacts/team_pytorch_fe02.json",
+      "files": 9,
+      "bytes": 30716748
+    },
+    {
+      "path": "docs/ai/sync/local_artifacts/team_pytorch_memory.json",
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "path": "docs/ai/sync/local_artifacts/team_pytorch_query_geometry_diagnostics.json",
+      "files": 129,
+      "bytes": 71250453
+    },
+    {
+      "path": "docs/ai/sync/local_artifacts/workspace_external.json",
+      "files": 613,
+      "bytes": 741351706
+    }
+  ],
+  "note": "Do not infer USB backup from a manifest. Duplicate archives and derived outputs are counted individually; this is not unique data volume."
+}

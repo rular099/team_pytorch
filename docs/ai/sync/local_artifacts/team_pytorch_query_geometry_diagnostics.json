@@ -1,0 +1,1045 @@
+{
+  "captured_at": "2026-11-02T08:37:15+00:00",
+  "source_worktree": "team_pytorch_query_geometry_diagnostics",
+  "source_branch": "exp/v01-velocity-prep-padding-control",
+  "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+  "transfer_status": "unverified",
+  "files": [
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/.gitignore",
+      "bytes": 32,
+      "sha256": "d8d53cd9bc10e3d91b229fd6494d9577bb01a2da5ad10caee69f2e6a54440176",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "local_scientific_evidence_or_runtime_input"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/coverage_comparison.pdf",
+      "bytes": 14027,
+      "sha256": "f71ce863b3d4888fad1bfc7ce59896f4c46f4bb27bc86d4bd78a665bb98dbba1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/coverage_comparison.png",
+      "bytes": 96275,
+      "sha256": "55d4619510903493700970eb93adb8a137e8c424d29478f1c0ba8cb959fe81ab",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/coverage_comparison.svg",
+      "bytes": 23158,
+      "sha256": "a1b3c01c64d679e923638dd8795feef1bfbca4391f29c6477b8fd37fb160adde",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/field_gate_progress.pdf",
+      "bytes": 16712,
+      "sha256": "f2e7d886ca7417f08ec29e2a1022311bebb42ce88944162ff14e5a1514ea027b",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/field_gate_progress.png",
+      "bytes": 165312,
+      "sha256": "9595f125eda5192546121b4a945d218bdf6ad8dc3a07dbdc1d4e81e72709499a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/field_gate_progress.svg",
+      "bytes": 26201,
+      "sha256": "1555ec9164bcae6897a1ac855e4d997cc66b63bc4409e32a7a2468768d8715ed",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/old_vs_rt61_scatter.pdf",
+      "bytes": 226916,
+      "sha256": "4a7c398c30fdf6e05091bfa1254170165239e7b8208048875e13e0729e1a47a4",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/old_vs_rt61_scatter.png",
+      "bytes": 728392,
+      "sha256": "92d68b311d94ec1389463d9c51937711a3eb50c98de03dce3eb0beac39446cb7",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/old_vs_rt61_scatter.svg",
+      "bytes": 448353,
+      "sha256": "c61c2bd11b43ea87f7408e60895c54ebbb14f3ca1689b9987346d44d154c21bc",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/paired_mae_progress.pdf",
+      "bytes": 18179,
+      "sha256": "54a1d73178de2f80e56485d239b801740e540f6b2bb0141fc39c9927c3b5de68",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/paired_mae_progress.png",
+      "bytes": 214537,
+      "sha256": "2cc99999380ea025582b4c343a2521b5c2a2adc46a6160f970a13a3a2c9c445c",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/paired_mae_progress.svg",
+      "bytes": 26184,
+      "sha256": "a9943be5b1ef8256cc85d7c7459fb80b916b98c1c9720c5a03fae9868eb5fa92",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_error_strata.pdf",
+      "bytes": 19350,
+      "sha256": "138d88d2abf47504fefd706fae03a045f634115cd7cb98a6555dfe0cf98905c1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_error_strata.png",
+      "bytes": 258712,
+      "sha256": "8c3953a2ccc3f4995adf1d410a3544a445e7d8883845525cabf5762e96dfb952",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_error_strata.svg",
+      "bytes": 36518,
+      "sha256": "6b1da948cf15244c676064670ae9ae2c1120bcd57fd76ac58faf570dd0cd2161",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_scatter_four_populations.pdf",
+      "bytes": 508027,
+      "sha256": "3c5e6c7a64a39008c0ee2b391162cfd4d6da9e89d4ee3ed89e9b874ab391ef5d",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_scatter_four_populations.png",
+      "bytes": 1499071,
+      "sha256": "21b06cc52b5deee714d99f6e33a9cfcb942b8915de299bf4e91483f3db4a5252",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_scatter_four_populations.svg",
+      "bytes": 1029116,
+      "sha256": "e9813db123b99cc20b3f379ae4b17885796b8a30e98d549ec52a4c81c6b44cf1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_stratified_scatter.pdf",
+      "bytes": 548172,
+      "sha256": "b08193ba64d0b158ea7ad9c29cb761f39f436888bf2eec6ab63622ceee394587",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_stratified_scatter.png",
+      "bytes": 1506914,
+      "sha256": "4fb1182bc1a37c35f9e4c44254446c26917ac46eb5845c0de2c40b127a09ea3e",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/figures/rt61_stratified_scatter.svg",
+      "bytes": 1118787,
+      "sha256": "7deedaddf8b4b89df5438b77bb53b663c6d62dde18de5e1b561244db664c09d9",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/drafts/slide_13_nonuniform_units.png",
+      "bytes": 1615404,
+      "sha256": "77837a3bb0acbde1f2232bd5c13a9d961e54d09c7137b0f528c04e72238c5399",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/drafts/slide_13_wide_axes.png",
+      "bytes": 1630274,
+      "sha256": "35470375ad9358a6ee61a5d23d256e4ecc7326a7eb16a11e1b3a220faf909a55",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/multistation_pga_exchange_20260930.pdf",
+      "bytes": 3771381,
+      "sha256": "385f5cc0e4d38f48d3a60dc0c5a5707a7cf44c5e29fa2e9e4d37f8ffae0c3d2a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/contact_sheet_1.png",
+      "bytes": 695144,
+      "sha256": "a24c194b3a5ba32fef637dc9d9ec88e1c8cd7c09504245c144e58d23805167db",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/contact_sheet_2.png",
+      "bytes": 882212,
+      "sha256": "4cc72d14823d105714e03231359502daa88f7032d541a047429f3d6624d32211",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/contact_sheet_3.png",
+      "bytes": 679884,
+      "sha256": "628cc4132b7e9405ea58b3342d052f6bab1b8442130d0115cae0a9b920351e08",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-01.png",
+      "bytes": 36194,
+      "sha256": "84e0956ffad1adb8aa18089dfb397b9eb84c8de86d720d60668bed54d248160f",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-02.png",
+      "bytes": 142986,
+      "sha256": "a34cbd20e9739ae9df39a3493cbdf2e9d8a6a5cf1b3d1ea3c33d89fb9b3bba84",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-03.png",
+      "bytes": 187736,
+      "sha256": "9a318b4add362e00d52bf2ea51ac581034310fa91e801e9c57e67d65ae48c19d",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-04.png",
+      "bytes": 176001,
+      "sha256": "52300b66ec7d6ef8985fb0cfe446ca53b4a6a921ccd05916b35847f3b425f585",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-05.png",
+      "bytes": 165132,
+      "sha256": "85176679ac7e19165e02fea14871f67153a0f8b32afc966ee7d430a084de4220",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-06.png",
+      "bytes": 179422,
+      "sha256": "f4d1397d56abffb5e56430152a9f419f36ed9b6593c02b0240eb3442ea02c983",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-07.png",
+      "bytes": 213528,
+      "sha256": "ade7d9426dd9b6c6d11bd2fde3672c908d9ce701bbf08b4e6b136fe1df998631",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-08.png",
+      "bytes": 164027,
+      "sha256": "69b3d5fe63ea37c8deae29529d12070e783ee87e12a4c61232f05968a4977e91",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-09.png",
+      "bytes": 157571,
+      "sha256": "4dcf25e3e327ea3c535cd49566089bb2fc1f2a4f85888be44d12c62ebb6842ff",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-10.png",
+      "bytes": 175995,
+      "sha256": "3d435273e3a29bcd3b873dc1fd5b0f74fa7c4a64d0825ee75dba4803dea87b6f",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-11.png",
+      "bytes": 160931,
+      "sha256": "be86fb2d737447d56748a3b3194045cf4460931ac02bee1f184c7363a553acf8",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-12.png",
+      "bytes": 437616,
+      "sha256": "c7de694bb9829f130341741654967f41a5f55212f528b2022f9f21f1951923f8",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-13.png",
+      "bytes": 429625,
+      "sha256": "f348ba72288acd08d53488d1b04fdfe9701c3515d8379063a687844a3e22fe44",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-14.png",
+      "bytes": 476072,
+      "sha256": "742401ea38f0ad03a94aee5ad94541ad70a3084509ebce5515028dc701c75bbc",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-15.png",
+      "bytes": 181649,
+      "sha256": "5ebb98fae14f977cb07ea43127c8828de04274d3e8f79caf4187a86f550741db",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-16.png",
+      "bytes": 182736,
+      "sha256": "4e98edcfd591c9324d1e186cfeb84d68f8d01805242d8ee0af31281d10142083",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-17.png",
+      "bytes": 179338,
+      "sha256": "558a8e0d33eec8c00896218820b24aa1ad2c40ee71cbc2160ac5d768c0a5e492",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-18.png",
+      "bytes": 203358,
+      "sha256": "80f9792d69b2f78007be1033078f9352eee29439e010327f854f9f6ca5434430",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-19.png",
+      "bytes": 174895,
+      "sha256": "edf9e5204ce63acfe71784d8f827ed44cd61a3c04894cc9308785d35e175355a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-20.png",
+      "bytes": 215154,
+      "sha256": "dcb3f4bbc46156d6a25cf939bd4f2ed015e6222ed375374d1d0b36dee1ffde0a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-21.png",
+      "bytes": 158132,
+      "sha256": "b872fc0240c546a0434802688d63587acde373a0da88f9568b5ed6271f932cd2",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-22.png",
+      "bytes": 150549,
+      "sha256": "cb11fcc741ab31cb4b28d740f0dd351b2975460e9e08abf6f9f964a41a1da00e",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-23.png",
+      "bytes": 183236,
+      "sha256": "1702c52302dd598a92fab3f34cc894ffa5b909e4d57b0ef2d667d656f2434f5f",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-24.png",
+      "bytes": 185197,
+      "sha256": "76ab451a6616900806ed40fb1f9e20dfcd9d38a573e124da2e5a908d5b01dd9b",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-25.png",
+      "bytes": 167985,
+      "sha256": "143c9308b41a8e5aab595cb9b181a31827ff0c755908e2266afa018b236cab17",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/preview/slide-26.png",
+      "bytes": 158374,
+      "sha256": "79ec8588f7bef8a170a8b91c04354740077620ae21a72b2e9931938e63ccbf92",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/.gitignore",
+      "bytes": 32,
+      "sha256": "d8d53cd9bc10e3d91b229fd6494d9577bb01a2da5ad10caee69f2e6a54440176",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "local_scientific_evidence_or_runtime_input"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/coverage_comparison.pdf",
+      "bytes": 14027,
+      "sha256": "f71ce863b3d4888fad1bfc7ce59896f4c46f4bb27bc86d4bd78a665bb98dbba1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/coverage_comparison.png",
+      "bytes": 96275,
+      "sha256": "55d4619510903493700970eb93adb8a137e8c424d29478f1c0ba8cb959fe81ab",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/coverage_comparison.svg",
+      "bytes": 23158,
+      "sha256": "a1b3c01c64d679e923638dd8795feef1bfbca4391f29c6477b8fd37fb160adde",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/field_gate_progress.pdf",
+      "bytes": 16712,
+      "sha256": "f2e7d886ca7417f08ec29e2a1022311bebb42ce88944162ff14e5a1514ea027b",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/field_gate_progress.png",
+      "bytes": 165312,
+      "sha256": "9595f125eda5192546121b4a945d218bdf6ad8dc3a07dbdc1d4e81e72709499a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/field_gate_progress.svg",
+      "bytes": 26201,
+      "sha256": "1555ec9164bcae6897a1ac855e4d997cc66b63bc4409e32a7a2468768d8715ed",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_calibration_progress.pdf",
+      "bytes": 14123,
+      "sha256": "d742ac603afe32b36edde51fb7c48d9fa1c91c7af28542741837bce69b44a60a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_calibration_progress.png",
+      "bytes": 108735,
+      "sha256": "0f134f5106caa3e68868871b8fd3bb2d1899547fc141523ed0971516a0a8d61f",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_calibration_progress.svg",
+      "bytes": 17073,
+      "sha256": "e774ee9739a22b21042673256dec359f00cbde291af9fe47d5bf8ec1009a7d88",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_point_progress.pdf",
+      "bytes": 16952,
+      "sha256": "a199d313014c5c7ec370ef1d6d0586bbddd3212fa64cb6a793b84c8ab5f41e62",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_point_progress.png",
+      "bytes": 179623,
+      "sha256": "22bac42ef95f006521e9f8f8dea7146b1bd9cefdf66ef56d55270b78729e1eb1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_point_progress.svg",
+      "bytes": 27734,
+      "sha256": "a613303e94ad7269ccee246cac22bfd6fd45040c823eab90fc17cf9a77ec5c9d",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_scatter_comparison.pdf",
+      "bytes": 245238,
+      "sha256": "82e4a3b9dfcf782f21bdff7235c3b71796bc0dbaacbdb762f4e9a866536f7bff",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_scatter_comparison.png",
+      "bytes": 752922,
+      "sha256": "48d28bafb0eca96d9b2a549fd5ea6d93b9f7bf65cd43d51a8300ad17d13f1dd8",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_scatter_comparison.svg",
+      "bytes": 500735,
+      "sha256": "950d81023af11265d794380daedeb57fcffbe61a667c0fc5e464474e82549383",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_spatial_range.pdf",
+      "bytes": 15504,
+      "sha256": "c1b1544a1a30318561b3813c6a6c90e4e36d29c6fad5da6a35a6c90c72604581",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_spatial_range.png",
+      "bytes": 125276,
+      "sha256": "c148c83258cd279f9475b7ecb4d3627560ceccaaefd1480a656c790c6163872e",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/meeting_spatial_range.svg",
+      "bytes": 10335,
+      "sha256": "6a5f7264911c102cd1b36ad372dae9f2f52da6549e6c062f1152db042d6ef331",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/normal_geometry_stratified_scatter.pdf",
+      "bytes": 416814,
+      "sha256": "c17bbef696f1f0209d9523f6f9eadadc723388cedc5238f5acb86cf339968d72",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/normal_geometry_stratified_scatter.png",
+      "bytes": 1227294,
+      "sha256": "a56a80879a132b7f346b9a3ae7ba4345e8817a756d565a3d88fc0f4907eabca7",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/normal_geometry_stratified_scatter.svg",
+      "bytes": 875869,
+      "sha256": "6a6c2891395405c87be3d3bab59dc2238f72be6974b8c002de6cefaf301e758c",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/old_vs_rt61_scatter.pdf",
+      "bytes": 226916,
+      "sha256": "4a7c398c30fdf6e05091bfa1254170165239e7b8208048875e13e0729e1a47a4",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/old_vs_rt61_scatter.png",
+      "bytes": 728392,
+      "sha256": "92d68b311d94ec1389463d9c51937711a3eb50c98de03dce3eb0beac39446cb7",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/old_vs_rt61_scatter.svg",
+      "bytes": 448353,
+      "sha256": "c61c2bd11b43ea87f7408e60895c54ebbb14f3ca1689b9987346d44d154c21bc",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/paired_mae_progress.pdf",
+      "bytes": 18179,
+      "sha256": "54a1d73178de2f80e56485d239b801740e540f6b2bb0141fc39c9927c3b5de68",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/paired_mae_progress.png",
+      "bytes": 214537,
+      "sha256": "2cc99999380ea025582b4c343a2521b5c2a2adc46a6160f970a13a3a2c9c445c",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/paired_mae_progress.svg",
+      "bytes": 26184,
+      "sha256": "a9943be5b1ef8256cc85d7c7459fb80b916b98c1c9720c5a03fae9868eb5fa92",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_error_strata.pdf",
+      "bytes": 19350,
+      "sha256": "138d88d2abf47504fefd706fae03a045f634115cd7cb98a6555dfe0cf98905c1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_error_strata.png",
+      "bytes": 258712,
+      "sha256": "8c3953a2ccc3f4995adf1d410a3544a445e7d8883845525cabf5762e96dfb952",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_error_strata.svg",
+      "bytes": 36518,
+      "sha256": "6b1da948cf15244c676064670ae9ae2c1120bcd57fd76ac58faf570dd0cd2161",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_scatter_four_populations.pdf",
+      "bytes": 508027,
+      "sha256": "3c5e6c7a64a39008c0ee2b391162cfd4d6da9e89d4ee3ed89e9b874ab391ef5d",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_scatter_four_populations.png",
+      "bytes": 1499071,
+      "sha256": "21b06cc52b5deee714d99f6e33a9cfcb942b8915de299bf4e91483f3db4a5252",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_scatter_four_populations.svg",
+      "bytes": 1029116,
+      "sha256": "e9813db123b99cc20b3f379ae4b17885796b8a30e98d549ec52a4c81c6b44cf1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_stratified_scatter.pdf",
+      "bytes": 548172,
+      "sha256": "b08193ba64d0b158ea7ad9c29cb761f39f436888bf2eec6ab63622ceee394587",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_stratified_scatter.png",
+      "bytes": 1506914,
+      "sha256": "4fb1182bc1a37c35f9e4c44254446c26917ac46eb5845c0de2c40b127a09ea3e",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/figures/rt61_stratified_scatter.svg",
+      "bytes": 1118787,
+      "sha256": "7deedaddf8b4b89df5438b77bb53b663c6d62dde18de5e1b561244db664c09d9",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/multistation_pga_exchange_20260930_v2.pdf",
+      "bytes": 4522246,
+      "sha256": "2af4f0b136038084f0d782463c4221271099108fe35ff7e82205f01d74e7225a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/contact_sheet_1.png",
+      "bytes": 718278,
+      "sha256": "5e0e151eeec5ad93ef1e0dc2dd56c8c7a69cae6a9e476a0d2b1bdd5feb17cfc4",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/contact_sheet_2.png",
+      "bytes": 863796,
+      "sha256": "df12aec1aa4acc0a8572ad503363d515eafd92150a0777e26cc316174a60450e",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/contact_sheet_3.png",
+      "bytes": 795859,
+      "sha256": "8af7405c89ceb48c9c37322b3e26de0599377eb0b5d256de73c4e14bc81eac0e",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/contact_sheet_4.png",
+      "bytes": 94174,
+      "sha256": "8ac8e23dbd2a785d217f51aab25a77c25422bbdefd8b0d5362ce49b775b4dcd2",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-01.png",
+      "bytes": 36194,
+      "sha256": "84e0956ffad1adb8aa18089dfb397b9eb84c8de86d720d60668bed54d248160f",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-02.png",
+      "bytes": 183977,
+      "sha256": "829b2d18d5a16fb5f84bf8059547a4fc88626e4dcca0e00579820768cb26ea4b",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-03.png",
+      "bytes": 187736,
+      "sha256": "9a318b4add362e00d52bf2ea51ac581034310fa91e801e9c57e67d65ae48c19d",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-04.png",
+      "bytes": 176001,
+      "sha256": "52300b66ec7d6ef8985fb0cfe446ca53b4a6a921ccd05916b35847f3b425f585",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-05.png",
+      "bytes": 165132,
+      "sha256": "85176679ac7e19165e02fea14871f67153a0f8b32afc966ee7d430a084de4220",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-06.png",
+      "bytes": 201698,
+      "sha256": "ca89b2a101bd978ddfe3afcaa725b228c24545c3411ee420f08237a1787419bc",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-07.png",
+      "bytes": 213528,
+      "sha256": "ade7d9426dd9b6c6d11bd2fde3672c908d9ce701bbf08b4e6b136fe1df998631",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-08.png",
+      "bytes": 164027,
+      "sha256": "69b3d5fe63ea37c8deae29529d12070e783ee87e12a4c61232f05968a4977e91",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-09.png",
+      "bytes": 157571,
+      "sha256": "4dcf25e3e327ea3c535cd49566089bb2fc1f2a4f85888be44d12c62ebb6842ff",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-10.png",
+      "bytes": 197580,
+      "sha256": "63fb3b0046ae1c5eac40eb9407b9f6fbda626d29c5ff9952ed13adc7e5a44397",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-11.png",
+      "bytes": 195732,
+      "sha256": "c38bc1bde7e39de9eefc11306fb393be0dff6320b3a93f802a9e2eccb2bb7361",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-12.png",
+      "bytes": 415342,
+      "sha256": "55ceb148bc1a82a11434c80b9106acd684982c6cb8740721e57bfca689d5859a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-13.png",
+      "bytes": 429625,
+      "sha256": "f348ba72288acd08d53488d1b04fdfe9701c3515d8379063a687844a3e22fe44",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-14.png",
+      "bytes": 476225,
+      "sha256": "281ba73ddd4166004732ad9446878890b4cfc521ae937ef173d87cd66c8ba7a1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-15.png",
+      "bytes": 437037,
+      "sha256": "ff12e78ccfd90f9460423a9ca249d081c4ac926dc05709b3c81e2140b178727a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-16.png",
+      "bytes": 184502,
+      "sha256": "bce5db8ba6a42d3e03317b805cf4bda9bd302515ac47e25c9623abda86a087e1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-17.png",
+      "bytes": 206126,
+      "sha256": "2551ee5053fee816fea70d850e3a6aa5e446de775490e9a6ffaa0df8f6a7a4c1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-18.png",
+      "bytes": 189555,
+      "sha256": "228f629e7fcf3cdb25542874dd44fabb8b51783b2050e5813ee3057846d360dc",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-19.png",
+      "bytes": 196435,
+      "sha256": "921a31aa4e280448e9b2d558df8ec66ecb01fb1d5db3e2c85b6ef1e75ac0d467",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-20.png",
+      "bytes": 202788,
+      "sha256": "cf090db5f9d976deb46331b96dd2a0d7cce6ddd693d7a66154c19efe9bfaefe5",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-21.png",
+      "bytes": 174895,
+      "sha256": "edf9e5204ce63acfe71784d8f827ed44cd61a3c04894cc9308785d35e175355a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-22.png",
+      "bytes": 215154,
+      "sha256": "dcb3f4bbc46156d6a25cf939bd4f2ed015e6222ed375374d1d0b36dee1ffde0a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-23.png",
+      "bytes": 164569,
+      "sha256": "5dfd2256723c23333997dff153ffc68c928c5ac4b5b6c29727b3030ba485142d",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-24.png",
+      "bytes": 150549,
+      "sha256": "cb11fcc741ab31cb4b28d740f0dd351b2975460e9e08abf6f9f964a41a1da00e",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-25.png",
+      "bytes": 183236,
+      "sha256": "1702c52302dd598a92fab3f34cc894ffa5b909e4d57b0ef2d667d656f2434f5f",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-26.png",
+      "bytes": 185197,
+      "sha256": "76ab451a6616900806ed40fb1f9e20dfcd9d38a573e124da2e5a908d5b01dd9b",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-27.png",
+      "bytes": 167985,
+      "sha256": "143c9308b41a8e5aab595cb9b181a31827ff0c755908e2266afa018b236cab17",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/preview/slide-28.png",
+      "bytes": 164596,
+      "sha256": "6047a69e7567870a8f4dcbea898532919c34d764c315a8e8c23c2c2bb95db8a1",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/tmp.tar.gz",
+      "bytes": 5182442,
+      "sha256": "bdb4f9d2b0abb77b7354d78669b81f439ccb30b6a1ca091e6853e36dbdbd53cf",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/multistation_pga_exchange_20260930.pptx",
+      "bytes": 4359122,
+      "sha256": "a1b7a43f13b05f136d3c3c7df9ab30ff859722979b97988c8c5d569c0a959f80",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/origin_image/slide_13.png",
+      "bytes": 1561590,
+      "sha256": "e198f0a361e71835263c29bae45dc581bed92d9b4f53a1ff8621dea9efb79fbb",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/multistation_pga_exchange_20260930_v2.pptx",
+      "bytes": 5523749,
+      "sha256": "b24944f04ed666e615bc84598442dc1dffb53184e87dddd336a7685fb62c00b7",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/multistation_pga_exchange_20260930_v3.pptx",
+      "bytes": 5496350,
+      "sha256": "9e5608991d0ab31e9d229673df04c61fb0d500b9376ebfd16248e6f6b08e602a",
+      "source_branch": "exp/v01-velocity-prep-padding-control",
+      "source_commit": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "restoration_role": "optional_history_or_derived"
+    }
+  ],
+  "skipped": {
+    "regenerable": 74
+  },
+  "note": "This hashes visible local files only. No USB destination or archived member equality was verified; no cleanup authorized."
+}

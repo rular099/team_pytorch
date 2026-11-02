@@ -1,15 +1,16 @@
 {
   "metadata": {
-    "generated_at": "2026-11-01T07:35:39+00:00",
-    "generated_from_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
-    "coordinator_branch": "chore/project-memory-bootstrap"
+    "generated_at": "2026-11-02T08:55:53+00:00",
+    "generated_from_commit": "328550fa7ea2164739009c0cd61c6a2fd70830e6",
+    "coordinator_branch": "chore/workspace-sync",
+    "work_focus": "当前任务为跨终端轻量同步。独立sync分支已保存原未提交报告与任务依据；恢复工作区和U盘校验请先读[终端恢复入口](../sync/TERMINAL_HANDOFF.md)。本轮没有新增科研训练/评价，原六个工作区保留，外接chaosuan_res尚不可读取，不能将清单当作已验证备份。"
   },
   "tracks": [
     {
       "track_id": "RT55_RT56",
       "branch": "query-geometry-diagnostics",
       "commit_sha": "e74f977271b0bcde42c7ac7a18cb77ac60107e34",
-      "last_verified_at": "2026-11-01T07:24:10+00:00",
+      "last_verified_at": "2026-11-02T08:55:52+00:00",
       "evidence_as_of": "2026-09-07",
       "current_state": "verified_complete",
       "completion_scope": "完成范围为已归档基线/随机几何诊断，不代表整体科研目标完成。",
@@ -26,6 +27,12 @@
           "evidence_ids": [
             "snapshot",
             "analysis"
+          ]
+        },
+        {
+          "text": "2026-11-02将既有RT55/56完整报告、21张PNG、聚合表和formal metrics同步到独立sync/rt55-rt56；原报告日期/协议保持，未产生新的test或训练结果。",
+          "evidence_ids": [
+            "terminal_report_sync"
           ]
         }
       ],
@@ -48,6 +55,12 @@
           "path": "docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md",
           "kind": "report",
           "commit_sha": "e74f977271b0bcde42c7ac7a18cb77ac60107e34"
+        },
+        {
+          "evidence_id": "terminal_report_sync",
+          "commit_sha": "bc648c75f4cb5f4d04bf10fe5a80d12745b20244",
+          "path": "docs/ai/SYNC_SCOPE_20261102.md",
+          "kind": "report"
         }
       ],
       "decisions": [
@@ -236,7 +249,7 @@
       "track_id": "RT59",
       "branch": "rt59-dual-objective-transport-v3",
       "commit_sha": "d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd",
-      "last_verified_at": "2026-11-01T07:24:10+00:00",
+      "last_verified_at": "2026-11-02T08:55:52+00:00",
       "evidence_as_of": "2026-09-20",
       "current_state": "verified_complete",
       "completion_scope": "epoch8报告及29项门已归档；假设未全面通过。",
@@ -275,6 +288,12 @@
           "path": "pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json",
           "kind": "config",
           "commit_sha": "d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd"
+        },
+        {
+          "evidence_id": "small_event_archive",
+          "commit_sha": "52ea935249e490033f49209e106eecdedaa9275a",
+          "path": "reports/rt59_small_event_warning_20260928/REPORT.md",
+          "kind": "report"
         }
       ],
       "decisions": [
@@ -307,6 +326,18 @@
           "relationship": "RT58后重新设计；RT60/61 reference",
           "state": "verified_complete",
           "review_status": "needs_independent_review"
+        },
+        {
+          "experiment_id": "RT59-SMALL-EVENT-20260928",
+          "scientific_question": "既有random validation中的M=3.0小震远端PGA表现如何？",
+          "dataset_protocol": "历史离线报告，validation单seed，23个M=3.0事件、211个有效非输入目标；事件簇bootstrap5000次。",
+          "result_nature": "9月28日已有分析；本轮仅同步报告/源表/代码。报告位于sync/v01的固定证据commit，科研parent仍RT59。",
+          "review_status": "needs_independent_review",
+          "relationship": "RT59 same-forward reference的条件子群；非新训练、非M<3泛化。",
+          "evidence_ids": [
+            "small_event_archive"
+          ],
+          "state": "verified_complete"
         }
       ]
     },
@@ -846,7 +877,7 @@
       "track_id": "V01",
       "branch": "exp/v01-velocity-prep-padding-control",
       "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
-      "last_verified_at": "2026-11-01T07:24:10+00:00",
+      "last_verified_at": "2026-11-02T08:55:52+00:00",
       "evidence_as_of": "2026-10-06",
       "current_state": "verified_complete",
       "completion_scope": "validation工程闭环与证据包完成；限定科学负机制结论待独立收尾审阅。",
@@ -864,6 +895,12 @@
           "evidence_ids": [
             "report",
             "headline"
+          ]
+        },
+        {
+          "text": "2026-11-02补存9月30日技术交流v1/v2的讲稿、复现脚本与轻量表；这是历史材料归档，不替代10月6日V01 closure当前结论。",
+          "evidence_ids": [
+            "technical_exchange_archive"
           ]
         }
       ],
@@ -905,6 +942,12 @@
           "path": "docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md",
           "kind": "report",
           "commit_sha": "d8f2436273fbe990e77f7151d86a6b629e99c5c1"
+        },
+        {
+          "evidence_id": "technical_exchange_archive",
+          "commit_sha": "52ea935249e490033f49209e106eecdedaa9275a",
+          "path": "docs/ai/SYNC_SCOPE_20261102.md",
+          "kind": "report"
         }
       ],
       "decisions": [
@@ -1010,7 +1053,7 @@
       "state": "retained_snapshot",
       "source": "docs/ai/memory/observations/RT55_RT56.json",
       "source_commit": null,
-      "record_sha256": "de9c23b017c14d99180953227f7a07f9bdec11937d603d61241af282a5318eb4"
+      "record_sha256": "006f0860e1729a02aa1f98dd977bef0e2b621beab2a683e4cd0081812ef29c1e"
     },
     "RT57": {
       "state": "retained_snapshot",
@@ -1028,7 +1071,7 @@
       "state": "retained_snapshot",
       "source": "docs/ai/memory/observations/RT59.json",
       "source_commit": null,
-      "record_sha256": "a0d581cd70820c75832579643f83d4f40287a4ca1f5422f7b8b326aa3c5a2ab7"
+      "record_sha256": "bc28ed2825053da72b46d18fd5bf1d5841e7559f56aec986c2a5c69d5f3f46ec"
     },
     "RT60": {
       "state": "retained_snapshot",
@@ -1070,7 +1113,7 @@
       "state": "retained_snapshot",
       "source": "docs/ai/memory/observations/V01.json",
       "source_commit": null,
-      "record_sha256": "779e8c59a02bbd15bf1c21df8cd3a734089cee3ed18886437b265ce46ac265ab"
+      "record_sha256": "837a213720aa7b13bdfcb785243f33556894aa976d226df30f67b7c01cdf7c2c"
     },
     "LEGACY": {
       "state": "retained_snapshot",

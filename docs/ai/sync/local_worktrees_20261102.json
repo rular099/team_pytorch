@@ -1,0 +1,47 @@
+{
+  "captured_at": "2026-11-02T08:37:15+00:00",
+  "worktrees": [
+    {
+      "directory": "team_pytorch",
+      "branch": "zhangb/native-scale-adapter-scaling",
+      "local_head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+      "remote_head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+      "initial_untracked_files": 351
+    },
+    {
+      "directory": "team_pytorch_fe01",
+      "branch": "exp/fe01-feature-extractor-site-effects",
+      "local_head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+      "remote_head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+      "initial_untracked_files": 64
+    },
+    {
+      "directory": "team_pytorch_fe01_a01",
+      "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+      "local_head": "236f72797ef4ccdec584cfbba952987e64a26437",
+      "remote_head": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+      "initial_untracked_files": 0
+    },
+    {
+      "directory": "team_pytorch_fe02",
+      "branch": "exp/fe02-event-fusion-readout",
+      "local_head": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "remote_head": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "initial_untracked_files": 0
+    },
+    {
+      "directory": "team_pytorch_memory",
+      "branch": "chore/project-memory-bootstrap",
+      "local_head": "328550fa7ea2164739009c0cd61c6a2fd70830e6",
+      "remote_head": "328550fa7ea2164739009c0cd61c6a2fd70830e6",
+      "initial_untracked_files": 0
+    },
+    {
+      "directory": "team_pytorch_query_geometry_diagnostics",
+      "branch": "exp/v01-velocity-prep-padding-control",
+      "local_head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "remote_head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "initial_untracked_files": 176
+    }
+  ]
+}

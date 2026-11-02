@@ -15,8 +15,8 @@ def plan(root, args):
     if args.track:
         if args.track not in registry or not TRACK.fullmatch(args.track):
             raise ValueError('Unknown track')
-        if args.source or args.bootstrap:
-            raise ValueError('--source/--bootstrap require --coordinator')
+        if args.source or args.bootstrap or args.focus:
+            raise ValueError('--source/--bootstrap/--focus require --coordinator')
         directory = mem / 'tracks' / args.track
         record = validate_record(load(Path(args.record) if args.record else directory / 'record.json'))
         if record['track_id'] != args.track:
@@ -96,6 +96,9 @@ def plan(root, args):
                             'generated_from_commit': git(root, 'rev-parse', 'HEAD').strip(),
                             'coordinator_branch': git(root, 'symbolic-ref', '--short', 'HEAD').strip()},
                 'tracks': records, 'sync': sync}
+    old_focus = load(mem / 'snapshot.json')['metadata'].get('work_focus') if (mem / 'snapshot.json').exists() else None
+    if args.focus or old_focus:
+        snapshot['metadata']['work_focus'] = args.focus or old_focus
     writes[mem / 'snapshot.json'] = json_text(snapshot)
     for name, body in global_views(snapshot).items():
         path = mem / name
@@ -111,6 +114,7 @@ def main(argv=None):
     role.add_argument('--coordinator', action='store_true')
     parser.add_argument('--record', help='Human-authored complete record; no metrics inference')
     parser.add_argument('--source', action='append', default=[], metavar='TRACK=REF', help='Explicit fetched ref, read using git show')
+    parser.add_argument('--focus', help='Coordinator-authored current operational focus; never infers scientific results')
     parser.add_argument('--bootstrap', action='store_true', help='One-time coordinator initialization')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args(argv)

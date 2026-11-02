@@ -1,0 +1,1766 @@
+{
+  "generated_at": "2026-11-02T08:37:15+00:00",
+  "files": [
+    {
+      "source_workspace_relative_path": "team_pytorch/AI_HANDOFF_20260902_query_geometry_diagnostics.md",
+      "published_path": "AI_HANDOFF_20260902_query_geometry_diagnostics.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "92706fbb220186ce5445db393b1053cfc0fbf904b5df3b963d00a22b797d9e7e",
+      "published_sha256": "92706fbb220186ce5445db393b1053cfc0fbf904b5df3b963d00a22b797d9e7e",
+      "bytes": 14030,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/AI_HANDOFF_20260903_querydiag_review_fixes.md",
+      "published_path": "AI_HANDOFF_20260903_querydiag_review_fixes.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "3095ea9874cbe27df77d3c0e93f8b56b63e4f88d3d070fe65688395837901742",
+      "published_sha256": "3095ea9874cbe27df77d3c0e93f8b56b63e4f88d3d070fe65688395837901742",
+      "bytes": 13767,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/AI_HANDOFF_20260908_RT57_GTNP_v2_station_distinctive.md",
+      "published_path": "AI_HANDOFF_20260908_RT57_GTNP_v2_station_distinctive.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "c36b1feb4ddd78200a9c957ea2541c964ae0e1066fd9312e2c263c95bdbe2245",
+      "published_sha256": "c36b1feb4ddd78200a9c957ea2541c964ae0e1066fd9312e2c263c95bdbe2245",
+      "bytes": 15825,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/MANIFEST_SHA256.txt",
+      "published_path": "docs/ai/history/external_review_rt55_rt56_20260902/MANIFEST_SHA256.txt",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "0f784227edb1a26142e6522ec7495b1bf90073b27fe874df4bacd33dc58707e8",
+      "published_sha256": "0f784227edb1a26142e6522ec7495b1bf90073b27fe874df4bacd33dc58707e8",
+      "bytes": 28470,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/README.md",
+      "published_path": "docs/ai/history/external_review_rt55_rt56_20260902/README.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "3bdb5965014601cde6c085fbce6fd4265b27ff48792718b5251d8a9c653dd414",
+      "published_sha256": "3bdb5965014601cde6c085fbce6fd4265b27ff48792718b5251d8a9c653dd414",
+      "bytes": 2105,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/REQUEST_TO_EXTERNAL_AI_CN.md",
+      "published_path": "docs/ai/history/external_review_rt55_rt56_20260902/REQUEST_TO_EXTERNAL_AI_CN.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "5eefca185a7902deb139a65c1f4019ca4922b2c3aa4810d390c7e52032c5e77c",
+      "published_sha256": "5eefca185a7902deb139a65c1f4019ca4922b2c3aa4810d390c7e52032c5e77c",
+      "bytes": 14448,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt55/formal_metrics/ep20_test_normal.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt55/formal_metrics/ep20_test_normal.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d18bd48578ece0a05f1e61f4047e77a7d0f2da132aab3a1496f4529cce8052f1",
+      "published_sha256": "61b00479dc0cfec32fd2b4ce2b74839e6d25e899499acbcd63a5478449cbca05",
+      "bytes": 2177,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt55/formal_metrics/ep20_validation_normal.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt55/formal_metrics/ep20_validation_normal.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "27f0860a7d551bb6c5d4aa30729b6c71e977d61f3db3af3ba0222208e44694ce",
+      "published_sha256": "8a099a7687a79a389a11caff81c952ca1007a8d33247c692f32451c467d4aa21",
+      "bytes": 2171,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt55/formal_metrics/ep32_validation_normal.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt55/formal_metrics/ep32_validation_normal.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d2b716ec6981791890cc9176c3d03d8349f340936640b9d48a3c461924acb983",
+      "published_sha256": "7e508fc0325b6c5fd6db9624f1b465f3c423f1f4d04f694dba243eacc5e079c7",
+      "bytes": 2168,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt55/formal_metrics/ep32_validation_waveform_roll.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt55/formal_metrics/ep32_validation_waveform_roll.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "04f8a912786b344a55889f183669dd13430a2c4ae9ae414f25ffa01551e39935",
+      "published_sha256": "65600725780c61a111849a1df096742f289990d2d8b2a17fddef75a671fe65c5",
+      "bytes": 2166,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt56/formal_metrics/ep32_zero_shot_random_geometry.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt56/formal_metrics/ep32_zero_shot_random_geometry.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e7c6c2bf8ca66163653f1439dcb6e365802ae0c5e3ab439d20e752e9ac44c084",
+      "published_sha256": "f227265a5470c3c0d536d137f2a4b11a24aef9b132943b27d2f280f77b0c59fa",
+      "bytes": 5143,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt56/formal_metrics/ep6_finetuned_random_geometry.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt56/formal_metrics/ep6_finetuned_random_geometry.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4aa2085c8d42b240ab0f39fd7dd1dca7130d628d57ec085d4760e88d75944d59",
+      "published_sha256": "20688596c764e6cf898255601ac8732276ab51a823c622292e578923fad9cff0",
+      "bytes": 5112,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt56/formal_metrics/ep6_validation_normal.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt56/formal_metrics/ep6_validation_normal.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "5ac3572281d491113a9cdff13552128f629b567e56790a550641e21e12cc5173",
+      "published_sha256": "faf45e1dc8c984a6c0b6d62bca2fda7658a979863c1c32cc9426ffa3cc3837c7",
+      "bytes": 2163,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/run_snapshots/rt55_merged_config.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/run_snapshots/rt55_merged_config.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "8139292c3819667632f8b6973f17159da7083f1a2738a2ad319468f8d7bf68a6",
+      "published_sha256": "8c494e0412844296a0407c6d67f6225dfd6b74c6973d1acb34a408dae43f1ab9",
+      "bytes": 87759,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/run_snapshots/rt56_merged_config.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/run_snapshots/rt56_merged_config.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "8a15c0b375a780edd7982901beb1528348d462e7f9a5e084b4a602f9a6738f0e",
+      "published_sha256": "e7e8720300b60ddc0aa60070f5d2af231d4031539b38d9d2bb06c03f29b3ffce",
+      "bytes": 89387,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/shared/report_provenance.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/shared/report_provenance.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4e02c1330a9c76b7c052eee5fa15577f494a211ece31e0faf1f97b3ae6ef00bd",
+      "published_sha256": "214bf3adbaad5adbb58bcae622d906e122fde9fd0bdce45aa731f2ecd2e0d84d",
+      "bytes": 448,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/FIGURE_CONTRACTS.md",
+      "published_path": "reports/rt55_rt56_current_results/FIGURE_CONTRACTS.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4fdd9987a79d1e39a9b471cb307278028ad5ddf0bc4f50f82b2f78b549657bd6",
+      "published_sha256": "541e99775f2d0bab8bcc631803110efc5feb79cdc5bdabac83c527b239e2189e",
+      "bytes": 4094,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/README.md",
+      "published_path": "reports/rt55_rt56_current_results/README.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "8fc2363bdf8025d68477e4af61056e458adb5ef3411528ed620c97e126d48572",
+      "published_sha256": "4170dce3d6918f5a512a874ed5053b38ead7ca31412d7d3755763d6b1e325bd5",
+      "bytes": 719,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/qa/artifact_manifest.csv",
+      "published_path": "reports/rt55_rt56_current_results/qa/artifact_manifest.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "7db9fe91c758ed8b3a729c3fe7e85d6310906da6e0c6050cc652d4b56722724d",
+      "published_sha256": "7db9fe91c758ed8b3a729c3fe7e85d6310906da6e0c6050cc652d4b56722724d",
+      "bytes": 7265,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/qa/formal_metric_recompute_parity.csv",
+      "published_path": "reports/rt55_rt56_current_results/qa/formal_metric_recompute_parity.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4f0644ee9de7565a18913b7ab2f8c5617447170b4c3fb212a79f4d95f4255c06",
+      "published_sha256": "4f0644ee9de7565a18913b7ab2f8c5617447170b4c3fb212a79f4d95f4255c06",
+      "bytes": 7423,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/REPORT_CN.md",
+      "published_path": "reports/rt55_rt56_current_results/rt55/REPORT_CN.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6c5d29bb031b8f4b1f888acf1c88c631f2fbc3104dca70a8c98263d6f0018feb",
+      "published_sha256": "0e79e2227c6d313e1196eb925a3cb33f44b50514d5f8c62d5051624012e37700",
+      "bytes": 13199,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_calibration_residual.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_calibration_residual.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "ef7dff2920184fe784f635fe308fdc2e13cabea0080b0bba44f52282eb5a09ff",
+      "published_sha256": "ef7dff2920184fe784f635fe308fdc2e13cabea0080b0bba44f52282eb5a09ff",
+      "bytes": 9835,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_calibration_residual.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_calibration_residual.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "1e9104c37446de7cb6f21e7559ca159fc46e6220c5794c7a99071855a8a352e5",
+      "published_sha256": "1e9104c37446de7cb6f21e7559ca159fc46e6220c5794c7a99071855a8a352e5",
+      "bytes": 210943,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_case_profiles.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_case_profiles.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e1eb643da4b5145f61da074331899ed45bdbd1209f775a5b90357995830f5abb",
+      "published_sha256": "e1eb643da4b5145f61da074331899ed45bdbd1209f775a5b90357995830f5abb",
+      "bytes": 32393,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_case_profiles.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_case_profiles.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6bbd9fa24daaccf23d0e233683020e7c816fe2a8e54cdb30c5bc76eb55721f81",
+      "published_sha256": "6bbd9fa24daaccf23d0e233683020e7c816fe2a8e54cdb30c5bc76eb55721f81",
+      "bytes": 399164,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_case_spatial_residuals.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_case_spatial_residuals.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "625b97bf929ea4e1e64963e605cb598b1fa28c84953dd070e323f6df00389ca6",
+      "published_sha256": "625b97bf929ea4e1e64963e605cb598b1fa28c84953dd070e323f6df00389ca6",
+      "bytes": 32254,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_case_spatial_residuals.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_case_spatial_residuals.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "69db864b6e9529f79153a3d70820eefdf5d9d6cc9aac43b5b783d2aacf2ec23a",
+      "published_sha256": "69db864b6e9529f79153a3d70820eefdf5d9d6cc9aac43b5b783d2aacf2ec23a",
+      "bytes": 412896,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_data_distribution.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_data_distribution.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f4badac56ff813a1c1df3a387a2bc834c9e8d0f24443401daa795fa6e1fe691c",
+      "published_sha256": "f4badac56ff813a1c1df3a387a2bc834c9e8d0f24443401daa795fa6e1fe691c",
+      "bytes": 341767,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_metric_dashboard.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_metric_dashboard.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6f8d214ec60f3e12a4b3d87d14cf09f266de2c415b7f98c77bf87fe0a7d80e62",
+      "published_sha256": "6f8d214ec60f3e12a4b3d87d14cf09f266de2c415b7f98c77bf87fe0a7d80e62",
+      "bytes": 3891,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_metric_dashboard.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_metric_dashboard.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "a0bda6826629ce05cc9c4b43f85aa40f4cd1fb33fdbf55537cf08081d4ecadf2",
+      "published_sha256": "a0bda6826629ce05cc9c4b43f85aa40f4cd1fb33fdbf55537cf08081d4ecadf2",
+      "bytes": 189780,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_scatter_truth_prediction.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_scatter_truth_prediction.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4e6a8dc9a8023230d1862b21c224c76752d5d16d60dff67c7d48adbb8ede8320",
+      "published_sha256": "4e6a8dc9a8023230d1862b21c224c76752d5d16d60dff67c7d48adbb8ede8320",
+      "bytes": 606030,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_stratified_mae.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_stratified_mae.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "2afe5eacc87ad48e77a76c996e51ef5e9fbc06b97e4c437ffd0160785abdd6aa",
+      "published_sha256": "2afe5eacc87ad48e77a76c996e51ef5e9fbc06b97e4c437ffd0160785abdd6aa",
+      "bytes": 42062,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_stratified_mae.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_stratified_mae.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f71d9ec095e619fad980f3785cbcd0a7b41f76a501ed18847e8b2932e7e276d3",
+      "published_sha256": "f71d9ec095e619fad980f3785cbcd0a7b41f76a501ed18847e8b2932e7e276d3",
+      "bytes": 392167,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_target_pga_distribution.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_target_pga_distribution.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "342cbd93d4b757caf6ee7e003806d6ab351623486b6f328a55b3e1593d2a9658",
+      "published_sha256": "342cbd93d4b757caf6ee7e003806d6ab351623486b6f328a55b3e1593d2a9658",
+      "bytes": 20910,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_target_pga_distribution.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_target_pga_distribution.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "ae1409dca23908d4e27208f630ce886a3b274a225160ae391b430eb22a491aa1",
+      "published_sha256": "ae1409dca23908d4e27208f630ce886a3b274a225160ae391b430eb22a491aa1",
+      "bytes": 129352,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_target_type_breakdown.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_target_type_breakdown.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "c4d86b5fb42e42dc6af24486560d1a77e5120390e6651a4dbc958e2d5ae82bca",
+      "published_sha256": "c4d86b5fb42e42dc6af24486560d1a77e5120390e6651a4dbc958e2d5ae82bca",
+      "bytes": 7469,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_target_type_breakdown.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_target_type_breakdown.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "73bf38a4a2f9d4a1c05b4359ab17ce03018837e15c36eaab9bb1c560ba25335c",
+      "published_sha256": "73bf38a4a2f9d4a1c05b4359ab17ce03018837e15c36eaab9bb1c560ba25335c",
+      "bytes": 174720,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_training_curve.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_training_curve.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e4c587b2c55309ebdf76d1550361a53ef97a87a2c9cd969c1e21b8d9b2050028",
+      "published_sha256": "e4c587b2c55309ebdf76d1550361a53ef97a87a2c9cd969c1e21b8d9b2050028",
+      "bytes": 505,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_training_curve.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_training_curve.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "fb551ba61a7cde7fc88044518f1b8371ec3dd1982be3c9fabb158a451ba2d64a",
+      "published_sha256": "fb551ba61a7cde7fc88044518f1b8371ec3dd1982be3c9fabb158a451ba2d64a",
+      "bytes": 76053,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_aggregate_metrics.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_aggregate_metrics.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "610f517d9d99f4cf94837b7354ee9ac2255696e3d4624719cb9c07f141ff810f",
+      "published_sha256": "610f517d9d99f4cf94837b7354ee9ac2255696e3d4624719cb9c07f141ff810f",
+      "bytes": 16345,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_case_selection.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_case_selection.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "bc1eabfa4eba9fbddf8b4fef5d162a388c277e0566290313d4970e038260e0b1",
+      "published_sha256": "bc1eabfa4eba9fbddf8b4fef5d162a388c277e0566290313d4970e038260e0b1",
+      "bytes": 1327,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_event_split_summary.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_event_split_summary.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "357fe3b19eb72ddf0f88819187e9dd51d6fe9c4059637884514e057f98a5db7c",
+      "published_sha256": "357fe3b19eb72ddf0f88819187e9dd51d6fe9c4059637884514e057f98a5db7c",
+      "bytes": 256,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_flat_output_audit.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_flat_output_audit.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "ecd6f77f7a2d0944beb8c66f5c17e7232f49d19f6da8acd90c3adffb1cd17c45",
+      "published_sha256": "ecd6f77f7a2d0944beb8c66f5c17e7232f49d19f6da8acd90c3adffb1cd17c45",
+      "bytes": 628,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_magnitude_split_counts.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_magnitude_split_counts.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "b7e89ec07722195fcb14f289fd7e03c63496d2653ed573291f61a03151d4169a",
+      "published_sha256": "b7e89ec07722195fcb14f289fd7e03c63496d2653ed573291f61a03151d4169a",
+      "bytes": 365,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_station_split_summary.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_station_split_summary.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d4622a3cececd06e5f2d8c072f79e5cad315f960b86c65e091aa8bc60aa2c2d7",
+      "published_sha256": "d4622a3cececd06e5f2d8c072f79e5cad315f960b86c65e091aa8bc60aa2c2d7",
+      "bytes": 205,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_distance.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_distance.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "aaf515911ea239235d423cd6ff51c0866e4b45116491b43cefe332226dbf10bd",
+      "published_sha256": "aaf515911ea239235d423cd6ff51c0866e4b45116491b43cefe332226dbf10bd",
+      "bytes": 7419,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_lead.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_lead.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "c179dc00bb7314154c412968939c3b4627cd524f9444b9a9e1e3556fae3b471e",
+      "published_sha256": "c179dc00bb7314154c412968939c3b4627cd524f9444b9a9e1e3556fae3b471e",
+      "bytes": 5075,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_magnitude.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_magnitude.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e4eb0ac57f7eef8ffc6866f6305d01fb16e59782735f59363bb17e70f66d2f7f",
+      "published_sha256": "e4eb0ac57f7eef8ffc6866f6305d01fb16e59782735f59363bb17e70f66d2f7f",
+      "bytes": 7462,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_station.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_station.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d2d49b132687ea9072ef6b9e63d2b46676d3d41cd9b6268b78240cb0f4123f78",
+      "published_sha256": "d2d49b132687ea9072ef6b9e63d2b46676d3d41cd9b6268b78240cb0f4123f78",
+      "bytes": 7428,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_time.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_time.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "a386b516b8cf34b62cc01a356339af8408ccfffda7179d1132c5820144379e5e",
+      "published_sha256": "a386b516b8cf34b62cc01a356339af8408ccfffda7179d1132c5820144379e5e",
+      "bytes": 8525,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_waveform.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_waveform.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "7b94ae4719ef8c2ef19114ab461cf2a9b711b24d785225b69f527cca4e9f3d3e",
+      "published_sha256": "7b94ae4719ef8c2ef19114ab461cf2a9b711b24d785225b69f527cca4e9f3d3e",
+      "bytes": 6736,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/REPORT_CN.md",
+      "published_path": "reports/rt55_rt56_current_results/rt56/REPORT_CN.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "cd6f5b7acb0b817f44505be8c1c77c8d08468aeb18987ff4ed527b7612b7fdc3",
+      "published_sha256": "013549d750b15d1f392bb14743d6aeb20f986951a584837f4ffa90776a649c5b",
+      "bytes": 11712,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_base_data_distribution.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_base_data_distribution.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f4badac56ff813a1c1df3a387a2bc834c9e8d0f24443401daa795fa6e1fe691c",
+      "published_sha256": "f4badac56ff813a1c1df3a387a2bc834c9e8d0f24443401daa795fa6e1fe691c",
+      "bytes": 341767,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_calibration_residual.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_calibration_residual.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "0de23d52e7ecc61b29093c5bd038196dc19a742af9e91e8432e37aad0fee30e2",
+      "published_sha256": "0de23d52e7ecc61b29093c5bd038196dc19a742af9e91e8432e37aad0fee30e2",
+      "bytes": 10072,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_calibration_residual.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_calibration_residual.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "ab64f32158a048518a75e6871eaa425c0c56bf230187b6f798314e1614ad1805",
+      "published_sha256": "ab64f32158a048518a75e6871eaa425c0c56bf230187b6f798314e1614ad1805",
+      "bytes": 209905,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_case_profiles.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_case_profiles.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "9b1a5bf8199cc7c672ae77dbfaf1d27e68f3b3b4a352148be3ecb437a19f673d",
+      "published_sha256": "9b1a5bf8199cc7c672ae77dbfaf1d27e68f3b3b4a352148be3ecb437a19f673d",
+      "bytes": 48423,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_case_profiles.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_case_profiles.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d514c3e60f12b3319b4563fee76e7fb0994c6b36c43daea88ed251c14d3929f0",
+      "published_sha256": "d514c3e60f12b3319b4563fee76e7fb0994c6b36c43daea88ed251c14d3929f0",
+      "bytes": 399952,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_case_spatial_delta.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_case_spatial_delta.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "abc110b64cf5230bb7b9857f36ad4fe85bd5e1d4f8603d43872e4ec31c1ba8ef",
+      "published_sha256": "abc110b64cf5230bb7b9857f36ad4fe85bd5e1d4f8603d43872e4ec31c1ba8ef",
+      "bytes": 48281,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_case_spatial_delta.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_case_spatial_delta.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "65b6e8a39aa3782cd25cb6fde32369e7b0e25cda23a348b12d176ba2b0474274",
+      "published_sha256": "65b6e8a39aa3782cd25cb6fde32369e7b0e25cda23a348b12d176ba2b0474274",
+      "bytes": 274726,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_normal_retention_dashboard.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_normal_retention_dashboard.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "cf569ef0011d5acedfcaa8a1fa0aad71a710a1eea905f2a76d0fc18a86ae9583",
+      "published_sha256": "cf569ef0011d5acedfcaa8a1fa0aad71a710a1eea905f2a76d0fc18a86ae9583",
+      "bytes": 2713,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_normal_retention_dashboard.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_normal_retention_dashboard.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "8ff2105322edc208dc07c80868ced26d4ce19a983b7ae98c90e5605bdc02a712",
+      "published_sha256": "8ff2105322edc208dc07c80868ced26d4ce19a983b7ae98c90e5605bdc02a712",
+      "bytes": 182374,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_paired_delta.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_paired_delta.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e3ee40f7aaf3f579cd3a7f1fea6388a9cf8ced41aed4d602056a8cb26c0e6cc5",
+      "published_sha256": "e3ee40f7aaf3f579cd3a7f1fea6388a9cf8ced41aed4d602056a8cb26c0e6cc5",
+      "bytes": 139374,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_random_geometry_distribution.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_random_geometry_distribution.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "b6e0642b657b8cebcb14f67b6707dc7978213859587c8bcd0c8cad076dbdf0db",
+      "published_sha256": "b6e0642b657b8cebcb14f67b6707dc7978213859587c8bcd0c8cad076dbdf0db",
+      "bytes": 216412,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_random_metric_dashboard.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_random_metric_dashboard.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "3c505fd243db97df0a0d9aeb303d1e21b82e478bba60625b6dd1e676c284c412",
+      "published_sha256": "3c505fd243db97df0a0d9aeb303d1e21b82e478bba60625b6dd1e676c284c412",
+      "bytes": 1563,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_random_metric_dashboard.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_random_metric_dashboard.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "78335c5299ec7fbc9e01d895d849b737b99f1e06dcc0ab7940615d2f5b3e44f2",
+      "published_sha256": "78335c5299ec7fbc9e01d895d849b737b99f1e06dcc0ab7940615d2f5b3e44f2",
+      "bytes": 123181,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_scatter_truth_prediction.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_scatter_truth_prediction.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d0aa468a0cb951ffd4f38cb9c33f88c53d76f8beffaffd695b7f792f392d1f7c",
+      "published_sha256": "d0aa468a0cb951ffd4f38cb9c33f88c53d76f8beffaffd695b7f792f392d1f7c",
+      "bytes": 701607,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_stratified_mae.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_stratified_mae.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f06fc5808f92bc9ab3a9636aae910ee63a62f0bd901e55a3eda5c8c390e6cdcf",
+      "published_sha256": "f06fc5808f92bc9ab3a9636aae910ee63a62f0bd901e55a3eda5c8c390e6cdcf",
+      "bytes": 34295,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_stratified_mae.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_stratified_mae.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4461e248fba141bcdc590a46ac28551f6b50d3600c25ab4088523bb4d93923f5",
+      "published_sha256": "4461e248fba141bcdc590a46ac28551f6b50d3600c25ab4088523bb4d93923f5",
+      "bytes": 367972,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_training_curve.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_training_curve.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6347007b60fe9b4600cbacc2197ff40fb957fc492e99a20e0bf4f2037d169888",
+      "published_sha256": "6347007b60fe9b4600cbacc2197ff40fb957fc492e99a20e0bf4f2037d169888",
+      "bytes": 370,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_training_curve.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_training_curve.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "352e53553f8e797747ca6799c292f98d0894f9b1e8420b207e610891064f229c",
+      "published_sha256": "352e53553f8e797747ca6799c292f98d0894f9b1e8420b207e610891064f229c",
+      "bytes": 58628,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_aggregate_metrics.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_aggregate_metrics.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "be922d85de0e2f7158461f7605b6dc95aa0e09e9d15c47ccc4bed3a7f924ff07",
+      "published_sha256": "be922d85de0e2f7158461f7605b6dc95aa0e09e9d15c47ccc4bed3a7f924ff07",
+      "bytes": 15419,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_case_selection.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_case_selection.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "9397207e52f1d66635a900f6adaf98c8812a446b37442bf26eec59d0eb069f52",
+      "published_sha256": "9397207e52f1d66635a900f6adaf98c8812a446b37442bf26eec59d0eb069f52",
+      "bytes": 2715,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_coordinate_exclusion_audit.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_coordinate_exclusion_audit.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "c0cea5135671438e1b65fa75868d275656d62a12dd4dfe52d01c4e2df528d016",
+      "published_sha256": "c0cea5135671438e1b65fa75868d275656d62a12dd4dfe52d01c4e2df528d016",
+      "bytes": 475,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_event_split_summary.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_event_split_summary.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "357fe3b19eb72ddf0f88819187e9dd51d6fe9c4059637884514e057f98a5db7c",
+      "published_sha256": "357fe3b19eb72ddf0f88819187e9dd51d6fe9c4059637884514e057f98a5db7c",
+      "bytes": 256,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_magnitude_split_counts.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_magnitude_split_counts.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "b7e89ec07722195fcb14f289fd7e03c63496d2653ed573291f61a03151d4169a",
+      "published_sha256": "b7e89ec07722195fcb14f289fd7e03c63496d2653ed573291f61a03151d4169a",
+      "bytes": 365,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_paired_event_bootstrap.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_paired_event_bootstrap.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6afe2243b8b9ab7eab1eb19321b284bf828716fadbdcf424f96ba8fe81b5983d",
+      "published_sha256": "6afe2243b8b9ab7eab1eb19321b284bf828716fadbdcf424f96ba8fe81b5983d",
+      "bytes": 296,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_paired_event_metrics.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_paired_event_metrics.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "54bd9cdb28f5d9753fa1fe1a0a91fce28931b15201dddd63f1b74150cf819368",
+      "published_sha256": "54bd9cdb28f5d9753fa1fe1a0a91fce28931b15201dddd63f1b74150cf819368",
+      "bytes": 102588,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_station_split_summary.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_station_split_summary.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d4622a3cececd06e5f2d8c072f79e5cad315f960b86c65e091aa8bc60aa2c2d7",
+      "published_sha256": "d4622a3cececd06e5f2d8c072f79e5cad315f960b86c65e091aa8bc60aa2c2d7",
+      "bytes": 205,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_lead.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_lead.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "24db771af27720e633c7e31e490bf0f32fd00e007b0e16c0f8f8609855d0c44f",
+      "published_sha256": "24db771af27720e633c7e31e490bf0f32fd00e007b0e16c0f8f8609855d0c44f",
+      "bytes": 6284,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_magnitude.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_magnitude.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "563833db8bcb8f958d0cd0010b2236585740b0100dd0dda9de61824f146afc99",
+      "published_sha256": "563833db8bcb8f958d0cd0010b2236585740b0100dd0dda9de61824f146afc99",
+      "bytes": 7536,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_nearest_input.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_nearest_input.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "931bb56caa441675ae6d1b93955db63821dba94fa2ba5607ee557841d2c17261",
+      "published_sha256": "931bb56caa441675ae6d1b93955db63821dba94fa2ba5607ee557841d2c17261",
+      "bytes": 6333,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_station.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_station.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "47c3eea5ea968eddd08ca82228f71a5ab56b5dbf604bc06dcf486312f411f57e",
+      "published_sha256": "47c3eea5ea968eddd08ca82228f71a5ab56b5dbf604bc06dcf486312f411f57e",
+      "bytes": 7482,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_strength.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_strength.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4703d04c80f6d9059cf74f089776233ff1b173a8c1c8c788e28dec217aabedb0",
+      "published_sha256": "4703d04c80f6d9059cf74f089776233ff1b173a8c1c8c788e28dec217aabedb0",
+      "bytes": 2478,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_target_type.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_target_type.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "9fa8356792134d1b213c441f47978893446cea1d254e9d943c063300029a1291",
+      "published_sha256": "9fa8356792134d1b213c441f47978893446cea1d254e9d943c063300029a1291",
+      "bytes": 2799,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_time.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_time.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f51f01191a89e1bc3451fc3277f76340f7b4dff54d60ea370b6e38c837b125fe",
+      "published_sha256": "f51f01191a89e1bc3451fc3277f76340f7b4dff54d60ea370b6e38c837b125fe",
+      "bytes": 8651,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/tables/checkpoint_provenance.csv",
+      "published_path": "reports/rt55_rt56_current_results/tables/checkpoint_provenance.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "bc01f1f4561aa934c9546f141da2266390549598de3aa52c3a0fa5d6b07fe4fc",
+      "published_sha256": "d22bc6689c0a0ba5764952871ebd9e1d37eb1327a3029ca70b15b37539718428",
+      "bytes": 3391,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/tables/report_provenance.json",
+      "published_path": "reports/rt55_rt56_current_results/tables/report_provenance.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4e02c1330a9c76b7c052eee5fa15577f494a211ece31e0faf1f97b3ae6ef00bd",
+      "published_sha256": "214bf3adbaad5adbb58bcae622d906e122fde9fd0bdce45aa731f2ecd2e0d84d",
+      "bytes": 448,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/tools/generate_rt55_rt56_comprehensive_report.py",
+      "published_path": "tools/generate_rt55_rt56_comprehensive_report.py",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "7b6041cdc1e9c2b6b02ddcd93a92ec65c52a454034ccfd9a6cf0b38b84c90920",
+      "published_sha256": "cdd204d1c9abac7260c4ade774776e6335a97fa505e45840033e8757228609dd",
+      "bytes": 104421,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_fe01/CODEX_TASK_FE01_EVAL1_20261004.md",
+      "published_path": "CODEX_TASK_FE01_EVAL1_20261004.md",
+      "branch": "sync/fe01",
+      "track_id": "FE01",
+      "source_sha256": "1a1e737be46149adda859ba816ce84a0a6463bda71ab2b065579a95c91a6a67f",
+      "published_sha256": "1a1e737be46149adda859ba816ce84a0a6463bda71ab2b065579a95c91a6a67f",
+      "bytes": 29781,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_fe01/FE01EVAL1_prompt.md",
+      "published_path": "FE01EVAL1_prompt.md",
+      "branch": "sync/fe01",
+      "track_id": "FE01",
+      "source_sha256": "29d91a2907961a43a7fed63a4036236c3fedea739b687997f4f999c4793055a0",
+      "published_sha256": "29d91a2907961a43a7fed63a4036236c3fedea739b687997f4f999c4793055a0",
+      "bytes": 5755,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_fe01/FE01_GEOMETRY_AMPLITUDE_HANDOFF_20261007.md",
+      "published_path": "FE01_GEOMETRY_AMPLITUDE_HANDOFF_20261007.md",
+      "branch": "sync/fe01",
+      "track_id": "FE01",
+      "source_sha256": "22bd7873e5b50649ff81bb4eeb6ff3ab159f1e58e53bf7439d6ca421a2a6981e",
+      "published_sha256": "22bd7873e5b50649ff81bb4eeb6ff3ab159f1e58e53bf7439d6ca421a2a6981e",
+      "bytes": 18773,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_fe01/fe01_a01_prompt.md",
+      "published_path": "fe01_a01_prompt.md",
+      "branch": "sync/fe01",
+      "track_id": "FE01",
+      "source_sha256": "89d27dc5139d52aa324359ad3003c6467d5fd8cb7f6e1750bdd5156e991cf27f",
+      "published_sha256": "89d27dc5139d52aa324359ad3003c6467d5fd8cb7f6e1750bdd5156e991cf27f",
+      "bytes": 18671,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/CODEX_RESULT_20260930_NATIVE_TECHNICAL_REPORT.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/CODEX_RESULT_20260930_NATIVE_TECHNICAL_REPORT.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "a006f753754fda72ffdfcf02cab44706425c41a1f4ab0e35f26275efe2541f23",
+      "published_sha256": "a006f753754fda72ffdfcf02cab44706425c41a1f4ab0e35f26275efe2541f23",
+      "bytes": 2706,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/QA.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/QA.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9d50b91217ada333842ab0e6fa59cd2fec6a71493fd6038e3029d386dd40ca63",
+      "published_sha256": "9d50b91217ada333842ab0e6fa59cd2fec6a71493fd6038e3029d386dd40ca63",
+      "bytes": 3061,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/README.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/README.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "8f066add033dd0876410a37af2f7d8177bd1910ca2cea231a0f76ce3db1001fc",
+      "published_sha256": "97a0cb711b23e742fb5b50e27ea156f3a9f365561377e5d92db35f33b9b20633",
+      "bytes": 4700,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/old_vs_rt61_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/old_vs_rt61_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "c6712c286b7e94d7ea970f3eebc8c8f6ac1778e4a22b25a8bb3b00ab46d023da",
+      "published_sha256": "c6712c286b7e94d7ea970f3eebc8c8f6ac1778e4a22b25a8bb3b00ab46d023da",
+      "bytes": 785,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/report_asset_provenance.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/report_asset_provenance.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "6d59f9440706227697d172c590ec8daa3d0e370cd9269bf90cbcd9b44db00600",
+      "published_sha256": "6d59f9440706227697d172c590ec8daa3d0e370cd9269bf90cbcd9b44db00600",
+      "bytes": 2594,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_error_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_error_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7a88806da19038fad8f9202d64dc37f1aeccab50becb0803893e0f65a17878ac",
+      "published_sha256": "7a88806da19038fad8f9202d64dc37f1aeccab50becb0803893e0f65a17878ac",
+      "bytes": 3634,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_literature_residual_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_literature_residual_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "f1ed9fff0540bba27b99aa632eb50bc04455b7e6683949f4581db53fe7234df3",
+      "published_sha256": "f1ed9fff0540bba27b99aa632eb50bc04455b7e6683949f4581db53fe7234df3",
+      "bytes": 393,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_sample_figure_provenance.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_sample_figure_provenance.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9135928e67ba1e1d982ab829a4f3eaf5ecdac8130120000c140468f760cad2c5",
+      "published_sha256": "9135928e67ba1e1d982ab829a4f3eaf5ecdac8130120000c140468f760cad2c5",
+      "bytes": 4388,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_sample_panel_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_sample_panel_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "4e7d2c96b011b57c469dd94fa56bb79e1672cf9bac416bcab5d9dfd726a3ecd2",
+      "published_sha256": "4e7d2c96b011b57c469dd94fa56bb79e1672cf9bac416bcab5d9dfd726a3ecd2",
+      "bytes": 1022,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_scatter_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_scatter_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9a47905bff916d7f7ea19cfe4019b753543691410eeec946bac6689b6976f011",
+      "published_sha256": "9a47905bff916d7f7ea19cfe4019b753543691410eeec946bac6689b6976f011",
+      "bytes": 1388,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_threshold_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/assets/tables/rt61_threshold_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7825b05dbbb9ad3dc250f186b658ec6c9b3204816d64a078d27d3ddac5076c9f",
+      "published_sha256": "7825b05dbbb9ad3dc250f186b658ec6c9b3204816d64a078d27d3ddac5076c9f",
+      "bytes": 3099,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/build_native_deck.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/build_native_deck.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "4c47f897b5398c7011bf7a1666dc05d33bff0c3d799e8c1daaba0263683698f0",
+      "published_sha256": "10e12dac03f77f6b71da8590f65660810268889f3af01dcd802da9cde1bf6801",
+      "bytes": 50680,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/native_deck_manifest.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/native_deck_manifest.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "38b83ecc26b622a3e63403ba5a27210cc7a0413008efb8444684967ba737c7bd",
+      "published_sha256": "38b83ecc26b622a3e63403ba5a27210cc7a0413008efb8444684967ba737c7bd",
+      "bytes": 5643,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/native_qa.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/native_qa.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "c28620ef1994bad6aad42027f5bb170096db41bbf97299ceed383d3f7510cbda",
+      "published_sha256": "c28620ef1994bad6aad42027f5bb170096db41bbf97299ceed383d3f7510cbda",
+      "bytes": 1738,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/outline.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/outline.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "64381cbed0faf1599c3cd335ee14daf73a1827c76213c8e55c19b07f60c2915f",
+      "published_sha256": "a7eae58a52a410af85ed86559c5ebdd455fe03f127c3582d948eae252b98d5af",
+      "bytes": 17277,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prepare_report_assets.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prepare_report_assets.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "171f345e98951bfb7b05fe65474b2f6577d8b39492199a42629d6a632c8fe4d6",
+      "published_sha256": "113fc065a736b7d4855c66dae411f0ba8758a52267e47429b197afd92cf3371d",
+      "bytes": 17212,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prepare_sample_scatter.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prepare_sample_scatter.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "19abe9e4ca2858518150d4d4b28bb53abf0d4b15a30b37396c7bc895041b0dac",
+      "published_sha256": "c458654c5a45f4fec9d78c0057b8b20cf6f64300a54998e77e0d9e17e42c9402",
+      "bytes": 11600,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/progress.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/progress.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "611c3acd030dcd8590a4b524d29c75b0b545afa85c50ef829d18ec16cb001cf1",
+      "published_sha256": "611c3acd030dcd8590a4b524d29c75b0b545afa85c50ef829d18ec16cb001cf1",
+      "bytes": 1940,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "fd21fa54aae75b617a5698f7a29fdc303ba5c479ef2c77cd7dfc1ad2441c3f8f",
+      "published_sha256": "fd21fa54aae75b617a5698f7a29fdc303ba5c479ef2c77cd7dfc1ad2441c3f8f",
+      "bytes": 3502,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13_repair.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13_repair.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7d042049c450edc81b8c315b13318b38259129f3ad5af87d78bb24e08e42e26d",
+      "published_sha256": "7d042049c450edc81b8c315b13318b38259129f3ad5af87d78bb24e08e42e26d",
+      "bytes": 1851,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13_strict_asset.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/prompts/sample_slide_13_strict_asset.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7885bfd46a76cad479d2dd1bbeee6e65ac362606fcd286f873c116aa2078fda2",
+      "published_sha256": "7885bfd46a76cad479d2dd1bbeee6e65ac362606fcd286f873c116aa2078fda2",
+      "bytes": 2954,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/qa_native_deck.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/qa_native_deck.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "84d0c20988bb37e4c48154a202408ca741f5e86b63c7e1a696e96b8b9886d2d1",
+      "published_sha256": "0f02ad069714a98090682e747d5db7b02e7b398991988c2373baf3bbbbd6941f",
+      "bytes": 4811,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/sample_qa.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/sample_qa.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "5c2ff0e07db793e4f823a6f12c7ae9dbb8078bad6edf2a8a68725e65de86b6e9",
+      "published_sha256": "5c2ff0e07db793e4f823a6f12c7ae9dbb8078bad6edf2a8a68725e65de86b6e9",
+      "bytes": 4056,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/sources.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/sources.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "dbfceb6040c98c73141043b2f56a7c92c364c4021bab62f4cf2e9f194c63d2a4",
+      "published_sha256": "dbfceb6040c98c73141043b2f56a7c92c364c4021bab62f4cf2e9f194c63d2a4",
+      "bytes": 6944,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/speech.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/speech.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "ed1d58aec626033de2b8b5f0cf2536a532a00ab865292ecc0f654e137f8056b5",
+      "published_sha256": "ed1d58aec626033de2b8b5f0cf2536a532a00ab865292ecc0f654e137f8056b5",
+      "bytes": 16435,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930/test_report_assets.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930/test_report_assets.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7105c1c68bdebc3b7c1e5eefdb1873574c8e9ceb852e9cf6ae80d8f1af57def3",
+      "published_sha256": "7105c1c68bdebc3b7c1e5eefdb1873574c8e9ceb852e9cf6ae80d8f1af57def3",
+      "bytes": 1562,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/CODEX_RESULT_20260930_REPORT_REVISION.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/CODEX_RESULT_20260930_REPORT_REVISION.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7403156458594477012be7b32738fce6aeab9ec36de791206243ce698367c104",
+      "published_sha256": "7403156458594477012be7b32738fce6aeab9ec36de791206243ce698367c104",
+      "bytes": 2980,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/QA.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/QA.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "5ec92d8fd93a1dfa483979ca5677991a7fd5f91541e8b4edb6a66b049d46dea7",
+      "published_sha256": "5ec92d8fd93a1dfa483979ca5677991a7fd5f91541e8b4edb6a66b049d46dea7",
+      "bytes": 2637,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/README.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/README.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "1db670decd3d7f5279fee677b7b5b4d1236b1e55e31354f852f94cbf1a3554af",
+      "published_sha256": "6bcfaf77d0041a0f65dd118d8285090aa8d03b28df88426a81ada6e24586c1ed",
+      "bytes": 5507,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/TECHNICAL_DETAILS.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/TECHNICAL_DETAILS.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "a9dd3afc130928d98adf648f96fc465628a33debf5c43c63d589d1663817ebba",
+      "published_sha256": "a9dd3afc130928d98adf648f96fc465628a33debf5c43c63d589d1663817ebba",
+      "bytes": 16104,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_comparison_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_comparison_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "ef9cb7c21231527e80570238c914d710c12e3fc9d62661737645f29a7c8357f1",
+      "published_sha256": "ef9cb7c21231527e80570238c914d710c12e3fc9d62661737645f29a7c8357f1",
+      "bytes": 2857,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_field_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_field_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "c097273ce1a0f8c94d061967acff1bb6b31a9c5fb416f50febee5f929d26242e",
+      "published_sha256": "c097273ce1a0f8c94d061967acff1bb6b31a9c5fb416f50febee5f929d26242e",
+      "bytes": 2014,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_threshold_comparison.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/meeting_threshold_comparison.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "d75469f2773b7d1182c1e097134746684aa9e7c35332fbebc8b17f9fdc450fce",
+      "published_sha256": "d75469f2773b7d1182c1e097134746684aa9e7c35332fbebc8b17f9fdc450fce",
+      "bytes": 2706,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/normal_geometry_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/normal_geometry_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "8b07a5620b3b7f6438d9229c5a7bb752153ea13aaf205bc742c47c1d60f37d41",
+      "published_sha256": "8b07a5620b3b7f6438d9229c5a7bb752153ea13aaf205bc742c47c1d60f37d41",
+      "bytes": 3794,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/old_vs_rt61_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/old_vs_rt61_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "c6712c286b7e94d7ea970f3eebc8c8f6ac1778e4a22b25a8bb3b00ab46d023da",
+      "published_sha256": "c6712c286b7e94d7ea970f3eebc8c8f6ac1778e4a22b25a8bb3b00ab46d023da",
+      "bytes": 785,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/report_asset_provenance.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/report_asset_provenance.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "6d59f9440706227697d172c590ec8daa3d0e370cd9269bf90cbcd9b44db00600",
+      "published_sha256": "6d59f9440706227697d172c590ec8daa3d0e370cd9269bf90cbcd9b44db00600",
+      "bytes": 2594,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/revision_summary.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/revision_summary.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "66b9c311fa226d7eb50389ca6d98ba3116a5fef8000a67c02802a7adc476c1cd",
+      "published_sha256": "66b9c311fa226d7eb50389ca6d98ba3116a5fef8000a67c02802a7adc476c1cd",
+      "bytes": 20902,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_error_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_error_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7a88806da19038fad8f9202d64dc37f1aeccab50becb0803893e0f65a17878ac",
+      "published_sha256": "7a88806da19038fad8f9202d64dc37f1aeccab50becb0803893e0f65a17878ac",
+      "bytes": 3634,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_literature_residual_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_literature_residual_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "f1ed9fff0540bba27b99aa632eb50bc04455b7e6683949f4581db53fe7234df3",
+      "published_sha256": "f1ed9fff0540bba27b99aa632eb50bc04455b7e6683949f4581db53fe7234df3",
+      "bytes": 393,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_sample_figure_provenance.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_sample_figure_provenance.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9135928e67ba1e1d982ab829a4f3eaf5ecdac8130120000c140468f760cad2c5",
+      "published_sha256": "9135928e67ba1e1d982ab829a4f3eaf5ecdac8130120000c140468f760cad2c5",
+      "bytes": 4388,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_sample_panel_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_sample_panel_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "4e7d2c96b011b57c469dd94fa56bb79e1672cf9bac416bcab5d9dfd726a3ecd2",
+      "published_sha256": "4e7d2c96b011b57c469dd94fa56bb79e1672cf9bac416bcab5d9dfd726a3ecd2",
+      "bytes": 1022,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_scatter_strata.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_scatter_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "9a47905bff916d7f7ea19cfe4019b753543691410eeec946bac6689b6976f011",
+      "published_sha256": "9a47905bff916d7f7ea19cfe4019b753543691410eeec946bac6689b6976f011",
+      "bytes": 1388,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_threshold_metrics.csv",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/assets/tables/rt61_threshold_metrics.csv",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "7825b05dbbb9ad3dc250f186b658ec6c9b3204816d64a078d27d3ddac5076c9f",
+      "published_sha256": "7825b05dbbb9ad3dc250f186b658ec6c9b3204816d64a078d27d3ddac5076c9f",
+      "bytes": 3099,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/build_revision_deck.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/build_revision_deck.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "d67a1e63e72e2041308c055a005b36cb19883213578e4de4a0d8c5cb123726d6",
+      "published_sha256": "d67a1e63e72e2041308c055a005b36cb19883213578e4de4a0d8c5cb123726d6",
+      "bytes": 21283,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/native_deck_manifest.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/native_deck_manifest.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "cb1f1f0968bdccd4d8384fa76ab57fd101d602cf1c7c0bf4761bc571b43e1c4e",
+      "published_sha256": "cb1f1f0968bdccd4d8384fa76ab57fd101d602cf1c7c0bf4761bc571b43e1c4e",
+      "bytes": 5355,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/native_qa.json",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/native_qa.json",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "f7d5e784b8cae7f704bff92d651cdc8f29b755a1959774b9b3c60897e13adc4f",
+      "published_sha256": "f7d5e784b8cae7f704bff92d651cdc8f29b755a1959774b9b3c60897e13adc4f",
+      "bytes": 1756,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/prepare_revision_assets.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/prepare_revision_assets.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "b78c3eafbbd7e9cfe2076493aa144a1346a951a94c93c2cfe4efe4209578b137",
+      "published_sha256": "b78c3eafbbd7e9cfe2076493aa144a1346a951a94c93c2cfe4efe4209578b137",
+      "bytes": 14092,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/qa_revision.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/qa_revision.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "6220f55c1d78f3e60cf763d49a14d1f633ea9e2f678d52abf7100cc4f4dafbbf",
+      "published_sha256": "916ed8996a1cea66c8f547bfe6f0d2d0c3a450ba77b55ded162276b9c30659c9",
+      "bytes": 3736,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/sources.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/sources.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "3bf35619e121f64993cf3d3b5f72081f9002479f415063321eb61e70e214cf2a",
+      "published_sha256": "3bf35619e121f64993cf3d3b5f72081f9002479f415063321eb61e70e214cf2a",
+      "bytes": 5604,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/speech.md",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/speech.md",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "ea8ff0ead071276ddaba5837929cacc9ec899175265238e1b605d07023575688",
+      "published_sha256": "ea8ff0ead071276ddaba5837929cacc9ec899175265238e1b605d07023575688",
+      "bytes": 16170,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_query_geometry_diagnostics/reports/technical_exchange/multistation_pga_exchange_20260930_v2/test_revision_assets.py",
+      "published_path": "reports/technical_exchange/multistation_pga_exchange_20260930_v2/test_revision_assets.py",
+      "branch": "sync/v01",
+      "track_id": "V01",
+      "source_sha256": "b1f3286177534fbe75c1c0143b1edc29e271d2533586301b911e84717c63f095",
+      "published_sha256": "b1f3286177534fbe75c1c0143b1edc29e271d2533586301b911e84717c63f095",
+      "bytes": 1408,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/rt59_small_event_strata.svg",
+      "published_path": "reports/rt59_small_event_warning_20260928/rt59_small_event_strata.svg",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "0c93f9d4bc520049bf3ecb206f97bd742bec6c9881b36536823f971a5d997f29",
+      "published_sha256": "0c93f9d4bc520049bf3ecb206f97bd742bec6c9881b36536823f971a5d997f29",
+      "bytes": 90827,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/QA_NOTES.md",
+      "published_path": "reports/rt59_small_event_warning_20260928/QA_NOTES.md",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "6402a97d46dd3eccbd82426a03387bf1ce13999c64f0e1fe6e16fca0cc055df2",
+      "published_sha256": "5c404f1db0421c1540b4bc4688096a4219dd08496959ddafc2f4b62d49b60876",
+      "bytes": 1060,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/REPORT.md",
+      "published_path": "reports/rt59_small_event_warning_20260928/REPORT.md",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "769014f606b2bcac5d273f30af52aad8aaefc752ab2ecc5a1a98fbf095f5075c",
+      "published_sha256": "769014f606b2bcac5d273f30af52aad8aaefc752ab2ecc5a1a98fbf095f5075c",
+      "bytes": 3524,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/joint_strata.csv",
+      "published_path": "reports/rt59_small_event_warning_20260928/joint_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "b1d6788d332e722e22f3f66a17e61669a50a9a65a80e8032cd950d5c4077b907",
+      "published_sha256": "b1d6788d332e722e22f3f66a17e61669a50a9a65a80e8032cd950d5c4077b907",
+      "bytes": 6913,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/FIGURE_CONTRACT.md",
+      "published_path": "reports/rt59_small_event_warning_20260928/FIGURE_CONTRACT.md",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "b9702971162154ea79474577f8b00d23e829d9692c369e9610402893459d65e7",
+      "published_sha256": "b485d55dc43d3e99a2eebc40c858d28513b6205a84f3a3851765ed7f6c516d25",
+      "bytes": 1315,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/analyze_rt59_small_events.py",
+      "published_path": "reports/rt59_small_event_warning_20260928/analyze_rt59_small_events.py",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "cfacdcabfa4cf265179ed3f6b649985655ea41ac7d02be0f9aa59c7ace2de588",
+      "published_sha256": "cfacdcabfa4cf265179ed3f6b649985655ea41ac7d02be0f9aa59c7ace2de588",
+      "bytes": 27117,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/time_strata.csv",
+      "published_path": "reports/rt59_small_event_warning_20260928/time_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "07ee82566ee0bb1c15b649468f0ad71140377beb8acccc2daf346b878b8f7eb6",
+      "published_sha256": "07ee82566ee0bb1c15b649468f0ad71140377beb8acccc2daf346b878b8f7eb6",
+      "bytes": 2611,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/analysis_manifest.json",
+      "published_path": "reports/rt59_small_event_warning_20260928/analysis_manifest.json",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "8cd387c937bc53447608fb805b53a8f82855c24bfd780dc0c5f7065c38881117",
+      "published_sha256": "8cd387c937bc53447608fb805b53a8f82855c24bfd780dc0c5f7065c38881117",
+      "bytes": 925,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/station_strata.csv",
+      "published_path": "reports/rt59_small_event_warning_20260928/station_strata.csv",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "161fe33d2e53be5f7182b82ce1145e38588295be883e67532874bacac5c947a7",
+      "published_sha256": "161fe33d2e53be5f7182b82ce1145e38588295be883e67532874bacac5c947a7",
+      "bytes": 1350,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/summary.json",
+      "published_path": "reports/rt59_small_event_warning_20260928/summary.json",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "ade27ef85e17aa3e91156c72a4889565f6566be0cf6c8b25e43767e5ce6bd7d1",
+      "published_sha256": "ade27ef85e17aa3e91156c72a4889565f6566be0cf6c8b25e43767e5ce6bd7d1",
+      "bytes": 4096,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "side_outputs/rt59_small_event_warning_20260928/rt59_small_event_strata.png",
+      "published_path": "reports/rt59_small_event_warning_20260928/rt59_small_event_strata.png",
+      "branch": "sync/v01",
+      "track_id": "RT59",
+      "source_sha256": "3a4b2dd576a11b91f0cc30ce9a4a01a0877855640178f3cb5274a5a4d93637b1",
+      "published_sha256": "3a4b2dd576a11b91f0cc30ce9a4a01a0877855640178f3cb5274a5a4d93637b1",
+      "bytes": 368697,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "rt61_prompt.md",
+      "published_path": "docs/ai/sync/workspace_sources/rt61_prompt.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "168908cf3b91bf4337f53f082c2262e0be94025c83449c8eff433c3eff8113ed",
+      "published_sha256": "168908cf3b91bf4337f53f082c2262e0be94025c83449c8eff433c3eff8113ed",
+      "bytes": 4372,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "V01_VELOCITY_PREP_PADDING_CODEX_PROMPT_20260929.md",
+      "published_path": "docs/ai/sync/workspace_sources/V01_VELOCITY_PREP_PADDING_CODEX_PROMPT_20260929.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "7970b333633496735c8f983d382dd1813eec0206a927228319ee329c112a11ff",
+      "published_sha256": "7970b333633496735c8f983d382dd1813eec0206a927228319ee329c112a11ff",
+      "bytes": 37773,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "FE02_prompt.md",
+      "published_path": "docs/ai/sync/workspace_sources/FE02_prompt.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "bc14f97780ef94b057f5ef7c2f88855a519fec66d5896f668e7f0c672c24364e",
+      "published_sha256": "bc14f97780ef94b057f5ef7c2f88855a519fec66d5896f668e7f0c672c24364e",
+      "bytes": 10243,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "RT60_REVIEW_RT61_CODEX_PROMPT_20260925.md",
+      "published_path": "docs/ai/sync/workspace_sources/RT60_REVIEW_RT61_CODEX_PROMPT_20260925.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "7e9bf4a91ab9da6e1750ed6acf21faef01ea8178a7b2f5a001a78f9b58e0fffb",
+      "published_sha256": "7e9bf4a91ab9da6e1750ed6acf21faef01ea8178a7b2f5a001a78f9b58e0fffb",
+      "bytes": 26738,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "CODEX_TASK_FE01_V2_20261001_NATIVE_WINDOWS_RANDOM_TIME.md",
+      "published_path": "docs/ai/sync/workspace_sources/CODEX_TASK_FE01_V2_20261001_NATIVE_WINDOWS_RANDOM_TIME.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "4023153411fb303652fb864659e11b9cb4f6689d9cfe09a3b95527fb34945cc6",
+      "published_sha256": "57cd15b143b787b460385258107a3bb5833f07afc6fb200e35f4a37a7b9d3714",
+      "bytes": 57639,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "RT59_REVIEW_RT60_CODEX_PROMPT_20260920.md",
+      "published_path": "docs/ai/sync/workspace_sources/RT59_REVIEW_RT60_CODEX_PROMPT_20260920.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "fe20676a351b41c82b05aec03b0944d06e4c4ad1cb539cdc4f93d883121b4f2b",
+      "published_sha256": "fe20676a351b41c82b05aec03b0944d06e4c4ad1cb539cdc4f93d883121b4f2b",
+      "bytes": 27834,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "readme.md",
+      "published_path": "docs/ai/sync/workspace_sources/readme.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "883bc3572eeeae39325df06b2cea99a446bce7f45bc6ce8fa6649ce2472e964d",
+      "published_sha256": "1d7f80875d0f756103e40cb4f77808b831c13fcf8ce49aa86f77787e53ec6e6a",
+      "bytes": 1567,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "FE01V2_prompt.md",
+      "published_path": "docs/ai/sync/workspace_sources/FE01V2_prompt.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "7c7e6dbc317749b72eea02eb551cf622fb2a0638734ac9c782a11e3fbf6e2479",
+      "published_sha256": "7c7e6dbc317749b72eea02eb551cf622fb2a0638734ac9c782a11e3fbf6e2479",
+      "bytes": 1191,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "renwushu.md",
+      "published_path": "docs/ai/sync/workspace_sources/renwushu.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "7937808aeba213d9e5439245a7f0b66263a5ec5da69eeb115ebb2c2ff66fe0fd",
+      "published_sha256": "7937808aeba213d9e5439245a7f0b66263a5ec5da69eeb115ebb2c2ff66fe0fd",
+      "bytes": 8813,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "RT59_V3_IMPLEMENTATION_AND_AI_HANDOFF_20260915.md",
+      "published_path": "docs/ai/sync/workspace_sources/RT59_V3_IMPLEMENTATION_AND_AI_HANDOFF_20260915.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "8892ffdf4d306b481619d828229a8fb9a35dc9a9a5dda350e5cd9b05aaa91a40",
+      "published_sha256": "8892ffdf4d306b481619d828229a8fb9a35dc9a9a5dda350e5cd9b05aaa91a40",
+      "bytes": 32311,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "renwushu_xiuding.md",
+      "published_path": "docs/ai/sync/workspace_sources/renwushu_xiuding.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "5dbb5db6eda66b6d15f6a5febec5b5f5672f738cfd5544a3fd9d9367abd441bd",
+      "published_sha256": "5dbb5db6eda66b6d15f6a5febec5b5f5672f738cfd5544a3fd9d9367abd441bd",
+      "bytes": 3332,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "AI_HANDOFF_20260912_RT58_waveform_anchor_transfer_field.md",
+      "published_path": "docs/ai/sync/workspace_sources/AI_HANDOFF_20260912_RT58_waveform_anchor_transfer_field.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "625c836b889158d08644d8536e9dbd111a2b1f740d2bc7f187b0fc666ebe1720",
+      "published_sha256": "625c836b889158d08644d8536e9dbd111a2b1f740d2bc7f187b0fc666ebe1720",
+      "bytes": 18941,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "jixu_prompt.txt",
+      "published_path": "docs/ai/sync/workspace_sources/jixu_prompt.txt",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "297b78b98202f0ba22bbb568c81e1c7cbcac5f959f24e0731f4d06a54cf4a695",
+      "published_sha256": "e22b1b076983a8ec19c5e9728622b882897583df0620681932e31171e9cddbaa",
+      "bytes": 637,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "V01_prompt_2.md",
+      "published_path": "docs/ai/sync/workspace_sources/V01_prompt_2.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "7a99b4fa2ecfd6bb7dc269a918df3f7c460e979c56915eb60a63eef5622ff849",
+      "published_sha256": "7a99b4fa2ecfd6bb7dc269a918df3f7c460e979c56915eb60a63eef5622ff849",
+      "bytes": 5433,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "RT58_REVIEW_RT59_AI_HANDOFF_20260915.md",
+      "published_path": "docs/ai/sync/workspace_sources/RT58_REVIEW_RT59_AI_HANDOFF_20260915.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "7d267bbac663afb898736325c891c9042165496791cf465625ba3af87957d703",
+      "published_sha256": "7d267bbac663afb898736325c891c9042165496791cf465625ba3af87957d703",
+      "bytes": 27545,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "SESSION_SUMMARY.md",
+      "published_path": "docs/ai/sync/workspace_sources/SESSION_SUMMARY.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "de28c5d1113b925550a7a2d56179dbdd87d536438123c0510431c82763308c5f",
+      "published_sha256": "358f43bb17f957d953a5a65bdf923a42d1310f57b5d5da4d2efd3f2cb429d8b6",
+      "bytes": 434,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "V01_REVIEW_AND_CODEX_HANDOFF_20261004.md",
+      "published_path": "docs/ai/sync/workspace_sources/V01_REVIEW_AND_CODEX_HANDOFF_20261004.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "4e310a98a5151d540f6333039dff1be43bc0c645c5afded97ffc5740b3c81141",
+      "published_sha256": "4e310a98a5151d540f6333039dff1be43bc0c645c5afded97ffc5740b3c81141",
+      "bytes": 21679,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "V01_prompt.md",
+      "published_path": "docs/ai/sync/workspace_sources/V01_prompt.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "9266fdbaf817b1553a4e94eb298cd7b0a6ff0232dfc6bb1f2bb409a82cd7d193",
+      "published_sha256": "9266fdbaf817b1553a4e94eb298cd7b0a6ff0232dfc6bb1f2bb409a82cd7d193",
+      "bytes": 6542,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "CODEX_TASK_FE01_20261001_FEATURE_EXTRACTOR_SITE_EFFECTS.md",
+      "published_path": "docs/ai/sync/workspace_sources/CODEX_TASK_FE01_20261001_FEATURE_EXTRACTOR_SITE_EFFECTS.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "ce3da31f4700ef83543f7c1c1378d65902894fddce771c54b60ebb7ee34c46ab",
+      "published_sha256": "3b227c07769c6b0fd77f726d38fef0a39ab2ef8c6d9b84dc94efd07ecfb16ae7",
+      "bytes": 36897,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "FE01v1_prompt.md",
+      "published_path": "docs/ai/sync/workspace_sources/FE01v1_prompt.md",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "ad098be36038ce59a052cb6b58226f8e0d5063b1ddb2c8907506b9130e18a17c",
+      "published_sha256": "ad098be36038ce59a052cb6b58226f8e0d5063b1ddb2c8907506b9130e18a17c",
+      "bytes": 1458,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "jieshu_prompt.txt",
+      "published_path": "docs/ai/sync/workspace_sources/jieshu_prompt.txt",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "66146833b452290341f9cac9174f266b9c81e883cd741d588a46496bac9064ed",
+      "published_sha256": "66146833b452290341f9cac9174f266b9c81e883cd741d588a46496bac9064ed",
+      "bytes": 1262,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "jixu_prompt_bak.txt",
+      "published_path": "docs/ai/sync/workspace_sources/jixu_prompt_bak.txt",
+      "branch": "chore/workspace-sync",
+      "track_id": "HISTORY",
+      "source_sha256": "93f6cf2c063b6aada8f6cbe65794deba1e6d8d75681075a6f30c23e3931035b4",
+      "published_sha256": "74382aecdc76424886ecc5d354357c02e7d7b6bb8f4247cd112f1d00190e23b3",
+      "bytes": 691,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    }
+  ],
+  "note": "Historic source texts are reference material, not new execution instructions."
+}

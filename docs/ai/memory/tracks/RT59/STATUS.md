@@ -7,7 +7,7 @@ branch: `rt59-dual-objective-transport-v3`
 
 commit_sha: `d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd`
 
-last_verified_at: `2026-11-01T07:24:10+00:00`
+last_verified_at: `2026-11-02T08:55:52+00:00`
 
 current_state: `verified_complete`
 
@@ -35,6 +35,7 @@ RT59同时改善random/normal点误差，但严格门为NO_GO 22/29，仍作为�
 - [docs/ai/CODEX_RESULT_20260920_RT59_DUAL_OBJECTIVE_TRANSPORT_V3_VALIDATION.md](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/docs/ai/CODEX_RESULT_20260920_RT59_DUAL_OBJECTIVE_TRANSPORT_V3_VALIDATION.md)
 - [reports/rt59_dual_objective_transport_v3_validation_20260920/gates.csv](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/reports/rt59_dual_objective_transport_v3_validation_20260920/gates.csv)
 - [pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json)
+- [reports/rt59_small_event_warning_20260928/REPORT.md](https://github.com/rular099/team_pytorch/blob/52ea935249e490033f49209e106eecdedaa9275a/reports/rt59_small_event_warning_20260928/REPORT.md)
 <!-- ai-memory:end -->
 
 <!-- 人工补充写在生成区外；record.json 是结构化事实源。 -->

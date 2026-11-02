@@ -1,11 +1,11 @@
 # DECISION_LOG
 
 <!-- ai-memory:begin -->
-更新时间：2026-11-01T07:35:39+00:00
+更新时间：2026-11-02T08:55:53+00:00
 
-生成所依据的协调分支 commit：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`
+生成所依据的协调分支 commit：`328550fa7ea2164739009c0cd61c6a2fd70830e6`
 
-协调分支：`chore/project-memory-bootstrap`
+协调分支：`chore/workspace-sync`
 
 此 SHA 是生成输入，不是整个科研项目的单一 HEAD；各线见下表。
 

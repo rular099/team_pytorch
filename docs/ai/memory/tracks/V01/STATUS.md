@@ -7,7 +7,7 @@ branch: `exp/v01-velocity-prep-padding-control`
 
 commit_sha: `d8f2436273fbe990e77f7151d86a6b629e99c5c1`
 
-last_verified_at: `2026-11-01T07:24:10+00:00`
+last_verified_at: `2026-11-02T08:55:52+00:00`
 
 current_state: `verified_complete`
 
@@ -21,6 +21,7 @@ current_state: `verified_complete`
 
 - 报告核验10格导出、4750个metric值和400行CI；fixed epoch8/单seed/非输入query-only，不能与RT55 normal-all混排。 来源：[reports/v01_validation_closure_20261006/RESULT_REVIEW.md](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/RESULT_REVIEW.md)；[reports/v01_validation_closure_20261006/verification.json](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/verification.json)
 - MM总体MAE更低但高PGA退化；A/V common-available MM−AA区间跨零，不证明等效或模态普遍胜出。 来源：[reports/v01_validation_closure_20261006/RESULT_REVIEW.md](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/RESULT_REVIEW.md)；[reports/v01_validation_closure_20261006/headline_metrics.csv](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/headline_metrics.csv)
+- 2026-11-02补存9月30日技术交流v1/v2的讲稿、复现脚本与轻量表；这是历史材料归档，不替代10月6日V01 closure当前结论。 来源：[docs/ai/SYNC_SCOPE_20261102.md](https://github.com/rular099/team_pytorch/blob/52ea935249e490033f49209e106eecdedaa9275a/docs/ai/SYNC_SCOPE_20261102.md)
 
 ### pending_tasks
 
@@ -39,6 +40,7 @@ current_state: `verified_complete`
 - [reports/v01_validation_closure_20261006/headline_metrics.csv](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/headline_metrics.csv)
 - [reports/v01_validation_closure_20261006/evidence/configs/vfull__vfull__normal.json](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/evidence/configs/vfull__vfull__normal.json)
 - [docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md)
+- [docs/ai/SYNC_SCOPE_20261102.md](https://github.com/rular099/team_pytorch/blob/52ea935249e490033f49209e106eecdedaa9275a/docs/ai/SYNC_SCOPE_20261102.md)
 <!-- ai-memory:end -->
 
 <!-- 人工补充写在生成区外；record.json 是结构化事实源。 -->

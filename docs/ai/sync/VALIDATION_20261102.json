@@ -1,0 +1,143 @@
+{
+  "performed_at": "2026-11-02T08:55:52+00:00",
+  "sync_tool_tests": {
+    "count": 7,
+    "result": "PASS"
+  },
+  "memory_tool_tests": {
+    "count": 14,
+    "result": "PASS"
+  },
+  "source_export_checks": {
+    "json": 22,
+    "csv": 64,
+    "python_syntax": 11,
+    "source_hashes": 176
+  },
+  "published_leaf_refs": {
+    "sync/rt55-rt56": {
+      "sha": "bc648c75f4cb5f4d04bf10fe5a80d12745b20244",
+      "tree": "c835984d9d1b584fb262ecfc3db3ab87668d51c4",
+      "remote_ref_verified": true,
+      "local_tree_identical": true
+    },
+    "sync/v01": {
+      "sha": "52ea935249e490033f49209e106eecdedaa9275a",
+      "tree": "a24f64f8555b95adf04ecc5a0ded567840784276",
+      "remote_ref_verified": true,
+      "local_tree_identical": true
+    },
+    "sync/fe01": {
+      "sha": "c6ee2ab195661b26adcb6f8b7cd068bf265985ea",
+      "tree": "bfb2c48f77354518a4f196888190f218aae63907",
+      "remote_ref_verified": true,
+      "local_tree_identical": true
+    }
+  },
+  "png_blobs": {
+    "unique_count": 21,
+    "sha_verified": true
+  },
+  "report_numeric_tests": {
+    "result": "IMPORT_FAILED_MISSING_NUMPY",
+    "modules": [
+      "test_report_assets.py",
+      "test_revision_assets.py"
+    ],
+    "numeric_assertions_executed": 0,
+    "no_dependency_install_or_scientific_rerun": true
+  },
+  "external_transfer": {
+    "status": "unverified",
+    "destination_not_read": true,
+    "chaosuan_res_source_unavailable": true
+  },
+  "scientific_core_or_experiment_config_changes": 0,
+  "original_worktree_protection": {
+    "team_pytorch": {
+      "head": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+      "branch": "zhangb/native-scale-adapter-scaling",
+      "status_unchanged": true,
+      "tracked_diff_unchanged": true,
+      "original_untracked_files": 351
+    },
+    "team_pytorch_fe01": {
+      "head": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+      "branch": "exp/fe01-feature-extractor-site-effects",
+      "status_unchanged": true,
+      "tracked_diff_unchanged": true,
+      "original_untracked_files": 64
+    },
+    "team_pytorch_fe01_a01": {
+      "head": "236f72797ef4ccdec584cfbba952987e64a26437",
+      "branch": "exp/fe01-a01-absolute-amplitude-ablation",
+      "status_unchanged": true,
+      "tracked_diff_unchanged": true,
+      "original_untracked_files": 0
+    },
+    "team_pytorch_fe02": {
+      "head": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "branch": "exp/fe02-event-fusion-readout",
+      "status_unchanged": true,
+      "tracked_diff_unchanged": true,
+      "original_untracked_files": 0
+    },
+    "team_pytorch_memory": {
+      "head": "328550fa7ea2164739009c0cd61c6a2fd70830e6",
+      "branch": "chore/project-memory-bootstrap",
+      "status_unchanged": true,
+      "tracked_diff_unchanged": true,
+      "original_untracked_files": 0
+    },
+    "team_pytorch_query_geometry_diagnostics": {
+      "head": "d8f2436273fbe990e77f7151d86a6b629e99c5c1",
+      "branch": "exp/v01-velocity-prep-padding-control",
+      "status_unchanged": true,
+      "tracked_diff_unchanged": true,
+      "original_untracked_files": 176
+    }
+  },
+  "hpc_jobs_submitted": 0,
+  "historic_qa_manifest": {
+    "result": "PREEXISTING_SIZE_MISMATCHES",
+    "source_manifest": "team_pytorch/reports/rt55_rt56_current_results/qa/artifact_manifest.csv",
+    "mismatches": [
+      {
+        "path": "qa/artifact_manifest.csv",
+        "manifest_bytes": 7137,
+        "source_bytes": 7265
+      },
+      {
+        "path": "rt55/figures/rt55_scatter_truth_prediction.pdf",
+        "manifest_bytes": 182904,
+        "source_bytes": 176435
+      },
+      {
+        "path": "rt55/figures/rt55_scatter_truth_prediction.png",
+        "manifest_bytes": 811944,
+        "source_bytes": 606030
+      },
+      {
+        "path": "rt55/figures/rt55_scatter_truth_prediction.svg",
+        "manifest_bytes": 248228,
+        "source_bytes": 259506
+      },
+      {
+        "path": "rt56/figures/rt56_scatter_truth_prediction.pdf",
+        "manifest_bytes": 207996,
+        "source_bytes": 199091
+      },
+      {
+        "path": "rt56/figures/rt56_scatter_truth_prediction.png",
+        "manifest_bytes": 935610,
+        "source_bytes": 701607
+      },
+      {
+        "path": "rt56/figures/rt56_scatter_truth_prediction.svg",
+        "manifest_bytes": 292651,
+        "source_bytes": 297655
+      }
+    ],
+    "interpretation": "Original report manifest is retained as historical evidence. Current source/export SHA manifests govern transfer integrity; no claim of fresh scientific QA or a metric failure."
+  }
+}

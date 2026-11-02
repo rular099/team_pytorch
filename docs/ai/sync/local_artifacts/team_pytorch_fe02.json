@@ -1,0 +1,85 @@
+{
+  "captured_at": "2026-11-02T08:37:15+00:00",
+  "source_worktree": "team_pytorch_fe02",
+  "source_branch": "exp/fe02-event-fusion-readout",
+  "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+  "transfer_status": "unverified",
+  "files": [
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_rng_resume_fix_20261014.tar.gz",
+      "bytes": 3359,
+      "sha256": "817d3d4ed255bc164614b9bbd9f4ebab8fdd84f0626143f3f4aa7bd2f568d585",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_source_20261008.tar.gz",
+      "bytes": 7671956,
+      "sha256": "7e38ac930780753f85cabd58207fe6825b91d5abdeb4fe2d733110ef9f82d49a",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_source_20261008.tar.gz.sha256",
+      "bytes": 94,
+      "sha256": "96a2b7c7f932f8eccb6181ba1f472fb0bddb396f28d0940fa3bd78efb27cbfec",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "local_scientific_evidence_or_runtime_input"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_source_20261008_autosubmit.tar.gz",
+      "bytes": 7679355,
+      "sha256": "08262cb2d304ab6c9cb6951412c4158901837d57005425448fa7b18f8bed10ad",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_source_20261008_autosubmit.tar.gz.sha256",
+      "bytes": 105,
+      "sha256": "39a7eaf1d10553b0d9f7159591896f10cc59c0585e31f8cabac76c4f51f6ca7d",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "local_scientific_evidence_or_runtime_input"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_source_20261008_simple.tar.gz",
+      "bytes": 7678851,
+      "sha256": "5746f6da7f5dd31a2c5f662f5bc57c5fa06121024fb853a711acc6f63a18c015",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_source_20261008_simple.tar.gz.sha256",
+      "bytes": 101,
+      "sha256": "9c91e025ab37699ec6c4280808ea5f6ca4797ebe72e4c605cfd8cc73ecd6ff62",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "local_scientific_evidence_or_runtime_input"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_source_20261009_conda_fix.tar.gz",
+      "bytes": 7682823,
+      "sha256": "7da1804f05b1db37484258e8b5a8f08fc40947d9f8fd63479876b6af5f5853f5",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "optional_history_or_derived"
+    },
+    {
+      "workspace_relative_path": "team_pytorch_fe02/artifacts/fe02/fe02_source_20261009_conda_fix.tar.gz.sha256",
+      "bytes": 104,
+      "sha256": "97dc51e178480a09650c3b6e3cae8816296f6ecc3ce29e67b9bd89bfda8062a2",
+      "source_branch": "exp/fe02-event-fusion-readout",
+      "source_commit": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
+      "restoration_role": "local_scientific_evidence_or_runtime_input"
+    }
+  ],
+  "skipped": {
+    "regenerable": 56
+  },
+  "note": "This hashes visible local files only. No USB destination or archived member equality was verified; no cleanup authorized."
+}

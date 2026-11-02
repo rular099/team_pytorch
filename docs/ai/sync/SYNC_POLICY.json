@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "repository": "rular099/team_pytorch",
+  "purpose": "Resume scientific work across terminals and expose compact review evidence",
+  "max_file_bytes": 1048576,
+  "max_batch_bytes": 16777216,
+  "text_extensions": [".py", ".sh", ".md", ".txt", ".json", ".jsonl", ".csv", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".svg", ".sha256"],
+  "binary_extensions": [".png"],
+  "extensionless_files": [".gitignore", ".gitattributes", "LICENSE", "Makefile"],
+  "private_path_parts": [".aws", ".ssh", ".codex", ".agents", ".claude", "__pycache__", ".venv-fe01", ".pytest_cache"],
+  "publication_rule": "Explicit reviewed path allowlist plus staged size/type/credential checks; never git add -A",
+  "large_artifact_rule": "Keep files locally; publish relative location, bytes, SHA256 and restoration role. A manifest does not prove USB backup.",
+  "transport_verification": "unverified until actual destination bytes match",
+  "history_rule": "No force pushes, no merging scientific tracks for synchronization, no automatic clean/reset/delete"
+}

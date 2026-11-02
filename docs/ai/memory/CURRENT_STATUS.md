@@ -1,27 +1,27 @@
 # CURRENT_STATUS
 
 <!-- ai-memory:begin -->
-更新时间：2026-11-01T07:35:39+00:00
+更新时间：2026-11-02T08:55:53+00:00
 
-生成所依据的协调分支 commit：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`
+生成所依据的协调分支 commit：`328550fa7ea2164739009c0cd61c6a2fd70830e6`
 
-协调分支：`chore/project-memory-bootstrap`
+协调分支：`chore/workspace-sync`
 
 此 SHA 是生成输入，不是整个科研项目的单一 HEAD；各线见下表。
 
 | track_id | branch | commit_sha | last_verified_at | current_state |
 |---|---|---|---|---|
-| RT55_RT56 | `query-geometry-diagnostics` | `e74f977271b0bcde42c7ac7a18cb77ac60107e34` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
+| RT55_RT56 | `query-geometry-diagnostics` | `e74f977271b0bcde42c7ac7a18cb77ac60107e34` | 2026-11-02T08:55:52+00:00 | `verified_complete` |
 | RT57 | `rt57-geo-temporal-neural-process` | `143b63af5d0a477ac388d310dc470eb7349b5c90` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
 | RT58 | `rt58-waveform-anchor-transfer-field` | `40830acd475bd40347fef03427b52c4a04432dc3` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
-| RT59 | `rt59-dual-objective-transport-v3` | `d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
+| RT59 | `rt59-dual-objective-transport-v3` | `d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd` | 2026-11-02T08:55:52+00:00 | `verified_complete` |
 | RT60 | `rt60-final-contrast-readout` | `00d624d2fb01c6dd98cac150043dd15b7d8366ff` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
 | RT61 | `rt61-wave-geometry-residual-conditioning` | `9c95dbfaf92f36b2673d816026cd3f25b91eec66` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
 | FE01 | `exp/fe01-feature-extractor-site-effects` | `ba4fa7740d9fde5fde87a7b0ae0397037209baf4` | 2026-11-01T07:24:10+00:00 | `in_progress` |
 | FE01_A01 | `exp/fe01-a01-absolute-amplitude-ablation` | `29ffb20ba0effc0c345a0329ba3f8c658dc8cef0` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
 | FE01_ON | `exp/fe01-on-warning-map-evaluation` | `50672e131d876a604432b283162d5b0189d40cf0` | 2026-11-01T07:24:10+00:00 | `in_progress` |
 | FE02 | `exp/fe02-event-fusion-readout` | `42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7` | 2026-11-01T07:24:10+00:00 | `blocked` |
-| V01 | `exp/v01-velocity-prep-padding-control` | `d8f2436273fbe990e77f7151d86a6b629e99c5c1` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
+| V01 | `exp/v01-velocity-prep-padding-control` | `d8f2436273fbe990e77f7151d86a6b629e99c5c1` | 2026-11-02T08:55:52+00:00 | `verified_complete` |
 | LEGACY | `zhangb/layerwise-station-temporal` | `8d0131db09f9d89e215b27dda77399b481b3a92a` | 2026-11-01T07:24:10+00:00 | `unknown` |
 
 ### RT55_RT56
@@ -32,6 +32,7 @@
 
 - 9月快照核验的是RT55 epoch20 test；含ep32_retry的目录不能证明epoch32 test。epoch32 validation roll证明系统使用匹配波形，不能证明adapter不collapse。 来源：[docs/ai/PROJECT_CONTEXT.md](https://github.com/rular099/team_pytorch/blob/8bde65cb64fd860adf552dfe56505b4b31a78b13/docs/ai/PROJECT_CONTEXT.md)
 - RT56 epoch6 random非输入validation改善，同时normal非输入validation退化；不能把validation改名test。 来源：[docs/ai/PROJECT_CONTEXT.md](https://github.com/rular099/team_pytorch/blob/8bde65cb64fd860adf552dfe56505b4b31a78b13/docs/ai/PROJECT_CONTEXT.md)；[docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md](https://github.com/rular099/team_pytorch/blob/e74f977271b0bcde42c7ac7a18cb77ac60107e34/docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md)
+- 2026-11-02将既有RT55/56完整报告、21张PNG、聚合表和formal metrics同步到独立sync/rt55-rt56；原报告日期/协议保持，未产生新的test或训练结果。 来源：[docs/ai/SYNC_SCOPE_20261102.md](https://github.com/rular099/team_pytorch/blob/bc648c75f4cb5f4d04bf10fe5a80d12745b20244/docs/ai/SYNC_SCOPE_20261102.md)
 
 **pending_tasks**
 
@@ -41,6 +42,7 @@
 
 - [docs/ai/PROJECT_CONTEXT.md](https://github.com/rular099/team_pytorch/blob/8bde65cb64fd860adf552dfe56505b4b31a78b13/docs/ai/PROJECT_CONTEXT.md)
 - [docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md](https://github.com/rular099/team_pytorch/blob/e74f977271b0bcde42c7ac7a18cb77ac60107e34/docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md)
+- [docs/ai/SYNC_SCOPE_20261102.md](https://github.com/rular099/team_pytorch/blob/bc648c75f4cb5f4d04bf10fe5a80d12745b20244/docs/ai/SYNC_SCOPE_20261102.md)
 
 同步：retained_snapshot；来源 `docs/ai/memory/observations/RT55_RT56.json`。
 
@@ -99,6 +101,7 @@ epoch8报告及29项门已归档；假设未全面通过。
 - [docs/ai/CODEX_RESULT_20260920_RT59_DUAL_OBJECTIVE_TRANSPORT_V3_VALIDATION.md](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/docs/ai/CODEX_RESULT_20260920_RT59_DUAL_OBJECTIVE_TRANSPORT_V3_VALIDATION.md)
 - [reports/rt59_dual_objective_transport_v3_validation_20260920/gates.csv](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/reports/rt59_dual_objective_transport_v3_validation_20260920/gates.csv)
 - [pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json](https://github.com/rular099/team_pytorch/blob/d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd/pga_configs/transformer_japan_full_2000_2024_rt59_dual_objective_transport_v3_seed42_chaosuan.json)
+- [reports/rt59_small_event_warning_20260928/REPORT.md](https://github.com/rular099/team_pytorch/blob/52ea935249e490033f49209e106eecdedaa9275a/reports/rt59_small_event_warning_20260928/REPORT.md)
 
 同步：retained_snapshot；来源 `docs/ai/memory/observations/RT59.json`。
 
@@ -238,6 +241,7 @@ validation工程闭环与证据包完成；限定科学负机制结论待独立�
 
 - 报告核验10格导出、4750个metric值和400行CI；fixed epoch8/单seed/非输入query-only，不能与RT55 normal-all混排。 来源：[reports/v01_validation_closure_20261006/RESULT_REVIEW.md](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/RESULT_REVIEW.md)；[reports/v01_validation_closure_20261006/verification.json](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/verification.json)
 - MM总体MAE更低但高PGA退化；A/V common-available MM−AA区间跨零，不证明等效或模态普遍胜出。 来源：[reports/v01_validation_closure_20261006/RESULT_REVIEW.md](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/RESULT_REVIEW.md)；[reports/v01_validation_closure_20261006/headline_metrics.csv](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/headline_metrics.csv)
+- 2026-11-02补存9月30日技术交流v1/v2的讲稿、复现脚本与轻量表；这是历史材料归档，不替代10月6日V01 closure当前结论。 来源：[docs/ai/SYNC_SCOPE_20261102.md](https://github.com/rular099/team_pytorch/blob/52ea935249e490033f49209e106eecdedaa9275a/docs/ai/SYNC_SCOPE_20261102.md)
 
 **pending_tasks**
 
@@ -250,6 +254,7 @@ validation工程闭环与证据包完成；限定科学负机制结论待独立�
 - [reports/v01_validation_closure_20261006/headline_metrics.csv](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/headline_metrics.csv)
 - [reports/v01_validation_closure_20261006/evidence/configs/vfull__vfull__normal.json](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/reports/v01_validation_closure_20261006/evidence/configs/vfull__vfull__normal.json)
 - [docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md](https://github.com/rular099/team_pytorch/blob/d8f2436273fbe990e77f7151d86a6b629e99c5c1/docs/ai/CHATGPT_REVIEW_REQUEST_20261006_V01_CLOSURE.md)
+- [docs/ai/SYNC_SCOPE_20261102.md](https://github.com/rular099/team_pytorch/blob/52ea935249e490033f49209e106eecdedaa9275a/docs/ai/SYNC_SCOPE_20261102.md)
 
 同步：retained_snapshot；来源 `docs/ai/memory/observations/V01.json`。
 

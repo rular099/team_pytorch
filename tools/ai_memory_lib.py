@@ -203,8 +203,9 @@ def global_views(snapshot):
     status = header + '\n' + table + '\n'
     handoff = ('科研目标：利用截至当前时刻可用的多台站三分量波形及输入/查询台站位置，'
                '预测查询台站最终 PGA 的概率分布；同时关注非输入目标、空间动态范围、校准与实时可用性。'
-               '报告坐标 log10(m/s²)。保留 RT55 checkpoint 加载与推理兼容，不用 held-out test 调参。\n\n'
-               '当前任务是项目记忆与并行隔离初始化。全局由协调者维护，各科研实例只写自己的 tracks/<ID>/。'
+               '报告坐标 log10(m/s²)。保留 RT55 checkpoint 加载与推理兼容，不用 held-out test 调参。\n\n')
+    handoff += meta.get('work_focus', '当前任务是项目记忆与并行隔离初始化。') + '\n\n'
+    handoff += ('全局由协调者维护，各科研实例只写自己的 tracks/<ID>/。'
                '公共改动经审阅后再引入工作分支，本轮没有开始新训练或提交超算。\n\n')
     handoff += '状态核验时间：' + meta['generated_at'] + '。精确 branch/commit 见 [CURRENT_STATUS.md](CURRENT_STATUS.md)。\n\n'
     for r in records:

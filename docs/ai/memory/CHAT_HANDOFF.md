@@ -3,9 +3,11 @@
 <!-- ai-memory:begin -->
 科研目标：利用截至当前时刻可用的多台站三分量波形及输入/查询台站位置，预测查询台站最终 PGA 的概率分布；同时关注非输入目标、空间动态范围、校准与实时可用性。报告坐标 log10(m/s²)。保留 RT55 checkpoint 加载与推理兼容，不用 held-out test 调参。
 
-当前任务是项目记忆与并行隔离初始化。全局由协调者维护，各科研实例只写自己的 tracks/<ID>/。公共改动经审阅后再引入工作分支，本轮没有开始新训练或提交超算。
+当前任务为跨终端轻量同步。独立sync分支已保存原未提交报告与任务依据；恢复工作区和U盘校验请先读[终端恢复入口](../sync/TERMINAL_HANDOFF.md)。本轮没有新增科研训练/评价，原六个工作区保留，外接chaosuan_res尚不可读取，不能将清单当作已验证备份。
 
-状态核验时间：2026-11-01T07:35:39+00:00。精确 branch/commit 见 [CURRENT_STATUS.md](CURRENT_STATUS.md)。
+全局由协调者维护，各科研实例只写自己的 tracks/<ID>/。公共改动经审阅后再引入工作分支，本轮没有开始新训练或提交超算。
+
+状态核验时间：2026-11-02T08:55:53+00:00。精确 branch/commit 见 [CURRENT_STATUS.md](CURRENT_STATUS.md)。
 
 - **RT55_RT56** (`verified_complete`)：RT55确实使用匹配波形；RT56随机几何适配有收益也有normal遗忘，任意查询空间辨识仍未解决。 9月快照核验的是RT55 epoch20 test；含ep32_retry的目录不能证明epoch32 test。epoch32 validation roll证明系统使用匹配波形，不能证明adapter不collapse。 [本线来源](tracks/RT55_RT56/STATUS.md)。
 - **RT57** (`verified_complete`)：GTNP v2已评估；残差缩放gamma=1.66来自同一validation选择，不能当独立test证据。 random/normal配对与指标复算在报告中通过；gamma=1.66当时为离线分析选择。 [本线来源](tracks/RT57/STATUS.md)。

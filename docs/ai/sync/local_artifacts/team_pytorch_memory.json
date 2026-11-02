@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-11-02T08:37:15+00:00",
+  "source_worktree": "team_pytorch_memory",
+  "source_branch": "chore/project-memory-bootstrap",
+  "source_commit": "328550fa7ea2164739009c0cd61c6a2fd70830e6",
+  "transfer_status": "unverified",
+  "files": [],
+  "skipped": {
+    "regenerable": 4
+  },
+  "note": "This hashes visible local files only. No USB destination or archived member equality was verified; no cleanup authorized."
+}

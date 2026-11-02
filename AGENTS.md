@@ -5,6 +5,12 @@ current task take precedence.
 
 ## Start here
 
+For terminal migration, first read `START_HERE.md` and
+`docs/ai/sync/TERMINAL_HANDOFF.md`. Sync branches are reviewed file snapshots,
+not new scientific runs. An artifact manifest does not certify a USB backup;
+verify actual destination bytes before relying on a transfer. Preserve original
+worktrees and never clean/reset/delete files just because they are ignored.
+
 For cross-conversation recovery, first read `docs/ai/memory/PROJECT_MEMORY.md`,
 `CURRENT_STATUS.md`, `CHAT_HANDOFF.md`, then the relevant `tracks/<ID>/STATUS.md`.
 Check the actual branch/HEAD against that line's recorded source. A memory-only

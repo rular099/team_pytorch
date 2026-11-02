@@ -7,7 +7,7 @@ branch: `query-geometry-diagnostics`
 
 commit_sha: `e74f977271b0bcde42c7ac7a18cb77ac60107e34`
 
-last_verified_at: `2026-11-01T07:24:10+00:00`
+last_verified_at: `2026-11-02T08:55:52+00:00`
 
 current_state: `verified_complete`
 
@@ -21,6 +21,7 @@ RT55确实使用匹配波形；RT56随机几何适配有收益也有normal遗忘
 
 - 9月快照核验的是RT55 epoch20 test；含ep32_retry的目录不能证明epoch32 test。epoch32 validation roll证明系统使用匹配波形，不能证明adapter不collapse。 来源：[docs/ai/PROJECT_CONTEXT.md](https://github.com/rular099/team_pytorch/blob/8bde65cb64fd860adf552dfe56505b4b31a78b13/docs/ai/PROJECT_CONTEXT.md)
 - RT56 epoch6 random非输入validation改善，同时normal非输入validation退化；不能把validation改名test。 来源：[docs/ai/PROJECT_CONTEXT.md](https://github.com/rular099/team_pytorch/blob/8bde65cb64fd860adf552dfe56505b4b31a78b13/docs/ai/PROJECT_CONTEXT.md)；[docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md](https://github.com/rular099/team_pytorch/blob/e74f977271b0bcde42c7ac7a18cb77ac60107e34/docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md)
+- 2026-11-02将既有RT55/56完整报告、21张PNG、聚合表和formal metrics同步到独立sync/rt55-rt56；原报告日期/协议保持，未产生新的test或训练结果。 来源：[docs/ai/SYNC_SCOPE_20261102.md](https://github.com/rular099/team_pytorch/blob/bc648c75f4cb5f4d04bf10fe5a80d12745b20244/docs/ai/SYNC_SCOPE_20261102.md)
 
 ### pending_tasks
 
@@ -35,6 +36,7 @@ RT55确实使用匹配波形；RT56随机几何适配有收益也有normal遗忘
 
 - [docs/ai/PROJECT_CONTEXT.md](https://github.com/rular099/team_pytorch/blob/8bde65cb64fd860adf552dfe56505b4b31a78b13/docs/ai/PROJECT_CONTEXT.md)
 - [docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md](https://github.com/rular099/team_pytorch/blob/e74f977271b0bcde42c7ac7a18cb77ac60107e34/docs/ai/CODEX_RESULT_20260907_random_geometry_full_analysis.md)
+- [docs/ai/SYNC_SCOPE_20261102.md](https://github.com/rular099/team_pytorch/blob/bc648c75f4cb5f4d04bf10fe5a80d12745b20244/docs/ai/SYNC_SCOPE_20261102.md)
 <!-- ai-memory:end -->
 
 <!-- 人工补充写在生成区外；record.json 是结构化事实源。 -->
