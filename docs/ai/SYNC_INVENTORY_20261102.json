@@ -1,0 +1,49 @@
+{
+  "source_branch": "exp/fe01-feature-extractor-site-effects",
+  "source_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+  "sync_branch": "sync/fe01",
+  "exported_at": "2026-11-02T08:37:15+00:00",
+  "files": [
+    {
+      "source_workspace_relative_path": "team_pytorch_fe01/CODEX_TASK_FE01_EVAL1_20261004.md",
+      "published_path": "CODEX_TASK_FE01_EVAL1_20261004.md",
+      "branch": "sync/fe01",
+      "track_id": "FE01",
+      "source_sha256": "1a1e737be46149adda859ba816ce84a0a6463bda71ab2b065579a95c91a6a67f",
+      "published_sha256": "1a1e737be46149adda859ba816ce84a0a6463bda71ab2b065579a95c91a6a67f",
+      "bytes": 29781,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_fe01/FE01EVAL1_prompt.md",
+      "published_path": "FE01EVAL1_prompt.md",
+      "branch": "sync/fe01",
+      "track_id": "FE01",
+      "source_sha256": "29d91a2907961a43a7fed63a4036236c3fedea739b687997f4f999c4793055a0",
+      "published_sha256": "29d91a2907961a43a7fed63a4036236c3fedea739b687997f4f999c4793055a0",
+      "bytes": 5755,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_fe01/FE01_GEOMETRY_AMPLITUDE_HANDOFF_20261007.md",
+      "published_path": "FE01_GEOMETRY_AMPLITUDE_HANDOFF_20261007.md",
+      "branch": "sync/fe01",
+      "track_id": "FE01",
+      "source_sha256": "22bd7873e5b50649ff81bb4eeb6ff3ab159f1e58e53bf7439d6ca421a2a6981e",
+      "published_sha256": "22bd7873e5b50649ff81bb4eeb6ff3ab159f1e58e53bf7439d6ca421a2a6981e",
+      "bytes": 18773,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch_fe01/fe01_a01_prompt.md",
+      "published_path": "fe01_a01_prompt.md",
+      "branch": "sync/fe01",
+      "track_id": "FE01",
+      "source_sha256": "89d27dc5139d52aa324359ad3003c6467d5fd8cb7f6e1750bdd5156e991cf27f",
+      "published_sha256": "89d27dc5139d52aa324359ad3003c6467d5fd8cb7f6e1750bdd5156e991cf27f",
+      "bytes": 18671,
+      "export_transform": "byte_identical"
+    }
+  ],
+  "scope": "Existing offline artifacts only; no scientific rerun; path-normalized copies retain numeric fields and original SHA"
+}
