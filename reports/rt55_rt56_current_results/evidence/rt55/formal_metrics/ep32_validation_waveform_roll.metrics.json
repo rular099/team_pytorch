@@ -1,0 +1,56 @@
+{
+  "checkpoint": "${HPC_CODE_ROOT}/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/full_model_best.pth",
+  "checkpoint_metadata": {
+    "checkpoint_format": "non_encoder_v1",
+    "encoder_source": "/public/home/test_bigmodel/seismogram/mx/results/scaling_diting_1b/scaling_diting_1200M/checkpoint_pt_epoch_70/mp_rank_00_model_states.pt",
+    "epoch": 32,
+    "loss": 0.012362980283796787
+  },
+  "config": "${HPC_CODE_ROOT}/weights_japan_full_2000_2024_rt55_knet_legacy_paddingmask_no_dpk_seed42/config.json",
+  "metric_protocol": {
+    "brier": "unweighted mean squared probability error at the configured PGA threshold",
+    "coverage": "|predictive_mean-target| <= k * predictive_mixture_std",
+    "nll": "unweighted mean MDN NLL over valid PGA targets in log10(m/s^2)",
+    "pga_coordinate": "log10(m/s^2)",
+    "point_estimate": "predictive_mixture_mean"
+  },
+  "metrics": {
+    "val": {
+      "pga": {
+        "bias": 0.03757755455908795,
+        "brier": 0.24428576249898726,
+        "brier_positive_rate": 0.41597415617689654,
+        "brier_threshold_log10_mps2": -1.2,
+        "coordinate": "log10(m/s^2)",
+        "correlation": 0.5603845792327539,
+        "coverage_1sigma": 0.3706694886933274,
+        "coverage_2sigma": 0.5928818090676172,
+        "events": 1383,
+        "intercept": -0.5895755508270712,
+        "mae": 0.24897953723727015,
+        "nll": 1.9937496813605737,
+        "nll_log10_mps2": 1.9937496813605737,
+        "nll_model_space": 2.8348243190441775,
+        "point_estimate": "predictive_mixture_mean",
+        "predictive_sigma_mean": 0.14309007678987243,
+        "predictive_sigma_median": 0.1608058214187622,
+        "probability_mean": 0.4820463835149417,
+        "r2": 0.20690590089051664,
+        "realtime_samples": 9681,
+        "rmse": 0.3242613072779131,
+        "slope": 0.4880877601023349,
+        "target_slots": 145215,
+        "targets": 89770,
+        "valid_target_fraction": 0.6181868264297765
+      }
+    }
+  },
+  "num_shards": 1,
+  "schema_version": 1,
+  "shard_id": 0,
+  "splits": [
+    "val"
+  ],
+  "waveform_station_permutation": "roll",
+  "waveform_station_permutation_seed": 12345
+}

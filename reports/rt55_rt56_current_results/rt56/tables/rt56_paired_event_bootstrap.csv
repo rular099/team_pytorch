@@ -1,0 +1,2 @@
+events,targets,event_balanced_before_mae,event_balanced_after_mae,event_balanced_delta_mae,bootstrap_ci95_low,bootstrap_ci95_high,bootstrap_replicates,bootstrap_seed
+1310.0,75654.0,0.28305174326703253,0.2607350783448916,-0.022316664922140853,-0.02589519855883421,-0.01899737293238091,1000.0,42.0

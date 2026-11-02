@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-08-29 Asia/Shanghai",
+  "generator": "${WORKSPACE_ROOT}/team_pytorch/tools/generate_rt55_rt56_comprehensive_report.py",
+  "python_backend": "NumPy/Pandas/SciPy/Matplotlib/Seaborn",
+  "bootstrap_replicates": 1000,
+  "bootstrap_seed": 42,
+  "strong_motion_threshold_log10_mps2": -1.2,
+  "notes": [
+    "RT55 formal test is epoch 20",
+    "RT56 has validation only",
+    "random target exclusion audited by coordinates"
+  ]
+}

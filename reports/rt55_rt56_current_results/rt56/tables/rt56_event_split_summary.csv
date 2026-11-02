@@ -1,0 +1,4 @@
+split,events,magnitude_min,magnitude_median,magnitude_max,depth_km_median,stations_per_event_median,year_min,year_max
+train,9627,3.0,3.9,9.0,26.0,10.0,2000.0,2024.0
+dev,1383,3.0,4.0,8.0,35.0,11.0,2000.0,2024.0
+test,2769,3.0,3.9,7.4,30.0,10.0,2000.0,2024.0

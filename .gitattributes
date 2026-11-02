@@ -1,0 +1,3 @@
+# Preserve source CSV CRLF and generated SVG bytes; do not change scientific artifacts for lint.
+*.csv whitespace=cr-at-eol
+*.svg -whitespace

@@ -1,0 +1,3 @@
+run,targets,overlap_targets_tol_1e-6,overlap_fraction_tol_1e-6,minimum_coord_delta_deg,p01_coord_delta_deg,minimum_geodesic_distance_km,p01_geodesic_distance_km,audit_basis
+rt56_zero_random,75654,0,0.0,0.005556970837494142,0.05826027923305893,0.5351001119465424,5.855251050460328,target and valid selected-input coordinates
+rt56_fine_random,75654,0,0.0,0.005556970837494142,0.05826027923305893,0.5351001119465424,5.855251050460328,target and valid selected-input coordinates

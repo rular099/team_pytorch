@@ -1,0 +1,4 @@
+split,station_rows,unique_stations,coordinate_cache_rows,coordinate_cache_coverage
+train,146842,960,146404,0.9970172021628689
+dev,22336,917,22271,0.9970898997134671
+test,42368,952,42270,0.9976869335347432

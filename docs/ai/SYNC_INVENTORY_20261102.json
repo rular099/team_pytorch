@@ -1,0 +1,889 @@
+{
+  "source_branch": "zhangb/native-scale-adapter-scaling",
+  "source_commit": "8bde65cb64fd860adf552dfe56505b4b31a78b13",
+  "sync_branch": "sync/rt55-rt56",
+  "exported_at": "2026-11-02T08:37:15+00:00",
+  "files": [
+    {
+      "source_workspace_relative_path": "team_pytorch/AI_HANDOFF_20260902_query_geometry_diagnostics.md",
+      "published_path": "AI_HANDOFF_20260902_query_geometry_diagnostics.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "92706fbb220186ce5445db393b1053cfc0fbf904b5df3b963d00a22b797d9e7e",
+      "published_sha256": "92706fbb220186ce5445db393b1053cfc0fbf904b5df3b963d00a22b797d9e7e",
+      "bytes": 14030,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/AI_HANDOFF_20260903_querydiag_review_fixes.md",
+      "published_path": "AI_HANDOFF_20260903_querydiag_review_fixes.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "3095ea9874cbe27df77d3c0e93f8b56b63e4f88d3d070fe65688395837901742",
+      "published_sha256": "3095ea9874cbe27df77d3c0e93f8b56b63e4f88d3d070fe65688395837901742",
+      "bytes": 13767,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/AI_HANDOFF_20260908_RT57_GTNP_v2_station_distinctive.md",
+      "published_path": "AI_HANDOFF_20260908_RT57_GTNP_v2_station_distinctive.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "c36b1feb4ddd78200a9c957ea2541c964ae0e1066fd9312e2c263c95bdbe2245",
+      "published_sha256": "c36b1feb4ddd78200a9c957ea2541c964ae0e1066fd9312e2c263c95bdbe2245",
+      "bytes": 15825,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/MANIFEST_SHA256.txt",
+      "published_path": "docs/ai/history/external_review_rt55_rt56_20260902/MANIFEST_SHA256.txt",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "0f784227edb1a26142e6522ec7495b1bf90073b27fe874df4bacd33dc58707e8",
+      "published_sha256": "0f784227edb1a26142e6522ec7495b1bf90073b27fe874df4bacd33dc58707e8",
+      "bytes": 28470,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/README.md",
+      "published_path": "docs/ai/history/external_review_rt55_rt56_20260902/README.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "3bdb5965014601cde6c085fbce6fd4265b27ff48792718b5251d8a9c653dd414",
+      "published_sha256": "3bdb5965014601cde6c085fbce6fd4265b27ff48792718b5251d8a9c653dd414",
+      "bytes": 2105,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/REQUEST_TO_EXTERNAL_AI_CN.md",
+      "published_path": "docs/ai/history/external_review_rt55_rt56_20260902/REQUEST_TO_EXTERNAL_AI_CN.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "5eefca185a7902deb139a65c1f4019ca4922b2c3aa4810d390c7e52032c5e77c",
+      "published_sha256": "5eefca185a7902deb139a65c1f4019ca4922b2c3aa4810d390c7e52032c5e77c",
+      "bytes": 14448,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt55/formal_metrics/ep20_test_normal.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt55/formal_metrics/ep20_test_normal.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d18bd48578ece0a05f1e61f4047e77a7d0f2da132aab3a1496f4529cce8052f1",
+      "published_sha256": "61b00479dc0cfec32fd2b4ce2b74839e6d25e899499acbcd63a5478449cbca05",
+      "bytes": 2177,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt55/formal_metrics/ep20_validation_normal.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt55/formal_metrics/ep20_validation_normal.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "27f0860a7d551bb6c5d4aa30729b6c71e977d61f3db3af3ba0222208e44694ce",
+      "published_sha256": "8a099a7687a79a389a11caff81c952ca1007a8d33247c692f32451c467d4aa21",
+      "bytes": 2171,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt55/formal_metrics/ep32_validation_normal.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt55/formal_metrics/ep32_validation_normal.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d2b716ec6981791890cc9176c3d03d8349f340936640b9d48a3c461924acb983",
+      "published_sha256": "7e508fc0325b6c5fd6db9624f1b465f3c423f1f4d04f694dba243eacc5e079c7",
+      "bytes": 2168,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt55/formal_metrics/ep32_validation_waveform_roll.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt55/formal_metrics/ep32_validation_waveform_roll.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "04f8a912786b344a55889f183669dd13430a2c4ae9ae414f25ffa01551e39935",
+      "published_sha256": "65600725780c61a111849a1df096742f289990d2d8b2a17fddef75a671fe65c5",
+      "bytes": 2166,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt56/formal_metrics/ep32_zero_shot_random_geometry.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt56/formal_metrics/ep32_zero_shot_random_geometry.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e7c6c2bf8ca66163653f1439dcb6e365802ae0c5e3ab439d20e752e9ac44c084",
+      "published_sha256": "f227265a5470c3c0d536d137f2a4b11a24aef9b132943b27d2f280f77b0c59fa",
+      "bytes": 5143,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt56/formal_metrics/ep6_finetuned_random_geometry.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt56/formal_metrics/ep6_finetuned_random_geometry.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4aa2085c8d42b240ab0f39fd7dd1dca7130d628d57ec085d4760e88d75944d59",
+      "published_sha256": "20688596c764e6cf898255601ac8732276ab51a823c622292e578923fad9cff0",
+      "bytes": 5112,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/rt56/formal_metrics/ep6_validation_normal.metrics.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/rt56/formal_metrics/ep6_validation_normal.metrics.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "5ac3572281d491113a9cdff13552128f629b567e56790a550641e21e12cc5173",
+      "published_sha256": "faf45e1dc8c984a6c0b6d62bca2fda7658a979863c1c32cc9426ffa3cc3837c7",
+      "bytes": 2163,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/run_snapshots/rt55_merged_config.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/run_snapshots/rt55_merged_config.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "8139292c3819667632f8b6973f17159da7083f1a2738a2ad319468f8d7bf68a6",
+      "published_sha256": "8c494e0412844296a0407c6d67f6225dfd6b74c6973d1acb34a408dae43f1ab9",
+      "bytes": 87759,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/run_snapshots/rt56_merged_config.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/run_snapshots/rt56_merged_config.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "8a15c0b375a780edd7982901beb1528348d462e7f9a5e084b4a602f9a6738f0e",
+      "published_sha256": "e7e8720300b60ddc0aa60070f5d2af231d4031539b38d9d2bb06c03f29b3ffce",
+      "bytes": 89387,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/external_ai_review_rt55_rt56_20260902/results/shared/report_provenance.json",
+      "published_path": "reports/rt55_rt56_current_results/evidence/shared/report_provenance.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4e02c1330a9c76b7c052eee5fa15577f494a211ece31e0faf1f97b3ae6ef00bd",
+      "published_sha256": "214bf3adbaad5adbb58bcae622d906e122fde9fd0bdce45aa731f2ecd2e0d84d",
+      "bytes": 448,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/FIGURE_CONTRACTS.md",
+      "published_path": "reports/rt55_rt56_current_results/FIGURE_CONTRACTS.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4fdd9987a79d1e39a9b471cb307278028ad5ddf0bc4f50f82b2f78b549657bd6",
+      "published_sha256": "541e99775f2d0bab8bcc631803110efc5feb79cdc5bdabac83c527b239e2189e",
+      "bytes": 4094,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/README.md",
+      "published_path": "reports/rt55_rt56_current_results/README.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "8fc2363bdf8025d68477e4af61056e458adb5ef3411528ed620c97e126d48572",
+      "published_sha256": "4170dce3d6918f5a512a874ed5053b38ead7ca31412d7d3755763d6b1e325bd5",
+      "bytes": 719,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/qa/artifact_manifest.csv",
+      "published_path": "reports/rt55_rt56_current_results/qa/artifact_manifest.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "7db9fe91c758ed8b3a729c3fe7e85d6310906da6e0c6050cc652d4b56722724d",
+      "published_sha256": "7db9fe91c758ed8b3a729c3fe7e85d6310906da6e0c6050cc652d4b56722724d",
+      "bytes": 7265,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/qa/formal_metric_recompute_parity.csv",
+      "published_path": "reports/rt55_rt56_current_results/qa/formal_metric_recompute_parity.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4f0644ee9de7565a18913b7ab2f8c5617447170b4c3fb212a79f4d95f4255c06",
+      "published_sha256": "4f0644ee9de7565a18913b7ab2f8c5617447170b4c3fb212a79f4d95f4255c06",
+      "bytes": 7423,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/REPORT_CN.md",
+      "published_path": "reports/rt55_rt56_current_results/rt55/REPORT_CN.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6c5d29bb031b8f4b1f888acf1c88c631f2fbc3104dca70a8c98263d6f0018feb",
+      "published_sha256": "0e79e2227c6d313e1196eb925a3cb33f44b50514d5f8c62d5051624012e37700",
+      "bytes": 13199,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_calibration_residual.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_calibration_residual.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "ef7dff2920184fe784f635fe308fdc2e13cabea0080b0bba44f52282eb5a09ff",
+      "published_sha256": "ef7dff2920184fe784f635fe308fdc2e13cabea0080b0bba44f52282eb5a09ff",
+      "bytes": 9835,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_calibration_residual.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_calibration_residual.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "1e9104c37446de7cb6f21e7559ca159fc46e6220c5794c7a99071855a8a352e5",
+      "published_sha256": "1e9104c37446de7cb6f21e7559ca159fc46e6220c5794c7a99071855a8a352e5",
+      "bytes": 210943,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_case_profiles.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_case_profiles.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e1eb643da4b5145f61da074331899ed45bdbd1209f775a5b90357995830f5abb",
+      "published_sha256": "e1eb643da4b5145f61da074331899ed45bdbd1209f775a5b90357995830f5abb",
+      "bytes": 32393,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_case_profiles.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_case_profiles.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6bbd9fa24daaccf23d0e233683020e7c816fe2a8e54cdb30c5bc76eb55721f81",
+      "published_sha256": "6bbd9fa24daaccf23d0e233683020e7c816fe2a8e54cdb30c5bc76eb55721f81",
+      "bytes": 399164,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_case_spatial_residuals.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_case_spatial_residuals.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "625b97bf929ea4e1e64963e605cb598b1fa28c84953dd070e323f6df00389ca6",
+      "published_sha256": "625b97bf929ea4e1e64963e605cb598b1fa28c84953dd070e323f6df00389ca6",
+      "bytes": 32254,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_case_spatial_residuals.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_case_spatial_residuals.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "69db864b6e9529f79153a3d70820eefdf5d9d6cc9aac43b5b783d2aacf2ec23a",
+      "published_sha256": "69db864b6e9529f79153a3d70820eefdf5d9d6cc9aac43b5b783d2aacf2ec23a",
+      "bytes": 412896,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_data_distribution.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_data_distribution.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f4badac56ff813a1c1df3a387a2bc834c9e8d0f24443401daa795fa6e1fe691c",
+      "published_sha256": "f4badac56ff813a1c1df3a387a2bc834c9e8d0f24443401daa795fa6e1fe691c",
+      "bytes": 341767,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_metric_dashboard.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_metric_dashboard.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6f8d214ec60f3e12a4b3d87d14cf09f266de2c415b7f98c77bf87fe0a7d80e62",
+      "published_sha256": "6f8d214ec60f3e12a4b3d87d14cf09f266de2c415b7f98c77bf87fe0a7d80e62",
+      "bytes": 3891,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_metric_dashboard.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_metric_dashboard.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "a0bda6826629ce05cc9c4b43f85aa40f4cd1fb33fdbf55537cf08081d4ecadf2",
+      "published_sha256": "a0bda6826629ce05cc9c4b43f85aa40f4cd1fb33fdbf55537cf08081d4ecadf2",
+      "bytes": 189780,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_scatter_truth_prediction.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_scatter_truth_prediction.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4e6a8dc9a8023230d1862b21c224c76752d5d16d60dff67c7d48adbb8ede8320",
+      "published_sha256": "4e6a8dc9a8023230d1862b21c224c76752d5d16d60dff67c7d48adbb8ede8320",
+      "bytes": 606030,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_stratified_mae.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_stratified_mae.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "2afe5eacc87ad48e77a76c996e51ef5e9fbc06b97e4c437ffd0160785abdd6aa",
+      "published_sha256": "2afe5eacc87ad48e77a76c996e51ef5e9fbc06b97e4c437ffd0160785abdd6aa",
+      "bytes": 42062,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_stratified_mae.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_stratified_mae.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f71d9ec095e619fad980f3785cbcd0a7b41f76a501ed18847e8b2932e7e276d3",
+      "published_sha256": "f71d9ec095e619fad980f3785cbcd0a7b41f76a501ed18847e8b2932e7e276d3",
+      "bytes": 392167,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_target_pga_distribution.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_target_pga_distribution.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "342cbd93d4b757caf6ee7e003806d6ab351623486b6f328a55b3e1593d2a9658",
+      "published_sha256": "342cbd93d4b757caf6ee7e003806d6ab351623486b6f328a55b3e1593d2a9658",
+      "bytes": 20910,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_target_pga_distribution.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_target_pga_distribution.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "ae1409dca23908d4e27208f630ce886a3b274a225160ae391b430eb22a491aa1",
+      "published_sha256": "ae1409dca23908d4e27208f630ce886a3b274a225160ae391b430eb22a491aa1",
+      "bytes": 129352,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_target_type_breakdown.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_target_type_breakdown.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "c4d86b5fb42e42dc6af24486560d1a77e5120390e6651a4dbc958e2d5ae82bca",
+      "published_sha256": "c4d86b5fb42e42dc6af24486560d1a77e5120390e6651a4dbc958e2d5ae82bca",
+      "bytes": 7469,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_target_type_breakdown.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_target_type_breakdown.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "73bf38a4a2f9d4a1c05b4359ab17ce03018837e15c36eaab9bb1c560ba25335c",
+      "published_sha256": "73bf38a4a2f9d4a1c05b4359ab17ce03018837e15c36eaab9bb1c560ba25335c",
+      "bytes": 174720,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_training_curve.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_training_curve.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e4c587b2c55309ebdf76d1550361a53ef97a87a2c9cd969c1e21b8d9b2050028",
+      "published_sha256": "e4c587b2c55309ebdf76d1550361a53ef97a87a2c9cd969c1e21b8d9b2050028",
+      "bytes": 505,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/figures/rt55_training_curve.png",
+      "published_path": "reports/rt55_rt56_current_results/rt55/figures/rt55_training_curve.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "fb551ba61a7cde7fc88044518f1b8371ec3dd1982be3c9fabb158a451ba2d64a",
+      "published_sha256": "fb551ba61a7cde7fc88044518f1b8371ec3dd1982be3c9fabb158a451ba2d64a",
+      "bytes": 76053,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_aggregate_metrics.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_aggregate_metrics.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "610f517d9d99f4cf94837b7354ee9ac2255696e3d4624719cb9c07f141ff810f",
+      "published_sha256": "610f517d9d99f4cf94837b7354ee9ac2255696e3d4624719cb9c07f141ff810f",
+      "bytes": 16345,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_case_selection.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_case_selection.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "bc1eabfa4eba9fbddf8b4fef5d162a388c277e0566290313d4970e038260e0b1",
+      "published_sha256": "bc1eabfa4eba9fbddf8b4fef5d162a388c277e0566290313d4970e038260e0b1",
+      "bytes": 1327,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_event_split_summary.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_event_split_summary.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "357fe3b19eb72ddf0f88819187e9dd51d6fe9c4059637884514e057f98a5db7c",
+      "published_sha256": "357fe3b19eb72ddf0f88819187e9dd51d6fe9c4059637884514e057f98a5db7c",
+      "bytes": 256,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_flat_output_audit.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_flat_output_audit.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "ecd6f77f7a2d0944beb8c66f5c17e7232f49d19f6da8acd90c3adffb1cd17c45",
+      "published_sha256": "ecd6f77f7a2d0944beb8c66f5c17e7232f49d19f6da8acd90c3adffb1cd17c45",
+      "bytes": 628,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_magnitude_split_counts.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_magnitude_split_counts.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "b7e89ec07722195fcb14f289fd7e03c63496d2653ed573291f61a03151d4169a",
+      "published_sha256": "b7e89ec07722195fcb14f289fd7e03c63496d2653ed573291f61a03151d4169a",
+      "bytes": 365,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_station_split_summary.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_station_split_summary.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d4622a3cececd06e5f2d8c072f79e5cad315f960b86c65e091aa8bc60aa2c2d7",
+      "published_sha256": "d4622a3cececd06e5f2d8c072f79e5cad315f960b86c65e091aa8bc60aa2c2d7",
+      "bytes": 205,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_distance.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_distance.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "aaf515911ea239235d423cd6ff51c0866e4b45116491b43cefe332226dbf10bd",
+      "published_sha256": "aaf515911ea239235d423cd6ff51c0866e4b45116491b43cefe332226dbf10bd",
+      "bytes": 7419,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_lead.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_lead.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "c179dc00bb7314154c412968939c3b4627cd524f9444b9a9e1e3556fae3b471e",
+      "published_sha256": "c179dc00bb7314154c412968939c3b4627cd524f9444b9a9e1e3556fae3b471e",
+      "bytes": 5075,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_magnitude.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_magnitude.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e4eb0ac57f7eef8ffc6866f6305d01fb16e59782735f59363bb17e70f66d2f7f",
+      "published_sha256": "e4eb0ac57f7eef8ffc6866f6305d01fb16e59782735f59363bb17e70f66d2f7f",
+      "bytes": 7462,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_station.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_station.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d2d49b132687ea9072ef6b9e63d2b46676d3d41cd9b6268b78240cb0f4123f78",
+      "published_sha256": "d2d49b132687ea9072ef6b9e63d2b46676d3d41cd9b6268b78240cb0f4123f78",
+      "bytes": 7428,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_time.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_time.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "a386b516b8cf34b62cc01a356339af8408ccfffda7179d1132c5820144379e5e",
+      "published_sha256": "a386b516b8cf34b62cc01a356339af8408ccfffda7179d1132c5820144379e5e",
+      "bytes": 8525,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_waveform.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt55/tables/rt55_stratified_waveform.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "7b94ae4719ef8c2ef19114ab461cf2a9b711b24d785225b69f527cca4e9f3d3e",
+      "published_sha256": "7b94ae4719ef8c2ef19114ab461cf2a9b711b24d785225b69f527cca4e9f3d3e",
+      "bytes": 6736,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/REPORT_CN.md",
+      "published_path": "reports/rt55_rt56_current_results/rt56/REPORT_CN.md",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "cd6f5b7acb0b817f44505be8c1c77c8d08468aeb18987ff4ed527b7612b7fdc3",
+      "published_sha256": "013549d750b15d1f392bb14743d6aeb20f986951a584837f4ffa90776a649c5b",
+      "bytes": 11712,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_base_data_distribution.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_base_data_distribution.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f4badac56ff813a1c1df3a387a2bc834c9e8d0f24443401daa795fa6e1fe691c",
+      "published_sha256": "f4badac56ff813a1c1df3a387a2bc834c9e8d0f24443401daa795fa6e1fe691c",
+      "bytes": 341767,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_calibration_residual.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_calibration_residual.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "0de23d52e7ecc61b29093c5bd038196dc19a742af9e91e8432e37aad0fee30e2",
+      "published_sha256": "0de23d52e7ecc61b29093c5bd038196dc19a742af9e91e8432e37aad0fee30e2",
+      "bytes": 10072,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_calibration_residual.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_calibration_residual.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "ab64f32158a048518a75e6871eaa425c0c56bf230187b6f798314e1614ad1805",
+      "published_sha256": "ab64f32158a048518a75e6871eaa425c0c56bf230187b6f798314e1614ad1805",
+      "bytes": 209905,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_case_profiles.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_case_profiles.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "9b1a5bf8199cc7c672ae77dbfaf1d27e68f3b3b4a352148be3ecb437a19f673d",
+      "published_sha256": "9b1a5bf8199cc7c672ae77dbfaf1d27e68f3b3b4a352148be3ecb437a19f673d",
+      "bytes": 48423,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_case_profiles.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_case_profiles.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d514c3e60f12b3319b4563fee76e7fb0994c6b36c43daea88ed251c14d3929f0",
+      "published_sha256": "d514c3e60f12b3319b4563fee76e7fb0994c6b36c43daea88ed251c14d3929f0",
+      "bytes": 399952,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_case_spatial_delta.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_case_spatial_delta.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "abc110b64cf5230bb7b9857f36ad4fe85bd5e1d4f8603d43872e4ec31c1ba8ef",
+      "published_sha256": "abc110b64cf5230bb7b9857f36ad4fe85bd5e1d4f8603d43872e4ec31c1ba8ef",
+      "bytes": 48281,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_case_spatial_delta.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_case_spatial_delta.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "65b6e8a39aa3782cd25cb6fde32369e7b0e25cda23a348b12d176ba2b0474274",
+      "published_sha256": "65b6e8a39aa3782cd25cb6fde32369e7b0e25cda23a348b12d176ba2b0474274",
+      "bytes": 274726,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_normal_retention_dashboard.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_normal_retention_dashboard.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "cf569ef0011d5acedfcaa8a1fa0aad71a710a1eea905f2a76d0fc18a86ae9583",
+      "published_sha256": "cf569ef0011d5acedfcaa8a1fa0aad71a710a1eea905f2a76d0fc18a86ae9583",
+      "bytes": 2713,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_normal_retention_dashboard.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_normal_retention_dashboard.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "8ff2105322edc208dc07c80868ced26d4ce19a983b7ae98c90e5605bdc02a712",
+      "published_sha256": "8ff2105322edc208dc07c80868ced26d4ce19a983b7ae98c90e5605bdc02a712",
+      "bytes": 182374,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_paired_delta.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_paired_delta.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "e3ee40f7aaf3f579cd3a7f1fea6388a9cf8ced41aed4d602056a8cb26c0e6cc5",
+      "published_sha256": "e3ee40f7aaf3f579cd3a7f1fea6388a9cf8ced41aed4d602056a8cb26c0e6cc5",
+      "bytes": 139374,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_random_geometry_distribution.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_random_geometry_distribution.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "b6e0642b657b8cebcb14f67b6707dc7978213859587c8bcd0c8cad076dbdf0db",
+      "published_sha256": "b6e0642b657b8cebcb14f67b6707dc7978213859587c8bcd0c8cad076dbdf0db",
+      "bytes": 216412,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_random_metric_dashboard.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_random_metric_dashboard.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "3c505fd243db97df0a0d9aeb303d1e21b82e478bba60625b6dd1e676c284c412",
+      "published_sha256": "3c505fd243db97df0a0d9aeb303d1e21b82e478bba60625b6dd1e676c284c412",
+      "bytes": 1563,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_random_metric_dashboard.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_random_metric_dashboard.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "78335c5299ec7fbc9e01d895d849b737b99f1e06dcc0ab7940615d2f5b3e44f2",
+      "published_sha256": "78335c5299ec7fbc9e01d895d849b737b99f1e06dcc0ab7940615d2f5b3e44f2",
+      "bytes": 123181,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_scatter_truth_prediction.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_scatter_truth_prediction.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d0aa468a0cb951ffd4f38cb9c33f88c53d76f8beffaffd695b7f792f392d1f7c",
+      "published_sha256": "d0aa468a0cb951ffd4f38cb9c33f88c53d76f8beffaffd695b7f792f392d1f7c",
+      "bytes": 701607,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_stratified_mae.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_stratified_mae.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f06fc5808f92bc9ab3a9636aae910ee63a62f0bd901e55a3eda5c8c390e6cdcf",
+      "published_sha256": "f06fc5808f92bc9ab3a9636aae910ee63a62f0bd901e55a3eda5c8c390e6cdcf",
+      "bytes": 34295,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_stratified_mae.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_stratified_mae.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4461e248fba141bcdc590a46ac28551f6b50d3600c25ab4088523bb4d93923f5",
+      "published_sha256": "4461e248fba141bcdc590a46ac28551f6b50d3600c25ab4088523bb4d93923f5",
+      "bytes": 367972,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_training_curve.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_training_curve.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6347007b60fe9b4600cbacc2197ff40fb957fc492e99a20e0bf4f2037d169888",
+      "published_sha256": "6347007b60fe9b4600cbacc2197ff40fb957fc492e99a20e0bf4f2037d169888",
+      "bytes": 370,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/figures/rt56_training_curve.png",
+      "published_path": "reports/rt55_rt56_current_results/rt56/figures/rt56_training_curve.png",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "352e53553f8e797747ca6799c292f98d0894f9b1e8420b207e610891064f229c",
+      "published_sha256": "352e53553f8e797747ca6799c292f98d0894f9b1e8420b207e610891064f229c",
+      "bytes": 58628,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_aggregate_metrics.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_aggregate_metrics.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "be922d85de0e2f7158461f7605b6dc95aa0e09e9d15c47ccc4bed3a7f924ff07",
+      "published_sha256": "be922d85de0e2f7158461f7605b6dc95aa0e09e9d15c47ccc4bed3a7f924ff07",
+      "bytes": 15419,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_case_selection.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_case_selection.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "9397207e52f1d66635a900f6adaf98c8812a446b37442bf26eec59d0eb069f52",
+      "published_sha256": "9397207e52f1d66635a900f6adaf98c8812a446b37442bf26eec59d0eb069f52",
+      "bytes": 2715,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_coordinate_exclusion_audit.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_coordinate_exclusion_audit.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "c0cea5135671438e1b65fa75868d275656d62a12dd4dfe52d01c4e2df528d016",
+      "published_sha256": "c0cea5135671438e1b65fa75868d275656d62a12dd4dfe52d01c4e2df528d016",
+      "bytes": 475,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_event_split_summary.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_event_split_summary.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "357fe3b19eb72ddf0f88819187e9dd51d6fe9c4059637884514e057f98a5db7c",
+      "published_sha256": "357fe3b19eb72ddf0f88819187e9dd51d6fe9c4059637884514e057f98a5db7c",
+      "bytes": 256,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_magnitude_split_counts.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_magnitude_split_counts.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "b7e89ec07722195fcb14f289fd7e03c63496d2653ed573291f61a03151d4169a",
+      "published_sha256": "b7e89ec07722195fcb14f289fd7e03c63496d2653ed573291f61a03151d4169a",
+      "bytes": 365,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_paired_event_bootstrap.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_paired_event_bootstrap.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "6afe2243b8b9ab7eab1eb19321b284bf828716fadbdcf424f96ba8fe81b5983d",
+      "published_sha256": "6afe2243b8b9ab7eab1eb19321b284bf828716fadbdcf424f96ba8fe81b5983d",
+      "bytes": 296,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_paired_event_metrics.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_paired_event_metrics.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "54bd9cdb28f5d9753fa1fe1a0a91fce28931b15201dddd63f1b74150cf819368",
+      "published_sha256": "54bd9cdb28f5d9753fa1fe1a0a91fce28931b15201dddd63f1b74150cf819368",
+      "bytes": 102588,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_station_split_summary.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_station_split_summary.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "d4622a3cececd06e5f2d8c072f79e5cad315f960b86c65e091aa8bc60aa2c2d7",
+      "published_sha256": "d4622a3cececd06e5f2d8c072f79e5cad315f960b86c65e091aa8bc60aa2c2d7",
+      "bytes": 205,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_lead.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_lead.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "24db771af27720e633c7e31e490bf0f32fd00e007b0e16c0f8f8609855d0c44f",
+      "published_sha256": "24db771af27720e633c7e31e490bf0f32fd00e007b0e16c0f8f8609855d0c44f",
+      "bytes": 6284,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_magnitude.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_magnitude.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "563833db8bcb8f958d0cd0010b2236585740b0100dd0dda9de61824f146afc99",
+      "published_sha256": "563833db8bcb8f958d0cd0010b2236585740b0100dd0dda9de61824f146afc99",
+      "bytes": 7536,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_nearest_input.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_nearest_input.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "931bb56caa441675ae6d1b93955db63821dba94fa2ba5607ee557841d2c17261",
+      "published_sha256": "931bb56caa441675ae6d1b93955db63821dba94fa2ba5607ee557841d2c17261",
+      "bytes": 6333,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_station.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_station.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "47c3eea5ea968eddd08ca82228f71a5ab56b5dbf604bc06dcf486312f411f57e",
+      "published_sha256": "47c3eea5ea968eddd08ca82228f71a5ab56b5dbf604bc06dcf486312f411f57e",
+      "bytes": 7482,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_strength.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_strength.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4703d04c80f6d9059cf74f089776233ff1b173a8c1c8c788e28dec217aabedb0",
+      "published_sha256": "4703d04c80f6d9059cf74f089776233ff1b173a8c1c8c788e28dec217aabedb0",
+      "bytes": 2478,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_target_type.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_target_type.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "9fa8356792134d1b213c441f47978893446cea1d254e9d943c063300029a1291",
+      "published_sha256": "9fa8356792134d1b213c441f47978893446cea1d254e9d943c063300029a1291",
+      "bytes": 2799,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_time.csv",
+      "published_path": "reports/rt55_rt56_current_results/rt56/tables/rt56_stratified_time.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "f51f01191a89e1bc3451fc3277f76340f7b4dff54d60ea370b6e38c837b125fe",
+      "published_sha256": "f51f01191a89e1bc3451fc3277f76340f7b4dff54d60ea370b6e38c837b125fe",
+      "bytes": 8651,
+      "export_transform": "byte_identical"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/tables/checkpoint_provenance.csv",
+      "published_path": "reports/rt55_rt56_current_results/tables/checkpoint_provenance.csv",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "bc01f1f4561aa934c9546f141da2266390549598de3aa52c3a0fa5d6b07fe4fc",
+      "published_sha256": "d22bc6689c0a0ba5764952871ebd9e1d37eb1327a3029ca70b15b37539718428",
+      "bytes": 3391,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/reports/rt55_rt56_current_results/tables/report_provenance.json",
+      "published_path": "reports/rt55_rt56_current_results/tables/report_provenance.json",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "4e02c1330a9c76b7c052eee5fa15577f494a211ece31e0faf1f97b3ae6ef00bd",
+      "published_sha256": "214bf3adbaad5adbb58bcae622d906e122fde9fd0bdce45aa731f2ecd2e0d84d",
+      "bytes": 448,
+      "export_transform": "path_placeholders_only"
+    },
+    {
+      "source_workspace_relative_path": "team_pytorch/tools/generate_rt55_rt56_comprehensive_report.py",
+      "published_path": "tools/generate_rt55_rt56_comprehensive_report.py",
+      "branch": "sync/rt55-rt56",
+      "track_id": "RT55_RT56",
+      "source_sha256": "7b6041cdc1e9c2b6b02ddcd93a92ec65c52a454034ccfd9a6cf0b38b84c90920",
+      "published_sha256": "cdd204d1c9abac7260c4ade774776e6335a97fa505e45840033e8757228609dd",
+      "bytes": 104421,
+      "export_transform": "byte_identical; publication whitespace or portable report-font override"
+    }
+  ],
+  "scope": "Existing offline artifacts only; no scientific rerun; path-normalized copies retain numeric fields and original SHA"
+}
