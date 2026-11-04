@@ -1,9 +1,9 @@
 # DECISION_LOG
 
 <!-- ai-memory:begin -->
-更新时间：2026-11-04T03:33:49+00:00
+更新时间：2026-11-04T07:09:47+00:00
 
-生成所依据的协调分支 commit：`826acaadc89979d6ad324d014123def8353a429c`
+生成所依据的协调分支 commit：`5bcf4f558f9571a2ad44ff2639f62bb64e228c2b`
 
 协调分支：`chore/persistent-ai-handoff`
 
@@ -100,6 +100,17 @@
 - 历史依据：needs_history_review
 - 来源：[reports/fe01_eval1_hpc_gates_20261006/summary.json](https://github.com/rular099/team_pytorch/blob/ba4fa7740d9fde5fde87a7b0ae0397037209baf4/reports/fe01_eval1_hpc_gates_20261006/summary.json)；[docs/ai/FE01_PROTOCOL.md](https://github.com/rular099/team_pytorch/blob/ba4fa7740d9fde5fde87a7b0ae0397037209baf4/docs/ai/FE01_PROTOCOL.md)
 
+### D-FE01-HANDOFF-20261104 · 2026-11-04
+
+- 实验线：FE01
+- 背景：新会话需要可追溯接手，且不能把待办当执行授权或覆盖另一条实验线。
+- 讨论选项：扩展已有record与生成视图，复用现有检查器；没有另建并行科研事实源。
+- 决定：本线独占状态目录；接手默认只读；结果commit、未完成和恢复步骤明确记录；HPC/协议变更依当前用户授权。
+- 适用范围：FE01接手与收尾
+- 后续推翻：未见记录
+- 历史依据：source_recorded
+- 来源：[docs/ai/START_HERE.md](https://github.com/rular099/team_pytorch/blob/5bcf4f558f9571a2ad44ff2639f62bb64e228c2b/docs/ai/START_HERE.md)
+
 ## FE01_A01
 
 ### D-FE01-A01-001 · 2026-10-21
@@ -160,6 +171,17 @@
 - 后续推翻：未见记录
 - 历史依据：needs_history_review
 - 来源：[docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md)
+
+### D-FE02-HANDOFF-20261104 · 2026-11-04
+
+- 实验线：FE02
+- 背景：新会话需要可追溯接手，且不能把待办当执行授权或覆盖另一条实验线。
+- 讨论选项：扩展已有record与生成视图，复用现有检查器；没有另建并行科研事实源。
+- 决定：本线独占状态目录；接手默认只读；结果commit、未完成和恢复步骤明确记录；HPC/协议变更依当前用户授权。
+- 适用范围：FE02接手与收尾
+- 后续推翻：未见记录
+- 历史依据：source_recorded
+- 来源：[docs/ai/START_HERE.md](https://github.com/rular099/team_pytorch/blob/5bcf4f558f9571a2ad44ff2639f62bb64e228c2b/docs/ai/START_HERE.md)
 
 ## V01
 

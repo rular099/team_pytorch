@@ -125,5 +125,7 @@
   "experimental_branch_deployment": "NOT_PERFORMED; independent branch delivery pending one-time reviewed adoption",
   "chatgpt_settings": "NOT_MODIFIED; user must save Project Instructions once",
   "hpc_submissions": 0,
-  "model_execution": 0
+  "model_execution": 0,
+  "implementation_commit": "5bcf4f558f9571a2ad44ff2639f62bb64e228c2b",
+  "state_publication_commit": "Use Git HEAD of the final state commit; not embedded recursively."
 }

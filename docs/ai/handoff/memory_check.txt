@@ -1,0 +1,4 @@
+WARN FE01_A01: local ref differs from verified source; do not treat unsynced as incomplete
+WARN FE01_ON: branch absent locally; recorded source retained
+WARN V01: local ref differs from verified source; do not treat unsynced as incomplete
+Memory check: 0 error(s), 3 warning(s)

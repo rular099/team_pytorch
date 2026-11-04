@@ -2,6 +2,7 @@
 
 仓库 `rular099/team_pytorch`，独立分支 `chore/persistent-ai-handoff`。
 base `826acaadc89979d6ad324d014123def8353a429c`。
+已验证实现提交：`5bcf4f558f9571a2ad44ff2639f62bb64e228c2b`；状态发布提交以用户回执为准。
 请以用户交付的完整 result commit 固定本轮diff，先报告实际读取的branch和SHA。
 
 先读 [START_HERE](START_HERE.md)、[审计与四情形验收](handoff/AUDIT.md)、

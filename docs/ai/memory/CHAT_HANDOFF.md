@@ -5,7 +5,7 @@
 
 当前任务是项目记忆与并行隔离初始化。全局由协调者维护，各科研实例只写自己的 tracks/<ID>/。公共改动经审阅后再引入工作分支，本轮没有开始新训练或提交超算。
 
-状态核验时间：2026-11-04T03:33:49+00:00。精确 branch/commit 见 [CURRENT_STATUS.md](CURRENT_STATUS.md)。
+状态核验时间：2026-11-04T07:09:47+00:00。精确 branch/commit 见 [CURRENT_STATUS.md](CURRENT_STATUS.md)。
 
 - **RT55_RT56** (`verified_complete`)：RT55确实使用匹配波形；RT56随机几何适配有收益也有normal遗忘，任意查询空间辨识仍未解决。 9月快照核验的是RT55 epoch20 test；含ep32_retry的目录不能证明epoch32 test。epoch32 validation roll证明系统使用匹配波形，不能证明adapter不collapse。 [本线来源](tracks/RT55_RT56/STATUS.md)。
 - **RT57** (`verified_complete`)：GTNP v2已评估；残差缩放gamma=1.66来自同一validation选择，不能当独立test证据。 random/normal配对与指标复算在报告中通过；gamma=1.66当时为离线分析选择。 [本线来源](tracks/RT57/STATUS.md)。

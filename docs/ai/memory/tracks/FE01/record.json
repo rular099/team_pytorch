@@ -2,7 +2,7 @@
   "track_id": "FE01",
   "branch": "exp/fe01-feature-extractor-site-effects",
   "commit_sha": "577a0cec43643597a61209209a770aeecf5fefa0",
-  "last_verified_at": "2026-11-04T03:33:49+00:00",
+  "last_verified_at": "2026-11-04T07:09:47+00:00",
   "evidence_as_of": "2026-10-06",
   "current_state": "in_progress",
   "completion_scope": "九组训练结果已归档；EVAL1身份/前向门部分完成，完整补评未全部取得。",
@@ -61,6 +61,12 @@
       "commit_sha": "577a0cec43643597a61209209a770aeecf5fefa0",
       "path": "docs/ai/README.md",
       "kind": "handoff"
+    },
+    {
+      "evidence_id": "handoff_bootstrap",
+      "commit_sha": "5bcf4f558f9571a2ad44ff2639f62bb64e228c2b",
+      "path": "docs/ai/START_HERE.md",
+      "kind": "handoff"
     }
   ],
   "decisions": [
@@ -77,6 +83,19 @@
       "applies_to": "FE01及后续评价",
       "superseded_by": null,
       "history_status": "needs_history_review"
+    },
+    {
+      "decision_id": "D-FE01-HANDOFF-20261104",
+      "date": "2026-11-04",
+      "problem": "新会话需要可追溯接手，且不能把待办当执行授权或覆盖另一条实验线。",
+      "options": "扩展已有record与生成视图，复用现有检查器；没有另建并行科研事实源。",
+      "decision": "本线独占状态目录；接手默认只读；结果commit、未完成和恢复步骤明确记录；HPC/协议变更依当前用户授权。",
+      "evidence_ids": [
+        "handoff_bootstrap"
+      ],
+      "applies_to": "FE01接手与收尾",
+      "superseded_by": null,
+      "history_status": "source_recorded"
     }
   ],
   "experiments": [
@@ -127,22 +146,22 @@
       ]
     },
     "last_session": {
-      "task_id": "20261102-fe01-existing-handoff-sync",
-      "result_commit": "577a0cec43643597a61209209a770aeecf5fefa0",
-      "result_branch": "exp/fe01-feature-extractor-site-effects",
-      "scope": "evidence_review",
+      "task_id": "20261104-persistent-ai-handoff",
+      "result_commit": "5bcf4f558f9571a2ad44ff2639f62bb64e228c2b",
+      "result_branch": "chore/persistent-ai-handoff",
+      "scope": "handoff_infrastructure",
       "evidence_ids": [
-        "current_entry",
-        "report",
-        "gate"
+        "handoff_bootstrap"
       ],
       "unfinished": [
+        "维护机制已在独立分支完成；科研分支的一次性部署仍待审阅后引入。",
         "按FE01_A01与FE01_ON各自新来源审阅后续，不能把旧EVAL1阻挡当新线仍未完成。",
         "站点泛化、场地效应、回放和held-out test要逐项查实际证据。"
       ],
       "resume_steps": [
-        "读取STATUS、NEXT_TASK、DECISIONS及其中固定commit证据；先报告事实、限制与剩余问题。",
-        "只有收到新的明确实施任务才推进代码或HPC；不从旧EVAL1状态推断新派生线。"
+        "先读START_HERE及本线STATUS/NEXT_TASK/DECISIONS，核对实际branch/HEAD和固定证据。",
+        "按HANDOFF_WORKFLOW在独立adoption worktree审阅部署，禁止复制覆盖原HPC源码或另一实验线。",
+        "接手只读报告；后续研究任务须由当前用户明确委托，不因NEXT_TASK存在自动执行。"
       ]
     }
   }

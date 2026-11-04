@@ -1,9 +1,9 @@
 # CURRENT_STATUS
 
 <!-- ai-memory:begin -->
-更新时间：2026-11-04T03:33:49+00:00
+更新时间：2026-11-04T07:09:47+00:00
 
-生成所依据的协调分支 commit：`826acaadc89979d6ad324d014123def8353a429c`
+生成所依据的协调分支 commit：`5bcf4f558f9571a2ad44ff2639f62bb64e228c2b`
 
 协调分支：`chore/persistent-ai-handoff`
 
@@ -17,10 +17,10 @@
 | RT59 | `rt59-dual-objective-transport-v3` | `d43c7d63528b3ade71c3506eeb2cb71f90fb3ffd` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
 | RT60 | `rt60-final-contrast-readout` | `00d624d2fb01c6dd98cac150043dd15b7d8366ff` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
 | RT61 | `rt61-wave-geometry-residual-conditioning` | `9c95dbfaf92f36b2673d816026cd3f25b91eec66` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
-| FE01 | `exp/fe01-feature-extractor-site-effects` | `577a0cec43643597a61209209a770aeecf5fefa0` | 2026-11-04T03:33:49+00:00 | `in_progress` |
+| FE01 | `exp/fe01-feature-extractor-site-effects` | `577a0cec43643597a61209209a770aeecf5fefa0` | 2026-11-04T07:09:47+00:00 | `in_progress` |
 | FE01_A01 | `exp/fe01-a01-absolute-amplitude-ablation` | `29ffb20ba0effc0c345a0329ba3f8c658dc8cef0` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
 | FE01_ON | `exp/fe01-on-warning-map-evaluation` | `50672e131d876a604432b283162d5b0189d40cf0` | 2026-11-01T07:24:10+00:00 | `in_progress` |
-| FE02 | `exp/fe02-event-fusion-readout` | `618661f99afb67f5c23c9f1a3fd713a0a156e7b5` | 2026-11-04T03:33:49+00:00 | `in_progress` |
+| FE02 | `exp/fe02-event-fusion-readout` | `618661f99afb67f5c23c9f1a3fd713a0a156e7b5` | 2026-11-04T07:09:47+00:00 | `in_progress` |
 | V01 | `exp/v01-velocity-prep-padding-control` | `d8f2436273fbe990e77f7151d86a6b629e99c5c1` | 2026-11-01T07:24:10+00:00 | `verified_complete` |
 | LEGACY | `zhangb/layerwise-station-temporal` | `8d0131db09f9d89e215b27dda77399b481b3a92a` | 2026-11-01T07:24:10+00:00 | `unknown` |
 
@@ -162,6 +162,7 @@ epoch8验证报告已完成；轻量delta权重归档缺口仍在。
 - [docs/ai/FE01_PROTOCOL.md](https://github.com/rular099/team_pytorch/blob/ba4fa7740d9fde5fde87a7b0ae0397037209baf4/docs/ai/FE01_PROTOCOL.md)
 - [configs/fe01/formal/formal__phasenet_pretrained_frozen__seed42.json](https://github.com/rular099/team_pytorch/blob/ba4fa7740d9fde5fde87a7b0ae0397037209baf4/configs/fe01/formal/formal__phasenet_pretrained_frozen__seed42.json)
 - [docs/ai/README.md](https://github.com/rular099/team_pytorch/blob/577a0cec43643597a61209209a770aeecf5fefa0/docs/ai/README.md)
+- [docs/ai/START_HERE.md](https://github.com/rular099/team_pytorch/blob/5bcf4f558f9571a2ad44ff2639f62bb64e228c2b/docs/ai/START_HERE.md)
 
 同步：audited_from_pinned_evidence_not_deployed；来源 `exp/fe01-feature-extractor-site-effects`。
 
@@ -235,6 +236,7 @@ epoch8验证报告已完成；轻量delta权重归档缺口仍在。
 - [reports/fe02_hpc_results_20261104/data/compact_verification.json](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/compact_verification.json)
 - [reports/fe02_hpc_results_20261104/data/headline_primary.csv](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/headline_primary.csv)
 - [reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md)
+- [docs/ai/START_HERE.md](https://github.com/rular099/team_pytorch/blob/5bcf4f558f9571a2ad44ff2639f62bb64e228c2b/docs/ai/START_HERE.md)
 
 同步：audited_from_pinned_evidence_not_deployed；来源 `exp/fe02-event-fusion-readout`。
 

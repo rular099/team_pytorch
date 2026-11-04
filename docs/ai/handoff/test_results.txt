@@ -1,0 +1,30 @@
+test_bootstrap_and_global_contradiction_detection (tests.test_ai_memory.MemoryWorkflowTests.test_bootstrap_and_global_contradiction_detection) ... ok
+test_bootstrap_cannot_repeat_or_use_malicious_track (tests.test_ai_memory.MemoryWorkflowTests.test_bootstrap_cannot_repeat_or_use_malicious_track) ... ok
+test_dry_run_leaves_memory_bytes_unchanged (tests.test_ai_memory.MemoryWorkflowTests.test_dry_run_leaves_memory_bytes_unchanged) ... ok
+test_generated_sections_do_not_erase_manual_text_or_accept_bad_markers (tests.test_ai_memory.MemoryWorkflowTests.test_generated_sections_do_not_erase_manual_text_or_accept_bad_markers) ... ok
+test_historical_ids_and_older_records_cannot_disappear (tests.test_ai_memory.MemoryWorkflowTests.test_historical_ids_and_older_records_cannot_disappear) ... ok
+test_invalid_evidence_path_and_commit_are_detected (tests.test_ai_memory.MemoryWorkflowTests.test_invalid_evidence_path_and_commit_are_detected) ... ok
+test_missing_remote_source_retains_verified_state (tests.test_ai_memory.MemoryWorkflowTests.test_missing_remote_source_retains_verified_state) ... ok
+test_parallel_two_worktrees_and_same_code_risk (tests.test_ai_memory.MemoryWorkflowTests.test_parallel_two_worktrees_and_same_code_risk) ... ok
+test_remote_snapshot_blob_tamper_is_detected (tests.test_ai_memory.MemoryWorkflowTests.test_remote_snapshot_blob_tamper_is_detected) ... ok
+test_resource_overlap_symlink_and_shared_readonly (tests.test_ai_memory.MemoryWorkflowTests.test_resource_overlap_symlink_and_shared_readonly) ... ok
+test_schema_rejects_missing_fields_states_duplicate_ids (tests.test_ai_memory.MemoryWorkflowTests.test_schema_rejects_missing_fields_states_duplicate_ids) ... ok
+test_single_track_update_keeps_other_files_and_manual_notes (tests.test_ai_memory.MemoryWorkflowTests.test_single_track_update_keeps_other_files_and_manual_notes) ... ok
+test_track_cannot_aggregate_or_write_on_another_branch (tests.test_ai_memory.MemoryWorkflowTests.test_track_cannot_aggregate_or_write_on_another_branch) ... ok
+test_wrong_source_branch_cannot_import_an_inherited_other_track (tests.test_ai_memory.MemoryWorkflowTests.test_wrong_source_branch_cannot_import_an_inherited_other_track) ... ok
+test_agents_entry_routes_and_ownership_directories_agree (tests.test_ai_handoff.PersistentHandoffTests.test_agents_entry_routes_and_ownership_directories_agree) ... ok
+test_concurrent_worktrees_never_overwrite_other_track_or_globals (tests.test_ai_handoff.PersistentHandoffTests.test_concurrent_worktrees_never_overwrite_other_track_or_globals) ... ok
+test_fields_paths_commits_and_forged_authorization_are_rejected (tests.test_ai_handoff.PersistentHandoffTests.test_fields_paths_commits_and_forged_authorization_are_rejected) ... ok
+test_new_fe01_chatgpt_handoff (tests.test_ai_handoff.PersistentHandoffTests.test_new_fe01_chatgpt_handoff) ... ok
+test_new_fe01_codex_handoff (tests.test_ai_handoff.PersistentHandoffTests.test_new_fe01_codex_handoff) ... ok
+test_new_fe02_chatgpt_handoff (tests.test_ai_handoff.PersistentHandoffTests.test_new_fe02_chatgpt_handoff) ... ok
+test_new_fe02_codex_handoff (tests.test_ai_handoff.PersistentHandoffTests.test_new_fe02_codex_handoff) ... ok
+test_next_task_text_is_never_executed_and_role_facts_agree (tests.test_ai_handoff.PersistentHandoffTests.test_next_task_text_is_never_executed_and_role_facts_agree) ... ok
+test_staged_scope_preserves_user_file_but_rejects_foreign_stage (tests.test_ai_handoff.PersistentHandoffTests.test_staged_scope_preserves_user_file_but_rejects_foreign_stage) ... ok
+test_stale_view_new_science_and_ambiguous_branch_are_reported (tests.test_ai_handoff.PersistentHandoffTests.test_stale_view_new_science_and_ambiguous_branch_are_reported) ... ok
+test_wrong_track_and_coordinator_updates_are_rejected_without_writes (tests.test_ai_handoff.PersistentHandoffTests.test_wrong_track_and_coordinator_updates_are_rejected_without_writes) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 6.963s
+
+OK

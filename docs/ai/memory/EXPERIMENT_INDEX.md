@@ -1,9 +1,9 @@
 # EXPERIMENT_INDEX
 
 <!-- ai-memory:begin -->
-更新时间：2026-11-04T03:33:49+00:00
+更新时间：2026-11-04T07:09:47+00:00
 
-生成所依据的协调分支 commit：`826acaadc89979d6ad324d014123def8353a429c`
+生成所依据的协调分支 commit：`5bcf4f558f9571a2ad44ff2639f62bb64e228c2b`
 
 协调分支：`chore/persistent-ai-handoff`
 

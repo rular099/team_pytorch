@@ -2,7 +2,7 @@
   "track_id": "FE02",
   "branch": "exp/fe02-event-fusion-readout",
   "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
-  "last_verified_at": "2026-11-04T03:33:49+00:00",
+  "last_verified_at": "2026-11-04T07:09:47+00:00",
   "evidence_as_of": "2026-11-04",
   "current_state": "in_progress",
   "completion_scope": "五组seed42的12轮训练和固定validation证据已归档并复算；独立科研审阅和来源缺口仍待完成。",
@@ -96,6 +96,12 @@
       "path": "reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md",
       "kind": "handoff",
       "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+    },
+    {
+      "evidence_id": "handoff_bootstrap",
+      "commit_sha": "5bcf4f558f9571a2ad44ff2639f62bb64e228c2b",
+      "path": "docs/ai/START_HERE.md",
+      "kind": "handoff"
     }
   ],
   "decisions": [
@@ -124,6 +130,19 @@
       "applies_to": "已知9f70371来源任务",
       "superseded_by": null,
       "history_status": "needs_history_review"
+    },
+    {
+      "decision_id": "D-FE02-HANDOFF-20261104",
+      "date": "2026-11-04",
+      "problem": "新会话需要可追溯接手，且不能把待办当执行授权或覆盖另一条实验线。",
+      "options": "扩展已有record与生成视图，复用现有检查器；没有另建并行科研事实源。",
+      "decision": "本线独占状态目录；接手默认只读；结果commit、未完成和恢复步骤明确记录；HPC/协议变更依当前用户授权。",
+      "evidence_ids": [
+        "handoff_bootstrap"
+      ],
+      "applies_to": "FE02接手与收尾",
+      "superseded_by": null,
+      "history_status": "source_recorded"
     }
   ],
   "experiments": [
@@ -163,23 +182,23 @@
       ]
     },
     "last_session": {
-      "task_id": "20261104-fe02-existing-results-review",
-      "result_commit": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
-      "result_branch": "exp/fe02-event-fusion-readout",
-      "scope": "evidence_review",
+      "task_id": "20261104-persistent-ai-handoff",
+      "result_commit": "5bcf4f558f9571a2ad44ff2639f62bb64e228c2b",
+      "result_branch": "chore/persistent-ai-handoff",
+      "scope": "handoff_infrastructure",
       "evidence_ids": [
-        "results",
-        "verification",
-        "compact_check"
+        "handoff_bootstrap"
       ],
       "unfinished": [
+        "维护机制已在独立分支完成；科研分支的一次性部署仍待审阅后引入。",
         "按已发布ChatGPT任务独立审阅点/概率/空间/几何/输入数分层及CI，比较Codex结论。",
         "补齐后四组launcher来源、checkpoint字节或可核验元数据、committed journals及sacct；缺失保持UNKNOWN。",
         "是否追加multi-seed、独立评价或新架构由用户决定；不自动训练、续跑、提交作业或动用held-out test。"
       ],
       "resume_steps": [
-        "从固定结果commit读取轻量报告和ChatGPT复核任务，报告实际可见branch/commit。",
-        "核对launcher来源缺口；没有当前授权时只报告提案，不运行submit.sh、resume脚本或测试集。"
+        "先读START_HERE及本线STATUS/NEXT_TASK/DECISIONS，核对实际branch/HEAD和固定证据。",
+        "按HANDOFF_WORKFLOW在独立adoption worktree审阅部署，禁止复制覆盖原HPC源码或另一实验线。",
+        "接手只读报告；后续研究任务须由当前用户明确委托，不因NEXT_TASK存在自动执行。"
       ]
     }
   }
