@@ -5,12 +5,17 @@ from pathlib import Path
 import sys
 from ai_memory_lib import (MEMORY, TRACK, atomic_write, digest, generated, git, global_views,
                            json_text, load, lock, root_path, track_views, utcnow, validate_record,
-                           evidence_available, preserve_history)
+                           evidence_available, preserve_history, handoff_registry, handoff_provenance)
 
 
 def plan(root, args):
     mem = root / MEMORY
     registry = load(mem / 'registry.json')['track_ids']
+    config = handoff_registry(root)
+    if args.coordinator and config:
+        actual = git(root, 'symbolic-ref', '--short', 'HEAD').strip()
+        if actual not in config['coordinator_branches']:
+            raise ValueError('Only the designated coordinator branch may aggregate global memory')
     writes, warnings = {}, []
     if args.track:
         if args.track not in registry or not TRACK.fullmatch(args.track):
@@ -21,7 +26,11 @@ def plan(root, args):
         record = validate_record(load(Path(args.record) if args.record else directory / 'record.json'))
         if record['track_id'] != args.track:
             raise ValueError('Record belongs to a different track')
-        preserve_history(validate_record(load(directory / 'record.json')), record)
+        previous = validate_record(load(directory / 'record.json'))
+        preserve_history(previous, record)
+        if args.track in config.get('tracks', {}):
+            handoff_provenance(root, record, config)
+            git(root, 'merge-base', '--is-ancestor', previous['commit_sha'], record['commit_sha'])
         branch = git(root, 'symbolic-ref', '--short', 'HEAD').strip()
         if branch != record['branch']:
             raise ValueError('Track update must run on its recorded branch; use an independent worktree')
@@ -57,6 +66,8 @@ def plan(root, args):
                 candidate = validate_record(json.loads(git(root, 'show', source_sha + ':' + str(MEMORY / 'tracks' / track / 'record.json'))))
                 if candidate['track_id'] != track:
                     raise ValueError('Source record has a different track ID')
+                if track in config.get('tracks', {}):
+                    handoff_provenance(root, candidate, config)
                 symbolic = git(root, 'rev-parse', '--symbolic-full-name', origin).strip()
                 if symbolic.startswith('refs/heads/'):
                     source_branch = symbolic[len('refs/heads/'):]

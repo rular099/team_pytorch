@@ -1,5 +1,9 @@
 # TEAM PyTorch 项目交接文档
 
+长期接手入口：[docs/ai/START_HERE.md](docs/ai/START_HERE.md)。本文件保留工程历史，
+新会话的当前进度与恢复步骤以所选实验线的 STATUS/NEXT_TASK/DECISIONS 和固定证据为准。
+默认只读，执行轮结束只维护本线状态，不要求两个实例共同编辑本文件。
+
 跨线恢复请先读 [项目记忆](docs/ai/memory/README.md) 和
 [全局状态](docs/ai/memory/CURRENT_STATUS.md)。本文保留原分支的带日期工程历史；
 旧P0/下一会话指令仅适用于当时，不能覆盖其他实验线的较新证据。

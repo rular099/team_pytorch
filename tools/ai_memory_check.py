@@ -8,13 +8,15 @@ import sys
 from urllib.parse import unquote, urlsplit
 from ai_memory_lib import (BEGIN, END, MEMORY, SHA, digest, evidence_available, generated, git,
                            global_views, json_text, load, merge_risk, resource_errors,
-                           root_path, safe_path, timestamp, track_views, validate_record)
+                           root_path, safe_path, timestamp, track_views, validate_record,
+                           handoff_registry, handoff_provenance)
 
 
 def check(root, max_age_days=45):
     mem = root / MEMORY
     errors, warnings = [], []
     registry = load(mem / 'registry.json')['track_ids']
+    config = handoff_registry(root)
     if len(registry) != len(set(registry)):
         errors.append('Duplicate track_id in registry')
     remote = load(mem / 'audit/remote_refs.json')
@@ -34,6 +36,9 @@ def check(root, max_age_days=45):
         directory = mem / 'tracks' / track
         own = validate_record(load(directory / 'record.json'))
         observed = validate_record(load(mem / 'observations' / (track + '.json')))
+        if track in config.get('tracks', {}):
+            handoff_provenance(root, own, config)
+            handoff_provenance(root, observed, config)
         all_records.extend([own, observed])
         if own['track_id'] != track or observed['track_id'] != track:
             errors.append('Directory/track ID mismatch: ' + track)
@@ -109,6 +114,7 @@ def main(argv=None):
     parser.add_argument('--resources', help='JSON list of track_id/write_paths/readonly_paths; read only')
     parser.add_argument('--scope', help='Reject committed/uncommitted changes outside tracks/<ID>/')
     parser.add_argument('--base', default='HEAD')
+    parser.add_argument('--staged-only', action='store_true', help='Scope only staged paths and committed changes since base; preserve unrelated user files')
     parser.add_argument('--merge-risk', nargs=2, metavar=('LEFT_REF', 'RIGHT_REF'))
     args = parser.parse_args(argv)
     try:
@@ -121,8 +127,12 @@ def main(argv=None):
             errors.extend(resource_errors(load(args.resources)))
         if args.scope:
             base = git(root, 'rev-parse', '--verify', args.base + '^{commit}').strip()
-            paths = set(git(root, 'diff', '--name-only', base).splitlines())
-            paths.update(git(root, 'ls-files', '--others', '--exclude-standard').splitlines())
+            if args.staged_only:
+                paths = set(git(root, 'diff', '--name-only', base, 'HEAD').splitlines())
+                paths.update(git(root, 'diff', '--cached', '--name-only').splitlines())
+            else:
+                paths = set(git(root, 'diff', '--name-only', base).splitlines())
+                paths.update(git(root, 'ls-files', '--others', '--exclude-standard').splitlines())
             prefix = str(MEMORY / 'tracks' / args.scope) + '/'
             errors.extend('Outside track ownership: ' + p for p in sorted(paths) if not p.startswith(prefix))
         for message in warnings:

@@ -1,11 +1,11 @@
 # EXPERIMENT_INDEX
 
 <!-- ai-memory:begin -->
-更新时间：2026-11-01T07:35:39+00:00
+更新时间：2026-11-04T03:33:49+00:00
 
-生成所依据的协调分支 commit：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`
+生成所依据的协调分支 commit：`826acaadc89979d6ad324d014123def8353a429c`
 
-协调分支：`chore/project-memory-bootstrap`
+协调分支：`chore/persistent-ai-handoff`
 
 此 SHA 是生成输入，不是整个科研项目的单一 HEAD；各线见下表。
 
@@ -111,7 +111,7 @@
 
 - 科学问题：不同冻结前端在共同下游下表现如何？
 - branch：`exp/fe01-feature-extractor-site-effects`
-- commit：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`
+- commit：`577a0cec43643597a61209209a770aeecf5fefa0`
 - 状态：`verified_complete`
 - 数据/协议：val 1310events/139440 noninput请求/十cell等权；3家族×seed42/43/44；选轮来自validation。
 - 结果性质：九组12轮验证比较，非test。
@@ -123,7 +123,7 @@
 
 - 科学问题：既有系统能否通过真实身份与包装器前向门？
 - branch：`exp/fe01-feature-extractor-site-effects`
-- commit：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`
+- commit：`577a0cec43643597a61209209a770aeecf5fefa0`
 - 状态：`in_progress`
 - 数据/协议：11组identity，8组各32 decisions/544 targets forward通过；3 TEAM未前向。
 - 结果性质：身份/等价核验与train-only参照，非新完整性能表。
@@ -165,13 +165,13 @@
 
 - 科学问题：事件memory能否改善单输入query空间场且保护normal？
 - branch：`exp/fe02-event-fusion-readout`
-- commit：`42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7`
-- 状态：`blocked`
+- commit：`618661f99afb67f5c23c9f1a3fd713a0a156e7b5`
+- 状态：`in_progress`
 - 数据/协议：FE01 V2 prefix/split/归一化；seed42五组各计划12轮；十cell等权noninput选轮；固定预算。
-- 结果性质：实现与部分M训练日志；未形成完成矩阵或性能结论。
+- 结果性质：五组已完成固定validation证据归档与统计复算；不是held-out test或稳健优胜结论。
 - 审阅：needs_independent_review
 - 关系：与FE01并行；共享基础代码但独立输出
-- 原始入口：[docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md)；[docs/ai/FE02_PROTOCOL.md](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/docs/ai/FE02_PROTOCOL.md)；[scripts/fe02/job.sh](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/scripts/fe02/job.sh)
+- 原始入口：[docs/ai/FE02_PROTOCOL.md](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/docs/ai/FE02_PROTOCOL.md)；[reports/fe02_hpc_results_20261104/README.md](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/README.md)；[reports/fe02_hpc_results_20261104/data/verification.json](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/verification.json)；[reports/fe02_hpc_results_20261104/data/headline_primary.csv](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/headline_primary.csv)
 
 ## V01
 

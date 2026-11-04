@@ -1,0 +1,129 @@
+{
+  "task_id": "20261104-persistent-ai-handoff",
+  "repository": "rular099/team_pytorch",
+  "branch": "chore/persistent-ai-handoff",
+  "base_commit": "826acaadc89979d6ad324d014123def8353a429c",
+  "recorded_at": "2026-11-04T03:44:55.205019+00:00",
+  "simulation_scope": "Programmatic cold reads of actual pinned facts in disposable Git worktrees and role-specific reader modes; no independent ChatGPT/Codex model sessions launched.",
+  "tests": {
+    "command": "python -m unittest -v tests.test_ai_memory tests.test_ai_handoff",
+    "run": 25,
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0
+  },
+  "scenarios": [
+    {
+      "track": "FE01",
+      "role": "codex",
+      "status": "PASS",
+      "test": "test_new_fe01_codex_handoff",
+      "goal": "比较原生因果窗口下不同波形前端与共同PGA下游；原FE01/EVAL1和后续FE01_A01、FE01_ON各自保留实验身份。",
+      "scientific_commit": "577a0cec43643597a61209209a770aeecf5fefa0",
+      "summary": "三家族×三seed原比较已完成；EVAL1八组forward PASS、TEAM三组被评价清单条件阻挡，后续A01/ON另线推进。",
+      "unresolved": [
+        "原比较跨encoder仍有原生窗口/能力条件化采样混杂。",
+        "validation站点全部在训练曝光表中，不支持未见台站泛化。",
+        "缺sacct不能声称调度器COMPLETED。"
+      ],
+      "next_task": "独立复核原FE01和EVAL1的已归档证据，区分原TEAM阻挡与A01/ON后续状态，报告仍缺的来源和评价。",
+      "automatic_actions": [
+        "read",
+        "verify",
+        "report"
+      ]
+    },
+    {
+      "track": "FE01",
+      "role": "chatgpt",
+      "status": "PASS",
+      "test": "test_new_fe01_chatgpt_handoff",
+      "goal": "比较原生因果窗口下不同波形前端与共同PGA下游；原FE01/EVAL1和后续FE01_A01、FE01_ON各自保留实验身份。",
+      "scientific_commit": "577a0cec43643597a61209209a770aeecf5fefa0",
+      "summary": "三家族×三seed原比较已完成；EVAL1八组forward PASS、TEAM三组被评价清单条件阻挡，后续A01/ON另线推进。",
+      "unresolved": [
+        "原比较跨encoder仍有原生窗口/能力条件化采样混杂。",
+        "validation站点全部在训练曝光表中，不支持未见台站泛化。",
+        "缺sacct不能声称调度器COMPLETED。"
+      ],
+      "next_task": "独立复核原FE01和EVAL1的已归档证据，区分原TEAM阻挡与A01/ON后续状态，报告仍缺的来源和评价。",
+      "automatic_actions": [
+        "read",
+        "verify",
+        "report"
+      ]
+    },
+    {
+      "track": "FE02",
+      "role": "codex",
+      "status": "PASS",
+      "test": "test_new_fe02_codex_handoff",
+      "goal": "固定真实冻结DiTing前端，对比R0/A/B/C/M事件融合读出，研究单输入非输入查询的空间辨识及normal/random精度与校准取舍。",
+      "scientific_commit": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+      "summary": "R0/A/B/C/M五组seed42各12轮/2544更新；M主指标最低但与B的总体差异CI含零，单台/random收益伴随normal多台代价。",
+      "unresolved": [
+        "单seed且validation同时用于checkpoint选择；bootstrap不含训练seed/选择不确定性，未校正多项比较。",
+        "原权重字节、committed journals、sacct未提供；不能宣称完整执行链复现或调度器COMPLETED。",
+        "单台normal晚时刻人口极稀疏，概率仍欠覆盖，C不是等容量消融。",
+        "预训练重叠、上游在线因果性、未见台站泛化均未认证。"
+      ],
+      "next_task": "按现有完整五组validation证据独立审阅并补充来源差异说明；先核验，不启动下一轮实验。",
+      "automatic_actions": [
+        "read",
+        "verify",
+        "report"
+      ]
+    },
+    {
+      "track": "FE02",
+      "role": "chatgpt",
+      "status": "PASS",
+      "test": "test_new_fe02_chatgpt_handoff",
+      "goal": "固定真实冻结DiTing前端，对比R0/A/B/C/M事件融合读出，研究单输入非输入查询的空间辨识及normal/random精度与校准取舍。",
+      "scientific_commit": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+      "summary": "R0/A/B/C/M五组seed42各12轮/2544更新；M主指标最低但与B的总体差异CI含零，单台/random收益伴随normal多台代价。",
+      "unresolved": [
+        "单seed且validation同时用于checkpoint选择；bootstrap不含训练seed/选择不确定性，未校正多项比较。",
+        "原权重字节、committed journals、sacct未提供；不能宣称完整执行链复现或调度器COMPLETED。",
+        "单台normal晚时刻人口极稀疏，概率仍欠覆盖，C不是等容量消融。",
+        "预训练重叠、上游在线因果性、未见台站泛化均未认证。"
+      ],
+      "next_task": "按现有完整五组validation证据独立审阅并补充来源差异说明；先核验，不启动下一轮实验。",
+      "automatic_actions": [
+        "read",
+        "verify",
+        "report"
+      ]
+    }
+  ],
+  "parallel_updates": "PASS: concurrent FE01/FE02 writes modify only their own track; coordinator explicitly imports both without overwriting either source.",
+  "negative_checks": [
+    "foreign track writes rejected",
+    "experiment branch cannot aggregate coordinator files",
+    "forged NEXT_TASK authorization rejected",
+    "invalid path/commit/route rejected",
+    "stale views and newer science detected",
+    "untracked user files preserved; foreign staged paths rejected",
+    "task text never executed"
+  ],
+  "memory_check": {
+    "errors": 0,
+    "warnings": [
+      "FE01_A01 local ref differs from historical snapshot",
+      "FE01_ON branch absent locally",
+      "V01 local ref differs from historical snapshot"
+    ]
+  },
+  "checked_code_sha256": {
+    "tools/ai_handoff.py": "69707df54922da4d807f78df7cc03e9326fd8c9e8fb408fd8390a417fb39504a",
+    "tools/ai_memory_lib.py": "b39ac1a704a0b7752744eb4258d7488ea90fa3fc6e24415a6489d2c2ab478f83",
+    "tools/ai_memory_check.py": "ac53c1fb6ba597b268471cb30935300e1d3640bd7297902dc05331b896e5289d",
+    "tools/ai_memory_update.py": "9ce7a065f99a03170ddbe5f821137afea5925e2d5e8b7312b2a32a4f4025aa85",
+    "tests/test_ai_memory.py": "e5a3190cc8280da64753abc0ba1a10816101f6b9a9e3c5c89edb3513ef63cf20",
+    "tests/test_ai_handoff.py": "eef74fd2df8d0059d608e48fcc461d9da3e2840827cbe5a902e85f5e644f1a52"
+  },
+  "experimental_branch_deployment": "NOT_PERFORMED; independent branch delivery pending one-time reviewed adoption",
+  "chatgpt_settings": "NOT_MODIFIED; user must save Project Instructions once",
+  "hpc_submissions": 0,
+  "model_execution": 0
+}

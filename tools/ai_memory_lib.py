@@ -112,7 +112,53 @@ def validate_record(record):
                 raise ValueError('Unknown evidence in ' + group)
             if group == 'experiments' and item['state'] not in STATES:
                 raise ValueError('Invalid experiment state')
+    if 'handoff' in record:
+        validate_handoff(record)
     return record
+
+
+def validate_handoff(record):
+    """A next task is a proposal, never a stored execution authorization."""
+    h = record.get('handoff')
+    if not isinstance(h, dict):
+        raise ValueError('Missing persistent handoff: ' + record['track_id'])
+    required = {'schema_version', 'repository', 'goal', 'default_action', 'next_task', 'last_session'}
+    if not required <= h.keys() or h['schema_version'] != 1:
+        raise ValueError('Incomplete/versioned handoff fields')
+    if h['repository'] != 'rular099/team_pytorch' or h['default_action'] != 'read_verify_report':
+        raise ValueError('Handoff repository/default action must be read-only')
+    if not isinstance(h['goal'], str) or not h['goal'].strip():
+        raise ValueError('Missing experiment goal')
+    next_task = h['next_task']
+    needed = {'task_id', 'objective', 'kind', 'execution_authorization', 'read_steps', 'acceptance_checks'}
+    if not isinstance(next_task, dict) or not needed <= next_task.keys():
+        raise ValueError('Incomplete next_task fields')
+    if next_task['execution_authorization'] != 'not_granted_by_this_file':
+        raise ValueError('NEXT_TASK cannot grant execution authorization')
+    if next_task['kind'] not in {'read_only_review', 'evidence_collection', 'implementation_proposal'}:
+        raise ValueError('Invalid next task kind')
+    if not next_task['task_id'].startswith(record['track_id'] + '-') or not next_task['objective']:
+        raise ValueError('Next task belongs to another track or has no objective')
+    for field in ('read_steps', 'acceptance_checks'):
+        if not isinstance(next_task[field], list) or not next_task[field] or not all(isinstance(x, str) and x.strip() for x in next_task[field]):
+            raise ValueError('Next task requires nonempty ' + field)
+    session = h['last_session']
+    needed = {'task_id', 'result_commit', 'result_branch', 'scope', 'evidence_ids', 'unfinished', 'resume_steps'}
+    if not isinstance(session, dict) or not needed <= session.keys():
+        raise ValueError('Incomplete last_session fields')
+    if not session['task_id'] or not SHA.fullmatch(session['result_commit']):
+        raise ValueError('Last session requires a full result commit')
+    if session['scope'] not in {'scientific_result', 'evidence_review', 'handoff_infrastructure'}:
+        raise ValueError('Invalid session scope')
+    if not session['result_branch'] or session['result_branch'].startswith('-'):
+        raise ValueError('Invalid last result branch')
+    ids = {x['evidence_id'] for x in record['evidence_paths']}
+    if not session['evidence_ids'] or not set(session['evidence_ids']) <= ids:
+        raise ValueError('Last session evidence IDs are missing or unknown')
+    for field in ('unfinished', 'resume_steps'):
+        if not isinstance(session[field], list) or not session[field] or not all(isinstance(x, str) and x.strip() for x in session[field]):
+            raise ValueError('Last session requires nonempty ' + field)
+    return h
 
 
 def preserve_history(previous, candidate):
@@ -123,6 +169,69 @@ def preserve_history(previous, candidate):
         after = {item[key] for item in candidate[collection]}
         if not before <= after:
             raise ValueError('Preserve historical IDs; mark superseded instead of deleting: ' + collection)
+
+
+def handoff_registry(root):
+    registry = load(root / MEMORY / 'registry.json')
+    config = registry.get('handoff', {})
+    if not config:
+        return config  # Existing non-FE snapshots keep their original schema.
+    if (config.get('schema_version') != 1 or not config.get('coordinator_branches') or
+            config.get('entry_branch') not in config['coordinator_branches']):
+        raise ValueError('Invalid handoff registry')
+    if registry.get('repository') != 'rular099/team_pytorch':
+        raise ValueError('Registry repository mismatch')
+    if set(config.get('tracks', {})) != {'FE01', 'FE02'}:
+        raise ValueError('Persistent handoff requires distinct FE01 and FE02 routes')
+    branches = list(config['coordinator_branches'])
+    for track, route in config['tracks'].items():
+        if route.get('directory') != str(MEMORY / 'tracks' / track):
+            raise ValueError('Track directory violates ownership: ' + track)
+        safe_path(root, route['directory'])
+        if not isinstance(route.get('branch'), str):
+            raise ValueError('Missing route branch: ' + track)
+        branches.append(route['branch'])
+    if len(branches) != len(set(branches)):
+        raise ValueError('Coordinator and experiment branches must be distinct')
+    for branch in branches:
+        git(root, 'check-ref-format', 'refs/heads/' + branch)
+    return config
+
+
+def handoff_provenance(root, record, config):
+    h = validate_handoff(record)
+    route = config['tracks'][record['track_id']]
+    if record['branch'] != route['branch']:
+        raise ValueError('Record branch does not own track: ' + record['track_id'])
+    session = h['last_session']
+    git(root, 'check-ref-format', 'refs/heads/' + session['result_branch'])
+    allowed = {record['branch']}
+    if session['scope'] == 'handoff_infrastructure':
+        allowed.update(config['coordinator_branches'])
+    if session['result_branch'] not in allowed:
+        raise ValueError('Last session result branch belongs to another track')
+    for sha in (record['commit_sha'], session['result_commit']):
+        git(root, 'cat-file', '-e', sha + '^{commit}')
+    for branch, sha in [(record['branch'], record['commit_sha']),
+                        (session['result_branch'], session['result_commit'])]:
+        refs = ['refs/heads/' + branch, 'refs/remotes/origin/' + branch]
+        available = []
+        for ref in refs:
+            try:
+                available.append(git(root, 'rev-parse', '--verify', ref + '^{commit}').strip())
+            except ValueError:
+                continue
+        if available and not any(is_ancestor(root, sha, head) for head in available):
+            raise ValueError('Recorded commit is not on its declared branch: ' + branch)
+    return h
+
+
+def is_ancestor(root, older, newer):
+    try:
+        git(root, 'merge-base', '--is-ancestor', older, newer)
+        return True
+    except ValueError:
+        return False
 
 
 def evidence_link(evidence):
@@ -172,6 +281,11 @@ def track_views(record):
             'last_verified_at: `{last_verified_at}`\n\ncurrent_state: `{current_state}`\n\n'
             '原证据日期：{evidence_as_of}；本次只核验可见来源，不代表重新跑过实验。\n\n'
             '完成范围：{completion_scope}\n\n{summary}\n').format(**r)
+    h = r.get('handoff')
+    if h:
+        meta += ('\n实验目标：' + h['goal'] + '\n\n默认动作：只读、核验和报告；待办不授予执行权限。\n\n'
+                 '最近工作 result_commit：`' + h['last_session']['result_commit'] + '`；branch：`' +
+                 h['last_session']['result_branch'] + '`；scope：`' + h['last_session']['scope'] + '`。\n')
     results = bullets([x['text'] + ' 来源：' + references(r, x['evidence_ids']) for x in r['verified_results']])
     status = meta + '\n### verified_results\n\n' + results
     status += '\n\n### pending_tasks\n\n' + bullets(r['pending_tasks'])
@@ -179,8 +293,22 @@ def track_views(record):
     status += '\n\n### evidence_paths\n\n' + bullets([evidence_link(e) for e in r['evidence_paths']]) + '\n'
     handoff = meta + '\n已核验：\n\n' + results + '\n\n下一步：\n\n' + bullets(r['pending_tasks'])
     handoff += '\n\n证据范围：\n\n' + bullets(r['limitations']) + '\n'
-    return {'STATUS.md': status, 'DECISIONS.md': decision_body(r),
-            'EXPERIMENT_INDEX.md': experiment_body(r), 'CHAT_HANDOFF.md': handoff}
+    views = {'STATUS.md': status, 'DECISIONS.md': decision_body(r),
+             'EXPERIMENT_INDEX.md': experiment_body(r), 'CHAT_HANDOFF.md': handoff}
+    if h:
+        task, session = h['next_task'], h['last_session']
+        resume = '\n\n### 未完成事项\n\n' + bullets(session['unfinished'])
+        resume += '\n\n### 恢复步骤（先读后报告）\n\n' + bullets(session['resume_steps']) + '\n'
+        views['STATUS.md'] += resume
+        views['CHAT_HANDOFF.md'] += resume
+        views['NEXT_TASK.md'] = (meta + '\n### 下一步提案\n\n任务：`' + task['task_id'] +
+            '`；类型：`' + task['kind'] + '`。\n\n' + task['objective'] +
+            '\n\n**execution_authorization: not_granted_by_this_file**\n\n'
+            '默认只核验并报告当前状态；是否实施取决于当前用户任务。不得根据此文件自动训练、'
+            '提交HPC作业、续跑或修改重要实验协议。\n\n### 可先读取的材料\n\n' +
+            bullets(task['read_steps']) + '\n\n### 若获授权后的验收条件\n\n' +
+            bullets(task['acceptance_checks']) + resume)
+    return views
 
 
 def generated(old, title, body):
@@ -220,8 +348,8 @@ def global_views(snapshot):
         handoff += ' [本线来源](tracks/' + track + '/STATUS.md)。\n'
     handoff += ('\n尚未解决：任意非输入查询的空间辨识、单输入空间场压缩、normal/random收益保持与概率校准。'
                 '单seed和反复使用validation限制结论；原始权重/数据/调度退出码缺失必须分别保留，不能用缺同步推断未完成。\n\n'
-                '优先顺序：先审阅本记忆体系；FE01 ON核对inventory修复的实际回执；FE02核对RNG兼容receipt和后续epoch；'
-                'FE01-A01读取10月21日完整结果，V01按限定科学结论独立审阅收尾。以上不自动触发计算。\n\n'
+                '逐线下一步以各线当前 NEXT_TASK（若已部署）及 pending_tasks 为准；'
+                '旧日期的优先级不覆盖新证据。所有待办均不自动触发计算。\n\n'
                 '追溯方法：用 [EXPERIMENT_INDEX.md](EXPERIMENT_INDEX.md) 找实验ID，用 '
                 '[DECISION_LOG.md](DECISION_LOG.md) 找决策ID，再打开条目中的固定commit链接。'
                 '[PROJECT_MEMORY.md](PROJECT_MEMORY.md) 保存长期规则；每线 STATUS/DECISIONS/EXPERIMENT_INDEX/CHAT_HANDOFF '

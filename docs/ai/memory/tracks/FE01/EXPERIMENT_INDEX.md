@@ -5,7 +5,7 @@
 
 - 科学问题：不同冻结前端在共同下游下表现如何？
 - branch：`exp/fe01-feature-extractor-site-effects`
-- commit：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`
+- commit：`577a0cec43643597a61209209a770aeecf5fefa0`
 - 状态：`verified_complete`
 - 数据/协议：val 1310events/139440 noninput请求/十cell等权；3家族×seed42/43/44；选轮来自validation。
 - 结果性质：九组12轮验证比较，非test。
@@ -17,7 +17,7 @@
 
 - 科学问题：既有系统能否通过真实身份与包装器前向门？
 - branch：`exp/fe01-feature-extractor-site-effects`
-- commit：`ba4fa7740d9fde5fde87a7b0ae0397037209baf4`
+- commit：`577a0cec43643597a61209209a770aeecf5fefa0`
 - 状态：`in_progress`
 - 数据/协议：11组identity，8组各32 decisions/544 targets forward通过；3 TEAM未前向。
 - 结果性质：身份/等价核验与train-only参照，非新完整性能表。

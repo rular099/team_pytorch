@@ -1,5 +1,11 @@
 # ChatGPT Project 与 Codex 协作约定
 
+新会话统一从 [START_HERE.md](START_HERE.md) 进入，再读所选实验线的
+STATUS、NEXT_TASK、DECISIONS。默认只读核验和报告，待办不授予执行权限。
+FE01/FE02 各自维护 `memory/tracks/<ID>/record.json` 及生成视图；
+[部署、每轮收尾与恢复](HANDOFF_WORKFLOW.md) 规定独立worktree/branch和结果提交/状态提交的区别。
+ChatGPT 一次性项目设置使用 [精简指令](PROJECT_INSTRUCTIONS_CN.md)。
+
 跨实验线入口：[项目记忆](memory/README.md)、[当前状态](memory/CURRENT_STATUS.md)、
 [新对话交接](memory/CHAT_HANDOFF.md)。下文2026-09-02分支快照保留历史语境；
 当前活跃分支及证据以逐线记录为准。FE01/FE02并行规则见
@@ -22,7 +28,7 @@ GitHub 连接器是否能写 issue、PR 或代码取决于实际安装项和权�
 ## 2. 每轮工作的固定流程
 
 1. ChatGPT 确认 `rular099/team_pytorch`、目标分支和当前 commit。
-2. ChatGPT 阅读 `AGENTS.md`、`docs/ai/PROJECT_CONTEXT.md` 和与任务直接相关的代码、配置、测试及 provenance。
+2. ChatGPT 阅读 `AGENTS.md`、`docs/ai/START_HERE.md`、本线 STATUS/NEXT_TASK/DECISIONS，再读与任务直接相关的代码、配置、测试及 provenance；历史上下文按需追溯。
 3. ChatGPT 区分事实、推断和建议，并输出 `AI-HANDOFF`。
 4. 用户把交接块发送给 Codex；若交接会改变实验定义，用户先作决定。
 5. Codex 在同一 base commit 上实施；若 HEAD 已变化，先报告差异，不机械套用旧方案。
@@ -36,7 +42,7 @@ GitHub 连接器是否能写 issue、PR 或代码取决于实际安装项和权�
 发生冲突时按以下顺序处理，并显式报告冲突：
 
 1. 当前分支上的代码、resolved config、测试和 checkpoint/result provenance；
-2. `docs/ai/PROJECT_CONTEXT.md` 的带日期快照；
+2. 本线固定commit的状态记录与带证据报告；全局协调快照和 `docs/ai/PROJECT_CONTEXT.md` 须保留其日期范围；
 3. `SESSION_SUMMARY.md` 和专题文档；
 4. 聊天中的用户补充；
 5. 模型记忆或未核验推断。

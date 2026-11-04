@@ -1,5 +1,12 @@
 # 项目记忆使用说明
 
+**2026-11-04 入口扩展：** 新会话从 [START_HERE](../START_HERE.md) 自动路由到FE01或FE02。
+这两线继续以同一record为事实源；新增 `handoff` 字段生成 NEXT_TASK.md，
+与原四份视图一起更新。`handoff.last_session` 记录结果commit/branch、证据、未完成和恢复步骤；
+`next_task.execution_authorization` 必须是 `not_granted_by_this_file`。
+其他10条历史track不强制升级schema；全局快照仍有独立核验日期。
+原下文三份全局入口用于跨线历史导航，不取代新会话的本线状态。
+
 新对话只先读取 [PROJECT_MEMORY](PROJECT_MEMORY.md)、[CURRENT_STATUS](CURRENT_STATUS.md)、
 [CHAT_HANDOFF](CHAT_HANDOFF.md)。需要历史时按 [EXPERIMENT_INDEX](EXPERIMENT_INDEX.md) 与
 [DECISION_LOG](DECISION_LOG.md) 的ID找固定commit证据，不全文加载历史。
@@ -28,8 +35,9 @@ python tools/ai_memory_update.py --coordinator --source FE01=origin/exp/fe01-fea
 python tools/ai_memory_check.py
 ```
 
-实验结果commit后，人工将record的commit_sha设为该结果commit，写入真正可核验的结论、
+实验结果commit后，人工将record的commit_sha设为该科研/证据结果commit，写入真正可核验的结论、
 原始证据路径、未解决问题；重要决定追加ID，新实验/收尾更新实验条目，再提交本线记忆。
+FE01/FE02还须更新handoff.last_session/next_task，并使用只读ai_handoff核验。
 不要试图让文档保存“包含自身的commit SHA”；生成所依据的commit与最后承载文档的commit区分。
 未部署记忆的旧分支被指定为source时会报警并保留已审计状态，不会变成unknown/未完成。
 

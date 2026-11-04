@@ -5,7 +5,7 @@
 
 当前任务是项目记忆与并行隔离初始化。全局由协调者维护，各科研实例只写自己的 tracks/<ID>/。公共改动经审阅后再引入工作分支，本轮没有开始新训练或提交超算。
 
-状态核验时间：2026-11-01T07:35:39+00:00。精确 branch/commit 见 [CURRENT_STATUS.md](CURRENT_STATUS.md)。
+状态核验时间：2026-11-04T03:33:49+00:00。精确 branch/commit 见 [CURRENT_STATUS.md](CURRENT_STATUS.md)。
 
 - **RT55_RT56** (`verified_complete`)：RT55确实使用匹配波形；RT56随机几何适配有收益也有normal遗忘，任意查询空间辨识仍未解决。 9月快照核验的是RT55 epoch20 test；含ep32_retry的目录不能证明epoch32 test。epoch32 validation roll证明系统使用匹配波形，不能证明adapter不collapse。 [本线来源](tracks/RT55_RT56/STATUS.md)。
 - **RT57** (`verified_complete`)：GTNP v2已评估；残差缩放gamma=1.66来自同一validation选择，不能当独立test证据。 random/normal配对与指标复算在报告中通过；gamma=1.66当时为离线分析选择。 [本线来源](tracks/RT57/STATUS.md)。
@@ -16,13 +16,13 @@
 - **FE01** (`in_progress`)：三家族×三seed原比较已完成；EVAL1八组forward PASS、TEAM三组被评价清单条件阻挡，后续A01/ON另线推进。 原九组各12轮的报告与EVAL1 summary均已归档；本轮只核验保存文件，未重算大型原始产物。 [本线来源](tracks/FE01/STATUS.md)。
 - **FE01_A01** (`verified_complete`)：10月21日五项seal和16份validation预测已归档；已取代10月15日等待pack的旧进度。 已发布中立报告记录16份导出：各1310events/194265请求，noninput139440；selected和epoch12不是独立重复。 [本线来源](tracks/FE01_A01/STATUS.md)。
 - **FE01_ON** (`in_progress`)：四ON旧导出CPU比较已发布；10月25日修复inventory清单路径，真实修复inventory与新回放结果待核验。 真实CPU比较与合成动态图均存在，但合成图醒目标SYNTHETIC，不能当Japan新前向结果。 [本线来源](tracks/FE01_ON/STATUS.md)。
-- **FE02** (`blocked`)：事件融合R0/A/B/C/M独立于FE01；M组5/12轮后超时，CPU RNG续跑兼容层已交付，真实恢复待证。 M/seed42 audit及5轮记录存在；续跑在RNG恢复时报错，没有进入新一轮，不能写成12轮完成。 [本线来源](tracks/FE02/STATUS.md)。
+- **FE02** (`in_progress`)：R0/A/B/C/M五组seed42各12轮/2544更新；M主指标最低但与B的总体差异CI含零，单台/random收益伴随normal多台代价。 已归档并复算五组seed42各12轮；共同validation十cell等权noninput域为normal/random×1/3/5/10/20秒，每组1310事件/139440非输入目标，PGA坐标log10(m/s²)；所选R0/A/B/C/M epoch为10/11/10/12/10。 [本线来源](tracks/FE02/STATUS.md)。
 - **V01** (`verified_complete`)：速度/P前缺失控制闭环已完成；MM总体优于FF但高PGA更差，不能据此证明padding无害或速度上限。 报告核验10格导出、4750个metric值和400行CI；fixed epoch8/单seed/非输入query-only，不能与RT55 normal-all混排。 [本线来源](tracks/V01/STATUS.md)。
 - **LEGACY** (`unknown`)：早期512-event容量/空间消融保留索引；graph与其余历史分支只确认存在，最终执行进度unknown。 Git保留早期stage2实验计划和历史branch；远端24个branch完整清单见audit/remote_refs.json。 [本线来源](tracks/LEGACY/STATUS.md)。
 
 尚未解决：任意非输入查询的空间辨识、单输入空间场压缩、normal/random收益保持与概率校准。单seed和反复使用validation限制结论；原始权重/数据/调度退出码缺失必须分别保留，不能用缺同步推断未完成。
 
-优先顺序：先审阅本记忆体系；FE01 ON核对inventory修复的实际回执；FE02核对RNG兼容receipt和后续epoch；FE01-A01读取10月21日完整结果，V01按限定科学结论独立审阅收尾。以上不自动触发计算。
+逐线下一步以各线当前 NEXT_TASK（若已部署）及 pending_tasks 为准；旧日期的优先级不覆盖新证据。所有待办均不自动触发计算。
 
 追溯方法：用 [EXPERIMENT_INDEX.md](EXPERIMENT_INDEX.md) 找实验ID，用 [DECISION_LOG.md](DECISION_LOG.md) 找决策ID，再打开条目中的固定commit链接。[PROJECT_MEMORY.md](PROJECT_MEMORY.md) 保存长期规则；每线 STATUS/DECISIONS/EXPERIMENT_INDEX/CHAT_HANDOFF 提供详细入口。Git之外的历史聊天未全部读取，缺原讨论的原因标 needs_history_review；使用 [HISTORY_IMPORT_TEMPLATE.md](HISTORY_IMPORT_TEMPLATE.md) 补录。旧报告保留其日期语境，不能当当前全局状态。
 <!-- ai-memory:end -->

@@ -5,33 +5,42 @@ track_id: `FE02`
 
 branch: `exp/fe02-event-fusion-readout`
 
-commit_sha: `42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7`
+commit_sha: `618661f99afb67f5c23c9f1a3fd713a0a156e7b5`
 
-last_verified_at: `2026-11-01T07:24:10+00:00`
+last_verified_at: `2026-11-04T03:33:49+00:00`
 
-current_state: `blocked`
+current_state: `in_progress`
 
-原证据日期：2026-10-14；本次只核验可见来源，不代表重新跑过实验。
+原证据日期：2026-11-04；本次只核验可见来源，不代表重新跑过实验。
 
-完成范围：五组代码/协议已实现；已知M组5/12轮，续跑失败后的兼容修复未获得真实验证。
+完成范围：五组seed42的12轮训练和固定validation证据已归档并复算；独立科研审阅和来源缺口仍待完成。
 
-事件融合R0/A/B/C/M独立于FE01；M组5/12轮后超时，CPU RNG续跑兼容层已交付，真实恢复待证。
+R0/A/B/C/M五组seed42各12轮/2544更新；M主指标最低但与B的总体差异CI含零，单台/random收益伴随normal多台代价。
+
+实验目标：固定真实冻结DiTing前端，对比R0/A/B/C/M事件融合读出，研究单输入非输入查询的空间辨识及normal/random精度与校准取舍。
+
+默认动作：只读、核验和报告；待办不授予执行权限。
+
+最近工作 result_commit：`618661f99afb67f5c23c9f1a3fd713a0a156e7b5`；branch：`exp/fe02-event-fusion-readout`；scope：`evidence_review`。
 
 ### verified_results
 
-- M/seed42 audit及5轮记录存在；续跑在RNG恢复时报错，没有进入新一轮，不能写成12轮完成。 来源：[docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md)
-- 兼容层只修复传入set_rng_state_all的CPU ByteTensor，独立SHA/receipt保留；原源码与source lock不重签。 来源：[docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/docs/ai/CODEX_RESULT_20261014_FE02_RNG_RESUME.md)；[docs/ai/FE02_PROTOCOL.md](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/docs/ai/FE02_PROTOCOL.md)
+- 已归档并复算五组seed42各12轮；共同validation十cell等权noninput域为normal/random×1/3/5/10/20秒，每组1310事件/139440非输入目标，PGA坐标log10(m/s²)；所选R0/A/B/C/M epoch为10/11/10/12/10。 来源：[reports/fe02_hpc_results_20261104/README.md](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/README.md)；[reports/fe02_hpc_results_20261104/data/headline_primary.csv](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/headline_primary.csv)；[reports/fe02_hpc_results_20261104/data/verification.json](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/verification.json)
+- 轻量事件表独立重建五组主分数及63行5000次event-cluster bootstrap，seed20261008；本次为已保存复算记录的接手核验，不再次运行模型或原始数据计算。 来源：[reports/fe02_hpc_results_20261104/data/compact_verification.json](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/compact_verification.json)；[reports/fe02_hpc_results_20261104/README.md](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/README.md)
+- 160份恢复回执覆盖10作业×16rank，shim SHA一致；最后R0/A/B/C launcher SHA不同于仓库入口，原入口字节未取得。 来源：[reports/fe02_hpc_results_20261104/data/verification.json](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/verification.json)；[reports/fe02_hpc_results_20261104/README.md](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/README.md)
 
 ### pending_tasks
 
-- 核验真实兼容receipt、后续epoch与last身份；不自动提交、重训或修改预算。
-- 其他四组状态unknown；有新回执再更新，不从M组推断其余组。
+- 按已发布ChatGPT任务独立审阅点/概率/空间/几何/输入数分层及CI，比较Codex结论。
+- 补齐后四组launcher来源、checkpoint字节或可核验元数据、committed journals及sacct；缺失保持UNKNOWN。
+- 是否追加multi-seed、独立评价或新架构由用户决定；不自动训练、续跑、提交作业或动用held-out test。
 
 ### limitations
 
-- 只有M组日志，没有完整checkpoint/逐目标结果下载。
-- 本地19项合成CPU测试不构成ROCm真实恢复成功。
-- 当前blocked描述已知执行缺口，不影响FE01继续工作。
+- 单seed且validation同时用于checkpoint选择；bootstrap不含训练seed/选择不确定性，未校正多项比较。
+- 原权重字节、committed journals、sacct未提供；不能宣称完整执行链复现或调度器COMPLETED。
+- 单台normal晚时刻人口极稀疏，概率仍欠覆盖，C不是等容量消融。
+- 预训练重叠、上游在线因果性、未见台站泛化均未认证。
 
 ### evidence_paths
 
@@ -39,6 +48,23 @@ current_state: `blocked`
 - [docs/ai/FE02_PROTOCOL.md](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/docs/ai/FE02_PROTOCOL.md)
 - [scripts/fe02/job.sh](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/scripts/fe02/job.sh)
 - [scripts/fe02/env.sh](https://github.com/rular099/team_pytorch/blob/42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7/scripts/fe02/env.sh)
+- [reports/fe02_hpc_results_20261104/README.md](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/README.md)
+- [reports/fe02_hpc_results_20261104/data/verification.json](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/verification.json)
+- [reports/fe02_hpc_results_20261104/data/compact_verification.json](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/compact_verification.json)
+- [reports/fe02_hpc_results_20261104/data/headline_primary.csv](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/data/headline_primary.csv)
+- [reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md](https://github.com/rular099/team_pytorch/blob/618661f99afb67f5c23c9f1a3fd713a0a156e7b5/reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md)
+
+
+### 未完成事项
+
+- 按已发布ChatGPT任务独立审阅点/概率/空间/几何/输入数分层及CI，比较Codex结论。
+- 补齐后四组launcher来源、checkpoint字节或可核验元数据、committed journals及sacct；缺失保持UNKNOWN。
+- 是否追加multi-seed、独立评价或新架构由用户决定；不自动训练、续跑、提交作业或动用held-out test。
+
+### 恢复步骤（先读后报告）
+
+- 从固定结果commit读取轻量报告和ChatGPT复核任务，报告实际可见branch/commit。
+- 核对launcher来源缺口；没有当前授权时只报告提案，不运行submit.sh、resume脚本或测试集。
 <!-- ai-memory:end -->
 
 <!-- 人工补充写在生成区外；record.json 是结构化事实源。 -->

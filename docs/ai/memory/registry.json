@@ -14,5 +14,22 @@
     "FE02",
     "V01",
     "LEGACY"
-  ]
+  ],
+  "handoff": {
+    "schema_version": 1,
+    "entry_branch": "chore/persistent-ai-handoff",
+    "coordinator_branches": [
+      "chore/persistent-ai-handoff"
+    ],
+    "tracks": {
+      "FE01": {
+        "branch": "exp/fe01-feature-extractor-site-effects",
+        "directory": "docs/ai/memory/tracks/FE01"
+      },
+      "FE02": {
+        "branch": "exp/fe02-event-fusion-readout",
+        "directory": "docs/ai/memory/tracks/FE02"
+      }
+    }
+  }
 }

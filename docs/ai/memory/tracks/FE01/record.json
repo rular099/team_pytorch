@@ -1,8 +1,8 @@
 {
   "track_id": "FE01",
   "branch": "exp/fe01-feature-extractor-site-effects",
-  "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
-  "last_verified_at": "2026-11-01T07:24:10+00:00",
+  "commit_sha": "577a0cec43643597a61209209a770aeecf5fefa0",
+  "last_verified_at": "2026-11-04T03:33:49+00:00",
   "evidence_as_of": "2026-10-06",
   "current_state": "in_progress",
   "completion_scope": "九组训练结果已归档；EVAL1身份/前向门部分完成，完整补评未全部取得。",
@@ -55,6 +55,12 @@
       "path": "configs/fe01/formal/formal__phasenet_pretrained_frozen__seed42.json",
       "kind": "config",
       "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4"
+    },
+    {
+      "evidence_id": "current_entry",
+      "commit_sha": "577a0cec43643597a61209209a770aeecf5fefa0",
+      "path": "docs/ai/README.md",
+      "kind": "handoff"
     }
   ],
   "decisions": [
@@ -100,5 +106,44 @@
       "state": "in_progress",
       "review_status": "needs_independent_review"
     }
-  ]
+  ],
+  "handoff": {
+    "schema_version": 1,
+    "repository": "rular099/team_pytorch",
+    "goal": "比较原生因果窗口下不同波形前端与共同PGA下游；原FE01/EVAL1和后续FE01_A01、FE01_ON各自保留实验身份。",
+    "default_action": "read_verify_report",
+    "next_task": {
+      "task_id": "FE01-READONLY-REVIEW",
+      "objective": "独立复核原FE01和EVAL1的已归档证据，区分原TEAM阻挡与A01/ON后续状态，报告仍缺的来源和评价。",
+      "kind": "read_only_review",
+      "execution_authorization": "not_granted_by_this_file",
+      "read_steps": [
+        "按本线固定commit读取原训练报告和EVAL1 summary；区分validation、身份门和完整性能评价。",
+        "需要A01或ON时显式选择该独立track及其来源，不把其任务写进FE01主线或FE02。"
+      ],
+      "acceptance_checks": [
+        "能从固定commit恢复前端比较目标、已验证门与尚缺证据。",
+        "保留train/validation/test、未见台站与sacct的解释边界；没有新计算或协议变更。"
+      ]
+    },
+    "last_session": {
+      "task_id": "20261102-fe01-existing-handoff-sync",
+      "result_commit": "577a0cec43643597a61209209a770aeecf5fefa0",
+      "result_branch": "exp/fe01-feature-extractor-site-effects",
+      "scope": "evidence_review",
+      "evidence_ids": [
+        "current_entry",
+        "report",
+        "gate"
+      ],
+      "unfinished": [
+        "按FE01_A01与FE01_ON各自新来源审阅后续，不能把旧EVAL1阻挡当新线仍未完成。",
+        "站点泛化、场地效应、回放和held-out test要逐项查实际证据。"
+      ],
+      "resume_steps": [
+        "读取STATUS、NEXT_TASK、DECISIONS及其中固定commit证据；先报告事实、限制与剩余问题。",
+        "只有收到新的明确实施任务才推进代码或HPC；不从旧EVAL1状态推断新派生线。"
+      ]
+    }
+  }
 }

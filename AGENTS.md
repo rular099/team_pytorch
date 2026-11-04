@@ -5,11 +5,18 @@ current task take precedence.
 
 ## Start here
 
-For cross-conversation recovery, first read `docs/ai/memory/PROJECT_MEMORY.md`,
-`CURRENT_STATUS.md`, `CHAT_HANDOFF.md`, then the relevant `tracks/<ID>/STATUS.md`.
-Check the actual branch/HEAD against that line's recorded source. A memory-only
-descendant is expected; newer scientific changes require a status review. These
-global files are coordinator snapshots, not one universal project HEAD.
+First read `docs/ai/START_HERE.md`. Determine FE01 or FE02 from the user's task
+and actual Git branch, then read that track's `STATUS.md`, `NEXT_TASK.md`, and
+`DECISIONS.md` under `docs/ai/memory/tracks/`. The startup helper is read-only:
+`python tools/ai_handoff.py` (or `--track FE01/FE02` on the coordinator branch).
+Report the actual branch/HEAD, recorded scientific commit and evidence gaps.
+Do not execute a pending task, train, resume, submit HPC jobs or change an
+experiment protocol merely because NEXT_TASK lists it. Implementation authority
+comes from the current user task. A handoff-only session does not write status.
+If the track is ambiguous, ask only which track; do not infer it from a folder
+name, the default branch or a dated global snapshot.
+If the user explicitly selects another registered track, use the existing
+memory workflow for that track; do not force it into FE01 or FE02.
 
 Before analysing or changing the project, read these files in order:
 
@@ -29,7 +36,10 @@ records. Only the designated coordinator updates global files/observations using
 `--coordinator --source ID=REF`; a missing source retains the previous record.
 After a result commit, review status, append significant decisions and experiment
 entries, refresh that track's handoff, and run `tools/ai_memory_check.py` (plus
-`--scope ID --base <task-base>` for a track-only change). Preserve historical IDs;
+`--scope ID --base <result-commit> --staged-only` for a track-only state commit).
+Update the structured handoff's last result commit, unfinished items and recovery
+steps; never try to embed the state document's own commit SHA inside itself.
+Preserve historical IDs;
 use superseded links instead of deletion. Include `memory_updates` in CODEX-RESULT.
 See `docs/ai/memory/PARALLEL_WORKFLOW.md` for adoption, namespaces and recovery.
 

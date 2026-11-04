@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "worktrees": [
+    {
+      "worktree": "team_pytorch_fe02",
+      "head": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+      "unchanged": true,
+      "untracked_sha256": {
+        "FE02_jieshou_2026-11-03.md": "8b1f084704d913affcc8098ac3ff1d7337a462f79abfdf27004e720aa1e6e972"
+      }
+    },
+    {
+      "worktree": "team_pytorch_fe01",
+      "head": "577a0cec43643597a61209209a770aeecf5fefa0",
+      "unchanged": true,
+      "untracked_sha256": {
+        "FE01_%E9%A1%B9%E7%9B%AE%E5%8E%86%E5%8F%B2%E6%81%A2%E5%A4%8D%E4%B8%8E%E6%8E%A5%E6%89%8B%E6%8A%A5%E5%91%8A_2026-11-03.md": "30b6867b0d15fcdc654095bb495c7d9493e320a303d7063c8de835b520efecc3"
+      }
+    },
+    {
+      "worktree": "team_pytorch_memory",
+      "head": "826acaadc89979d6ad324d014123def8353a429c",
+      "unchanged": true,
+      "untracked_sha256": {}
+    }
+  ],
+  "scope": "branch/HEAD/status/tracked diff and original untracked file bytes unchanged"
+}

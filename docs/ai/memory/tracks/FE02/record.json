@@ -1,35 +1,46 @@
 {
   "track_id": "FE02",
   "branch": "exp/fe02-event-fusion-readout",
-  "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
-  "last_verified_at": "2026-11-01T07:24:10+00:00",
-  "evidence_as_of": "2026-10-14",
-  "current_state": "blocked",
-  "completion_scope": "五组代码/协议已实现；已知M组5/12轮，续跑失败后的兼容修复未获得真实验证。",
-  "summary": "事件融合R0/A/B/C/M独立于FE01；M组5/12轮后超时，CPU RNG续跑兼容层已交付，真实恢复待证。",
+  "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+  "last_verified_at": "2026-11-04T03:33:49+00:00",
+  "evidence_as_of": "2026-11-04",
+  "current_state": "in_progress",
+  "completion_scope": "五组seed42的12轮训练和固定validation证据已归档并复算；独立科研审阅和来源缺口仍待完成。",
+  "summary": "R0/A/B/C/M五组seed42各12轮/2544更新；M主指标最低但与B的总体差异CI含零，单台/random收益伴随normal多台代价。",
   "verified_results": [
     {
-      "text": "M/seed42 audit及5轮记录存在；续跑在RNG恢复时报错，没有进入新一轮，不能写成12轮完成。",
+      "text": "已归档并复算五组seed42各12轮；共同validation十cell等权noninput域为normal/random×1/3/5/10/20秒，每组1310事件/139440非输入目标，PGA坐标log10(m/s²)；所选R0/A/B/C/M epoch为10/11/10/12/10。",
       "evidence_ids": [
-        "resume"
+        "results",
+        "headline",
+        "verification"
       ]
     },
     {
-      "text": "兼容层只修复传入set_rng_state_all的CPU ByteTensor，独立SHA/receipt保留；原源码与source lock不重签。",
+      "text": "轻量事件表独立重建五组主分数及63行5000次event-cluster bootstrap，seed20261008；本次为已保存复算记录的接手核验，不再次运行模型或原始数据计算。",
       "evidence_ids": [
-        "resume",
-        "protocol"
+        "compact_check",
+        "results"
+      ]
+    },
+    {
+      "text": "160份恢复回执覆盖10作业×16rank，shim SHA一致；最后R0/A/B/C launcher SHA不同于仓库入口，原入口字节未取得。",
+      "evidence_ids": [
+        "verification",
+        "results"
       ]
     }
   ],
   "pending_tasks": [
-    "核验真实兼容receipt、后续epoch与last身份；不自动提交、重训或修改预算。",
-    "其他四组状态unknown；有新回执再更新，不从M组推断其余组。"
+    "按已发布ChatGPT任务独立审阅点/概率/空间/几何/输入数分层及CI，比较Codex结论。",
+    "补齐后四组launcher来源、checkpoint字节或可核验元数据、committed journals及sacct；缺失保持UNKNOWN。",
+    "是否追加multi-seed、独立评价或新架构由用户决定；不自动训练、续跑、提交作业或动用held-out test。"
   ],
   "limitations": [
-    "只有M组日志，没有完整checkpoint/逐目标结果下载。",
-    "本地19项合成CPU测试不构成ROCm真实恢复成功。",
-    "当前blocked描述已知执行缺口，不影响FE01继续工作。"
+    "单seed且validation同时用于checkpoint选择；bootstrap不含训练seed/选择不确定性，未校正多项比较。",
+    "原权重字节、committed journals、sacct未提供；不能宣称完整执行链复现或调度器COMPLETED。",
+    "单台normal晚时刻人口极稀疏，概率仍欠覆盖，C不是等容量消融。",
+    "预训练重叠、上游在线因果性、未见台站泛化均未认证。"
   ],
   "evidence_paths": [
     {
@@ -55,6 +66,36 @@
       "path": "scripts/fe02/env.sh",
       "kind": "launcher",
       "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7"
+    },
+    {
+      "evidence_id": "results",
+      "path": "reports/fe02_hpc_results_20261104/README.md",
+      "kind": "report",
+      "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+    },
+    {
+      "evidence_id": "verification",
+      "path": "reports/fe02_hpc_results_20261104/data/verification.json",
+      "kind": "result",
+      "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+    },
+    {
+      "evidence_id": "compact_check",
+      "path": "reports/fe02_hpc_results_20261104/data/compact_verification.json",
+      "kind": "result",
+      "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+    },
+    {
+      "evidence_id": "headline",
+      "path": "reports/fe02_hpc_results_20261104/data/headline_primary.csv",
+      "kind": "result",
+      "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+    },
+    {
+      "evidence_id": "review",
+      "path": "reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md",
+      "kind": "handoff",
+      "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
     }
   ],
   "decisions": [
@@ -90,15 +131,56 @@
       "experiment_id": "FE02-FUSION",
       "scientific_question": "事件memory能否改善单输入query空间场且保护normal？",
       "dataset_protocol": "FE01 V2 prefix/split/归一化；seed42五组各计划12轮；十cell等权noninput选轮；固定预算。",
-      "result_nature": "实现与部分M训练日志；未形成完成矩阵或性能结论。",
+      "result_nature": "五组已完成固定validation证据归档与统计复算；不是held-out test或稳健优胜结论。",
       "evidence_ids": [
-        "resume",
         "protocol",
-        "io"
+        "results",
+        "verification",
+        "headline"
       ],
       "relationship": "与FE01并行；共享基础代码但独立输出",
-      "state": "blocked",
+      "state": "in_progress",
       "review_status": "needs_independent_review"
     }
-  ]
+  ],
+  "handoff": {
+    "schema_version": 1,
+    "repository": "rular099/team_pytorch",
+    "goal": "固定真实冻结DiTing前端，对比R0/A/B/C/M事件融合读出，研究单输入非输入查询的空间辨识及normal/random精度与校准取舍。",
+    "default_action": "read_verify_report",
+    "next_task": {
+      "task_id": "FE02-READONLY-REVIEW",
+      "objective": "按现有完整五组validation证据独立审阅并补充来源差异说明；先核验，不启动下一轮实验。",
+      "kind": "read_only_review",
+      "execution_authorization": "not_granted_by_this_file",
+      "read_steps": [
+        "读取results、verification、headline及review固定commit证据。",
+        "核对single/multi、normal/random、all/noninput、空间误差及概率校准；注意稀疏cell和未校正CI。"
+      ],
+      "acceptance_checks": [
+        "能报告五组完成记录、所选epoch、来源缺口及受限科学结论。",
+        "明确M与B差异CI包含零及normal多台代价，不以single空间范围变大单独认定成功。"
+      ]
+    },
+    "last_session": {
+      "task_id": "20261104-fe02-existing-results-review",
+      "result_commit": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+      "result_branch": "exp/fe02-event-fusion-readout",
+      "scope": "evidence_review",
+      "evidence_ids": [
+        "results",
+        "verification",
+        "compact_check"
+      ],
+      "unfinished": [
+        "按已发布ChatGPT任务独立审阅点/概率/空间/几何/输入数分层及CI，比较Codex结论。",
+        "补齐后四组launcher来源、checkpoint字节或可核验元数据、committed journals及sacct；缺失保持UNKNOWN。",
+        "是否追加multi-seed、独立评价或新架构由用户决定；不自动训练、续跑、提交作业或动用held-out test。"
+      ],
+      "resume_steps": [
+        "从固定结果commit读取轻量报告和ChatGPT复核任务，报告实际可见branch/commit。",
+        "核对launcher来源缺口；没有当前授权时只报告提案，不运行submit.sh、resume脚本或测试集。"
+      ]
+    }
+  }
 }

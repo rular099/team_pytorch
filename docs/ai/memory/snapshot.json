@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "generated_at": "2026-11-01T07:35:39+00:00",
-    "generated_from_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
-    "coordinator_branch": "chore/project-memory-bootstrap"
+    "generated_at": "2026-11-04T03:33:49+00:00",
+    "generated_from_commit": "826acaadc89979d6ad324d014123def8353a429c",
+    "coordinator_branch": "chore/persistent-ai-handoff"
   },
   "tracks": [
     {
@@ -462,8 +462,8 @@
     {
       "track_id": "FE01",
       "branch": "exp/fe01-feature-extractor-site-effects",
-      "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
-      "last_verified_at": "2026-11-01T07:24:10+00:00",
+      "commit_sha": "577a0cec43643597a61209209a770aeecf5fefa0",
+      "last_verified_at": "2026-11-04T03:33:49+00:00",
       "evidence_as_of": "2026-10-06",
       "current_state": "in_progress",
       "completion_scope": "九组训练结果已归档；EVAL1身份/前向门部分完成，完整补评未全部取得。",
@@ -516,6 +516,12 @@
           "path": "configs/fe01/formal/formal__phasenet_pretrained_frozen__seed42.json",
           "kind": "config",
           "commit_sha": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4"
+        },
+        {
+          "evidence_id": "current_entry",
+          "commit_sha": "577a0cec43643597a61209209a770aeecf5fefa0",
+          "path": "docs/ai/README.md",
+          "kind": "handoff"
         }
       ],
       "decisions": [
@@ -561,7 +567,46 @@
           "state": "in_progress",
           "review_status": "needs_independent_review"
         }
-      ]
+      ],
+      "handoff": {
+        "schema_version": 1,
+        "repository": "rular099/team_pytorch",
+        "goal": "比较原生因果窗口下不同波形前端与共同PGA下游；原FE01/EVAL1和后续FE01_A01、FE01_ON各自保留实验身份。",
+        "default_action": "read_verify_report",
+        "next_task": {
+          "task_id": "FE01-READONLY-REVIEW",
+          "objective": "独立复核原FE01和EVAL1的已归档证据，区分原TEAM阻挡与A01/ON后续状态，报告仍缺的来源和评价。",
+          "kind": "read_only_review",
+          "execution_authorization": "not_granted_by_this_file",
+          "read_steps": [
+            "按本线固定commit读取原训练报告和EVAL1 summary；区分validation、身份门和完整性能评价。",
+            "需要A01或ON时显式选择该独立track及其来源，不把其任务写进FE01主线或FE02。"
+          ],
+          "acceptance_checks": [
+            "能从固定commit恢复前端比较目标、已验证门与尚缺证据。",
+            "保留train/validation/test、未见台站与sacct的解释边界；没有新计算或协议变更。"
+          ]
+        },
+        "last_session": {
+          "task_id": "20261102-fe01-existing-handoff-sync",
+          "result_commit": "577a0cec43643597a61209209a770aeecf5fefa0",
+          "result_branch": "exp/fe01-feature-extractor-site-effects",
+          "scope": "evidence_review",
+          "evidence_ids": [
+            "current_entry",
+            "report",
+            "gate"
+          ],
+          "unfinished": [
+            "按FE01_A01与FE01_ON各自新来源审阅后续，不能把旧EVAL1阻挡当新线仍未完成。",
+            "站点泛化、场地效应、回放和held-out test要逐项查实际证据。"
+          ],
+          "resume_steps": [
+            "读取STATUS、NEXT_TASK、DECISIONS及其中固定commit证据；先报告事实、限制与剩余问题。",
+            "只有收到新的明确实施任务才推进代码或HPC；不从旧EVAL1状态推断新派生线。"
+          ]
+        }
+      }
     },
     {
       "track_id": "FE01_A01",
@@ -741,35 +786,46 @@
     {
       "track_id": "FE02",
       "branch": "exp/fe02-event-fusion-readout",
-      "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7",
-      "last_verified_at": "2026-11-01T07:24:10+00:00",
-      "evidence_as_of": "2026-10-14",
-      "current_state": "blocked",
-      "completion_scope": "五组代码/协议已实现；已知M组5/12轮，续跑失败后的兼容修复未获得真实验证。",
-      "summary": "事件融合R0/A/B/C/M独立于FE01；M组5/12轮后超时，CPU RNG续跑兼容层已交付，真实恢复待证。",
+      "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+      "last_verified_at": "2026-11-04T03:33:49+00:00",
+      "evidence_as_of": "2026-11-04",
+      "current_state": "in_progress",
+      "completion_scope": "五组seed42的12轮训练和固定validation证据已归档并复算；独立科研审阅和来源缺口仍待完成。",
+      "summary": "R0/A/B/C/M五组seed42各12轮/2544更新；M主指标最低但与B的总体差异CI含零，单台/random收益伴随normal多台代价。",
       "verified_results": [
         {
-          "text": "M/seed42 audit及5轮记录存在；续跑在RNG恢复时报错，没有进入新一轮，不能写成12轮完成。",
+          "text": "已归档并复算五组seed42各12轮；共同validation十cell等权noninput域为normal/random×1/3/5/10/20秒，每组1310事件/139440非输入目标，PGA坐标log10(m/s²)；所选R0/A/B/C/M epoch为10/11/10/12/10。",
           "evidence_ids": [
-            "resume"
+            "results",
+            "headline",
+            "verification"
           ]
         },
         {
-          "text": "兼容层只修复传入set_rng_state_all的CPU ByteTensor，独立SHA/receipt保留；原源码与source lock不重签。",
+          "text": "轻量事件表独立重建五组主分数及63行5000次event-cluster bootstrap，seed20261008；本次为已保存复算记录的接手核验，不再次运行模型或原始数据计算。",
           "evidence_ids": [
-            "resume",
-            "protocol"
+            "compact_check",
+            "results"
+          ]
+        },
+        {
+          "text": "160份恢复回执覆盖10作业×16rank，shim SHA一致；最后R0/A/B/C launcher SHA不同于仓库入口，原入口字节未取得。",
+          "evidence_ids": [
+            "verification",
+            "results"
           ]
         }
       ],
       "pending_tasks": [
-        "核验真实兼容receipt、后续epoch与last身份；不自动提交、重训或修改预算。",
-        "其他四组状态unknown；有新回执再更新，不从M组推断其余组。"
+        "按已发布ChatGPT任务独立审阅点/概率/空间/几何/输入数分层及CI，比较Codex结论。",
+        "补齐后四组launcher来源、checkpoint字节或可核验元数据、committed journals及sacct；缺失保持UNKNOWN。",
+        "是否追加multi-seed、独立评价或新架构由用户决定；不自动训练、续跑、提交作业或动用held-out test。"
       ],
       "limitations": [
-        "只有M组日志，没有完整checkpoint/逐目标结果下载。",
-        "本地19项合成CPU测试不构成ROCm真实恢复成功。",
-        "当前blocked描述已知执行缺口，不影响FE01继续工作。"
+        "单seed且validation同时用于checkpoint选择；bootstrap不含训练seed/选择不确定性，未校正多项比较。",
+        "原权重字节、committed journals、sacct未提供；不能宣称完整执行链复现或调度器COMPLETED。",
+        "单台normal晚时刻人口极稀疏，概率仍欠覆盖，C不是等容量消融。",
+        "预训练重叠、上游在线因果性、未见台站泛化均未认证。"
       ],
       "evidence_paths": [
         {
@@ -795,6 +851,36 @@
           "path": "scripts/fe02/env.sh",
           "kind": "launcher",
           "commit_sha": "42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7"
+        },
+        {
+          "evidence_id": "results",
+          "path": "reports/fe02_hpc_results_20261104/README.md",
+          "kind": "report",
+          "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+        },
+        {
+          "evidence_id": "verification",
+          "path": "reports/fe02_hpc_results_20261104/data/verification.json",
+          "kind": "result",
+          "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+        },
+        {
+          "evidence_id": "compact_check",
+          "path": "reports/fe02_hpc_results_20261104/data/compact_verification.json",
+          "kind": "result",
+          "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+        },
+        {
+          "evidence_id": "headline",
+          "path": "reports/fe02_hpc_results_20261104/data/headline_primary.csv",
+          "kind": "result",
+          "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
+        },
+        {
+          "evidence_id": "review",
+          "path": "reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md",
+          "kind": "handoff",
+          "commit_sha": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5"
         }
       ],
       "decisions": [
@@ -830,17 +916,58 @@
           "experiment_id": "FE02-FUSION",
           "scientific_question": "事件memory能否改善单输入query空间场且保护normal？",
           "dataset_protocol": "FE01 V2 prefix/split/归一化；seed42五组各计划12轮；十cell等权noninput选轮；固定预算。",
-          "result_nature": "实现与部分M训练日志；未形成完成矩阵或性能结论。",
+          "result_nature": "五组已完成固定validation证据归档与统计复算；不是held-out test或稳健优胜结论。",
           "evidence_ids": [
-            "resume",
             "protocol",
-            "io"
+            "results",
+            "verification",
+            "headline"
           ],
           "relationship": "与FE01并行；共享基础代码但独立输出",
-          "state": "blocked",
+          "state": "in_progress",
           "review_status": "needs_independent_review"
         }
-      ]
+      ],
+      "handoff": {
+        "schema_version": 1,
+        "repository": "rular099/team_pytorch",
+        "goal": "固定真实冻结DiTing前端，对比R0/A/B/C/M事件融合读出，研究单输入非输入查询的空间辨识及normal/random精度与校准取舍。",
+        "default_action": "read_verify_report",
+        "next_task": {
+          "task_id": "FE02-READONLY-REVIEW",
+          "objective": "按现有完整五组validation证据独立审阅并补充来源差异说明；先核验，不启动下一轮实验。",
+          "kind": "read_only_review",
+          "execution_authorization": "not_granted_by_this_file",
+          "read_steps": [
+            "读取results、verification、headline及review固定commit证据。",
+            "核对single/multi、normal/random、all/noninput、空间误差及概率校准；注意稀疏cell和未校正CI。"
+          ],
+          "acceptance_checks": [
+            "能报告五组完成记录、所选epoch、来源缺口及受限科学结论。",
+            "明确M与B差异CI包含零及normal多台代价，不以single空间范围变大单独认定成功。"
+          ]
+        },
+        "last_session": {
+          "task_id": "20261104-fe02-existing-results-review",
+          "result_commit": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+          "result_branch": "exp/fe02-event-fusion-readout",
+          "scope": "evidence_review",
+          "evidence_ids": [
+            "results",
+            "verification",
+            "compact_check"
+          ],
+          "unfinished": [
+            "按已发布ChatGPT任务独立审阅点/概率/空间/几何/输入数分层及CI，比较Codex结论。",
+            "补齐后四组launcher来源、checkpoint字节或可核验元数据、committed journals及sacct；缺失保持UNKNOWN。",
+            "是否追加multi-seed、独立评价或新架构由用户决定；不自动训练、续跑、提交作业或动用held-out test。"
+          ],
+          "resume_steps": [
+            "从固定结果commit读取轻量报告和ChatGPT复核任务，报告实际可见branch/commit。",
+            "核对launcher来源缺口；没有当前授权时只报告提案，不运行submit.sh、resume脚本或测试集。"
+          ]
+        }
+      }
     },
     {
       "track_id": "V01",
@@ -1043,10 +1170,10 @@
       "record_sha256": "50741d3ff0af765ffde302c34cd3f6e8a7ddb7a5425f9c1637fdc067fc4ba164"
     },
     "FE01": {
-      "state": "retained_snapshot",
-      "source": "docs/ai/memory/observations/FE01.json",
-      "source_commit": null,
-      "record_sha256": "a7ad9d9f9f7fc892171576d03c9179c6b34a1717f48b6e539e7fe24d520cc4dd"
+      "state": "audited_from_pinned_evidence_not_deployed",
+      "source": "exp/fe01-feature-extractor-site-effects",
+      "source_commit": "577a0cec43643597a61209209a770aeecf5fefa0",
+      "record_sha256": "d8e8f0d0809b3d59dc736b8c804d43a84971b740d5c57798bf4784e3c227784b"
     },
     "FE01_A01": {
       "state": "retained_snapshot",
@@ -1061,10 +1188,10 @@
       "record_sha256": "4ab35e8aad3bb5fe9a2d2bf3f10a059ec9c803c9f31da417e892e414f131671f"
     },
     "FE02": {
-      "state": "retained_snapshot",
-      "source": "docs/ai/memory/observations/FE02.json",
-      "source_commit": null,
-      "record_sha256": "c748f2b7808d86a5b6a03df4e26c4377f5a44df5a50eb396aa2be3ece17b507c"
+      "state": "audited_from_pinned_evidence_not_deployed",
+      "source": "exp/fe02-event-fusion-readout",
+      "source_commit": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+      "record_sha256": "4cd445ca672166962688612dfc46b0ead0d8fc61fb1607edf04587e9e4f7a582"
     },
     "V01": {
       "state": "retained_snapshot",

@@ -1,5 +1,9 @@
 # RT55 / RT56 项目上下文快照
 
+跨会话恢复入口为 [START_HERE.md](START_HERE.md)。先选择 FE01/FE02，读取本线
+STATUS/NEXT_TASK/DECISIONS，再按固定commit核验；下文为带日期的历史背景，
+不能覆盖本线已更新的事实，也不构成训练、HPC或协议变更授权。
+
 历史范围提示：本文是2026-09-02的RT55/RT56快照，不代表全项目当前进度。
 跨线当前入口为 [memory/CURRENT_STATUS.md](memory/CURRENT_STATUS.md)，
 新对话先读 [memory/CHAT_HANDOFF.md](memory/CHAT_HANDOFF.md)。
