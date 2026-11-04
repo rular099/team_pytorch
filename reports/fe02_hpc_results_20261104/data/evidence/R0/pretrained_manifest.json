@@ -1,0 +1,21 @@
+{
+  "models": {
+    "diting": {
+      "files": {
+        "weights": {
+          "path": "${HPC_EXTERNAL_ROOT}/mp_rank_00_model_states.pt",
+          "sha256": "c71aea36cd3b14a3dfa8da1b22104776bede4c04e208db01b443ae25c27a685b",
+          "bytes": 2477657432
+        }
+      },
+      "source": "\u5df2\u6709DiTing MAE1200M\u9884\u8bad\u7ec3\u6743\u91cd\uff1b\u8bed\u6599\u91cd\u53e0unknown",
+      "architecture": "MAE 1200M backbone_attn_pool; strict-load/device audit required",
+      "component_order": "NEZ",
+      "sampling_rate": 100,
+      "native_n_samples": 10000,
+      "pretraining_normalization": "unknown",
+      "overlap_status": "unknown; corpus-level audit required",
+      "device_forward_status": "NOT_RUN"
+    }
+  }
+}

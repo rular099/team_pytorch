@@ -1,0 +1,36 @@
+{
+  "draws": 100000,
+  "sample_type": "sampler only; no real labels",
+  "seed": 20261001,
+  "expected": [
+    20000.000000000015,
+    20000.000000000015,
+    20000.000000000164,
+    15000.000000000036,
+    15000.000000000116,
+    10000.000000000282
+  ],
+  "observed": [
+    19912,
+    19927,
+    20000,
+    15137,
+    14995,
+    10029
+  ],
+  "tolerance": [
+    763.9466384404112,
+    763.9466384404112,
+    763.9466384404134,
+    682.4953874381736,
+    682.4953874381752,
+    574.2099788303154
+  ],
+  "passed": true,
+  "retained_probability_mass": 1.0000000000000002,
+  "min_seconds": 1.0,
+  "max_seconds": 90.0,
+  "duplicate_tick_fraction": 0.91779,
+  "per_event_three_draw_duplicate_fraction": 0.0015900159001590016,
+  "bin_boundaries": "left inclusive / right exclusive; 90 included in final bin"
+}

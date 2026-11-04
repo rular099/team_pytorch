@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "event_id": "20000106204000",
+  "queries": 3,
+  "max_mdn_parameter_delta": 1.3969838619232178e-09,
+  "atol": 1e-05,
+  "rtol": 1e-05,
+  "rule": "batch vs order reversal vs independent single coordinate queries"
+}

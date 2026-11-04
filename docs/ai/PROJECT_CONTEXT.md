@@ -1,5 +1,17 @@
 # RT55 / RT56 项目上下文快照
 
+> **FE02 当前结果（2026-11-04）**：用户提供的真实结果已整理为
+> [证据与独立分析](../../reports/fe02_hpc_results_20261104/README.md) 和
+> [ChatGPT 复核任务](../../reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md)。
+> 五组 seed42 均有12轮/2544更新及固定 validation 导出；所选 epoch 为
+> R0/A/B/C/M=10/11/10/12/10。共同十 cell noninput MAE 分别为
+> 0.220296/0.221691/0.219883/0.225063/0.217888 dex，均为 validation、
+> 1,310 events / 139,440 targets、log10(m/s²)，来源为报告 headline_primary.csv。
+> M 对 B 的事件配对 CI 包含零，single/random 收益伴随 normal multi 代价。
+> 训练 source=9f703718，分析 base=42b3d540；缺权重字节/journals/sacct，
+> 后四组最终 launcher SHA 与仓库入口不同，保留来源缺口。
+> 以下 10 月 8 日与 RT55/56 段落为历史快照，不能覆盖此状态。
+
 > 当前分支工作（2026-10-08）：FE02 独立事件融合读出实验，
 > `exp/fe02-event-fusion-readout`，基点 `ba4fa7740d9fde5fde87a7b0ae0397037209baf4`。
 > 入口：[FE02协议](FE02_PROTOCOL.md)、[超算手动提交](FE02_HPC_RUNBOOK.md)、

@@ -1,5 +1,12 @@
 # ChatGPT Project 与 Codex 协作约定
 
+当前结果（2026-11-04）：[FE02 真实结果与 Codex 分析](../../reports/fe02_hpc_results_20261104/README.md)、
+[ChatGPT 独立复核任务](../../reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md)、
+[本轮交接](CODEX_RESULT_20261104_FE02_RESULTS.md)。五组 seed42 已提供完整12轮记录和
+固定 validation；原配对分析通过，轻量表独立重建全部63行bootstrap。
+权重字节、训练journals、sacct及部分续跑launcher来源仍有缺口，详见报告。
+下段“仅M五轮”为2026-10-14时的历史交付状态。
+
 本分支最新任务（2026-10-08）：[FE02事件融合协议](FE02_PROTOCOL.md)、
 [超算脚本/手动命令](FE02_HPC_RUNBOOK.md)、[实现交付](CODEX_RESULT_20261008_FE02.md)、
 [ChatGPT审阅要求](FE02_REVIEW_REQUEST.md)。FE02与FE01前端矩阵独立，默认仅5组seed42；

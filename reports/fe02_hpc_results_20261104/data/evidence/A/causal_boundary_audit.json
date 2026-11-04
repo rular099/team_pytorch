@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "event_id": "20000106204000",
+  "first_forbidden_sample": 1699,
+  "modified": "all raw samples from exclusive cutoff onward \u2192 NaN",
+  "max_prediction_delta": 2.7939677238464355e-09,
+  "max_feature_delta": 4.76837158203125e-07,
+  "observed_encoder_outputs": [
+    [
+      1,
+      1792,
+      200
+    ],
+    [
+      1,
+      1792,
+      200
+    ]
+  ],
+  "station_feature_shape": [
+    1,
+    25,
+    1000
+  ],
+  "upstream_causality": "not certified: existing offline resampling/filtering is unchanged"
+}

@@ -1,5 +1,29 @@
 # TEAM PyTorch 项目交接文档
 
+## 当前结果入口：FE02（2026-11-04）
+
+独立worktree/分支不变，分析base `42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7`。
+用户提供 `fe02_runs_20261008`，464文件约4.09GB，已只读整理到
+[真实结果报告](reports/fe02_hpc_results_20261104/README.md)，含
+[ChatGPT复核任务](reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md)。
+五组seed42各12轮/2544更新；运行source `9f70371838ec31044e559096a939f023d2924f37`，
+科研源码hash与原lock一致，原模型/配置/启动器/结果未改。
+实际audit与CPU RNG恢复回执已取得；最终日志含训练和normal/random validation完成信息。
+未取得sacct，不能将日志完成信息当作调度器State/ExitCode。
+
+共同validation主域为normal/random×1/3/5/10/20秒十cell等权noninput MAE，
+每组1310事件/139440非输入目标，坐标log10(m/s²)：
+R0 ep10=0.220296，A ep11=0.221691，B ep10=0.219883，C ep12=0.225063，M ep10=0.217888。
+来源为报告data/headline_primary.csv；全部60份每轮validation选择分数已复算。
+M对R0差值-0.002408 dex，未校正95%事件bootstrap CI[-0.004637,-0.000192]；
+M对B的CI包含零。single/random受益，但normal multi退步；单seed不能宣称稳健优胜。
+空间误差/范围、校准和稀疏单台晚时刻分母见报告，不以总体榜单替代分层。
+
+原始权重与committed journals不在本批；checkpoint epoch/SHA来自导出并相互核验，
+未加载权重重验。160份回执覆盖10作业×16rank；shim SHA一致，最后R0/A/B/C launcher
+SHA不同于仓库入口，原入口字节未提供。无新超算提交/test/重训。
+原2026-11-03接手报告保持用户文件不改，下方10月14日状态保留为历史。
+
 ## 当前入口：FE02（2026-10-14）
 
 当前独立工作目录 `team_pytorch_fe02`，分支 `exp/fe02-event-fusion-readout`，

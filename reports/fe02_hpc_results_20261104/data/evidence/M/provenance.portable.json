@@ -1,0 +1,45 @@
+{
+  "checkpoint_sha256": "c15670ab40f497fc4ce9c4e6400943c57cfc803f70d184147f5b2a75a9ffe1a8",
+  "checkpoint_epoch": 10,
+  "config_sha256": "37f8b094a05e8916e21ec169903f04850fa46d63bba12b8270d709e186db974c",
+  "split": "val",
+  "protocol_lock_sha256": "7922df7a54a66e52011585e53c94caa3b197356418fa3c25492fcd312dfe1d2d",
+  "window_protocol": "native_prefix_v2",
+  "stage": "formal",
+  "split_manifest_sha256": "a914fa361dc51af957aca32396d992219dd04c665a7ccffc46ec18769c491108",
+  "validation_population_sha256": "e96284780cb5f72b952c1697d4d264d307e7139a153201fa222566015aec7f69",
+  "random_times_manifest_sha256": null,
+  "runtime": {
+    "host": "c04r1n01",
+    "job_id": "30961700",
+    "python": "3.9.21 (main, Dec 11 2024, 16:24:11) \n[GCC 11.2.0]",
+    "versions": {
+      "torch": "1.13.1+git55d300e.abi0.dtk2304",
+      "seisbench": "0.10.1",
+      "numpy": "1.26.4",
+      "scipy": "1.13.1",
+      "h5py": "3.13.0"
+    },
+    "rocm": "5.4.23191-0e6bf66b",
+    "device": "Device 66a1",
+    "git_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "git_dirty": null,
+    "base_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+    "command": [
+      "scripts/fe02/run.py",
+      "eval",
+      "--config",
+      "${FE02_CODE_ROOT}/configs/fe02/formal/fe02__formal__M__seed42.json",
+      "--checkpoint",
+      "${FE02_OUTPUT_ROOT}/fe02__formal__M__seed42/best.pth",
+      "--output",
+      "${FE02_OUTPUT_ROOT}/fe02__formal__M__seed42/evaluation_fixed_val",
+      "--device",
+      "cuda"
+    ],
+    "recorded_utc": "2026-10-22T17:35:41.737930+00:00"
+  },
+  "variant_id": "M",
+  "event_fusion": "memory",
+  "encoder_checkpoint_sha256": "c71aea36cd3b14a3dfa8da1b22104776bede4c04e208db01b443ae25c27a685b"
+}

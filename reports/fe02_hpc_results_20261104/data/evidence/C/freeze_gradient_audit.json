@@ -1,0 +1,2294 @@
+{
+  "status": "PASS",
+  "encoder_not_in_optimizer": true,
+  "parent_train_encoder_eval": true,
+  "encoder_parameters_and_buffers_unchanged": true,
+  "encoder_state_sha256": "2ee9bf53adec8e4ee12dfaaf5170b26c80cf0bc61ea987d380cddfd0980bccb8",
+  "observed_native_feature_shapes": [
+    [
+      1,
+      1792,
+      200
+    ],
+    [
+      1,
+      1792,
+      200
+    ],
+    [
+      1,
+      1792,
+      200
+    ],
+    [
+      1,
+      1792,
+      200
+    ]
+  ],
+  "gradient_by_parameter": {
+    "waveform_scale_gate": {
+      "present": true,
+      "nonzero": true
+    },
+    "pga_query_token": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_query_token": {
+      "present": true,
+      "nonzero": true
+    },
+    "pga_event_context_gate": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_model.encoder.backbone.W_p.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.W_p.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.0.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.1.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.2.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.3.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.4.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.5.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.6.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.7.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.8.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.9.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.10.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.11.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.12.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.13.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.14.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.15.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.16.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.17.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.18.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.19.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.20.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.21.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.22.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.q_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.q_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.k_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.k_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.v_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.v_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.o_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.o_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.self_attn.sdp_attn.scale": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.norm_attn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.gate_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.gate_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.up_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.up_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.down_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.down_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder.layers.23.norm_ffn.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.encoder.backbone.encoder_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "waveform_model.diting_adapter.attn_query": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_model.diting_adapter.delta_scale": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_model.diting_adapter.base_proj.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_model.diting_adapter.attn_norm.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_model.diting_adapter.attn_norm.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_model.diting_adapter.focus_proj.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_model.diting_adapter.norm.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_model.diting_adapter.norm.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "transformer.blocks.0.attention.WQ.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.attention.WQ.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.attention.WK.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.attention.WK.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.attention.WV.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.attention.WV.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.attention.WO.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.attention.WO.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.ffn.0.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.ffn.0.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.ffn.2.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.ffn.2.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.norm1.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.norm1.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.norm2.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.0.norm2.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.attention.WQ.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.attention.WQ.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.attention.WK.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.attention.WK.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.attention.WV.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.attention.WV.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.attention.WO.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.attention.WO.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.ffn.0.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.ffn.0.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.ffn.2.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.ffn.2.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.norm1.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.norm1.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.norm2.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "transformer.blocks.1.norm2.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "mlp_mag.mlp.0.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_mag.mlp.0.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_mag.alpha.weight": {
+      "present": true,
+      "nonzero": false
+    },
+    "output_model_mag.alpha.bias": {
+      "present": true,
+      "nonzero": false
+    },
+    "output_model_mag.mu.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_mag.mu.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_mag.sigma.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_mag.sigma.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_loc.mlp.0.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_loc.mlp.0.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_loc.mlp.2.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_loc.mlp.2.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_loc.alpha.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_loc.alpha.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_loc.mu.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_loc.mu.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_loc.sigma.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_loc.sigma.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_pga.mlp.0.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_pga.mlp.0.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_pga.mlp.2.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "mlp_pga.mlp.2.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_pga.alpha.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_pga.alpha.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_pga.mu.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_pga.mu.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_pga.sigma.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "output_model_pga.sigma.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_scale_proj.net.0.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_scale_proj.net.0.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_scale_proj.net.2.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "waveform_scale_proj.net.2.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "pga_cross_attention.query_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.query_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.kv_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.kv_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.attn.in_proj_weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.attn.in_proj_bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.attn.out_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.attn.out_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.out_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.out_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.attn_gate": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.ffn_gate": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.query_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.query_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.kv_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.kv_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.attn.in_proj_weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.attn.in_proj_bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.attn.out_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.attn.out_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.attn_out_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.attn_out_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.ffn.0.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.ffn.0.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.ffn.2.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.ffn.2.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.ffn_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.0.ffn_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.attn_gate": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.ffn_gate": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.query_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.query_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.kv_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.kv_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.attn.in_proj_weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.attn.in_proj_bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.attn.out_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.attn.out_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.attn_out_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.attn_out_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.ffn.0.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.ffn.0.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.ffn.2.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.ffn.2.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.ffn_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.1.ffn_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.attn_gate": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.ffn_gate": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.query_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.query_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.kv_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.kv_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.attn.in_proj_weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.attn.in_proj_bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.attn.out_proj.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.attn.out_proj.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.attn_out_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.attn_out_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.ffn.0.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.ffn.0.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.ffn.2.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.ffn.2.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.ffn_norm.weight": {
+      "present": false,
+      "nonzero": false
+    },
+    "pga_cross_attention.extra_layers.2.ffn_norm.bias": {
+      "present": false,
+      "nonzero": false
+    },
+    "event_cross_attention.query_norm.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.query_norm.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.kv_norm.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.kv_norm.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.attn.in_proj_weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.attn.in_proj_bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.attn.out_proj.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.attn.out_proj.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.out_norm.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "event_cross_attention.out_norm.bias": {
+      "present": true,
+      "nonzero": true
+    },
+    "pga_event_context_proj.weight": {
+      "present": true,
+      "nonzero": false
+    },
+    "pga_event_context_proj.bias": {
+      "present": true,
+      "nonzero": false
+    },
+    "layernorm.weight": {
+      "present": true,
+      "nonzero": true
+    },
+    "layernorm.bias": {
+      "present": true,
+      "nonzero": true
+    }
+  },
+  "active_gradient_parameters": 8943746,
+  "nonzero_gradient_parameters": 7942681,
+  "scope": "one real train-event audit update; complete model state and RNG restored; not formal training"
+}

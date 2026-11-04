@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "headline_rows": 5,
+  "bootstrap_rows": 63,
+  "draws_per_row": 5000,
+  "seed": 20261008,
+  "max_ci_abs_difference": 1.1047066039715503e-13,
+  "scope": "reconstructed from portable event/cell error sums; raw predictions not required"
+}

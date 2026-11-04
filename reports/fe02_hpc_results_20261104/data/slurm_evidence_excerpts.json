@@ -1,0 +1,1357 @@
+[
+  {
+    "file": "fe02-run-29583074_0.err",
+    "line": 1,
+    "text": "${HPC_EXTERNAL_ROOT}/conda.sh: line 55: PS1: unbound variable"
+  },
+  {
+    "file": "fe02-run-29583074_1.err",
+    "line": 1,
+    "text": "${HPC_EXTERNAL_ROOT}/conda.sh: line 55: PS1: unbound variable"
+  },
+  {
+    "file": "fe02-run-29583074_2.err",
+    "line": 1,
+    "text": "${HPC_EXTERNAL_ROOT}/conda.sh: line 55: PS1: unbound variable"
+  },
+  {
+    "file": "fe02-run-29583074_3.err",
+    "line": 1,
+    "text": "${HPC_EXTERNAL_ROOT}/conda.sh: line 55: PS1: unbound variable"
+  },
+  {
+    "file": "fe02-run-29583074_4.err",
+    "line": 1,
+    "text": "${HPC_EXTERNAL_ROOT}/conda.sh: line 55: PS1: unbound variable"
+  },
+  {
+    "file": "fe02-run-29934377_0.err",
+    "line": 181,
+    "text": "slurmstepd: error: *** STEP 29934395.0 ON c04r2n13 CANCELLED AT 2026-10-10T14:54:37 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_0.err",
+    "line": 182,
+    "text": "slurmstepd: error: *** JOB 29934395 ON c04r2n13 CANCELLED AT 2026-10-10T14:54:37 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_0.out",
+    "line": 8,
+    "text": "AUDIT_PASS ${FE02_OUTPUT_ROOT}/audits/fe02__formal__R0__seed42"
+  },
+  {
+    "file": "fe02-run-29934377_0.out",
+    "line": 75,
+    "text": "{\"epoch\": 1, \"updates\": 212, \"train_loss_rank0\": 1.396863288193379, \"validation_selection\": 0.26214265709123014, \"lr\": 0.000982962913144534, \"elapsed_seconds\": 16044.38981786702, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_0.out",
+    "line": 76,
+    "text": "{\"epoch\": 2, \"updates\": 424, \"train_loss_rank0\": 1.0867824149581622, \"validation_selection\": 0.2526733101447399, \"lr\": 0.0009330127018922197, \"elapsed_seconds\": 16451.428218733985, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_0.out",
+    "line": 77,
+    "text": "{\"epoch\": 3, \"updates\": 636, \"train_loss_rank0\": 0.9597757458686829, \"validation_selection\": 0.24706269675521808, \"lr\": 0.0008535533905932753, \"elapsed_seconds\": 16454.042315134022, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_0.out",
+    "line": 78,
+    "text": "{\"epoch\": 4, \"updates\": 848, \"train_loss_rank0\": 0.9164880955556653, \"validation_selection\": 0.24075482380237498, \"lr\": 0.000750000000000002, \"elapsed_seconds\": 16562.18569708499, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_0.out",
+    "line": 79,
+    "text": "{\"epoch\": 5, \"updates\": 1060, \"train_loss_rank0\": 0.8599033447087936, \"validation_selection\": 0.23484145207094728, \"lr\": 0.0006294095225512623, \"elapsed_seconds\": 16480.515488225967, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_1.err",
+    "line": 181,
+    "text": "slurmstepd: error: *** STEP 30182192.0 ON d14r3n08 CANCELLED AT 2026-10-11T14:44:38 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_1.err",
+    "line": 182,
+    "text": "slurmstepd: error: *** JOB 30182192 ON d14r3n08 CANCELLED AT 2026-10-11T14:44:38 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_1.out",
+    "line": 8,
+    "text": "AUDIT_PASS ${FE02_OUTPUT_ROOT}/audits/fe02__formal__A__seed42"
+  },
+  {
+    "file": "fe02-run-29934377_1.out",
+    "line": 75,
+    "text": "{\"epoch\": 1, \"updates\": 212, \"train_loss_rank0\": 1.390194277718382, \"validation_selection\": 0.2610196465193909, \"lr\": 0.000982962913144534, \"elapsed_seconds\": 16338.321423429006, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_1.out",
+    "line": 76,
+    "text": "{\"epoch\": 2, \"updates\": 424, \"train_loss_rank0\": 1.0743155417577275, \"validation_selection\": 0.25457309134397416, \"lr\": 0.0009330127018922197, \"elapsed_seconds\": 16383.365337116004, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_1.out",
+    "line": 77,
+    "text": "{\"epoch\": 3, \"updates\": 636, \"train_loss_rank0\": 0.9513373433981301, \"validation_selection\": 0.24351528424834307, \"lr\": 0.0008535533905932753, \"elapsed_seconds\": 16168.064940572018, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_1.out",
+    "line": 78,
+    "text": "{\"epoch\": 4, \"updates\": 848, \"train_loss_rank0\": 0.8942164369630363, \"validation_selection\": 0.2417042534331649, \"lr\": 0.000750000000000002, \"elapsed_seconds\": 16144.63875442202, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_1.out",
+    "line": 79,
+    "text": "{\"epoch\": 5, \"updates\": 1060, \"train_loss_rank0\": 0.858327310040312, \"validation_selection\": 0.23016263714566393, \"lr\": 0.0006294095225512623, \"elapsed_seconds\": 16138.296270675957, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_2.err",
+    "line": 181,
+    "text": "slurmstepd: error: *** STEP 30274043.0 ON c02r2n16 CANCELLED AT 2026-10-12T14:34:56 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_2.err",
+    "line": 182,
+    "text": "slurmstepd: error: *** JOB 30274043 ON c02r2n16 CANCELLED AT 2026-10-12T14:34:56 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_2.out",
+    "line": 8,
+    "text": "AUDIT_PASS ${FE02_OUTPUT_ROOT}/audits/fe02__formal__B__seed42"
+  },
+  {
+    "file": "fe02-run-29934377_2.out",
+    "line": 75,
+    "text": "{\"epoch\": 1, \"updates\": 212, \"train_loss_rank0\": 1.3937360624659736, \"validation_selection\": 0.26318104789916646, \"lr\": 0.000982962913144534, \"elapsed_seconds\": 16543.55215654301, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_2.out",
+    "line": 76,
+    "text": "{\"epoch\": 2, \"updates\": 424, \"train_loss_rank0\": 1.071627307894095, \"validation_selection\": 0.25062145323015333, \"lr\": 0.0009330127018922197, \"elapsed_seconds\": 16630.80652726401, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_2.out",
+    "line": 77,
+    "text": "{\"epoch\": 3, \"updates\": 636, \"train_loss_rank0\": 0.9451804922999076, \"validation_selection\": 0.23802045812836123, \"lr\": 0.0008535533905932753, \"elapsed_seconds\": 16437.86222087295, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_2.out",
+    "line": 78,
+    "text": "{\"epoch\": 4, \"updates\": 848, \"train_loss_rank0\": 0.8985575797422877, \"validation_selection\": 0.24138869880555708, \"lr\": 0.000750000000000002, \"elapsed_seconds\": 16252.038898873026, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_2.out",
+    "line": 79,
+    "text": "{\"epoch\": 5, \"updates\": 1060, \"train_loss_rank0\": 0.8536360827538202, \"validation_selection\": 0.22876086979376425, \"lr\": 0.0006294095225512623, \"elapsed_seconds\": 16187.712849598029, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_3.err",
+    "line": 181,
+    "text": "slurmstepd: error: *** STEP 30318091.0 ON c04r2n13 CANCELLED AT 2026-10-13T14:25:08 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_3.err",
+    "line": 182,
+    "text": "slurmstepd: error: *** JOB 30318091 ON c04r2n13 CANCELLED AT 2026-10-13T14:25:08 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_3.out",
+    "line": 8,
+    "text": "AUDIT_PASS ${FE02_OUTPUT_ROOT}/audits/fe02__formal__C__seed42"
+  },
+  {
+    "file": "fe02-run-29934377_3.out",
+    "line": 75,
+    "text": "{\"epoch\": 1, \"updates\": 212, \"train_loss_rank0\": 1.4225833472215905, \"validation_selection\": 0.2651976563135915, \"lr\": 0.000982962913144534, \"elapsed_seconds\": 16202.11013117904, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_3.out",
+    "line": 76,
+    "text": "{\"epoch\": 2, \"updates\": 424, \"train_loss_rank0\": 1.1588369051240526, \"validation_selection\": 0.2566362277342607, \"lr\": 0.0009330127018922197, \"elapsed_seconds\": 16430.715507589048, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_3.out",
+    "line": 77,
+    "text": "{\"epoch\": 3, \"updates\": 636, \"train_loss_rank0\": 1.0689791022044308, \"validation_selection\": 0.24979874290437376, \"lr\": 0.0008535533905932753, \"elapsed_seconds\": 16430.421289021964, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_3.out",
+    "line": 78,
+    "text": "{\"epoch\": 4, \"updates\": 848, \"train_loss_rank0\": 1.0312349284594913, \"validation_selection\": 0.2511030054732232, \"lr\": 0.000750000000000002, \"elapsed_seconds\": 16405.215208461974, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_3.out",
+    "line": 79,
+    "text": "{\"epoch\": 5, \"updates\": 1060, \"train_loss_rank0\": 0.9978416846045908, \"validation_selection\": 0.23803028962059006, \"lr\": 0.0006294095225512623, \"elapsed_seconds\": 16173.26600466203, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_4.err",
+    "line": 182,
+    "text": "slurmstepd: error: *** STEP 29934377.0 ON c04r2n13 CANCELLED AT 2026-10-14T14:15:25 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_4.err",
+    "line": 183,
+    "text": "slurmstepd: error: *** JOB 29934377 ON c04r2n13 CANCELLED AT 2026-10-14T14:15:25 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-29934377_4.out",
+    "line": 8,
+    "text": "AUDIT_PASS ${FE02_OUTPUT_ROOT}/audits/fe02__formal__M__seed42"
+  },
+  {
+    "file": "fe02-run-29934377_4.out",
+    "line": 75,
+    "text": "{\"epoch\": 1, \"updates\": 212, \"train_loss_rank0\": 1.3941743106774565, \"validation_selection\": 0.2663417144121707, \"lr\": 0.000982962913144534, \"elapsed_seconds\": 16137.609716595965, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_4.out",
+    "line": 76,
+    "text": "{\"epoch\": 2, \"updates\": 424, \"train_loss_rank0\": 1.1065703326801084, \"validation_selection\": 0.26193581984258313, \"lr\": 0.0009330127018922197, \"elapsed_seconds\": 16218.861494727083, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_4.out",
+    "line": 77,
+    "text": "{\"epoch\": 3, \"updates\": 636, \"train_loss_rank0\": 0.9954000956045007, \"validation_selection\": 0.2455744379842412, \"lr\": 0.0008535533905932753, \"elapsed_seconds\": 16645.85446937394, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_4.out",
+    "line": 78,
+    "text": "{\"epoch\": 4, \"updates\": 848, \"train_loss_rank0\": 0.9322659547598857, \"validation_selection\": 0.24376011257777636, \"lr\": 0.000750000000000002, \"elapsed_seconds\": 16269.989216693095, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-29934377_4.out",
+    "line": 79,
+    "text": "{\"epoch\": 5, \"updates\": 1060, \"train_loss_rank0\": 0.9017339399400747, \"validation_selection\": 0.23163945101144184, \"lr\": 0.0006294095225512623, \"elapsed_seconds\": 16209.974955143058, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 386,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 387,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 389,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 391,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 392,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 395,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 397,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 399,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 400,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 404,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 405,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 406,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 414,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 417,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 418,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30444656_4.err",
+    "line": 449,
+    "text": "TypeError: RNG state must be a torch.ByteTensor"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 195,
+    "text": "slurmstepd: error: *** JOB 30446372 ON c02r1n01 CANCELLED AT 2026-10-15T15:53:46 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_0.err",
+    "line": 196,
+    "text": "slurmstepd: error: *** STEP 30446372.0 ON c02r1n01 CANCELLED AT 2026-10-15T15:53:46 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_0.out",
+    "line": 70,
+    "text": "{\"epoch\": 6, \"updates\": 1272, \"train_loss_rank0\": 0.8126698910908879, \"validation_selection\": 0.2273174508423185, \"lr\": 0.0005000000000000013, \"elapsed_seconds\": 16618.289004441, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_0.out",
+    "line": 71,
+    "text": "{\"epoch\": 7, \"updates\": 1484, \"train_loss_rank0\": 0.7648160508218801, \"validation_selection\": 0.22337147665348075, \"lr\": 0.0003705904774487404, \"elapsed_seconds\": 16492.242306133965, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_0.out",
+    "line": 72,
+    "text": "{\"epoch\": 8, \"updates\": 1696, \"train_loss_rank0\": 0.7456449025644446, \"validation_selection\": 0.2233137477041507, \"lr\": 0.0002500000000000007, \"elapsed_seconds\": 16468.551870704978, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_0.out",
+    "line": 73,
+    "text": "{\"epoch\": 9, \"updates\": 1908, \"train_loss_rank0\": 0.708146232689889, \"validation_selection\": 0.2220632490243347, \"lr\": 0.00014644660940672663, \"elapsed_seconds\": 16161.565231193905, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_0.out",
+    "line": 74,
+    "text": "{\"epoch\": 10, \"updates\": 2120, \"train_loss_rank0\": 0.7121166574223986, \"validation_selection\": 0.2202958549741109, \"lr\": 6.698729810778078e-05, \"elapsed_seconds\": 16181.61572564498, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 195,
+    "text": "slurmstepd: error: *** JOB 30538064 ON c02r1n01 CANCELLED AT 2026-10-16T15:44:00 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_1.err",
+    "line": 196,
+    "text": "slurmstepd: error: *** STEP 30538064.0 ON c02r1n01 CANCELLED AT 2026-10-16T15:44:00 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_1.out",
+    "line": 70,
+    "text": "{\"epoch\": 6, \"updates\": 1272, \"train_loss_rank0\": 0.8012689567118321, \"validation_selection\": 0.23060206051423213, \"lr\": 0.0005000000000000013, \"elapsed_seconds\": 16612.504734884016, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_1.out",
+    "line": 71,
+    "text": "{\"epoch\": 7, \"updates\": 1484, \"train_loss_rank0\": 0.7600385018114774, \"validation_selection\": 0.2259160074973007, \"lr\": 0.0003705904774487404, \"elapsed_seconds\": 16762.58311075496, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_1.out",
+    "line": 72,
+    "text": "{\"epoch\": 8, \"updates\": 1696, \"train_loss_rank0\": 0.72884585602947, \"validation_selection\": 0.22517866025890076, \"lr\": 0.0002500000000000007, \"elapsed_seconds\": 16643.094081057003, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_1.out",
+    "line": 73,
+    "text": "{\"epoch\": 9, \"updates\": 1908, \"train_loss_rank0\": 0.696780013799105, \"validation_selection\": 0.22377695108257126, \"lr\": 0.00014644660940672663, \"elapsed_seconds\": 16178.64925784804, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_1.out",
+    "line": 74,
+    "text": "{\"epoch\": 10, \"updates\": 2120, \"train_loss_rank0\": 0.681684590384083, \"validation_selection\": 0.2226343524980429, \"lr\": 6.698729810778078e-05, \"elapsed_seconds\": 16225.914409603924, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 195,
+    "text": "slurmstepd: error: *** JOB 30597045 ON c04r2n13 CANCELLED AT 2026-10-17T15:34:21 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_2.err",
+    "line": 196,
+    "text": "slurmstepd: error: *** STEP 30597045.0 ON c04r2n13 CANCELLED AT 2026-10-17T15:34:21 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_2.out",
+    "line": 70,
+    "text": "{\"epoch\": 6, \"updates\": 1272, \"train_loss_rank0\": 0.7860517562279161, \"validation_selection\": 0.22486593172832378, \"lr\": 0.0005000000000000013, \"elapsed_seconds\": 16362.257059082971, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_2.out",
+    "line": 71,
+    "text": "{\"epoch\": 7, \"updates\": 1484, \"train_loss_rank0\": 0.7456958271422476, \"validation_selection\": 0.22386177034234697, \"lr\": 0.0003705904774487404, \"elapsed_seconds\": 16320.903977498063, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_2.out",
+    "line": 72,
+    "text": "{\"epoch\": 8, \"updates\": 1696, \"train_loss_rank0\": 0.7122743462897697, \"validation_selection\": 0.2229323598830554, \"lr\": 0.0002500000000000007, \"elapsed_seconds\": 16160.08219712309, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_2.out",
+    "line": 73,
+    "text": "{\"epoch\": 9, \"updates\": 1908, \"train_loss_rank0\": 0.6768017528789505, \"validation_selection\": 0.22242729865588523, \"lr\": 0.00014644660940672663, \"elapsed_seconds\": 16073.226509008091, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_2.out",
+    "line": 74,
+    "text": "{\"epoch\": 10, \"updates\": 2120, \"train_loss_rank0\": 0.6658305372902245, \"validation_selection\": 0.2198834865872905, \"lr\": 6.698729810778078e-05, \"elapsed_seconds\": 16151.262192177936, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 195,
+    "text": "slurmstepd: error: *** JOB 30668423 ON d13r3n15 CANCELLED AT 2026-10-18T15:24:39 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_3.err",
+    "line": 196,
+    "text": "slurmstepd: error: *** STEP 30668423.0 ON d13r3n15 CANCELLED AT 2026-10-18T15:24:39 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_3.out",
+    "line": 70,
+    "text": "{\"epoch\": 6, \"updates\": 1272, \"train_loss_rank0\": 0.949823685130983, \"validation_selection\": 0.24004398490455098, \"lr\": 0.0005000000000000013, \"elapsed_seconds\": 15978.443032523035, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_3.out",
+    "line": 71,
+    "text": "{\"epoch\": 7, \"updates\": 1484, \"train_loss_rank0\": 0.9013846624853477, \"validation_selection\": 0.23014205212456512, \"lr\": 0.0003705904774487404, \"elapsed_seconds\": 16138.212138450006, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_3.out",
+    "line": 72,
+    "text": "{\"epoch\": 8, \"updates\": 1696, \"train_loss_rank0\": 0.9118210501828283, \"validation_selection\": 0.23157500270984288, \"lr\": 0.0002500000000000007, \"elapsed_seconds\": 16574.382665283978, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_3.out",
+    "line": 73,
+    "text": "{\"epoch\": 9, \"updates\": 1908, \"train_loss_rank0\": 0.8727248510662114, \"validation_selection\": 0.226303656766484, \"lr\": 0.00014644660940672663, \"elapsed_seconds\": 16153.219256449025, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_3.out",
+    "line": 74,
+    "text": "{\"epoch\": 10, \"updates\": 2120, \"train_loss_rank0\": 0.8872991088988647, \"validation_selection\": 0.22614921309763888, \"lr\": 6.698729810778078e-05, \"elapsed_seconds\": 16133.925970812095, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 196,
+    "text": "slurmstepd: error: *** JOB 30446370 ON c04r2n09 CANCELLED AT 2026-10-19T15:14:49 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_4.err",
+    "line": 197,
+    "text": "slurmstepd: error: *** STEP 30446370.0 ON c04r2n09 CANCELLED AT 2026-10-19T15:14:49 DUE TO TIME LIMIT ***"
+  },
+  {
+    "file": "fe02-run-30446370_4.out",
+    "line": 70,
+    "text": "{\"epoch\": 6, \"updates\": 1272, \"train_loss_rank0\": 0.8396402514486943, \"validation_selection\": 0.2278140126904674, \"lr\": 0.0005000000000000013, \"elapsed_seconds\": 16531.13509620994, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_4.out",
+    "line": 71,
+    "text": "{\"epoch\": 7, \"updates\": 1484, \"train_loss_rank0\": 0.8042200019337097, \"validation_selection\": 0.22306904341573816, \"lr\": 0.0003705904774487404, \"elapsed_seconds\": 16576.423500603065, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_4.out",
+    "line": 72,
+    "text": "{\"epoch\": 8, \"updates\": 1696, \"train_loss_rank0\": 0.7793907229349298, \"validation_selection\": 0.22085582495276085, \"lr\": 0.0002500000000000007, \"elapsed_seconds\": 17042.377993075876, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_4.out",
+    "line": 73,
+    "text": "{\"epoch\": 9, \"updates\": 1908, \"train_loss_rank0\": 0.7439910389201821, \"validation_selection\": 0.22181238876248566, \"lr\": 0.00014644660940672663, \"elapsed_seconds\": 16675.04848660296, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30446370_4.out",
+    "line": 74,
+    "text": "{\"epoch\": 10, \"updates\": 2120, \"train_loss_rank0\": 0.7296552341782822, \"validation_selection\": 0.21788805593756716, \"lr\": 6.698729810778078e-05, \"elapsed_seconds\": 16246.03548645787, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-30961700_4.out",
+    "line": 70,
+    "text": "{\"epoch\": 11, \"updates\": 2332, \"train_loss_rank0\": 0.6966733479134317, \"validation_selection\": 0.21791541237003248, \"lr\": 1.7037086855465955e-05, \"elapsed_seconds\": 16535.306122001028, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30961700_4.out",
+    "line": 71,
+    "text": "{\"epoch\": 12, \"updates\": 2544, \"train_loss_rank0\": 0.6773563493746069, \"validation_selection\": 0.21812258711998536, \"lr\": 0.0, \"elapsed_seconds\": 16671.678629155038, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-30961700_4.out",
+    "line": 76,
+    "text": "FE02 completed training and normal/random validation: fe02__formal__M__seed42"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088347_3.out",
+    "line": 70,
+    "text": "{\"epoch\": 11, \"updates\": 2332, \"train_loss_rank0\": 0.844018815963898, \"validation_selection\": 0.22538523272760802, \"lr\": 1.7037086855465955e-05, \"elapsed_seconds\": 16125.054305484053, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-31088347_3.out",
+    "line": 71,
+    "text": "{\"epoch\": 12, \"updates\": 2544, \"train_loss_rank0\": 0.8099844772017227, \"validation_selection\": 0.22506257208412053, \"lr\": 0.0, \"elapsed_seconds\": 16069.918300146004, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-31088347_3.out",
+    "line": 76,
+    "text": "FE02 completed training and normal/random validation: fe02__formal__C__seed42"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088360_2.out",
+    "line": 70,
+    "text": "{\"epoch\": 11, \"updates\": 2332, \"train_loss_rank0\": 0.6238232472876333, \"validation_selection\": 0.2202091979489406, \"lr\": 1.7037086855465955e-05, \"elapsed_seconds\": 16191.882879459998, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-31088360_2.out",
+    "line": 71,
+    "text": "{\"epoch\": 12, \"updates\": 2544, \"train_loss_rank0\": 0.6015352168524603, \"validation_selection\": 0.21994185283591822, \"lr\": 0.0, \"elapsed_seconds\": 16105.545457177097, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-31088360_2.out",
+    "line": 76,
+    "text": "FE02 completed training and normal/random validation: fe02__formal__B__seed42"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088387_1.out",
+    "line": 70,
+    "text": "{\"epoch\": 11, \"updates\": 2332, \"train_loss_rank0\": 0.6533192212710965, \"validation_selection\": 0.22169051145102642, \"lr\": 1.7037086855465955e-05, \"elapsed_seconds\": 16243.24814093206, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-31088387_1.out",
+    "line": 71,
+    "text": "{\"epoch\": 12, \"updates\": 2544, \"train_loss_rank0\": 0.6314120449055478, \"validation_selection\": 0.22190314869110503, \"lr\": 0.0, \"elapsed_seconds\": 16155.511646192055, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-31088387_1.out",
+    "line": 76,
+    "text": "FE02 completed training and normal/random validation: fe02__formal__A__seed42"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 179,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=7 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 180,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=4 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 181,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=5 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 182,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=6 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 183,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=12 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 184,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=15 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 185,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=13 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 186,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=14 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 187,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=2 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 188,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=3 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 189,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=1 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 190,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=9 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 191,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=11 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 192,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=10 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 193,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=8 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.err",
+    "line": 194,
+    "text": "[FE02-RNG-CPU] restored unchanged RNG bytes on CPU; rank=0 shim=162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4"
+  },
+  {
+    "file": "fe02-run-31088392_0.out",
+    "line": 70,
+    "text": "{\"epoch\": 11, \"updates\": 2332, \"train_loss_rank0\": 0.6772545627406183, \"validation_selection\": 0.2204507195206268, \"lr\": 1.7037086855465955e-05, \"elapsed_seconds\": 16174.147692968138, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-31088392_0.out",
+    "line": 71,
+    "text": "{\"epoch\": 12, \"updates\": 2544, \"train_loss_rank0\": 0.6507027009326332, \"validation_selection\": 0.2203733462249943, \"lr\": 0.0, \"elapsed_seconds\": 16128.329512675991, \"global_batch\": 128, \"planned_samples\": 27252, \"actual_samples\": 27136, \"dropped_for_equal_update_budget\": 116}"
+  },
+  {
+    "file": "fe02-run-31088392_0.out",
+    "line": 76,
+    "text": "FE02 completed training and normal/random validation: fe02__formal__R0__seed42"
+  }
+]

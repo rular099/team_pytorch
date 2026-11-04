@@ -1,0 +1,5122 @@
+[
+  {
+    "file": "rng_cpu_30446370_4_rank0_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank10_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank11_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank12_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank13_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank14_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank15_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank1_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank2_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank3_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank4_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank5_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank6_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank7_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank8_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446370_4_rank9_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "30446370",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank0_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank10_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank11_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank12_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank13_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank14_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank15_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank1_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank2_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank3_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank4_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank5_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank6_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank7_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank8_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30446372_0_rank9_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "30446372",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank0_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank10_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank11_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank12_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank13_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank14_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank15_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank1_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank2_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank3_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank4_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank5_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank6_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank7_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank8_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30538064_1_rank9_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "30538064",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank0_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank10_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank11_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank12_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank13_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank14_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank15_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank1_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank2_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank3_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank4_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank5_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank6_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank7_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank8_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30597045_2_rank9_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "30597045",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank0_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank10_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank11_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank12_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank13_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank14_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank15_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank1_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank2_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank3_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank4_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank5_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank6_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank7_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank8_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30668423_3_rank9_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "30668423",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank0_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank10_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank11_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank12_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank13_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank14_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank15_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank1_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank2_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank3_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank4_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank5_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank6_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank7_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank8_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_30961700_4_rank9_call1.json",
+    "launcher_matches_repository": true,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "45744ec7b25fc25a9b4b762a8041e063b373ad9177bb06063240ddc663652d9d",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "30961700",
+    "array_index": "4",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank0_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank10_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank11_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank12_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank13_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank14_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank15_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank1_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank2_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank3_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank4_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank5_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank6_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank7_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank8_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088347_3_rank9_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "420c02a4a69c40115ce3b09c01d670db93900dc1a5034af4c50ffe6bf4c085eb",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "31088347",
+    "array_index": "3",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank0_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank10_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank11_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank12_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank13_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank14_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank15_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank1_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank2_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank3_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank4_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank5_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank6_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank7_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank8_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088360_2_rank9_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "864ae36a7070717a88de59d57ccff02608af06b66ff1e563c3d36062728698ef",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "31088360",
+    "array_index": "2",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank0_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank10_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank11_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank12_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank13_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank14_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank15_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank1_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank2_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank3_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank4_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank5_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank6_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank7_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank8_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088387_1_rank9_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "6908a2c293d11378018240dd19a56767f76737455f51567e459e96921164a83b",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "31088387",
+    "array_index": "1",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank0_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 0,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank10_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 10,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank11_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 11,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank12_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 12,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank13_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 13,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank14_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 14,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank15_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 15,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank1_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 1,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank2_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 2,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank3_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 3,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank4_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 4,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank5_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 5,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank6_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 6,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank7_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 7,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank8_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 8,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  },
+  {
+    "file": "rng_cpu_31088392_0_rank9_call1.json",
+    "launcher_matches_repository": false,
+    "fix": "fe02-cuda-rng-cpu-byte-v1",
+    "shim_sha256": "162644b91b93c34ebc9f97708ac8482637702f5e0af2799e341e4f539b872af4",
+    "launcher_sha256": "cb63989def93a18700814abac250deef65fd59fc0a4905be417633f605f64619",
+    "original_source_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "torch_version": "1.13.1",
+    "rank": 9,
+    "job_id": "31088392",
+    "array_index": "0",
+    "state_bytes_preserved": true,
+    "restore_device": "cpu",
+    "states": [
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      },
+      {
+        "bytes": 816,
+        "sha256": "d77fb61ef1844a93ae98982359cb188ea3cfdcd3547d036946a1aebaa7a2949c"
+      }
+    ]
+  }
+]

@@ -1,0 +1,82 @@
+[
+  {
+    "host": "c04r2n13",
+    "job_id": "29934395",
+    "python": "3.9.21 (main, Dec 11 2024, 16:24:11) \n[GCC 11.2.0]",
+    "versions": {
+      "torch": "1.13.1+git55d300e.abi0.dtk2304",
+      "seisbench": "0.10.1",
+      "numpy": "1.26.4",
+      "scipy": "1.13.1",
+      "h5py": "3.13.0"
+    },
+    "rocm": "5.4.23191-0e6bf66b",
+    "device": "Device 66a1",
+    "git_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "git_dirty": null,
+    "base_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+    "command": [
+      "scripts/fe02/run.py",
+      "train",
+      "--config",
+      "${FE02_CODE_ROOT}/configs/fe02/formal/fe02__formal__R0__seed42.json",
+      "--audit-dir",
+      "${FE02_OUTPUT_ROOT}/audits/fe02__formal__R0__seed42"
+    ],
+    "recorded_utc": "2026-10-09T07:16:30.252905+00:00"
+  },
+  {
+    "host": "c02r1n01",
+    "job_id": "30446372",
+    "python": "3.9.21 (main, Dec 11 2024, 16:24:11) \n[GCC 11.2.0]",
+    "versions": {
+      "torch": "1.13.1+git55d300e.abi0.dtk2304",
+      "seisbench": "0.10.1",
+      "numpy": "1.26.4",
+      "scipy": "1.13.1",
+      "h5py": "3.13.0"
+    },
+    "rocm": "5.4.23191-0e6bf66b",
+    "device": "Device 66a1",
+    "git_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "git_dirty": null,
+    "base_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+    "command": [
+      "scripts/fe02/run.py",
+      "train",
+      "--config",
+      "${FE02_CODE_ROOT}/configs/fe02/formal/fe02__formal__R0__seed42.json",
+      "--audit-dir",
+      "${FE02_OUTPUT_ROOT}/audits/fe02__formal__R0__seed42",
+      "--resume"
+    ],
+    "recorded_utc": "2026-10-14T08:08:18.960367+00:00"
+  },
+  {
+    "host": "c04r2n03",
+    "job_id": "31088392",
+    "python": "3.9.21 (main, Dec 11 2024, 16:24:11) \n[GCC 11.2.0]",
+    "versions": {
+      "torch": "1.13.1+git55d300e.abi0.dtk2304",
+      "seisbench": "0.10.1",
+      "numpy": "1.26.4",
+      "scipy": "1.13.1",
+      "h5py": "3.13.0"
+    },
+    "rocm": "5.4.23191-0e6bf66b",
+    "device": "Device 66a1",
+    "git_commit": "9f70371838ec31044e559096a939f023d2924f37",
+    "git_dirty": null,
+    "base_commit": "ba4fa7740d9fde5fde87a7b0ae0397037209baf4",
+    "command": [
+      "scripts/fe02/run.py",
+      "train",
+      "--config",
+      "${FE02_CODE_ROOT}/configs/fe02/formal/fe02__formal__R0__seed42.json",
+      "--audit-dir",
+      "${FE02_OUTPUT_ROOT}/audits/fe02__formal__R0__seed42",
+      "--resume"
+    ],
+    "recorded_utc": "2026-10-23T02:26:03.564535+00:00"
+  }
+]
