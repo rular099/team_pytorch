@@ -14,7 +14,8 @@ def build(output):
             'Commit task files and use a clean worktree before release')
     commit = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
     paths = ['scripts/fe01_v4_team_smoke_fix', 'docs/ai/FE01_V4_TEAM_SMOKE_FIX.md',
-             'reports/fe01_v4_team_smoke_fix_20261102', 'tests/test_fe01_v4_team_smoke_fix.py']
+             'reports/fe01_v4_team_smoke_fix_20261102', 'reports/fe01_v4_team_smoke_shell_fix_20261105',
+             'tests/test_fe01_v4_team_smoke_fix.py']
     output.mkdir(parents=True, exist_ok=False)
     top = 'v4_team_smoke_fix_' + commit[:12]
     raw = output / 'source.tar'

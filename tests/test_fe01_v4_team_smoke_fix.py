@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -226,3 +227,40 @@ def test_scripts_parse_and_import_does_not_initialize_torch():
             subprocess.run(['bash', '-n', str(path)], check=True)
     code = 'import sys;sys.path.insert(0,' + repr(str(TOOLS)) + ');import fix_support,submit,team_smoke_runtime;assert "torch" not in sys.modules'
     subprocess.run([sys.executable, '-c', code], check=True)
+
+
+@pytest.mark.parametrize('mode', ['no_arguments', 'override_run', 'custom_env', 'equals_env'])
+def test_submit_shell_preserves_arguments_with_empty_or_clobbered_args_variable(tmp_path, mode):
+    # Exercise the actual shell entrypoint. The interpreter replacement only
+    # records argv; it cannot submit a scheduler task or import a model.
+    capture = tmp_path / 'argv.json'
+    fake_python = tmp_path / 'record_python'
+    fake_python.write_text('#!' + sys.executable + '\nimport json,os,sys\n'
+        'from pathlib import Path\nPath(os.environ["TEAM_SMOKE_CAPTURE"]).write_text(json.dumps(sys.argv[1:]))\n')
+    fake_python.chmod(0o755)
+    env_file = tmp_path / ('private file.env' if mode in ('custom_env', 'equals_env')
+                           else 'on_eval_v4_inventory_fix.private.env')
+    env_file.write_text('export ON_EVAL_RELEASE_ROOT=/original/release\n'
+        'export ON_EVAL_INHERITED_CODE_ROOT=/original/inherited\n'
+        'export ON_EVAL_CONFIG_PYTHON=' + shlex.quote(str(fake_python)) + '\n'
+        'args=("unrelated private environment argument")\n'
+        'tool_dir=/unrelated/env/value\nenv_file=/unrelated/env/value\n')
+    supplied = []
+    if mode == 'override_run':
+        supplied = ['--run-id', 'explicit_run']
+    elif mode == 'custom_env':
+        supplied = ['--env', str(env_file), '--run-id', 'explicit_run']
+    elif mode == 'equals_env':
+        supplied = ['--env=' + str(env_file)]
+    env = dict(os.environ, TEAM_SMOKE_CAPTURE=str(capture))
+    subprocess.run(['bash', str(TOOLS / 'submit_team_smoke.sh'), *supplied], cwd=tmp_path, env=env,
+                   capture_output=True, text=True, check=True)
+    assert json.loads(capture.read_text()) == ['-B', str(TOOLS / 'submit.py'), '--env', str(env_file),
+                                              '--run-id', 'on_v4_20261025_inventory_fix', *supplied]
+
+
+def test_submit_shell_missing_env_value_has_clear_error_before_interpreter(tmp_path):
+    result = subprocess.run(['bash', str(TOOLS / 'submit_team_smoke.sh'), '--env'], cwd=tmp_path,
+                            capture_output=True, text=True)
+    assert result.returncode == 2 and '--env requires a path' in result.stderr
+    assert 'unbound variable' not in result.stderr

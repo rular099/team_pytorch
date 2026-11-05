@@ -220,3 +220,7 @@ PhaseNet/EQT 的通用 manifest。修复保留可访问的原路径、原 SHA �
 使用[独立TEAM重试小包](FE01_V4_TEAM_SMOKE_FIX.md)，沿用原50672e1 release和原run，仅sbatch 3号。
 原runner/gates不改，新增audit采用既有A01 paired_execution并补同输入重复对照和逐future诊断；原阈值不放宽。
 新增运营身份随原stage seal独立保存，其他模型/成功结果保留。实际受控DCU重试尚未提交。
+
+2026-11-05 更新：提交入口无参数调用出现 `args[@]: unbound variable`，新版改为原生`"$@"`且使用私有变量前缀，
+补上实际shell无参数/显式参数/带空格env/同名变量覆盖/缺值测试，22项专项通过。
+仍沿用原run，仅重提TEAM；新的实际设备结果待用户提交，见同一[操作说明](FE01_V4_TEAM_SMOKE_FIX.md)。

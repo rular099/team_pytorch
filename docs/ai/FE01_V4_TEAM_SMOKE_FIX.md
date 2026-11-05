@@ -1,5 +1,10 @@
 # FE01 V4 TEAM model_smoke 单项受控重试（2026-11-02）
 
+**2026-11-05 提交入口更新：** 原fe358c3小包在用户无参数调用时出现 `args[@]: unbound variable`，
+失败发生在Python/sbatch之前。新版移除参数数组，直接用 `"$@"` 转交原参数，并给私有变量加前缀。
+支持不带参数、显式run ID、`--env PATH`及`--env=PATH`，保留带空格的路径；缺少env值会明确报错。
+请使用最新小包的相同提交入口；不要手改旧包，以免源码SHA不匹配。原run/env及TEAM检查保持不变。
+
 用户提供 `model_smoke_32163754_3.err/.out`。原 V4 release 为
 `50672e131d876a604432b283162d5b0189d40cf0`，运行目录为
 `outputs/fe01_on_eval_v4/on_v4_20261025_inventory_fix`。
@@ -84,3 +89,4 @@ outputs/fe01_on_eval_v4/on_v4_20261025_inventory_fix/slurm/model_smoke_新JOBID_
 原future失败继续失败、成功/失败恢复backend、只提交3、去重/UNKNOWN拒绝、运营源码防篡改及seal兼容。
 这些证明入口与诊断逻辑，不证明Japan模型或DCU数值已经通过。
 本地缺生产checkpoint/Japan波形/DCU，修复重提 **NOT_SUBMITTED**。
+2026-11-05 新增5项真实shell入口测试，专项测试合计22项通过；解释器用记录参数的替身，未提交真实作业。

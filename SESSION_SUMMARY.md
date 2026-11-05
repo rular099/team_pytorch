@@ -808,3 +808,12 @@ all/K1/untriggered及部分空间指标不支持普遍优势；第一秒约70.41
 audit局部复用已有A01 paired_execution并恢复设置/RNG，补同输入严格重复和每future特征诊断，不放宽阈值、不以CPU替代DCU。
 新增运营源码SHA/commit随结果独立seal；原status和下游父seal继续认证完整混合执行证据。
 本轮真实受控重试NOT_SUBMITTED；生产checkpoint/DCU验证NOT_RUN。操作见docs/ai/FE01_V4_TEAM_SMOKE_FIX.md。
+
+## 2026-11-05 TEAM smoke 提交脚本参数兼容修复
+
+用户报告小包入口 `args[@]: unbound variable`。原入口在nounset下遍历/展开通用args数组，
+无参数及source私有env对同名变量的覆盖均有兼容风险；错误在调用Python/sbatch之前。
+基点fe358c38f061a06d1b1e66c57574a9f44b3c0fc7，移除数组，改用原生`"$@"`转交，变量使用team_smoke前缀。
+新增实际shell入口测试：无参数、显式run ID、带空格env、--env=形式、env同名args/tool_dir/env_file覆盖、缺env值。
+22项专项通过，真实原环境Bash版本未提供，未宣称在该版本复现；解释器替身不提交任务或加载模型。
+新的小包保持原50672e1 release/run/env/模型门/阈值/运营审计不变，只处理提交入口；真实重提NOT_SUBMITTED。
