@@ -817,3 +817,13 @@ audit局部复用已有A01 paired_execution并恢复设置/RNG，补同输入严
 新增实际shell入口测试：无参数、显式run ID、带空格env、--env=形式、env同名args/tool_dir/env_file覆盖、缺env值。
 22项专项通过，真实原环境Bash版本未提供，未宣称在该版本复现；解释器替身不提交任务或加载模型。
 新的小包保持原50672e1 release/run/env/模型门/阈值/运营审计不变，只处理提交入口；真实重提NOT_SUBMITTED。
+
+## 2026-11-08 跨服务器Codex接手文档
+
+用户要求把本方进度同步GitHub供另一台服务器接手。整理前本地/远端实施HEAD均为
+6e2ddb5dc0a52ff663099d0f0410a637261406bb，工作区clean。
+新入口 docs/ai/FE01_V4_CODEX_HANDOFF_20261108.md（docs/ai/README顶部可发现）。
+明确区分最新实施commit、超算冻结主程序50672e1、TEAM运营小包6e2ddb5，以及当前修复run/env。
+交接点仍为TEAM受控重试新版交付后等待实际结果；covariates41项为用户已确认，其他阶段按证据标未知/待查。
+提供跨机安全worktree接手、原status/单项sbatch/后续完整阶段命令、精确实施commit封包重建和gzip摘要差异说明。
+本轮仅更新文档，不改执行代码/旧seal，不提交、取消或探查任何真实超算作业。
