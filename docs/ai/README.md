@@ -3,10 +3,12 @@
 更新日期：2026-11-08（基础协作约定始于2026-09-02）
 
 **最新跨服务器接手入口（2026-11-08）：[FE01 ON V4 Codex交接](FE01_V4_CODEX_HANDOFF_20261108.md)。**
-当前实施基线6e2ddb5；超算主程序仍50672e1，TEAM受控重试新版结果尚未收到。先按交接检查状态，保留已有成功项。
+当前运营实施版本c66db619e99a；超算主程序仍50672e1。Job33156666_3已提供TEAM模型门PASS日志，
+尚待原status完整核验四组smoke的seal；通过后手动进入pilot，保留已有成功项。
 
 **同日后续更新：** 已收到Job33116200_3日志，TEAM同输入重复前向失败，future门尚未执行。
-当前修复与新包说明见[TEAM smoke操作说明](FE01_V4_TEAM_SMOKE_FIX.md)；6e2ddb5不再是当前推荐重试包。
+当前修复及后续Job33156666_3的PASS证据见[TEAM smoke操作说明](FE01_V4_TEAM_SMOKE_FIX.md)；
+6e2ddb5保留为历史来源，运营包仍用c66db619e99a，无需为结果文档更新重新封包。
 
 ## 1. 协作边界
 
@@ -246,3 +248,11 @@ feature最大绝对差1.52587890625e-5，阈值1e-5；尚无完整MDN差值或�
 新运营小包仅在smoke audit启用严格全局模式，恢复旧enabled/warn_only，保留原runner字节码/门/阈值，打印backend与MDN差值。
 32项本地专项通过，真实设备新包尚未提交；不以控制缺口推断已确定实际算子根因。
 操作入口和证据见同一[TEAM重试说明](FE01_V4_TEAM_SMOKE_FIX.md)。
+
+## 22. TEAM Job33156666_3真实模型门日志通过（2026-11-08）
+
+用户提供out/err，TEAM ep11/seed42的两个validation smoke事件×两geometry×五时刻共20个请求重复检查全部通过；
+48条打印的future特征检查也全部通过，feature最大差7.62939453125e-6，原门1e-5不变。
+stdout最终出现模型门PASS；该标记先于封存，故仍需原status确认四组smoke均`COMPLETE_SEAL_VERIFIED`后再手动pilot。
+逐请求/行号/日志SHA及证据边界见[日志核验JSON](../../reports/fe01_v4_team_smoke_repeatability_20261108/job_33156666_log_review.json)。
+本轮只更新证据与文档；继续原50672e1主程序、c66db61运营包和修复run，不重训/重提或重新prepare。

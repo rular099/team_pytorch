@@ -1,5 +1,16 @@
 # FE01 V4 TEAM model_smoke 单项受控重试（2026-11-02）
 
+**2026-11-08 后续真实运行：** Job33156666_3的日志已出现`TEAM_MODEL_SMOKE_PASS_WITH_OPERATIONAL_REVISION`。
+TEAM ep11/seed42在两个validation smoke事件、normal/random及1/3/5/10/20秒共20个请求上，
+严格deterministic algorithms启用、warn_only关闭；同输入feature及完整MDN检查全部通过。
+日志另有48条future NaN/Inf/pulse feature检查，全部通过；feature最大差7.62939453125e-6，仍低于原1e-5门。
+这些是小样本模型门结果，不是全validation性能或逐bit一致性证明。
+
+PASS打印在attempt封存/原子发布之前，目前仅取得out/err，尚未独立核验`stages/model_smoke/3/SEAL.json`。
+下一步用原50672e1的status确认四组model_smoke均为`COMPLETE_SEAL_VERIFIED`，再手动提交`replay_pilot`。
+继续使用既有c66db619e99a运营包、原主程序/run/env；本次仅记录结果，不重新封包或重提TEAM。
+详见[本批逐请求日志核验](../../reports/fe01_v4_team_smoke_repeatability_20261108/job_33156666_log_review.json)。
+
 **2026-11-08 最新设备结果与修复：** Job33116200_3 已实际运行6e2ddb5小包，DCU可见、TEAM selected ep11身份通过，
 在第一个normal/1秒请求的同输入重复检查失败，encoder feature最大差为1.52587890625e-5，原门为1e-5。
 该请求来自validation，事件japan_2006.hdf5/20060913043100；日志只覆盖这一失败请求，不能当成完整split成绩。

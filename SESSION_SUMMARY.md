@@ -845,3 +845,18 @@ warn_only=False；成功或失败均恢复旧enabled/warn_only，stdout补backen
 原V4 execution SHA及96份本地冻结文件不变；65份dtbench仍待设备完整runtime门。
 新包正式重提NOT_SUBMITTED，本轮未加载生产模型/波形、训练或test。
 当前入口docs/ai/FE01_V4_TEAM_SMOKE_FIX.md，证据reports/fe01_v4_team_smoke_repeatability_20261108/。
+
+## 2026-11-08 TEAM Job33156666_3模型门日志通过
+
+审阅base c66db619e99a60751ba02d24931d4570ead464a3，分支handoff/fe01-on-20261108。
+用户提供runs/model_smoke_33156666_3.err/.out，TEAM ep11身份通过，严格确定性标志True且warn_only=False。
+两个validation smoke事件×normal/random×1/3/5/10/20秒共20个同输入请求均通过feature和完整MDN门，
+48条打印的future特征检查通过，feature最大绝对差7.62939453125e-6，原1e-5阈值不变。
+stdout第117行出现TEAM_MODEL_SMOKE_PASS_WITH_OPERATIONAL_REVISION；stderr仅route/timm提示，无traceback。
+
+该标记在attempt上下文内、seal和原子发布之前；尚未独立取得status/SEAL/运行身份JSON/sacct及其他三组smoke状态。
+当前证据等级MODEL_CHECKS_PASS_IN_LOGS，不冒充COMPLETE_SEAL_VERIFIED；也不是完整validation成绩或bitwise一致性证明。
+前后作业分配节点不同，不能把日志对比当成严格隔离具体BLAS算子的配对因果结论。
+当前下一步按原status确认四组smoke及covariates完整通过，再由用户手动提交replay_pilot。
+主程序50672e1、运营包c66db61、原修复run/env均保留；本轮只保存证据与更新文档，不重新封包/提交任务/运行模型。
+逐请求/行号/日志SHA见reports/fe01_v4_team_smoke_repeatability_20261108/job_33156666_log_review.json。

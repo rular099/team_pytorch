@@ -1,0 +1,1282 @@
+{
+  "task_id": "20261108-fe01-v4-team-smoke-33156666-review",
+  "repository": "rular099/team_pytorch",
+  "review_branch": "handoff/fe01-on-20261108",
+  "review_base_commit": "c66db619e99a60751ba02d24931d4570ead464a3",
+  "expected_operational_commit": "c66db619e99a60751ba02d24931d4570ead464a3",
+  "commit_identity_visibility": "Expected from preceding delivered package; operational_execution.json and SEAL.json not supplied for independent readback.",
+  "frozen_main_commit": "50672e131d876a604432b283162d5b0189d40cf0",
+  "job_id": "33156666_3",
+  "scope": {
+    "stage": "model_smoke",
+    "task": 3,
+    "family": "TEAM",
+    "checkpoint_epoch": 11,
+    "seed": 42,
+    "split": "validation under frozen V4 contract",
+    "protocol": "normal/random at 1/3/5/10/20 seconds for two smoke events",
+    "decision_requests": 20,
+    "target_count": "not printed in supplied logs; not inferred"
+  },
+  "source_artifacts": {
+    "runs/model_smoke_33156666_3.out": {
+      "sha256": "a2f3743965908224e655f2f2c41d38f337fb625d8cbed5ee229036a2a1583be7",
+      "bytes": 16378
+    },
+    "runs/model_smoke_33156666_3.err": {
+      "sha256": "cbfa39ed2d3349498bb69ea94c5ce2d9489c7ecb2b0666520b2751ea16ac05ae",
+      "bytes": 359
+    }
+  },
+  "verified_facts": {
+    "device_visible": true,
+    "torch": "1.13.1",
+    "hip": "5.4.23191-0e6bf66b",
+    "checkpoint_inventory": "INVENTORY_PASS TEAM selected epoch11",
+    "attempt_relative_path": "attempts/model_smoke/3_wgkhcviz",
+    "strict_backend_records": 20,
+    "same_input_checks_passed": 20,
+    "same_input_feature_max_abs": 7.62939453125e-06,
+    "same_input_full_mdn_field_max_abs": {
+      "prediction": 3.363947806978018e-07,
+      "mdn_logits": 1.1324882507324219e-06,
+      "mdn_mu": 3.5992892510883223e-07,
+      "mdn_sigma": 1.2854604469758613e-07
+    },
+    "future_feature_checks_printed": 48,
+    "future_variants": {
+      "future_NaN": 16,
+      "future_Inf": 16,
+      "future_pulse": 16
+    },
+    "future_feature_max_abs": 7.62939453125e-06,
+    "original_absolute_threshold": 1e-05,
+    "relative_pass_tolerance": 0.0,
+    "units": {
+      "features": "encoder feature coordinates",
+      "mdn_logits": "dimensionless",
+      "prediction_and_mdn_mu_sigma": "log10(m/s^2) coordinates"
+    },
+    "final_model_checks_marker": {
+      "text": "TEAM_MODEL_SMOKE_PASS_WITH_OPERATIONAL_REVISION",
+      "line": 117
+    },
+    "stderr": "Slurm route message and timm deprecation warning; no traceback or exit failure printed"
+  },
+  "evidence_level": "MODEL_CHECKS_PASS_IN_LOGS; COMPLETE_SEAL_VERIFIED not yet independently observed",
+  "inferences": [
+    "The supplied logs support passing the original smoke model checks with strict deterministic algorithms enabled and unchanged tolerances.",
+    "Differences remain nonzero within tolerance; these logs do not establish bitwise-identical execution.",
+    "The earlier and current jobs used different allocated nodes, so this is not a paired isolation of the exact backend root operator.",
+    "No future feature rows are printed for the four 20-second requests. The original runner can record NOT_APPLICABLE_NO_FUTURE_SAMPLES; confirm their exact statuses from smoke_checks.json, not from absence of stdout."
+  ],
+  "completion_provenance": {
+    "marker_location": "team_smoke_runtime.run prints PASS inside with attempt(), after runner() returns.",
+    "seal_location": "fe01_a01_compare.io.attempt subsequently seals and atomically renames the attempt to stages/model_smoke/3.",
+    "missing": [
+      "current original-run status",
+      "stages/model_smoke/3/SEAL.json and sealed file validation",
+      "operational_execution.json and smoke_checks.json",
+      "independent sacct State/ExitCode",
+      "other three model_smoke current seal states"
+    ],
+    "stage_complete_claimed": false
+  },
+  "next_step": {
+    "read_only": "Use original 50672e1 status.sh with existing private env and on_v4_20261025_inventory_fix run.",
+    "required": "model_smoke COMPLETE_SEAL_VERIFIED for all four tasks and valid covariates.",
+    "manual_submit": "Use original submit_stage.sh --stage replay_pilot only after prerequisites pass; it validates full seals before sbatch and preserves successful/running tasks.",
+    "automatic_submission_performed": false
+  },
+  "records": {
+    "same_input": [
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "1.0"
+        },
+        "feature_max_abs": 1.1920928955078125e-07,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 5.0121396810709484e-08,
+          "mdn_logits": 1.1920928955078125e-07,
+          "mdn_mu": 5.141841774580769e-08,
+          "mdn_sigma": 3.856381339262249e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 10
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "3.0"
+        },
+        "feature_max_abs": 7.62939453125e-06,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 3.363947806978018e-07,
+          "mdn_logits": 1.1324882507324219e-06,
+          "mdn_mu": 3.5992892510883223e-07,
+          "mdn_sigma": 1.2854604469758613e-07
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 16
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "5.0"
+        },
+        "feature_max_abs": 7.62939453125e-06,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 3.068722498333898e-08,
+          "mdn_logits": 1.1920928955078125e-07,
+          "mdn_mu": 5.141841796785229e-08,
+          "mdn_sigma": 3.856381342037807e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 22
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "10.0"
+        },
+        "feature_max_abs": 7.62939453125e-06,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 4.9932604717639606e-08,
+          "mdn_logits": 2.384185791015625e-07,
+          "mdn_mu": 5.141841796785229e-08,
+          "mdn_sigma": 3.856381342037807e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 28
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "20.0"
+        },
+        "feature_max_abs": 7.62939453125e-06,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 8.348541102876084e-08,
+          "mdn_logits": 2.384185791015625e-07,
+          "mdn_mu": 1.0283683571365998e-07,
+          "mdn_sigma": 3.856381339262249e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 34
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "1.0"
+        },
+        "feature_max_abs": 2.384185791015625e-07,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 0.0,
+          "mdn_logits": 0.0,
+          "mdn_mu": 0.0,
+          "mdn_sigma": 0.0
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 37
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "3.0"
+        },
+        "feature_max_abs": 2.384185791015625e-07,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 5.297322247521663e-08,
+          "mdn_logits": 1.1920928955078125e-07,
+          "mdn_mu": 7.712762695177844e-08,
+          "mdn_sigma": 2.5709208983926146e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 43
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "5.0"
+        },
+        "feature_max_abs": 0.0,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 0.0,
+          "mdn_logits": 0.0,
+          "mdn_mu": 0.0,
+          "mdn_sigma": 0.0
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 49
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "10.0"
+        },
+        "feature_max_abs": 2.384185791015625e-07,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 8.083287195148614e-08,
+          "mdn_logits": 1.4901161193847656e-07,
+          "mdn_mu": 1.0283683571365998e-07,
+          "mdn_sigma": 5.141841785682999e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 55
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "20.0"
+        },
+        "feature_max_abs": 3.814697265625e-06,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 6.146171260823508e-08,
+          "mdn_logits": 1.7881393432617188e-07,
+          "mdn_mu": 7.712762672973383e-08,
+          "mdn_sigma": 2.570920895617057e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 61
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "1.0"
+        },
+        "feature_max_abs": 0.0,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 0.0,
+          "mdn_logits": 0.0,
+          "mdn_mu": 0.0,
+          "mdn_sigma": 0.0
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 64
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "3.0"
+        },
+        "feature_max_abs": 1.1920928955078125e-07,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 3.013494964676511e-08,
+          "mdn_logits": 1.1920928955078125e-07,
+          "mdn_mu": 5.141841774580769e-08,
+          "mdn_sigma": 2.5709208928414995e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 70
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "5.0"
+        },
+        "feature_max_abs": 4.76837158203125e-07,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 1.0036684816583374e-08,
+          "mdn_logits": 5.960464477539063e-08,
+          "mdn_mu": 2.5709208983926146e-08,
+          "mdn_sigma": 1.2854604464207497e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 76
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "10.0"
+        },
+        "feature_max_abs": 3.814697265625e-06,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 2.3276857175069665e-07,
+          "mdn_logits": 7.748603820800781e-07,
+          "mdn_mu": 3.0851050714097994e-07,
+          "mdn_sigma": 5.141841785682999e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 82
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "20.0"
+        },
+        "feature_max_abs": 7.62939453125e-06,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 3.295804562597482e-08,
+          "mdn_logits": 1.1920928955078125e-07,
+          "mdn_mu": 5.141841796785229e-08,
+          "mdn_sigma": 5.1418417884585566e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 88
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "1.0"
+        },
+        "feature_max_abs": 4.76837158203125e-07,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 8.364664405569044e-08,
+          "mdn_logits": 1.7881393432617188e-07,
+          "mdn_mu": 6.427302223777076e-08,
+          "mdn_sigma": 5.141841785682999e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 91
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "3.0"
+        },
+        "feature_max_abs": 0.0,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 0.0,
+          "mdn_logits": 0.0,
+          "mdn_mu": 0.0,
+          "mdn_sigma": 0.0
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 97
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "5.0"
+        },
+        "feature_max_abs": 0.0,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 0.0,
+          "mdn_logits": 0.0,
+          "mdn_mu": 0.0,
+          "mdn_sigma": 0.0
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 103
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "10.0"
+        },
+        "feature_max_abs": 1.1920928955078125e-07,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 0.0,
+          "mdn_logits": 0.0,
+          "mdn_mu": 0.0,
+          "mdn_sigma": 0.0
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 109
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "20.0"
+        },
+        "feature_max_abs": 7.62939453125e-06,
+        "feature_passed": true,
+        "mdn_fields_max_abs": {
+          "prediction": 3.008064819454148e-08,
+          "mdn_logits": 1.1920928955078125e-07,
+          "mdn_mu": 5.141841796785229e-08,
+          "mdn_sigma": 3.856381339262249e-08
+        },
+        "mdn_passed": true,
+        "passed": true,
+        "line": 115
+      }
+    ],
+    "backend": [
+      {
+        "line": 9,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 15,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 21,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 27,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 33,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 36,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 42,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 48,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 54,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 60,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 63,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 69,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 75,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 81,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 87,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 90,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 96,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 102,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 108,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      },
+      {
+        "line": 114,
+        "settings": {
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "cudnn_allow_tf32": false,
+          "matmul_allow_tf32": false,
+          "deterministic_algorithms_enabled": true,
+          "deterministic_algorithms_warn_only": false
+        }
+      }
+    ],
+    "future_features": [
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 3.814697265625e-06,
+        "passed": true,
+        "line": 12
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 3.814697265625e-06,
+        "passed": true,
+        "line": 13
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 3.814697265625e-06,
+        "passed": true,
+        "line": 14
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 18
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 19
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 20
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 24
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 25
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 3.814697265625e-06,
+        "passed": true,
+        "line": 26
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 30
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 31
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "normal",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 32
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 2.384185791015625e-07,
+        "passed": true,
+        "line": 39
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 2.384185791015625e-07,
+        "passed": true,
+        "line": 40
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 2.384185791015625e-07,
+        "passed": true,
+        "line": 41
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 45
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 46
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 47
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 51
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 52
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 53
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 2.384185791015625e-07,
+        "passed": true,
+        "line": 57
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 2.384185791015625e-07,
+        "passed": true,
+        "line": 58
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2006.hdf5",
+          "event_id": "20060913043100",
+          "geometry_protocol": "random",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 2.384185791015625e-07,
+        "passed": true,
+        "line": 59
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 66
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 67
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 68
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 72
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 73
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 7.62939453125e-06,
+        "passed": true,
+        "line": 74
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 78
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 79
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 80
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 84
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 2.384185791015625e-07,
+        "passed": true,
+        "line": 85
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "normal",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 3.814697265625e-06,
+        "passed": true,
+        "line": 86
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 93
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 94
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "1.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 95
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 2.384185791015625e-07,
+        "passed": true,
+        "line": 99
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 100
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "3.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 101
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 1.1920928955078125e-07,
+        "passed": true,
+        "line": 105
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 1.1920928955078125e-07,
+        "passed": true,
+        "line": 106
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "5.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 1.1920928955078125e-07,
+        "passed": true,
+        "line": 107
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_NaN",
+        "feature_max_abs": 1.1920928955078125e-07,
+        "passed": true,
+        "line": 111
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_Inf",
+        "feature_max_abs": 4.76837158203125e-07,
+        "passed": true,
+        "line": 112
+      },
+      {
+        "request": {
+          "dataset_id": "japan_2008.hdf5",
+          "event_id": "20080906162900",
+          "geometry_protocol": "random",
+          "elapsed_time": "10.0"
+        },
+        "variant": "future_pulse",
+        "feature_max_abs": 0.0,
+        "passed": true,
+        "line": 113
+      }
+    ]
+  },
+  "verification": {
+    "log_parsing": "PASS",
+    "full_expected_request_grid": "PASS; 20 unique identities",
+    "absolute_bounds_and_pass_flags": "PASS",
+    "production_model_reexecution": "NOT_RUN",
+    "tests_rerun": "NOT_RUN; no execution source changes"
+  }
+}
