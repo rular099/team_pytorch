@@ -43,7 +43,7 @@ def run(session):
                                                         'SLURM_CPUS_PER_TASK', 'SLURM_MEM_PER_NODE')}))
         write(out / 'operational_execution.json', dict(revision=revision, device='cuda',
               original_runner_bytecode_unchanged=True, private_namespace_override=['verify_smoke'],
-              backend_policy='original A01 paired_execution scoped to TEAM smoke gates; restored after each audit',
+              backend_policy='original A01 paired_execution plus strict deterministic algorithms (warn_only=False), scoped to TEAM smoke gates; all settings restored after each audit',
               tolerance='unchanged original absolute 1e-5; no relative pass tolerance',
               production_inference_and_latency='unchanged original implementation/defaults',
               python_executable=__import__('sys').executable, torch=torch.__version__, rocm=torch.version.hip,

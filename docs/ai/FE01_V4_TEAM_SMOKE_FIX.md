@@ -1,5 +1,24 @@
 # FE01 V4 TEAM model_smoke 单项受控重试（2026-11-02）
 
+**2026-11-08 最新设备结果与修复：** Job33116200_3 已实际运行6e2ddb5小包，DCU可见、TEAM selected ep11身份通过，
+在第一个normal/1秒请求的同输入重复检查失败，encoder feature最大差为1.52587890625e-5，原门为1e-5。
+该请求来自validation，事件japan_2006.hdf5/20060913043100；日志只覆盖这一失败请求，不能当成完整split成绩。
+future NaN/Inf/pulse门尚未运行，不能将这次失败称作未来信息泄漏。
+
+原A01 paired_execution没有设置全局deterministic algorithms；PyTorch 1.13.1的
+[ROCm BLAS源码](https://github.com/pytorch/pytorch/blob/v1.13.1/aten/src/ATen/cuda/CublasHandlePool.cpp#L55)
+按此全局标志决定是否允许rocBLAS atomics，设置cudnn.deterministic并不设置该标志。
+新小包仅在TEAM smoke audit内加`torch.use_deterministic_algorithms(True, warn_only=False)`，
+成功/异常均恢复原enabled/warn_only；原卷积设置和RNG控制保留，生产推理/latency不改。
+同时记录六项backend设置并在stdout打印feature与完整MDN字段的最大差值。
+这是对可确认的审计控制缺口的修复，实际设备根因及新包能否通过仍待DCU复跑；不放宽绝对阈值、不增加relative tolerance或CPU通行路径。
+出现无确定性实现的算子时继续失败，保留原异常和诊断，不转成warning或跳过原门。
+
+当前请使用本轮交付的新commit小包；6e2ddb5及更早包保留为历史来源，不再作为本次重试入口。
+仅重提TEAM task3，原50672e1主程序、run/env及其他成功项保持。新包重提本轮尚未提交。
+设备日志SHA、事实/推断、32项专项测试和验收边界见
+[本批验证记录](../../reports/fe01_v4_team_smoke_repeatability_20261108/verification.json)。
+
 **2026-11-05 提交入口更新：** 原fe358c3小包在用户无参数调用时出现 `args[@]: unbound variable`，
 失败发生在Python/sbatch之前。新版移除参数数组，直接用 `"$@"` 转交原参数，并给私有变量加前缀。
 支持不带参数、显式run ID、`--env PATH`及`--env=PATH`，保留带空格的路径；缺少env值会明确报错。

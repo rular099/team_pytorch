@@ -1,0 +1,120 @@
+{
+  "task_id": "20261108-fe01-v4-team-smoke-deterministic-algorithms",
+  "repository": "rular099/team_pytorch",
+  "branch": "handoff/fe01-on-20261108",
+  "target_branch": "exp/fe01-on-warning-map-evaluation",
+  "base_commit": "b772d8b92149f0e312633530757a00b357505f50",
+  "failed_operational_commit": "6e2ddb5dc0a52ff663099d0f0410a637261406bb",
+  "frozen_main_commit": "50672e131d876a604432b283162d5b0189d40cf0",
+  "frozen_execution_sha256": "b9dd0368adc7041bb0c1e36a6899d49014ac9545ae7f44850274099bab6dc15c",
+  "verified_facts": {
+    "job_id": "33116200_3",
+    "stage": "model_smoke",
+    "task": 3,
+    "family": "TEAM",
+    "checkpoint_epoch": 11,
+    "split": "validation (frozen V4 contract)",
+    "seed": 42,
+    "target_population": "first smoke request, normal geometry at 1 second; station capture count not printed",
+    "dataset_id": "japan_2006.hdf5",
+    "event_id": "20060913043100",
+    "observed_request_count": 1,
+    "torch": "1.13.1",
+    "hip": "5.4.23191-0e6bf66b",
+    "device_visible": true,
+    "inventory": "INVENTORY_PASS TEAM selected",
+    "failure": "SAME_INPUT_REPEATABILITY_FAILED",
+    "encoder_features_max_abs": 1.52587890625e-05,
+    "feature_units": "encoder feature coordinates, not PGA log10(m/s^2)",
+    "absolute_threshold": 1e-05,
+    "relative_tolerance": 0.0,
+    "future_variants_executed_for_this_request": false,
+    "full_mdn_difference": "not printed in supplied logs; 02_same_input_repeat.json not supplied",
+    "attempt_relative_path": "attempts/model_smoke/3_ue5z4fo9",
+    "log_sha256": {
+      "runs/model_smoke_33116200_3.err": "c616adb0ecb92a046cab87e456e31eaccf5df03807302776fa2b65b0396810f8",
+      "runs/model_smoke_33116200_3.out": "329f8f2dc7b716ecd1d00a9bdd909bff68490fb47ef843a7d7390cac0297efde"
+    },
+    "old_audit_control_gap": "Original A01 paired_execution controls cudnn/TF32 but never enables torch.use_deterministic_algorithms."
+  },
+  "primary_sources": [
+    {
+      "url": "https://github.com/pytorch/pytorch/blob/v1.13.1/aten/src/ATen/cuda/CublasHandlePool.cpp#L55-L62",
+      "fact": "Under USE_ROCM and ROCM_VERSION >= 30800, deterministicAlgorithms() controls rocblas_atomics_not_allowed vs rocblas_atomics_allowed."
+    },
+    {
+      "url": "https://github.com/pytorch/pytorch/blob/v1.13.1/torch/__init__.py",
+      "fact": "Pinned version exposes strict deterministic setter and getters for enabled/warn_only modes."
+    },
+    {
+      "url": "https://github.com/pytorch/pytorch/blob/v1.13.1/docs/source/notes/randomness.rst",
+      "fact": "The global deterministic algorithm control extends beyond convolution settings and raises for known unsupported operations."
+    }
+  ],
+  "inferences": [
+    "The missing global control is a testable explanation for repeat drift, not proof that rocBLAS caused this production failure.",
+    "The supplied logs establish a repeatability failure before the future gates, not future-data leakage or successful causality certification."
+  ],
+  "change": [
+    "Only the external TEAM smoke callback adds torch.use_deterministic_algorithms(True, warn_only=False) around the unchanged original callback.",
+    "Save and restore the prior enabled/warn_only modes on success or failure; retain original A01 RNG/convolution/TF32 controls.",
+    "Record global deterministic flags in backend diagnostics and print feature/full-MDN differences.",
+    "Keep all original absolute 1e-5 gates, original runner bytecode, original plan/env, and other tasks unchanged."
+  ],
+  "verification": {
+    "focused_tests": {
+      "command": "PYTHONPATH=/tmp/fe01_on_handoff_test_deps_20261108 PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q -p no:cacheprovider tests/test_fe01_v4_team_smoke_fix.py",
+      "exit_code": 0,
+      "passed": 32,
+      "seconds_reported": 0.84,
+      "scope": "synthetic/fake backend and scheduler; no Torch/DCU or production model execution"
+    },
+    "new_cases": [
+      "Four old enabled/warn_only combinations restored after both success and exception (8 cases).",
+      "Unsupported deterministic operator remains a hard failure, diagnostics persist, no success output.",
+      "The observed float32 absolute difference remains rejected by unchanged tolerance."
+    ],
+    "compile_and_python39_syntax": {
+      "status": "PASS",
+      "files": [
+        "scripts/fe01_v4_team_smoke_fix/build_bundle.py",
+        "scripts/fe01_v4_team_smoke_fix/fix_support.py",
+        "scripts/fe01_v4_team_smoke_fix/submit.py",
+        "scripts/fe01_v4_team_smoke_fix/team_smoke_runtime.py",
+        "tests/test_fe01_v4_team_smoke_fix.py"
+      ]
+    },
+    "bash_syntax": {
+      "status": "PASS",
+      "files": [
+        "scripts/fe01_v4_team_smoke_fix/submit_team_smoke.sh",
+        "scripts/fe01_v4_team_smoke_fix/worker.sbatch",
+        "scripts/fe01_v4_team_smoke_fix/worker.sh"
+      ]
+    },
+    "frozen_execution_identity": "UNCHANGED",
+    "frozen_core_local_files_checked": 96,
+    "dtbench_not_locally_verified": 65,
+    "git_diff_check": "PASS"
+  },
+  "compatibility": {
+    "rt55_and_training_sources_changed": false,
+    "frozen_a01_and_review_sources_changed": false,
+    "original_v4_execution_tree_changed": false,
+    "production_inference_or_latency_backend_policy_changed": false,
+    "old_seals_modified": false
+  },
+  "hpc_status": {
+    "observed_old_job": "FAILED in supplied logs; independent sacct output not supplied",
+    "new_retry": "NOT_SUBMITTED",
+    "training_or_heldout_test": "NOT_RUN"
+  },
+  "expected_observable_effect": "Strict flags visible in 01_backend/stdout; repeat check and unchanged complete smoke gates must pass before success seal. Unsupported operations or remaining differences still fail.",
+  "rollback": "Keep old releases and attempts. Use a new committed operational bundle without overwriting the frozen main release. No old success needs rewriting.",
+  "remaining_risks": [
+    "Production root operator is unconfirmed.",
+    "No local production checkpoint/Japan waveform/DCU execution.",
+    "Strict audit may expose unsupported operations or legacy-overlap differences; original gates remain enforced.",
+    "The new archive has its own commit and byte SHA; never reuse the old archive digest."
+  ]
+}

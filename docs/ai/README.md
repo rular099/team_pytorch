@@ -5,6 +5,9 @@
 **最新跨服务器接手入口（2026-11-08）：[FE01 ON V4 Codex交接](FE01_V4_CODEX_HANDOFF_20261108.md)。**
 当前实施基线6e2ddb5；超算主程序仍50672e1，TEAM受控重试新版结果尚未收到。先按交接检查状态，保留已有成功项。
 
+**同日后续更新：** 已收到Job33116200_3日志，TEAM同输入重复前向失败，future门尚未执行。
+当前修复与新包说明见[TEAM smoke操作说明](FE01_V4_TEAM_SMOKE_FIX.md)；6e2ddb5不再是当前推荐重试包。
+
 ## 1. 协作边界
 
 这个流程把 GitHub 作为共享的、可追溯的事实来源，但不假设两个 AI 之间存在自动通信。
@@ -234,3 +237,12 @@ PhaseNet/EQT 的通用 manifest。修复保留可访问的原路径、原 SHA �
 冻结本对话可见状态、五个关键版本、原run/env、当前小包/摘要、下一步及后续阶段命令、可重建资源和未取得的证据。
 最新有效TEAM小包实施commit为6e2ddb5；没有收到其新job结果，不能把已交付当成超算通过。
 本次仅同步文档，不修改执行源码或运行身份，不提交/取消任何超算任务。
+
+## 21. TEAM同输入重复失败与严格确定性审计（2026-11-08）
+
+Job33116200_3实际通过DCU/TEAM ep11身份门，在第一个validation请求的blank repeat检查失败：
+feature最大绝对差1.52587890625e-5，阈值1e-5；尚无完整MDN差值或该attempt诊断JSON。
+现有卷积确定性控制没有设置PyTorch全局deterministic algorithms，1.13.1源码显示ROCm BLAS原子模式由后者控制。
+新运营小包仅在smoke audit启用严格全局模式，恢复旧enabled/warn_only，保留原runner字节码/门/阈值，打印backend与MDN差值。
+32项本地专项通过，真实设备新包尚未提交；不以控制缺口推断已确定实际算子根因。
+操作入口和证据见同一[TEAM重试说明](FE01_V4_TEAM_SMOKE_FIX.md)。

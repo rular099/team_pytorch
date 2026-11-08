@@ -1,0 +1,11 @@
+Focused test command (fake backend/scheduler; no production execution):
+PYTHONPATH=/tmp/fe01_on_handoff_test_deps_20261108 PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q -p no:cacheprovider tests/test_fe01_v4_team_smoke_fix.py
+
+................................                                         [100%]
+32 passed in 0.84s
+Exit code: 0
+PYTHON_COMPILE_AND_39_SYNTAX_PASS: 5 files
+BASH_SYNTAX_PASS: 3 files
+FROZEN_EXECUTION_UNCHANGED: b9dd0368adc7041bb0c1e36a6899d49014ac9545ae7f44850274099bab6dc15c
+FROZEN_CORE_LOCAL_PASS: 96 files; 65 dtbench dependencies not locally verified
+GIT_DIFF_CHECK_PASS

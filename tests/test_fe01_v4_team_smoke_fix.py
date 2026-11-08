@@ -49,12 +49,18 @@ def test_feature_comparison_keeps_absolute_threshold_and_rejects_missing_nonfini
 
 
 def fake_torch_and_original_paired_execution(monkeypatch):
+    deterministic = dict(enabled=False, warn_only=False)
+    def set_deterministic(enabled, *, warn_only=False):
+        deterministic.update(enabled=enabled, warn_only=warn_only)
     torch = SimpleNamespace(
         backends=SimpleNamespace(cudnn=SimpleNamespace(benchmark=True, deterministic=False, allow_tf32=True),
                                  cuda=SimpleNamespace(matmul=SimpleNamespace(allow_tf32=True))),
         device=lambda name: SimpleNamespace(type='cuda'),
         cuda=SimpleNamespace(device_count=lambda: 1, is_initialized=lambda: False),
-        random=SimpleNamespace(fork_rng=lambda **kwargs: contextlib.nullcontext()))
+        random=SimpleNamespace(fork_rng=lambda **kwargs: contextlib.nullcontext()),
+        are_deterministic_algorithms_enabled=lambda: deterministic['enabled'],
+        is_deterministic_algorithms_warn_only_enabled=lambda: deterministic['warn_only'],
+        use_deterministic_algorithms=set_deterministic)
     monkeypatch.setitem(sys.modules, 'torch', torch)
     spec = importlib.util.spec_from_file_location('unchanged_a01_equivalence_test', ROOT / 'fe01_a01/equivalence.py')
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
@@ -97,7 +103,9 @@ def test_controlled_audit_calls_original_gate_and_restores_backend(monkeypatch, 
     def original(forward, event, group, legacy, family, checks):
         called.append(1)
         assert support.backend_settings(torch) == dict(cudnn_benchmark=False, cudnn_deterministic=True,
-                                                       cudnn_allow_tf32=False, matmul_allow_tf32=False)
+                                                       cudnn_allow_tf32=False, matmul_allow_tf32=False,
+                                                       deterministic_algorithms_enabled=True,
+                                                       deterministic_algorithms_warn_only=False)
         for i in range(4):
             with forward.runner.capture_features():
                 forward.predict(event, group)
@@ -141,6 +149,57 @@ def test_future_failure_preserves_original_error_and_diagnostics(monkeypatch, tm
     assert not json.loads((directory / '04_future_NaN.json').read_text())['passed']
     assert not (directory / '99_pass.json').exists()
     assert support.backend_settings(torch) == before
+
+
+@pytest.mark.parametrize('enabled,warn_only', [(False, False), (False, True), (True, False), (True, True)])
+@pytest.mark.parametrize('fail', [False, True])
+def test_strict_algorithms_restore_prior_modes_on_success_and_failure(monkeypatch, enabled, warn_only, fail):
+    torch, _ = fake_torch_and_original_paired_execution(monkeypatch)
+    torch.use_deterministic_algorithms(enabled, warn_only=warn_only)
+    before = support.backend_settings(torch)
+    def audit():
+        with support.strict_deterministic_algorithms(torch):
+            assert torch.are_deterministic_algorithms_enabled()
+            assert not torch.is_deterministic_algorithms_warn_only_enabled()
+            if fail:
+                raise RuntimeError('nondeterministic operator has no implementation')
+    if fail:
+        with pytest.raises(RuntimeError, match='no implementation'):
+            audit()
+    else:
+        audit()
+    assert support.backend_settings(torch) == before
+
+
+def test_strict_control_reaches_original_gate_and_unsupported_operator_remains_failure(monkeypatch, tmp_path):
+    torch, paired = fake_torch_and_original_paired_execution(monkeypatch)
+    before = support.backend_settings(torch)
+    called = []
+    def unsupported(*args):
+        called.append(1)
+        assert torch.are_deterministic_algorithms_enabled()
+        assert not torch.is_deterministic_algorithms_warn_only_enabled()
+        raise RuntimeError('synthetic operator has no deterministic implementation')
+    verify = support.controlled_smoke(unsupported, paired, torch, tmp_path)
+    with pytest.raises(RuntimeError, match='no deterministic implementation'):
+        verify(FakeForward(), {}, frame(), None, 'TEAM', [])
+    assert called == [1]
+    assert support.backend_settings(torch) == before
+    directory = next(tmp_path.iterdir())
+    backend = json.loads((directory / '01_backend.json').read_text())
+    assert backend['deterministic_algorithms_enabled'] and not backend['deterministic_algorithms_warn_only']
+    failure = json.loads((directory / '99_failure.json').read_text())
+    assert failure['backend_restored'] and 'no deterministic implementation' in failure['reason']
+    assert not (directory / '99_pass.json').exists()
+
+
+def test_observed_float32_repeat_difference_is_still_rejected():
+    a = np.array([128.], dtype=np.float32)
+    b = np.nextafter(a, np.array([np.inf], dtype=np.float32))
+    result = support.feature_comparison([a], [b])
+    assert result['max_abs'] == 1.52587890625e-5
+    assert result['atol'] == 1e-5 and result['rtol'] == 0.
+    assert not result['passed']
 
 
 def test_wrong_original_source_or_task_mapping_rejected(monkeypatch):

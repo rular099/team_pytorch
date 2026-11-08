@@ -155,7 +155,30 @@ def backend_settings(torch):
     return dict(cudnn_benchmark=bool(torch.backends.cudnn.benchmark),
                 cudnn_deterministic=bool(torch.backends.cudnn.deterministic),
                 cudnn_allow_tf32=bool(torch.backends.cudnn.allow_tf32),
-                matmul_allow_tf32=bool(torch.backends.cuda.matmul.allow_tf32))
+                matmul_allow_tf32=bool(torch.backends.cuda.matmul.allow_tf32),
+                deterministic_algorithms_enabled=bool(torch.are_deterministic_algorithms_enabled()),
+                deterministic_algorithms_warn_only=bool(torch.is_deterministic_algorithms_warn_only_enabled()))
+
+
+@contextlib.contextmanager
+def strict_deterministic_algorithms(torch):
+    """Audit-only control, including ROCm BLAS atomics in PyTorch 1.13.1.
+
+    cudnn.deterministic alone does not set deterministicAlgorithms(), which the
+    pinned upstream ROCm BLAS handle code checks before allowing atomics:
+    pytorch/pytorch v1.13.1, aten/src/ATen/cuda/CublasHandlePool.cpp:55-62.
+    Unsupported deterministic operations must fail, never degrade to a warning.
+    """
+    enabled = bool(torch.are_deterministic_algorithms_enabled())
+    warn_only = bool(torch.is_deterministic_algorithms_warn_only_enabled())
+    try:
+        torch.use_deterministic_algorithms(True, warn_only=False)
+        require(torch.are_deterministic_algorithms_enabled() and
+                not torch.is_deterministic_algorithms_warn_only_enabled(),
+                'Strict deterministic algorithms could not be enabled')
+        yield
+    finally:
+        torch.use_deterministic_algorithms(enabled, warn_only=warn_only)
 
 
 def controlled_smoke(original, paired_execution, torch, root):
@@ -171,8 +194,10 @@ def controlled_smoke(original, paired_execution, torch, root):
         write(directory / '00_scope.json', dict(request=identity, backend_before=before,
             absolute_tolerance=ATOL, relative_tolerance=0., original_future_gates_unchanged=True))
         try:
-            with paired_execution(forward.device):
-                write(directory / '01_backend.json', backend_settings(torch))
+            with paired_execution(forward.device), strict_deterministic_algorithms(torch):
+                audit_backend = backend_settings(torch)
+                write(directory / '01_backend.json', audit_backend)
+                print('TEAM_SMOKE_BACKEND', audit_backend, flush=True)
                 with forward.runner.capture_features() as first:
                     first_output, _ = forward.predict(event, group)
                 with forward.runner.capture_features() as second:
@@ -181,6 +206,9 @@ def controlled_smoke(original, paired_execution, torch, root):
                 prediction = prediction_comparison(first_output, second_output)
                 write(directory / '02_same_input_repeat.json', dict(features=features, prediction=prediction))
                 print('TEAM_SMOKE_SAME_INPUT', identity, 'feature_max_abs=' + str(features['max_abs']),
+                      'feature_passed=' + str(features['passed']),
+                      'mdn_fields_max_abs=' + str(prediction['fields_max_abs']),
+                      'mdn_passed=' + str(prediction['passed']),
                       'passed=' + str(features['passed'] and prediction['passed']), flush=True)
                 require(features['passed'] and prediction['passed'],
                         'SAME_INPUT_REPEATABILITY_FAILED; see smoke_diagnostics/02_same_input_repeat.json')

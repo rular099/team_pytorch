@@ -827,3 +827,21 @@ audit局部复用已有A01 paired_execution并恢复设置/RNG，补同输入严
 交接点仍为TEAM受控重试新版交付后等待实际结果；covariates41项为用户已确认，其他阶段按证据标未知/待查。
 提供跨机安全worktree接手、原status/单项sbatch/后续完整阶段命令、精确实施commit封包重建和gzip摘要差异说明。
 本轮仅更新文档，不改执行代码/旧seal，不提交、取消或探查任何真实超算作业。
+
+## 2026-11-08 TEAM Job33116200_3同输入重复失败
+
+接手分支handoff/fe01-on-20261108，基点b772d8b92149f0e312633530757a00b357505f50，
+仓库rular099/team_pytorch；远端exp/fe01-on-warning-map-evaluation同基点。
+用户提供runs/model_smoke_33116200_3.err/.out：PyTorch1.13.1/ROCm5.4、DCU可见、TEAM ep11身份通过，
+首个normal/1秒validation事件japan_2006.hdf5/20060913043100的同输入repeat feature最大差1.52587890625e-5，
+超过原1e-5门；future扰动尚未执行。完整MDN差值及attempt诊断JSON尚未本地取得。
+
+核对v1.13.1官方CublasHandlePool源码：ROCm BLAS atomics受global deterministicAlgorithms控制，
+原paired_execution只设cudnn/TF32而未设此标志。新TEAM运营小包在原A01控制器内增加严格deterministic algorithms，
+warn_only=False；成功或失败均恢复旧enabled/warn_only，stdout补backend及完整MDN差值。
+保持同一原runner bytecode/私有callback、原绝对阈值、future/query/cache/label/legacy门、旧源码/配置/plan/seal和成功项。
+这是审计控制缺口修复；没有确证具体设备算子，不能声称真实复跑成功。
+32项专项通过（含四种旧全局模式的成功/异常恢复、无确定性实现继续失败及实际差值不放行），
+原V4 execution SHA及96份本地冻结文件不变；65份dtbench仍待设备完整runtime门。
+新包正式重提NOT_SUBMITTED，本轮未加载生产模型/波形、训练或test。
+当前入口docs/ai/FE01_V4_TEAM_SMOKE_FIX.md，证据reports/fe01_v4_team_smoke_repeatability_20261108/。
