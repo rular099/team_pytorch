@@ -1,0 +1,410 @@
+{
+  "task_id": "20261109-fe01-v4-pilot-evidence-review",
+  "repository": "rular099/team_pytorch",
+  "review_base_commit": "17ba43eea495e8df6f1e6c6825f6b99f41f67f69",
+  "review_branch": "handoff/fe01-on-20261108",
+  "frozen_main_commit": "50672e131d876a604432b283162d5b0189d40cf0",
+  "team_smoke_revision": "c66db619e99a60751ba02d24931d4570ead464a3",
+  "archive": {
+    "name": "fe01_v4_pilot_review_20261109T113132.tar.gz",
+    "sha256": "40764a1cb0cdb34e2d5e080c621da78a7d223b9c5a6512288f976e1b62307395",
+    "bytes": 37381966
+  },
+  "source_plan_sha256": "2a3549190db940055d083b9e447b31e9db9146c67f0b9678d182c0c9d0ef9373",
+  "execution_sha256": "b9dd0368adc7041bb0c1e36a6899d49014ac9545ae7f44850274099bab6dc15c",
+  "contract_sha256": "642a5fb17c0ae609029b7406a1cf2ff0a172374d991aa5202d5d776a35cbcf93",
+  "split": "validation",
+  "seed": 42,
+  "mode": "physical_scale_keep_duration",
+  "protocol": "fixed_query_replay_v4/grid_replay_v4; each second 1-20; normal/random; six metadata-selected pilot events",
+  "actual_pilot_events": [
+    [
+      "japan_2006.hdf5",
+      "20060913043100"
+    ],
+    [
+      "japan_2008.hdf5",
+      "20080906162900"
+    ],
+    [
+      "japan_2011.hdf5",
+      "20110827015100"
+    ],
+    [
+      "japan_2017.hdf5",
+      "20171001102500"
+    ],
+    [
+      "japan_2020.hdf5",
+      "20200907093400"
+    ],
+    [
+      "japan_2016.hdf5",
+      "20160913191200"
+    ]
+  ],
+  "provisional_plan_events": [
+    [
+      "japan_2011.hdf5",
+      "20110827091600"
+    ],
+    [
+      "japan_2009.hdf5",
+      "20091110030100"
+    ],
+    [
+      "japan_2002.hdf5",
+      "20021014020700"
+    ],
+    [
+      "japan_2010.hdf5",
+      "20101004231700"
+    ],
+    [
+      "japan_2011.hdf5",
+      "20110830163300"
+    ],
+    [
+      "japan_2008.hdf5",
+      "20080809095400"
+    ]
+  ],
+  "station_target_roles": {
+    "untriggered_noninput": 1690,
+    "observed_input": 2078,
+    "triggered_noninput": 3192
+  },
+  "selection_note": "The plan explicitly labels its pilot provisional. Actual events are frozen by selection.freeze from CPU physical metadata, before model predictions; all four models share the same sealed selection receipt.",
+  "seals": [
+    {
+      "stage": "model_smoke",
+      "task": 0,
+      "family": "DiTing",
+      "files_verified": 13,
+      "seal_sha256": "b772079ebf782155c30ac631c854079f2ef383bd184d9482695080095f2cbffa",
+      "job_id": "32163183",
+      "parent_seals_recorded": 42,
+      "parent_seals_checked_locally": 0,
+      "runtime_revision_commit": null
+    },
+    {
+      "stage": "model_smoke",
+      "task": 1,
+      "family": "PhaseNet",
+      "files_verified": 13,
+      "seal_sha256": "22a1a283ed0d49669b19ae4f9f3517b9be0938ca4153fdc1d93e5c3911b1854b",
+      "job_id": "32163184",
+      "parent_seals_recorded": 42,
+      "parent_seals_checked_locally": 0,
+      "runtime_revision_commit": null
+    },
+    {
+      "stage": "model_smoke",
+      "task": 2,
+      "family": "EQT",
+      "files_verified": 13,
+      "seal_sha256": "6826771838754945e34d7fe1fa0472ba928e5f975bca5976e67f7348ee85d6fb",
+      "job_id": "32163185",
+      "parent_seals_recorded": 42,
+      "parent_seals_checked_locally": 0,
+      "runtime_revision_commit": null
+    },
+    {
+      "stage": "model_smoke",
+      "task": 3,
+      "family": "TEAM",
+      "files_verified": 162,
+      "seal_sha256": "3ecae72efa6f668d2771c9a227ec928161ee8b1d67789e940d110925ab072a21",
+      "job_id": "33156666",
+      "parent_seals_recorded": 42,
+      "parent_seals_checked_locally": 0,
+      "runtime_revision_commit": "c66db619e99a60751ba02d24931d4570ead464a3"
+    },
+    {
+      "stage": "replay_pilot",
+      "task": 0,
+      "family": "DiTing",
+      "files_verified": 33,
+      "seal_sha256": "1fb6d0c484170df4a1f718ed2de490eede08216e5212fce9ffcc6c53aa0d2b69",
+      "job_id": "33159324",
+      "parent_seals_recorded": 45,
+      "parent_seals_checked_locally": 4,
+      "runtime_revision_commit": null
+    },
+    {
+      "stage": "replay_pilot",
+      "task": 1,
+      "family": "PhaseNet",
+      "files_verified": 33,
+      "seal_sha256": "fe538d2c7fd7bb830eca2a9773fb20723928b17ae450a5e7d24a422dba2215ae",
+      "job_id": "33159325",
+      "parent_seals_recorded": 45,
+      "parent_seals_checked_locally": 4,
+      "runtime_revision_commit": null
+    },
+    {
+      "stage": "replay_pilot",
+      "task": 2,
+      "family": "EQT",
+      "files_verified": 33,
+      "seal_sha256": "e561d53ffc74a64f396b6df8f788a6d35688efeded18e89f19ebca7e1786a13a",
+      "job_id": "33159326",
+      "parent_seals_recorded": 45,
+      "parent_seals_checked_locally": 4,
+      "runtime_revision_commit": null
+    },
+    {
+      "stage": "replay_pilot",
+      "task": 3,
+      "family": "TEAM",
+      "files_verified": 33,
+      "seal_sha256": "96e5445808a4f37b4fba033f79d7c9d52909c10df405654e14213fbff6133c64",
+      "job_id": "33159323",
+      "parent_seals_recorded": 45,
+      "parent_seals_checked_locally": 4,
+      "runtime_revision_commit": null
+    }
+  ],
+  "sealed_payload_files_verified": 333,
+  "evidence_level": "Eight supplied smoke/pilot seals and their complete payloads verified locally; pilot links to all four supplied smoke seals verified.",
+  "missing_dependency_scope": "Inventory/covariate payloads and seals were not included. Their recorded hashes are consistent across supplied artifacts; the supplied production status reports them verified. No claim of independent local verification of those absent files.",
+  "team_operational_identity_and_backend_restore": "PASS; exact c66db61 file digests and 20 restored strict audits checked",
+  "station_grid_population_pairing": "PASS; complete identity and physical input populations matched across four models",
+  "mdn_checks": [
+    {
+      "family": "DiTing",
+      "population": "fixed_query_replay_v4",
+      "rows": 6960,
+      "components": 3,
+      "finite": true,
+      "mixture_mean_weights_width_and_probabilities": "PASS"
+    },
+    {
+      "family": "DiTing",
+      "population": "grid_replay_v4",
+      "rows": 24040,
+      "components": 3,
+      "finite": true,
+      "mixture_mean_weights_width_and_probabilities": "PASS"
+    },
+    {
+      "family": "PhaseNet",
+      "population": "fixed_query_replay_v4",
+      "rows": 6960,
+      "components": 3,
+      "finite": true,
+      "mixture_mean_weights_width_and_probabilities": "PASS"
+    },
+    {
+      "family": "PhaseNet",
+      "population": "grid_replay_v4",
+      "rows": 24040,
+      "components": 3,
+      "finite": true,
+      "mixture_mean_weights_width_and_probabilities": "PASS"
+    },
+    {
+      "family": "EQT",
+      "population": "fixed_query_replay_v4",
+      "rows": 6960,
+      "components": 3,
+      "finite": true,
+      "mixture_mean_weights_width_and_probabilities": "PASS"
+    },
+    {
+      "family": "EQT",
+      "population": "grid_replay_v4",
+      "rows": 24040,
+      "components": 3,
+      "finite": true,
+      "mixture_mean_weights_width_and_probabilities": "PASS"
+    },
+    {
+      "family": "TEAM",
+      "population": "fixed_query_replay_v4",
+      "rows": 6960,
+      "components": 3,
+      "finite": true,
+      "mixture_mean_weights_width_and_probabilities": "PASS"
+    },
+    {
+      "family": "TEAM",
+      "population": "grid_replay_v4",
+      "rows": 24040,
+      "components": 3,
+      "finite": true,
+      "mixture_mean_weights_width_and_probabilities": "PASS"
+    }
+  ],
+  "resources": [
+    {
+      "family": "DiTing",
+      "epoch": 12,
+      "events": 6,
+      "frame_count": 240,
+      "station_targets": 6960,
+      "noninput_targets": 4882,
+      "observed_input_targets": 2078,
+      "grid_targets": 76840,
+      "grid_supported_targets": 24040,
+      "total_worker_seconds": 512.7113555171527,
+      "cold_worker_seconds": 86.88313897233456,
+      "peak_allocated_bytes": 5288848384,
+      "peak_allocated_GiB": 4.925623893737793,
+      "complete_stage_bytes": 9410142,
+      "numeric_map_service_p50_seconds": 0.5827799024991691,
+      "numeric_map_service_p95_seconds": 4.498968246765434,
+      "source": "stages/replay_pilot/0/worker.json; latency_frames.csv; full stage files"
+    },
+    {
+      "family": "PhaseNet",
+      "epoch": 12,
+      "events": 6,
+      "frame_count": 240,
+      "station_targets": 6960,
+      "noninput_targets": 4882,
+      "observed_input_targets": 2078,
+      "grid_targets": 76840,
+      "grid_supported_targets": 24040,
+      "total_worker_seconds": 195.41116356709972,
+      "cold_worker_seconds": 36.796556630171835,
+      "peak_allocated_bytes": 186053632,
+      "peak_allocated_GiB": 0.17327594757080078,
+      "complete_stage_bytes": 9420356,
+      "numeric_map_service_p50_seconds": 0.24157900689169765,
+      "numeric_map_service_p95_seconds": 1.2732184803346172,
+      "source": "stages/replay_pilot/1/worker.json; latency_frames.csv; full stage files"
+    },
+    {
+      "family": "EQT",
+      "epoch": 10,
+      "events": 6,
+      "frame_count": 240,
+      "station_targets": 6960,
+      "noninput_targets": 4882,
+      "observed_input_targets": 2078,
+      "grid_targets": 76840,
+      "grid_supported_targets": 24040,
+      "total_worker_seconds": 236.40211801137775,
+      "cold_worker_seconds": 37.09347623027861,
+      "peak_allocated_bytes": 192583680,
+      "peak_allocated_GiB": 0.17935752868652344,
+      "complete_stage_bytes": 9391786,
+      "numeric_map_service_p50_seconds": 0.3059581317938864,
+      "numeric_map_service_p95_seconds": 1.7642222242895513,
+      "source": "stages/replay_pilot/2/worker.json; latency_frames.csv; full stage files"
+    },
+    {
+      "family": "TEAM",
+      "epoch": 11,
+      "events": 6,
+      "frame_count": 240,
+      "station_targets": 6960,
+      "noninput_targets": 4882,
+      "observed_input_targets": 2078,
+      "grid_targets": 76840,
+      "grid_supported_targets": 24040,
+      "total_worker_seconds": 199.49718664772809,
+      "cold_worker_seconds": 19.575378004927188,
+      "peak_allocated_bytes": 224385536,
+      "peak_allocated_GiB": 0.20897531509399414,
+      "complete_stage_bytes": 9392397,
+      "numeric_map_service_p50_seconds": 0.273333880584687,
+      "numeric_map_service_p95_seconds": 1.4998969103209672,
+      "source": "stages/replay_pilot/3/worker.json; latency_frames.csv; full stage files"
+    }
+  ],
+  "support": [
+    {
+      "family": "DiTing",
+      "population": "station",
+      "status": "supported",
+      "targets": 6960
+    },
+    {
+      "family": "DiTing",
+      "population": "grid",
+      "status": "unsupported_grid_metadata",
+      "targets": 52800
+    },
+    {
+      "family": "DiTing",
+      "population": "grid",
+      "status": "supported",
+      "targets": 24040
+    },
+    {
+      "family": "PhaseNet",
+      "population": "station",
+      "status": "supported",
+      "targets": 6960
+    },
+    {
+      "family": "PhaseNet",
+      "population": "grid",
+      "status": "unsupported_grid_metadata",
+      "targets": 52800
+    },
+    {
+      "family": "PhaseNet",
+      "population": "grid",
+      "status": "supported",
+      "targets": 24040
+    },
+    {
+      "family": "EQT",
+      "population": "station",
+      "status": "supported",
+      "targets": 6960
+    },
+    {
+      "family": "EQT",
+      "population": "grid",
+      "status": "unsupported_grid_metadata",
+      "targets": 52800
+    },
+    {
+      "family": "EQT",
+      "population": "grid",
+      "status": "supported",
+      "targets": 24040
+    },
+    {
+      "family": "TEAM",
+      "population": "station",
+      "status": "supported",
+      "targets": 6960
+    },
+    {
+      "family": "TEAM",
+      "population": "grid",
+      "status": "unsupported_grid_metadata",
+      "targets": 52800
+    },
+    {
+      "family": "TEAM",
+      "population": "grid",
+      "status": "supported",
+      "targets": 24040
+    }
+  ],
+  "resource_caveats": [
+    "One worker per family, six metadata-selected events, both geometries, 240 frames. These are pilot resource observations, not formal repeated warm latency benchmarks.",
+    "peak_device_allocated_bytes is PyTorch allocated memory, not total device or host RAM. worker time includes cold loading and full pilot work; no render time or queue wait.",
+    "Do not extrapolate a full-run completion time or compare hardware speed without the dedicated latency stage."
+  ],
+  "scientific_scope": "No new model selection, accuracy ranking, calibration tuning, retraining, or held-out test access. Grid has no ground truth; unsupported heights remain NA.",
+  "next_step": {
+    "manual_stages": [
+      "replay_stations",
+      "replay_grid --geometry normal",
+      "latency"
+    ],
+    "preserve_existing_run": true,
+    "change_frozen_block_partition": false,
+    "concurrency_proposal": "6 station tasks + 6 normal-grid tasks + up to 4 latency tasks: at most 16 requested one-node/one-DCU workers across these arrays.",
+    "resources": "Keep existing per-worker memory/time/GRES; no host/device memory reduction justified by this package alone."
+  },
+  "hpc_status": "Downloaded smoke/pilot complete. Packaged status snapshot lists the new full stages NOT_SUBMITTED; this review submits none and does not query their subsequent live state.",
+  "verification": "Actual sealed artifacts and CSV distributions checked; no production model reexecution or new scheduler submission."
+}

@@ -1,0 +1,13 @@
+family,population,status,targets
+DiTing,station,supported,6960
+DiTing,grid,unsupported_grid_metadata,52800
+DiTing,grid,supported,24040
+PhaseNet,station,supported,6960
+PhaseNet,grid,unsupported_grid_metadata,52800
+PhaseNet,grid,supported,24040
+EQT,station,supported,6960
+EQT,grid,unsupported_grid_metadata,52800
+EQT,grid,supported,24040
+TEAM,station,supported,6960
+TEAM,grid,unsupported_grid_metadata,52800
+TEAM,grid,supported,24040

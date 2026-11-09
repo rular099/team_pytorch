@@ -1,0 +1,26 @@
+{
+  "task_id": "20261109-fe01-v4-pilot-evidence-review",
+  "actual_review_exit_code": 0,
+  "review_script_sha256": "ec16c0c0d30e5e10692e868d223ead2ff23fae8702fd4954a7132271fd9805f8",
+  "python": "3.13.17 | packaged by Anaconda, Inc. | (main, Oct 23 2026, 00:29:53) [GCC 14.3.0]",
+  "versions": {
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "scipy": "1.18.1"
+  },
+  "checks": {
+    "archive_sha": "PASS",
+    "plan_contract_execution": "PASS",
+    "complete_stage_seals": 8,
+    "sealed_file_hashes": 333,
+    "team_operational_commit_and_backend_restore": "PASS",
+    "station_and_grid_identity_pairing": "PASS",
+    "full_mdn_and_tail_probability_consistency": "PASS",
+    "compile": "PASS",
+    "query_coordinates_and_complete_time_domain": "PASS",
+    "final_pga_constant_across_frames": "PASS"
+  },
+  "production_model_reexecution": "NOT_RUN",
+  "new_scheduler_submission": "NOT_SUBMITTED",
+  "reproduce": "python3 -B reports/fe01_v4_pilot_results_20261109/review_bundle.py --input-dir <extracted-package-root> --archive <downloaded-tar.gz> --output-dir <new-review-directory>"
+}

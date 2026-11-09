@@ -6,6 +6,10 @@
 当前运营实施版本c66db619e99a；超算主程序仍50672e1。Job33156666_3已提供TEAM模型门PASS日志，
 尚待原status完整核验四组smoke的seal；通过后手动进入pilot，保留已有成功项。
 
+**最新实物核验（2026-11-09）：** 已下载并核验四smoke/四pilot共8份seal、333个封存文件，
+pilot通过。当前进入手动全量station/normal-grid/latency阶段，见[复核证据](../../reports/fe01_v4_pilot_results_20261109/verification.json)。
+继续既有50672e1主程序、c66db61运营包及原run，不因本次报告提交更新执行身份。
+
 **同日后续更新：** 已收到Job33116200_3日志，TEAM同输入重复前向失败，future门尚未执行。
 当前修复及后续Job33156666_3的PASS证据见[TEAM smoke操作说明](FE01_V4_TEAM_SMOKE_FIX.md)；
 6e2ddb5保留为历史来源，运营包仍用c66db619e99a，无需为结果文档更新重新封包。
@@ -256,3 +260,18 @@ feature最大绝对差1.52587890625e-5，阈值1e-5；尚无完整MDN差值或�
 stdout最终出现模型门PASS；该标记先于封存，故仍需原status确认四组smoke均`COMPLETE_SEAL_VERIFIED`后再手动pilot。
 逐请求/行号/日志SHA及证据边界见[日志核验JSON](../../reports/fe01_v4_team_smoke_repeatability_20261108/job_33156666_log_review.json)。
 本轮只更新证据与文档；继续原50672e1主程序、c66db61运营包和修复run，不重训/重提或重新prepare。
+
+## 23. 四组smoke与pilot实物核验完成（2026-11-09）
+
+用户下载fe01_v4_pilot_review_20261109T113132.tar.gz，SHA40764a1cb0cdb34e2d5e080c621da78a7d223b9c5a6512288f976e1b62307395。
+8份smoke/pilot seal及333个封存文件通过；pilot对四份smoke父seal SHA逐一匹配，TEAM运营源码确为c66db61，20次审计设置恢复通过。
+每模型为validation/seed42的共同6个元数据预选事件、normal/random、逐秒1–20、240帧，
+6960条台站请求（4882非输入、2078输入）及76840条网格请求；网格24040支持、52800缺高程支撑留NA。
+模型epoch固定12/12/10/11，完整MDN、概率、输出人口和物理输入配对核验通过；不以pilot比较准确率或调参。
+
+worker总耗时分钟DiTing8.55/PhaseNet3.26/EQT3.94/TEAM3.32，PyTorch峰值allocated GiB分别4.93/.17/.18/.21；
+这不是正式重复warm latency或总设备/主机内存。原32事件分块、per-worker资源和既有run保持。
+下一步手动提交replay_stations、normal replay_grid、latency；可分别cap6/6/4，三数组合计最多16个worker。
+CPU inventory/covariates原文件未随包，现有status报告完整通过，记录的父SHA彼此一致；不宣称本地重验未提供原件。
+当前包的status中全量阶段尚未提交，本轮没有sbatch/srun/模型重执行；后续实时状态仍由原status核验。
+证据与重现脚本见reports/fe01_v4_pilot_results_20261109/，无需再次传递或重建HPC程序包。

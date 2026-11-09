@@ -860,3 +860,24 @@ stdout第117行出现TEAM_MODEL_SMOKE_PASS_WITH_OPERATIONAL_REVISION；stderr仅
 当前下一步按原status确认四组smoke及covariates完整通过，再由用户手动提交replay_pilot。
 主程序50672e1、运营包c66db61、原修复run/env均保留；本轮只保存证据与更新文档，不重新封包/提交任务/运行模型。
 逐请求/行号/日志SHA见reports/fe01_v4_team_smoke_repeatability_20261108/job_33156666_log_review.json。
+
+## 2026-11-09 四smoke/四pilot结果包实物核验
+
+仓库rular099/team_pytorch，review分支handoff/fe01-on-20261108，base17ba43eea495e8df6f1e6c6825f6b99f41f67f69。
+用户下载runs/fe01_v4_pilot_review_20261109T113132.tar.gz（SHA40764a1cb0cdb34e2d5e080c621da78a7d223b9c5a6512288f976e1b62307395）。
+解包至独立artifacts目录保留原包；8份smoke/pilot seal及333个payload文件全部核SHA/identity，
+pilot的四份smoke父seal SHA通过；原CPU inventory/covariates未随包，status报告其完成，父SHA记录一致，不声称本地重验其原件。
+TEAM实际seal绑定c66db61，7个运营文件与该commit核对通过，20个严格audit及backend恢复记录完整。
+
+实际pilot采用selection.freeze在CPU物理元数据上预先固定的6事件（不是plan中显式标PROVISIONAL的6个旧候选），
+四模型选择/物理输入/查询人口完全配对：validation seed42、两geometry、逐秒1–20、240帧；
+每模型6960台站请求（4882非输入、2078输入），76840网格请求中24040可预测、52800缺高程支持显式NA。
+selected epoch依次DiTing12/PhaseNet12/EQT10/TEAM11，完整MDN、均值/权重/区间宽度/尾概率一致性通过。
+未以pilot调参/选择checkpoint/报告准确率排名，未读取train/test或重跑生产模型。
+
+worker wall分钟依次8.55/3.26/3.94/3.32，PyTorch peak allocated GiB 4.93/.17/.18/.21；
+单worker/每模型只加载一次。数值来自worker/latency记录，不是warm重复benchmark或整块数据的完成时间预测。
+下一步原run/env手动提交replay_stations 328项、normal grid164项、latency4项；建议array cap6/6/4，合计最多16worker，
+保持原block32/per-worker内存/时限/GRES。现有包status显示这些全量阶段NOT_SUBMITTED，本review未提交任何任务。
+报告/CSV/只读复现脚本在reports/fe01_v4_pilot_results_20261109/，原始数据与private plan留本地不入Git；
+原50672e1主程序、c66db61运营包、旧seal与成功结果均不变，无需因报告同步另传执行包。

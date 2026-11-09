@@ -1,5 +1,11 @@
 # FE01 V4 TEAM model_smoke 单项受控重试（2026-11-02）
 
+**2026-11-09 封存实物已确认：** 用户下载包中四组smoke与四组pilot的8份seal、333个封存文件均通过核验。
+TEAM的seal已绑定c66db61运营身份，20个严格确定性审计成功且恢复backend；原其他三组smoke与全部pilot来源保留。
+当前不再等待TEAM成功证据，下一步手动进入全量station、normal-grid和latency。
+详细人口、资源与原件可见性边界见[本批报告](../../reports/fe01_v4_pilot_results_20261109/verification.json)。
+本轮仅更新报告；原50672e1主程序、c66db61运营包和修复run/env继续使用，不为文档更新重新封包或重跑。
+
 **2026-11-08 后续真实运行：** Job33156666_3的日志已出现`TEAM_MODEL_SMOKE_PASS_WITH_OPERATIONAL_REVISION`。
 TEAM ep11/seed42在两个validation smoke事件、normal/random及1/3/5/10/20秒共20个请求上，
 严格deterministic algorithms启用、warn_only关闭；同输入feature及完整MDN检查全部通过。

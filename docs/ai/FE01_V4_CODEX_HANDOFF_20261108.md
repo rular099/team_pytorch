@@ -1,5 +1,11 @@
 # FE01 ON V4：跨服务器 Codex 接手文档（2026-11-08）
 
+**2026-11-09 当前进度：** 四组smoke/四组pilot完整下载核验通过（8份seal/333个封存文件），
+详见[复核报告](../../reports/fe01_v4_pilot_results_20261109/verification.json)。
+保持原50672e1主程序/c66db61运营包/修复run；下一步按本文第9节手动提交全量station、normal-grid和latency。
+资源可用时三数组并发分别cap6/6/4，总计最多16个单节点单DCU worker；不改冻结32事件分块或per-worker资源。
+本次是证据/文档提交，不是新的HPC release，不重新prepare，不重跑已完成门。以下保留此前历史快照。
+
 **最新后续：** Job33156666_3已提供TEAM模型门PASS日志，20个重复检查与48条打印future特征检查均通过。
 实际运营包仍是c66db619e99a，主程序仍50672e1；本次结果文档提交不替代这两个执行身份，也不要求重新封包。
 下一步原status核验四组smoke完整seal，再手动pilot。当前事实见[TEAM说明](FE01_V4_TEAM_SMOKE_FIX.md)及
