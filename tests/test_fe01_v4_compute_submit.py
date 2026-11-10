@@ -146,6 +146,7 @@ def pool_fixture(tmp_path,monkeypatch,count=328):
     original=copy.deepcopy(plan)
     monkeypatch.setattr(ops,'prerequisites',lambda *args:None)
     monkeypatch.setenv('ON_EVAL_GRES','dcu:1')
+    monkeypatch.setenv('ON_EVAL_RELEASE_ROOT','/original/frozen release')
     calls=[]
     def run(command,**kwargs):
         calls.append(command)
@@ -160,6 +161,7 @@ def test_submit_328_logical_tasks_as_only_six_scheduler_slots(tmp_path,monkeypat
     revision={'commit':'external','revision_sha256':'digest'}
     assert compute_control.submit_pool(session,plan,'replay_stations',6,out,revision)=='777'
     assert len(calls)==1 and '--array=0-5%6' in calls[0] and '--gres=dcu:1' in calls[0]
+    assert '--chdir=/original/frozen release' in calls[0]
     record=json.loads(next((session/'jobs').glob('*.json')).read_text())
     assert record['indices']==list(range(328)) and len(record['worker_task_map'])==6
     assert record['stage']=='replay_stations' and plan==original

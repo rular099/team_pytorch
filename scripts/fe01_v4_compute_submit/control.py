@@ -152,7 +152,7 @@ def submit_pool(session, plan, stage, workers, out, identity):
                     purpose='Original tasks unchanged; each scheduler slot executes a list of original logical tasks in fresh Python processes')
     write(out / 'pool_manifest.json', manifest)
     write(out / 'pool_manifest.pin.json', dict(sha256=digest(out / 'pool_manifest.json')))
-    command = ['sbatch', '--parsable', '--export=ALL', '--chdir=' + str(ROOT), '--nodes=1', '--ntasks=1',
+    command = ['sbatch', '--parsable', '--export=ALL', '--chdir=' + os.environ['ON_EVAL_RELEASE_ROOT'], '--nodes=1', '--ntasks=1',
                '--job-name=onv4_pool_' + stage, '--array=0-' + str(len(mapping)-1) + '%' + str(len(mapping)),
                '--cpus-per-task=' + os.environ.get('ON_EVAL_CPUS', '4'), '--mem=' + os.environ.get('ON_EVAL_MEM', '64G'),
                '--time=' + os.environ.get('ON_EVAL_TIME', '24:00:00'),

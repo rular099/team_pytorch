@@ -36,7 +36,8 @@
     "Actual scheduler array slot is preserved; logical index is passed explicitly, with mapping-aware job receipts/status.",
     "Successful seals are verified and skipped; an active pool blocks another pool for that stage; UNKNOWN or unresolved accepted submissions fail closed.",
     "Partial logical-task failures preserve successes, continue remaining assigned tasks, and cause a nonzero pool worker exit; retries select only incomplete tasks.",
-    "Raw sbatch stdout/stderr and available scontrol config are saved in the compute control evidence directory."
+    "Raw sbatch stdout/stderr and available scontrol config are saved in the compute control evidence directory.",
+    "Pool sbatch uses the original ON_EVAL_RELEASE_ROOT working directory, preserving the known private-env relative-path context."
   ],
   "inferences": [
     "Array size or submitted-job policy limits are plausible given rejection of large arrays and acceptance of four latency tasks; the precise original cause is unconfirmed."
@@ -54,7 +55,7 @@
   "verification": {
     "command": "PYTHONPATH=/tmp/fe01_on_handoff_test_deps_20261108 PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q -p no:cacheprovider tests/test_fe01_v4_compute_submit.py tests/test_fe01_on_runtime.py",
     "exit_code": 0,
-    "stdout_summary": "39 passed, 2 warnings in 5.03s",
+    "stdout_summary": "39 passed, 2 warnings in 5.15s",
     "test_scope": "Fake scheduler/synthetic mappings and real shell entrypoints; no real cluster or model execution.",
     "compile_and_python39_syntax": {
       "status": "PASS",

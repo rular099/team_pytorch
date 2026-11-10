@@ -6,4 +6,4 @@ tests/test_fe01_on_runtime.py::test_streamed_frame_tables_keep_schema_for_small_
     return pd.read_csv(path, float_precision='round_trip',
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-39 passed, 2 warnings in 5.03s
+39 passed, 2 warnings in 5.15s
