@@ -1,0 +1,9 @@
+.......................................                                  [100%]
+=============================== warnings summary ===============================
+tests/test_fe01_on_runtime.py::test_prepare_with_fake_scheduler_is_readonly_toward_sources
+tests/test_fe01_on_runtime.py::test_streamed_frame_tables_keep_schema_for_small_and_supported_events
+  /tmp/team_pytorch_fe01_on_handoff_20261108/fe01_a01_compare/io.py:44: Pandas4Warning: The 'float_precision' argument is deprecated. Use the default float precision instead.
+    return pd.read_csv(path, float_precision='round_trip',
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+39 passed, 2 warnings in 5.03s

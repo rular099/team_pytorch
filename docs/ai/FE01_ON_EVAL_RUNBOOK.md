@@ -1,5 +1,69 @@
 # FE01 ON V4：本地交付与超算操作手册
 
+## 2026-11-10 当前入口：登录节点只提交，所有 Python 在计算节点
+
+用户明确登录节点只能提交任务。旧`submit_stage.sh`、`status.sh`、`prepare`入口会在登录节点
+运行Python并遍历seal/散列文件；从本更新起不再直接在登录节点调用这些入口。
+本页旧流程是历史参考，当前采用独立`scripts/fe01_v4_compute_submit/`小包，原50672e1程序不改。
+
+用户回报station/grid的sbatch返回1，原入口capture_output却未显示stderr，因此确切拒绝原因尚未取得。
+328项/164项即使写`%6`仍是大数组；可能触发数组/提交任务数限制，不能把可能原因当成已查明的集群配置。
+latency已由用户提交Job33441392，本次默认保留，不重复提交或取消。
+
+新入口在登录节点只做shell路径检查/日志目录创建和一次sbatch，不source私有env，不运行Python、conda或散列。
+提交的是短时CPU控制作业，默认4CPU/8G/4小时；所有source私有环境、依赖导入、plan/seal/散列校验、
+状态筛选和后续sbatch调度都在分配的计算节点srun step中执行。
+CPU控制作业需集群允许在计算节点调用sbatch；若不允许，真实stderr保留并报失败，不做隐藏重试。
+
+将本轮独立小包解压到原项目根目录，使用本轮交付给出的实际`FIX`目录：
+
+```bash
+bash "$FIX/scripts/fe01_v4_compute_submit/submit.sh"
+```
+
+无参数仅显式请求`replay_stations`和`replay_grid_normal`两个已有阶段，每阶段默认最多4个DCU worker。
+每个Slurm worker顺序执行若干原始任务；每个原32事件任务均在全新Python进程中调用同一原`stages.execute`
+bytecode，模型/采样/输入/阈值/输出路径不变。原逻辑任务仍为328/164项，Slurm数组最多为`0-3%4`，不是改小验证人口。
+原有per-worker CPU/内存/时限/GRES沿用私有env；新CPU控制作业的资源是单独作用域。
+连同原latency最多4项，默认至多12个DCU worker，另有一个短时CPU控制作业。
+可显式传`--workers 1`至`--workers 6`；控制器读取可见的MaxArraySize/max_array_tasks进一步压低数组大小。
+
+成功seal先核验并跳过；任一该阶段旧worker仍在跑则不再新增该阶段pool，保留总并发上限。
+UNKNOWN/身份不符/未完成提交回执一律停止该阶段重提；不会根据父job状态或目录非空认成功。
+单个逻辑任务失败会保留其attempt，worker继续处理其余已分配任务，最终以非零退出报告失败；
+超时/失败重提仍用同一新入口，只补未完成逻辑任务。不要改旧seal、plan或环境路径绕过门。
+
+原Slurm array slot保持不变，不伪造SLURM_ARRAY_TASK_ID。slot到原逻辑编号的映射、独立运营commit/SHA、
+原任务定义指纹写入每个结果的`operational_submission.json`并纳入新seal；下游原父seal门继续有效。
+原status无法解释pool中的slot/逻辑编号对应关系，当前状态也通过计算节点查询：
+
+```bash
+bash "$FIX/scripts/fe01_v4_compute_submit/status.sh"
+```
+
+该命令只在登录节点提交CPU状态作业，不提交推理任务。其统计是逻辑任务数；pool中RUNNING/PENDING表示
+已分配给对应worker，不能把328个逻辑任务都算成同时运行的GPU任务。
+后续单独手动推进阶段可用`submit.sh --stage analyze`、`--stage render_normal`或`--stage pack`，
+均先在计算节点执行原完整前置门，不自动启动下游阶段。latency只有显式`--stage latency`才会被请求。
+
+路径均相对现有run `outputs/fe01_on_eval_v4/on_v4_20261025_inventory_fix/`：
+
+- CPU日志：`operational_submit/logs/control_JOBID.out/.err`。
+- 控制stdout打印`CONTROL_EVIDENCE=.../operational_submit/control_JOBID`；含scheduler_config、状态、
+  pool_manifest及pin、sbatch intent/result原始stdout/stderr、summary或status.json。
+- pool日志：`slurm/replay_stations_pool_ARRAYJOBID_SLOT.out/.err`或`replay_grid_normal_pool_...`。
+- 成功结果仍在`stages/replay_stations/原逻辑编号/`及`stages/replay_grid_normal/原逻辑编号/`。
+- pool stdout打印每个`BEGIN/END_LOGICAL_TASK`及精确`POOL_SUMMARY`路径，部分成功不回滚。
+
+如新CPU控制作业失败，先传回其out/err及CONTROL_EVIDENCE目录中的小JSON；无需再次搬权重/波形。
+`FE01_V4_PROJECT_ROOT/ENV_FILE/RUN_ID`可显式指定原项目/env/run；默认从当前项目目录及既有修复env解析。
+若CPU分区/账户需指定，用shell环境`FE01_V4_CONTROL_PARTITION/ACCOUNT/GRES/MEM/TIME`；不要在登录节点source私有env取值。
+本地fake-scheduler验证不代表新调度器已经在超算执行通过。新包只改变运营入口，不替换原主程序、TEAM包或已有成功输出。
+
+---
+
+以下保留首次交付的历史流程；其登录节点Python命令已由上面的计算节点入口替代。
+
 任务 `20261021-fe01-on-integrated-warning-map-v4`。实施在独立工作区
 `team_pytorch_fe01_on_eval`、分支 `exp/fe01-on-warning-map-evaluation`；基点
 `29ffb20ba0effc0c345a0329ba3f8c658dc8cef0`。本轮正式超算状态 **NOT_SUBMITTED**。

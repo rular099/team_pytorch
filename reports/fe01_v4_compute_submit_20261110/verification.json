@@ -1,0 +1,122 @@
+{
+  "task_id": "20261110-fe01-v4-compute-only-dispatch",
+  "repository": "rular099/team_pytorch",
+  "branch": "handoff/fe01-on-20261108",
+  "base_commit": "9968d7f25524f0e095b07291aae2848c7493e6ff",
+  "frozen_main_commit": "50672e131d876a604432b283162d5b0189d40cf0",
+  "team_smoke_revision": "c66db619e99a60751ba02d24931d4570ead464a3",
+  "user_supplied_evidence": {
+    "replay_stations": {
+      "logical_tasks": 328,
+      "array_concurrency": 6,
+      "sbatch_returncode": 1
+    },
+    "replay_grid_normal": {
+      "logical_tasks": 164,
+      "array_concurrency": 6,
+      "sbatch_returncode": 1
+    },
+    "latency": {
+      "submission": "SUBMITTED",
+      "job_id": "33441392",
+      "tasks": 4,
+      "completion": "not provided"
+    },
+    "missing": "Captured sbatch stdout/stderr were not printed in the supplied original traceback; no confirmed site limit or rejection reason.",
+    "login_policy": "Login nodes only submit jobs. All Python, hashing, status/seal traversal and scientific computation must run in compute allocations."
+  },
+  "verified_code_facts": [
+    "The old dispatch shell runs fe01_a01_compare.cli on login; submit/status traverse source/plan/seal hashes there.",
+    "The original sbatch call captures stdout/stderr but CalledProcessError output omits the captured stderr.",
+    "The replacement login shell does not source private env or invoke Python/conda/hash tools; it submits one CPU control job.",
+    "All private-env initialization, imports, plan/seal hashing and task-state selection are inside the allocated control srun step.",
+    "Default control requests only replay_stations and replay_grid_normal; latency is only an explicit opt-in.",
+    "Default per-stage scheduler pools have at most four slots; original 328/164 logical tasks and 32-event definitions remain unchanged.",
+    "Each logical task runs in a fresh Python process through the identical original execute bytecode, with a private attempt callback solely adding sealed operational identity/mapping.",
+    "Actual scheduler array slot is preserved; logical index is passed explicitly, with mapping-aware job receipts/status.",
+    "Successful seals are verified and skipped; an active pool blocks another pool for that stage; UNKNOWN or unresolved accepted submissions fail closed.",
+    "Partial logical-task failures preserve successes, continue remaining assigned tasks, and cause a nonzero pool worker exit; retries select only incomplete tasks.",
+    "Raw sbatch stdout/stderr and available scontrol config are saved in the compute control evidence directory."
+  ],
+  "inferences": [
+    "Array size or submitted-job policy limits are plausible given rejection of large arrays and acceptance of four latency tasks; the precise original cause is unconfirmed."
+  ],
+  "references": [
+    {
+      "url": "https://slurm.schedmd.com/job_array.html",
+      "claim": "% limits simultaneously running array tasks; array tasks still count for job-related limits; MaxArraySize limits index values."
+    },
+    {
+      "url": "https://slurm.schedmd.com/sbatch.html",
+      "claim": "sbatch submits batch scripts to run on allocated nodes and returns success/error; subprocess stderr is needed to identify a site rejection."
+    }
+  ],
+  "verification": {
+    "command": "PYTHONPATH=/tmp/fe01_on_handoff_test_deps_20261108 PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q -p no:cacheprovider tests/test_fe01_v4_compute_submit.py tests/test_fe01_on_runtime.py",
+    "exit_code": 0,
+    "stdout_summary": "39 passed, 2 warnings in 5.03s",
+    "test_scope": "Fake scheduler/synthetic mappings and real shell entrypoints; no real cluster or model execution.",
+    "compile_and_python39_syntax": {
+      "status": "PASS",
+      "files": [
+        "scripts/fe01_v4_compute_submit/build_bundle.py",
+        "scripts/fe01_v4_compute_submit/control.py",
+        "scripts/fe01_v4_compute_submit/runtime.py",
+        "scripts/fe01_v4_compute_submit/support.py",
+        "tests/test_fe01_v4_compute_submit.py"
+      ]
+    },
+    "shell_syntax": {
+      "status": "PASS",
+      "files": [
+        "scripts/fe01_v4_compute_submit/control.sbatch",
+        "scripts/fe01_v4_compute_submit/control_step.sh",
+        "scripts/fe01_v4_compute_submit/pool.sbatch",
+        "scripts/fe01_v4_compute_submit/pool_step.sh",
+        "scripts/fe01_v4_compute_submit/status.sh",
+        "scripts/fe01_v4_compute_submit/submit.sh"
+      ]
+    },
+    "frozen_execution_sha256": "b9dd0368adc7041bb0c1e36a6899d49014ac9545ae7f44850274099bab6dc15c",
+    "frozen_core_local_checked": 96,
+    "dtbench_not_locally_verified": 65,
+    "torch_free_import": "PASS"
+  },
+  "operational_resources": {
+    "cpu_control_default": {
+      "cpus": 4,
+      "memory": "8G",
+      "time": "04:00:00",
+      "dcu_requested": false
+    },
+    "pool_default": {
+      "workers_per_stage": 4,
+      "requested_stages": 2,
+      "maximum_new_dcu_workers": 8
+    },
+    "existing_latency_workers_up_to": 4,
+    "inference_worker_resources": "Retain existing private env CPU/memory/time/GRES; each pool slot executes multiple unchanged logical tasks.",
+    "stage_timeout": "Successful logical-task seals survive a pool timeout; a fresh control submission only schedules remaining tasks."
+  },
+  "compatibility": {
+    "original_execution_source_changed": false,
+    "rt55_loading_or_inference_changed": false,
+    "checkpoint_or_scientific_config_changed": false,
+    "old_seals_or_success_outputs_changed": false
+  },
+  "hpc_status": {
+    "new_control_or_pool_jobs": "NOT_SUBMITTED",
+    "latency": "User reports submitted job33441392; no cancel/retry by this work"
+  },
+  "remaining_risks": [
+    "Compute-node sbatch permissions and default CPU allocation policy require real cluster validation.",
+    "Original rejection stderr/site limits were not supplied.",
+    "New worker-pool duration is not a measured performance result; no completion-time guarantee.",
+    "The original login status/submit wrappers do not interpret worker-pool mappings; use the new compute status entry."
+  ],
+  "rollback": "Keep frozen main, TEAM fix, original run/plan/env/seals. New operational bundle has its own commit and marker; do not overwrite an old release or re-sign old files.",
+  "next_evidence": [
+    "CPU control out/err and CONTROL_EVIDENCE summary/scheduler config/intent/result JSON.",
+    "Then pool logs and compute-only status; no production model data/checkpoints need transferring for a submission failure."
+  ]
+}

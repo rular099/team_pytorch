@@ -1,5 +1,10 @@
 # FE01 ON V4：跨服务器 Codex 接手文档（2026-11-08）
 
+**2026-11-10 当前运营入口：** 用户明确登录节点只提交任务；先前直接调用旧submit/status会运行Python，当前改为
+[独立计算节点调度小包](FE01_ON_EVAL_RUNBOOK.md)。大数组station/grid被sbatch拒绝的原stderr尚缺，latency已提交33441392。
+新包默认仅请求station和normal-grid，用4个Slurm worker映射执行全部原逻辑任务；不重提latency。
+主程序50672e1/TEAM包c66db61/原run和成功项不变；映射与新运营来源另行seal，新入口真实超算结果待手动执行。
+
 **2026-11-09 当前进度：** 四组smoke/四组pilot完整下载核验通过（8份seal/333个封存文件），
 详见[复核报告](../../reports/fe01_v4_pilot_results_20261109/verification.json)。
 保持原50672e1主程序/c66db61运营包/修复run；下一步按本文第9节手动提交全量station、normal-grid和latency。

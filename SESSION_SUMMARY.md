@@ -881,3 +881,20 @@ worker wall分钟依次8.55/3.26/3.94/3.32，PyTorch peak allocated GiB 4.93/.17
 保持原block32/per-worker内存/时限/GRES。现有包status显示这些全量阶段NOT_SUBMITTED，本review未提交任何任务。
 报告/CSV/只读复现脚本在reports/fe01_v4_pilot_results_20261109/，原始数据与private plan留本地不入Git；
 原50672e1主程序、c66db61运营包、旧seal与成功结果均不变，无需因报告同步另传执行包。
+
+## 2026-11-10 sbatch失败与登录节点计算边界修复
+
+基点9968d7f25524f0e095b07291aae2848c7493e6ff，工作分支handoff/fe01-on-20261108，仓库rular099/team_pytorch。
+用户回报原replay_stations 328项、replay_grid_normal164项sbatch返回1；原capture_output隐藏真实stderr，确切集群拒绝原因未知。
+latency实际回报SUBMITTED job33441392 tasks4，仅提交证据，不代表完成。
+用户明确登录节点只提交，任何计算都在计算节点；旧submit/status确实会在登录节点执行Python和seal/散列遍历，先前推荐不合适。
+
+新增scripts/fe01_v4_compute_submit外部运营包，不改50672e1 execution tree：登录节点shell只提交CPU控制作业，
+私有env/source、conda/modules、Python、状态/散列/前置门和后续调度全部在分配的srun step内执行。
+每阶段默认4个Slurm slot，原逻辑任务仍328/164，各原32事件块在fresh Python进程运行同一stages.execute bytecode，
+仅私有attempt callback补映射/运营身份并seal，原model/sampler/readout/loss/export及参数结构不变。
+不伪造scheduler array ID，原stage/global task路径保留；新增mapping-aware状态查询避免把slot当global index。
+成功/在跑保留，UNKNOWN/未完成提交回执拒绝盲重提；单块失败保留attempt并处理其余任务，最后worker非零退出，重提只补缺项。
+默认只请求两批replay，latency33441392保留；真实sbatch stderr/stdout及scheduler config均落盘。
+原MaxArraySize/MaxSubmitJobs限制仍待实证，不能把pool本地验证当成集群提交成功。
+登录和计算边界、资源/失败取证/后续状态入口见docs/ai/FE01_ON_EVAL_RUNBOOK.md顶部；所有真实作业由用户手动触发。

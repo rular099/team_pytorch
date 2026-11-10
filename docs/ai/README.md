@@ -1,5 +1,9 @@
 # ChatGPT Project 与 Codex 协作约定
 
+**最新调度边界（2026-11-10）：** 用户要求登录节点只提交任务，所有Python/散列/seal与状态计算均在计算节点。
+当前使用[计算节点调度入口](FE01_ON_EVAL_RUNBOOK.md)，旧submit/status的登录节点Python用法已被替代。
+原主程序50672e1、TEAM smoke运营包c66db61及成功结果继续保留；latency Job33441392已提交，本次默认不重提。
+
 更新日期：2026-11-08（基础协作约定始于2026-09-02）
 
 **最新跨服务器接手入口（2026-11-08）：[FE01 ON V4 Codex交接](FE01_V4_CODEX_HANDOFF_20261108.md)。**
@@ -275,3 +279,13 @@ worker总耗时分钟DiTing8.55/PhaseNet3.26/EQT3.94/TEAM3.32，PyTorch峰值all
 CPU inventory/covariates原文件未随包，现有status报告完整通过，记录的父SHA彼此一致；不宣称本地重验未提供原件。
 当前包的status中全量阶段尚未提交，本轮没有sbatch/srun/模型重执行；后续实时状态仍由原status核验。
 证据与重现脚本见reports/fe01_v4_pilot_results_20261109/，无需再次传递或重建HPC程序包。
+
+## 24. 登录节点边界与小worker pool调度（2026-11-10）
+
+用户回报replay_stations 328项和normal grid164项sbatch失败，原入口未显示捕获的stderr；
+latency四项已提交Job33441392。不能仅凭非零返回断定MaxArraySize或账户限额。
+新增独立compute-submit小包：登录节点仅shell+一次sbatch，CPU计算节点核验原plan/前置seal/源码并做映射调度。
+每阶段默认4个Slurm slot顺序执行原逻辑任务，每个原32事件块使用新Python进程和同一原worker bytecode。
+输出/逻辑编号/科学协议不变，新映射和运营身份入seal；不改原SLURM_ARRAY_TASK_ID或旧锁/成功项。
+全成功/在跑跳过，UNKNOWN拒绝，原始sbatch stdout/stderr落盘；状态查询也作为CPU作业运行。
+当前入口/失败取证及局部并发定义见[运行手册顶部](FE01_ON_EVAL_RUNBOOK.md)。本轮不提交真实作业。
