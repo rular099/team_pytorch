@@ -1,9 +1,11 @@
 # ChatGPT Project 与 Codex 协作约定
 
-**最新提交证据（2026-11-11）：** CPU control33473739日志确认台站pool33474027（4worker/328逻辑任务）与
-normal-grid pool33474094（4worker/164逻辑任务）已提交，stderr仅Slurm route，无新提交错误。
-这是提交证据，尚缺worker进度/完成seal；继续原1cebcdc运营包、50672e1主程序及原run。
-详见[控制日志核验](../../reports/fe01_v4_compute_submit_20261110/control_33473739_log_review.json)。
+**最新回放日志证据（2026-11-11）：** 用户提供的`runs/slurm0001.zip`覆盖台站pool33474027全部328项、
+normal-grid pool33474094全部164项；每项恰有一次exit0，八个worker均打印最终汇总路径。
+stderr仅Slurm route、timm/pandas FutureWarning及其源码续行。latency33441392只有启动/身份日志，完成状态未知。
+详见[逐任务复核](../../reports/fe01_v4_full_replay_logs_20261111/verification.json)。当前证据为日志执行成功，
+尚未独立取得全量payload/seal或准确率指标。下一步沿用原1cebcdc包手动`submit.sh --stage analyze`，
+由计算节点先验证原全部前置seal；latency是pack前置，不阻塞analyze。不重跑回放或重新封包。
 
 **最新调度边界（2026-11-10）：** 用户要求登录节点只提交任务，所有Python/散列/seal与状态计算均在计算节点。
 当前使用[计算节点调度入口](FE01_ON_EVAL_RUNBOOK.md)，旧submit/status的登录节点Python用法已被替代。

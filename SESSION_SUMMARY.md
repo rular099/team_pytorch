@@ -908,3 +908,25 @@ stderr仅Slurm srun route，无Python traceback或新sbatch拒绝；代码打印
 当前证据为SUBMITTED_POOL，不是回放完成；没有这两批worker状态/日志/seal，也没有latency33441392新状态。
 下一步只读Slurm队列和pool日志，完整状态/seal遍历继续通过计算节点status入口；保持1cebcdc包和原50672e1程序/run。
 本轮仅保存证据/文档，不重跑测试/模型，不提交、取消或重复提交任何作业。
+
+## 2026-11-11 全量station/normal-grid日志覆盖核验
+
+仓库rular099/team_pytorch，review分支handoff/fe01-on-20261108，baseecb7dfba2b68b40cab36cb59f3af2820e3dd9438；
+同步目标分支exp/fe01-on-warning-map-evaluation。用户称slum0001.zip，实际文件为runs/slurm0001.zip，
+245803 bytes，SHA256 e4733a6f0733633d9045b03750d03cfcb67545185aa5047e3ffb6071d321e66c，ZIP CRC通过。
+24个成员为8个pool和4个latency的out/err；每份原始成员SHA、slot映射与checkpoint核验记录在
+reports/fe01_v4_full_replay_logs_20261111/verification.json，review_logs.py可用原ZIP和此前pilot原plan复现。
+
+station pool33474027四worker各82项，共328项；normal-grid pool33474094四worker各41项，共164项。
+BEGIN/END与原冻结plan的slot步进覆盖完全一致，每项仅一次且exit0；各项确认对应selected checkpoint
+DiTing12/PhaseNet12/EQT10/TEAM11，八worker最后均打印POOL_SUMMARY。这里统计的是逻辑任务，不是目标行/并发数。
+全部stderr行仅route、timm导入和pandas空/all-NA concat FutureWarning及源码续行；无需因这些警告补跑。
+当前证据级别ALL_LOGICAL_TASKS_EXIT_ZERO_IN_LOGS；未收到全量预测payload/seal，不能冒称本地COMPLETE_SEAL_VERIFIED或产生性能指标。
+预期协议仍为冻结plan的validation、seed42、ON、fixed_query_replay_v4及normal grid，实际逐行provenance仍待产物核验。
+
+latency33441392四份日志仅设备/启动/身份PASS，无明确完成标记；原benchmark本就无最终stdout标记，
+不能据短日志推断成功、失败或挂起。保留原latency，不盲目重提；pack之前必须经计算节点status/seal确认。
+下一步用户在原项目根目录执行既有v4_compute_submit_1cebcdc61285入口、传--stage analyze；
+control先在计算节点执行原replay_stations/crossing_truth/replay_grid_normal/covariates完整seal前置门，合格后才提交单项CPU分析。
+latency不是analyze前置；不必为其短日志阻塞分析，也不必先搬全量大产物回来。
+继续原1cebcdc调度包、50672e1主程序及原run；本轮仅日志解析/编译检查/证据文档，不修改执行源码、不重新封包、不实际提交HPC。

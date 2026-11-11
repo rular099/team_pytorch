@@ -2,9 +2,23 @@
 
 ## 2026-11-10 当前入口：登录节点只提交，所有 Python 在计算节点
 
-**2026-11-11实际回执：** control33473739已提交station pool33474027（4worker/328逻辑任务）及
-normal-grid pool33474094（4worker/164逻辑任务）；当前只确认提交，运行/完成仍待worker和seal证据。
-新运营包继续使用1cebcdc61285，无需为本次结果文档更新重新封包。
+**2026-11-11实际回放日志：** `runs/slurm0001.zip`中station pool33474027的328项与normal-grid
+pool33474094的164项全部记录exit0；八个worker均打印最终POOL_SUMMARY。stderr只有route及FutureWarning，
+没有缺项或失败退出；这仍是日志证据，尚未本地独立验证全量payload/seal。latency33441392的四份日志
+只有启动和checkpoint身份检查，不能由此判断完成、失败或卡住。见[复核记录](../../reports/fe01_v4_full_replay_logs_20261111/verification.json)。
+新运营包继续使用1cebcdc61285，无需为本次结果文档更新重新封包、重跑回放或重提latency。
+
+当前下一步：在超算原项目根目录手动提交CPU分析阶段，沿用已解压的包：
+
+```bash
+bash v4_compute_submit_1cebcdc61285/scripts/fe01_v4_compute_submit/submit.sh --stage analyze
+```
+
+登录节点仍只执行shell/sbatch。先运行CPU control（默认4CPU/8G/4小时），在计算节点验证原
+replay_stations、crossing_truth、replay_grid_normal、covariates的全部seal；通过才提交一个CPU分析任务，
+默认4CPU/64G/24小时，不申请DCU，实际CPU/内存/时限沿用私有env覆盖值。latency不在analyze前置中，pack前仍须验证。
+分析成功结果在原run的`stages/analyze/0/`；请传回`operational_submit/logs/control_JOBID.out/.err`
+和`slurm/analyze_pool_ARRAYJOBID_0.out/.err`。若前置检查失败，传control日志及其CONTROL_EVIDENCE小JSON，保留原结果。
 
 用户明确登录节点只能提交任务。旧`submit_stage.sh`、`status.sh`、`prepare`入口会在登录节点
 运行Python并遍历seal/散列文件；从本更新起不再直接在登录节点调用这些入口。
