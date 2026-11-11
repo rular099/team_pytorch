@@ -1,0 +1,71 @@
+{
+  "task_id": "20261111-fe01-v4-control-33473739-review",
+  "repository": "rular099/team_pytorch",
+  "review_branch": "handoff/fe01-on-20261108",
+  "review_base_commit": "1cebcdc61285fb99767509cb2e513bee07aefb05",
+  "review_date": "2026-11-11 Asia/Shanghai",
+  "expected_operational_package_commit": "1cebcdc61285fb99767509cb2e513bee07aefb05",
+  "operational_identity_readback": "Not printed; operational_identity.json/pool_manifest.json were not supplied.",
+  "source_logs": {
+    "runs/control_33473739.out": {
+      "sha256": "61b92f65a020e18de7f8aa956026546d5e352d9f945d48ebe01fb5ced0f8a45b",
+      "bytes": 325
+    },
+    "runs/control_33473739.err": {
+      "sha256": "57588973b579d4ec57b15ec40c359e4062716f37f6eb82b24e8a097c4ad7ddf6",
+      "bytes": 54
+    }
+  },
+  "control_job_id": "33473739",
+  "submitted_pools": [
+    {
+      "stage": "replay_stations",
+      "job_id": "33474027",
+      "workers": 4,
+      "logical_tasks": 328,
+      "stdout_line": 2
+    },
+    {
+      "stage": "replay_grid_normal",
+      "job_id": "33474094",
+      "workers": 4,
+      "logical_tasks": 164,
+      "stdout_line": 3
+    }
+  ],
+  "facts": [
+    "Control stdout reports both worker pools submitted; original submit_pool prints this only after sbatch returned an integer job ID and its job receipt was saved.",
+    "Each pool has four scheduler slots; the original 328/164 logical task lists are preserved.",
+    "stderr contains a Slurm srun route message with no Python traceback or sbatch rejection printed."
+  ],
+  "inferences": [
+    "The new compute-only path successfully invoked sbatch in this compute allocation for these two worker pools.",
+    "This does not determine the exact original large-array rejection reason or establish subsequent worker progress."
+  ],
+  "evidence_level": "SUBMITTED_POOL_FROM_STDOUT; no worker completion/seal evidence received",
+  "missing_evidence": [
+    "Current squeue/sacct state of both arrays.",
+    "Pool worker out/err and worker_summary.json.",
+    "Original logical task success seals and complete payload checks.",
+    "Control summary/intent/result JSON and exact operational identity readback."
+  ],
+  "latency": {
+    "job_id": "33441392",
+    "status": "Previously reported submitted by user; no new state in this batch; not resubmitted by the reviewed control defaults."
+  },
+  "next_paths": {
+    "station_logs": "slurm/replay_stations_pool_33474027_SLOT.out/.err (SLOT 0-3)",
+    "grid_logs": "slurm/replay_grid_normal_pool_33474094_SLOT.out/.err (SLOT 0-3)",
+    "control_evidence": "operational_submit/control_33473739/",
+    "station_results": "stages/replay_stations/LOGICAL_INDEX/ (0-327)",
+    "grid_results": "stages/replay_grid_normal/LOGICAL_INDEX/ (0-163)"
+  },
+  "verification": {
+    "log_parse": "PASS",
+    "known_stage_task_worker_counts": "PASS",
+    "execution_source_changes": "none",
+    "tests_rerun": "not run; evidence/documentation only",
+    "new_scheduler_submissions_by_review": "none"
+  },
+  "scientific_scope": "No model metrics, new model execution, training, checkpoint selection or held-out test access."
+}

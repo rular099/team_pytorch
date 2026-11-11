@@ -898,3 +898,13 @@ latency实际回报SUBMITTED job33441392 tasks4，仅提交证据，不代表完
 默认只请求两批replay，latency33441392保留；真实sbatch stderr/stdout及scheduler config均落盘。
 原MaxArraySize/MaxSubmitJobs限制仍待实证，不能把pool本地验证当成集群提交成功。
 登录和计算边界、资源/失败取证/后续状态入口见docs/ai/FE01_ON_EVAL_RUNBOOK.md顶部；所有真实作业由用户手动触发。
+
+## 2026-11-11 control33473739提交回执已核验
+
+仓库rular099/team_pytorch，review分支handoff/fe01-on-20261108，base1cebcdc61285fb99767509cb2e513bee07aefb05。
+用户提供runs/control_33473739.out/.err，SHA/行号已记录到reports/fe01_v4_compute_submit_20261110/control_33473739_log_review.json。
+stdout第2/3行分别确认station job33474027、4worker、328逻辑任务，以及normal-grid job33474094、4worker、164逻辑任务。
+stderr仅Slurm srun route，无Python traceback或新sbatch拒绝；代码打印提交行前已取得Slurm job ID并保存jobs回执。
+当前证据为SUBMITTED_POOL，不是回放完成；没有这两批worker状态/日志/seal，也没有latency33441392新状态。
+下一步只读Slurm队列和pool日志，完整状态/seal遍历继续通过计算节点status入口；保持1cebcdc包和原50672e1程序/run。
+本轮仅保存证据/文档，不重跑测试/模型，不提交、取消或重复提交任何作业。

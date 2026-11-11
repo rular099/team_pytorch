@@ -2,6 +2,10 @@
 
 ## 2026-11-10 当前入口：登录节点只提交，所有 Python 在计算节点
 
+**2026-11-11实际回执：** control33473739已提交station pool33474027（4worker/328逻辑任务）及
+normal-grid pool33474094（4worker/164逻辑任务）；当前只确认提交，运行/完成仍待worker和seal证据。
+新运营包继续使用1cebcdc61285，无需为本次结果文档更新重新封包。
+
 用户明确登录节点只能提交任务。旧`submit_stage.sh`、`status.sh`、`prepare`入口会在登录节点
 运行Python并遍历seal/散列文件；从本更新起不再直接在登录节点调用这些入口。
 本页旧流程是历史参考，当前采用独立`scripts/fe01_v4_compute_submit/`小包，原50672e1程序不改。

@@ -1,5 +1,10 @@
 # ChatGPT Project 与 Codex 协作约定
 
+**最新提交证据（2026-11-11）：** CPU control33473739日志确认台站pool33474027（4worker/328逻辑任务）与
+normal-grid pool33474094（4worker/164逻辑任务）已提交，stderr仅Slurm route，无新提交错误。
+这是提交证据，尚缺worker进度/完成seal；继续原1cebcdc运营包、50672e1主程序及原run。
+详见[控制日志核验](../../reports/fe01_v4_compute_submit_20261110/control_33473739_log_review.json)。
+
 **最新调度边界（2026-11-10）：** 用户要求登录节点只提交任务，所有Python/散列/seal与状态计算均在计算节点。
 当前使用[计算节点调度入口](FE01_ON_EVAL_RUNBOOK.md)，旧submit/status的登录节点Python用法已被替代。
 原主程序50672e1、TEAM smoke运营包c66db61及成功结果继续保留；latency Job33441392已提交，本次默认不重提。
@@ -289,3 +294,11 @@ latency四项已提交Job33441392。不能仅凭非零返回断定MaxArraySize�
 输出/逻辑编号/科学协议不变，新映射和运营身份入seal；不改原SLURM_ARRAY_TASK_ID或旧锁/成功项。
 全成功/在跑跳过，UNKNOWN拒绝，原始sbatch stdout/stderr落盘；状态查询也作为CPU作业运行。
 当前入口/失败取证及局部并发定义见[运行手册顶部](FE01_ON_EVAL_RUNBOOK.md)。本轮不提交真实作业。
+
+## 25. 计算节点控制作业已实际提交两个pool（2026-11-11）
+
+用户提供runs/control_33473739.out/.err，stdout明确SUBMITTED_POOL：
+replay_stations job33474027 workers4 logical_tasks328，replay_grid_normal job33474094 workers4 logical_tasks164。
+源码打印该行在真实sbatch返回job ID且作业回执落盘之后；本批stderr无traceback/提交拒绝。
+当前不再把新入口统称NOT_SUBMITTED，但不能将两个pool已提交称为回放完成；后续看pool日志/计算节点status与完整seal。
+latency33441392没有新状态，不重提。代码/模型/配置不改，仅保存日志SHA、行号和交接事实。

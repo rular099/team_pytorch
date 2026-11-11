@@ -1,5 +1,9 @@
 # FE01 ON V4：跨服务器 Codex 接手文档（2026-11-08）
 
+**2026-11-11当前提交状态：** control33473739已在计算节点提交station pool33474027（4worker/328原任务）和
+normal-grid pool33474094（4worker/164原任务）。stderr仅route；尚无worker完成或完整seal证据。
+继续1cebcdc调度包及原主程序/run，下一步查看这两批pool日志/队列；不因文档更新重提或重新封包。
+
 **2026-11-10 当前运营入口：** 用户明确登录节点只提交任务；先前直接调用旧submit/status会运行Python，当前改为
 [独立计算节点调度小包](FE01_ON_EVAL_RUNBOOK.md)。大数组station/grid被sbatch拒绝的原stderr尚缺，latency已提交33441392。
 新包默认仅请求station和normal-grid，用4个Slurm worker映射执行全部原逻辑任务；不重提latency。
