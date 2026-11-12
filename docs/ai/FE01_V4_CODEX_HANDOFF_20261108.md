@@ -1,5 +1,12 @@
 # FE01 ON V4：跨服务器 Codex 接手文档（2026-11-08）
 
+**2026-11-12当前分析状态：** analyze pool33717765的唯一任务0记录exit0，随后打印最终POOL_SUMMARY；
+selected/epoch12旧预测比较日志齐全，stderr仅route及两条pandas FutureWarning。
+见[分析日志复核](../../reports/fe01_v4_analyze_logs_20261112/analyze_33717765_log_review.json)。当前为日志执行成功，
+尚未本地独立验证分析seal/数值；epoch12不表示新回放切换checkpoint。下一步手动`submit.sh --stage render_normal`，
+仍用1cebcdc包/50672e1主程序/原run，计算节点先核验原前置seal。原41渲染块覆盖1310锁定normal事件，
+默认最多4个CPU worker，无DCU；完成后才考虑pack。latency33441392状态仍未知，pack前必须核验，不盲目重提。
+
 **2026-11-11当前回放日志状态：** `runs/slurm0001.zip`覆盖station pool33474027全部328个原任务和
 normal-grid pool33474094全部164个原任务，每项exit0，八个worker均打印最终汇总。stderr只有route/timm/pandas
 FutureWarning，无缺项或失败退出。详见[复核证据](../../reports/fe01_v4_full_replay_logs_20261111/verification.json)。

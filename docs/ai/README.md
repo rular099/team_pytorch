@@ -1,5 +1,12 @@
 # ChatGPT Project 与 Codex 协作约定
 
+**最新分析日志证据（2026-11-12）：** `analyze_pool_33717765_0.out/.err`记录唯一analyze任务exit0及最终POOL_SUMMARY，
+两套旧预测policy（selected/epoch12）的三组比较/分层完成标记齐全；stderr仅route及两条pandas FutureWarning。
+详见[分析日志复核](../../reports/fe01_v4_analyze_logs_20261112/analyze_33717765_log_review.json)。
+未收到分析payload/seal，尚不能报告新性能数值；epoch12日志属于旧预测再分析，不改变新回放selected模型。
+下一步沿用1cebcdc包手动`submit.sh --stage render_normal`，计算节点先验证原完整前置seal；
+normal渲染仍为原41逻辑块、1310锁定事件，默认最多4个CPU worker，不申请DCU。latency状态仍待pack前核验。
+
 **最新回放日志证据（2026-11-11）：** 用户提供的`runs/slurm0001.zip`覆盖台站pool33474027全部328项、
 normal-grid pool33474094全部164项；每项恰有一次exit0，八个worker均打印最终汇总路径。
 stderr仅Slurm route、timm/pandas FutureWarning及其源码续行。latency33441392只有启动/身份日志，完成状态未知。

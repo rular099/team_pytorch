@@ -930,3 +930,21 @@ latency33441392四份日志仅设备/启动/身份PASS，无明确完成标记�
 control先在计算节点执行原replay_stations/crossing_truth/replay_grid_normal/covariates完整seal前置门，合格后才提交单项CPU分析。
 latency不是analyze前置；不必为其短日志阻塞分析，也不必先搬全量大产物回来。
 继续原1cebcdc调度包、50672e1主程序及原run；本轮仅日志解析/编译检查/证据文档，不修改执行源码、不重新封包、不实际提交HPC。
+
+## 2026-11-12 analyze33717765日志成功与normal渲染交接
+
+仓库rular099/team_pytorch，review分支handoff/fe01-on-20261108，同步exp/fe01-on-warning-map-evaluation；
+base ed156ae29c08090fe3a4768de2812376d8c705bc。用户提供runs/analyze_pool_33717765_0.out/.err，
+out为12行/734 bytes、SHA4e4eec4a3845563eef019afbb33f9f3376db7546b1248096eaa4b2754e2364bd；
+err为5行/986 bytes、SHA1c4e62d3d54ad905b1dd74a53d9123596ce636e36fcad1cd750e045716bf9d26。
+唯一逻辑任务0在stdout第11行exit0，第12行打印最终worker_summary路径；selected/epoch12两套旧预测的三比较分层标记齐全。
+stderr仅一条route和stages.py第174/175行的两条pandas空/all-NA concat FutureWarning及源码续行，无错误行。
+逐行证据在reports/fe01_v4_analyze_logs_20261112/analyze_33717765_log_review.json。
+
+按既有execute/attempt语义，exit0支持当时完成前置检查、封存和发布；未收到分析payload/SEAL、运营manifest或Slurm终态，
+仍不冒称本地COMPLETE_SEAL_VERIFIED或报告性能数值。epoch12是legacy保存预测再分析，不是切换新回放checkpoint或重训。
+下一步用户在原项目根目录沿用v4_compute_submit_1cebcdc61285入口，手动--stage render_normal。
+计算节点原前置门核验replay_stations/analyze/replay_grid_normal后才调度；原plan SHA与pilot已核验记录一致，
+41逻辑块精确覆盖原1310 normal事件。默认最多4个CPU worker，每worker4CPU/64G/24h，无DCU，私有env可覆盖资源值。
+latency33441392状态仍未知，不阻塞render，pack前必须核验；保留成功项、不重提latency、不修改原程序/plan/seal、不重新封包。
+本轮仅日志和冻结plan解析、JSON/diff检查与文档同步；未重新运行模型/统计、无新增测试或真实HPC提交。

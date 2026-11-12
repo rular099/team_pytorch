@@ -1,0 +1,137 @@
+{
+  "task_id": "20261112-fe01-v4-analyze-33717765-log-review",
+  "repository": "rular099/team_pytorch",
+  "review_branch": "handoff/fe01-on-20261108",
+  "sync_branch": "exp/fe01-on-warning-map-evaluation",
+  "review_base_commit": "ed156ae29c08090fe3a4768de2812376d8c705bc",
+  "review_date": "2026-11-12 Asia/Shanghai",
+  "expected_operational_package_commit": "1cebcdc61285fb99767509cb2e513bee07aefb05",
+  "operational_identity_readback": "Operational manifest and identity JSON not supplied; existing package expected, not independently read back.",
+  "source_logs": {
+    "runs/analyze_pool_33717765_0.out": {
+      "bytes": 734,
+      "sha256": "4e4eec4a3845563eef019afbb33f9f3376db7546b1248096eaa4b2754e2364bd",
+      "lines": 12
+    },
+    "runs/analyze_pool_33717765_0.err": {
+      "bytes": 986,
+      "sha256": "1c4e62d3d54ad905b1dd74a53d9123596ce636e36fcad1cd750e045716bf9d26",
+      "lines": 5
+    }
+  },
+  "frozen_plan_sha256": "2a3549190db940055d083b9e447b31e9db9146c67f0b9678d182c0c9d0ef9373",
+  "run_id": "on_v4_20261025_inventory_fix",
+  "stage": "analyze",
+  "array_job_id": "33717765",
+  "scheduler_slot": 0,
+  "logical_task": 0,
+  "markers": {
+    "begin_stdout_line": 1,
+    "start_stdout_line": 2,
+    "selected_policy_stdout_line": 3,
+    "selected_comparator_complete_stdout_lines": [
+      4,
+      5,
+      6
+    ],
+    "epoch12_policy_stdout_line": 7,
+    "epoch12_comparator_complete_stdout_lines": [
+      8,
+      9,
+      10
+    ],
+    "exit_zero_stdout_line": 11,
+    "pool_summary_stdout_line": 12
+  },
+  "pool_summary_relative_path": "operational_submit/pool_33717765_3zk9w11w/worker_summary.json",
+  "stderr": {
+    "route_lines": [
+      1
+    ],
+    "pandas_concat_future_warning_lines": [
+      2,
+      4
+    ],
+    "source_continuation_lines": [
+      3,
+      5
+    ],
+    "unclassified_lines": []
+  },
+  "verified_facts": [
+    "The only analyze logical task starts once and ends once with exit0, then the supervisor prints the final worker summary path.",
+    "Both selected and epoch12 saved-prediction analysis policies print all three comparator/strata completion markers.",
+    "All stderr lines are one Slurm route message, two pandas concat FutureWarnings and their source continuations; no error lines."
+  ],
+  "inferences": [
+    "Under the existing execute/attempt implementation, child exit0 follows successful sealing and publication to stages/analyze/0; actual saved artifacts have not been downloaded for independent verification.",
+    "The original analyze prerequisites are replay_stations, crossing_truth, replay_grid_normal and covariates. Reaching the analysis body supports that the prerequisite gate passed on compute at that time; original gate outputs/seals were not supplied.",
+    "POLICY_LOADED epoch12 belongs to legacy saved-prediction analysis; it does not mean new replay checkpoint selection, inference or training."
+  ],
+  "evidence_level": "LOG_EXECUTION_SUCCESS; not independent local COMPLETE_SEAL_VERIFIED",
+  "missing_evidence": [
+    "stages/analyze/0/SEAL.json and its complete numeric payloads.",
+    "Operational pool manifest, worker_summary.json and live Slurm terminal record.",
+    "Current completion/seal status of latency33441392."
+  ],
+  "scientific_scope": {
+    "expected_split": "validation",
+    "seed": 42,
+    "amplitude": "ON",
+    "new_replay_selected_epochs": {
+      "DiTing": 12,
+      "PhaseNet": 12,
+      "EQT": 10,
+      "TEAM": 11
+    },
+    "legacy_saved_policies": [
+      "selected",
+      "epoch12"
+    ],
+    "metrics_received": false,
+    "note": "No accuracy, calibration, TTUM or shadow values inferred from these logs; no held-out test use."
+  },
+  "expected_output": {
+    "directory": "stages/analyze/0/",
+    "availability": "Expected from the existing implementation and exit0, not independently inspected.",
+    "examples": [
+      "legacy_with_physical_covariates/",
+      "interaction_contrasts/",
+      "additional_endpoints/",
+      "event_time_to_usable_map.csv",
+      "ttum_paired_summary.csv",
+      "shadow_paired_summary.csv",
+      "shadow_support_audit.csv",
+      "SEAL.json"
+    ]
+  },
+  "next_step": {
+    "stage": "render_normal",
+    "command": "bash v4_compute_submit_1cebcdc61285/scripts/fe01_v4_compute_submit/submit.sh --stage render_normal",
+    "frozen_logical_tasks": 41,
+    "frozen_normal_events": 1310,
+    "prerequisites": [
+      "replay_stations",
+      "analyze",
+      "replay_grid_normal"
+    ],
+    "workers": "default maximum 4; scheduler-visible limits can reduce this",
+    "worker_defaults": {
+      "cpus": 4,
+      "memory": "64G",
+      "time_limit": "24:00:00",
+      "dcu": 0
+    },
+    "resource_scope": "Per worker; 4 workers imply up to 16 CPU/256G requested, with private environment overrides. Separate control defaults: 4 CPU/8G/4h.",
+    "worker_logs": "slurm/render_normal_pool_ARRAYJOBID_SLOT.out/.err",
+    "results": "stages/render_normal/LOGICAL_INDEX/ (0-40)",
+    "latency": "Not a render prerequisite. Still required before full pack; do not blindly resubmit."
+  },
+  "verification": {
+    "exact_log_marker_and_stderr_parse": "PASS",
+    "frozen_plan_pin_and_render_population": "PASS",
+    "execution_source_changes": "none",
+    "tests_rerun": "not run; evidence/documents only",
+    "cluster_jobs_submitted_by_review": "none"
+  }
+}
