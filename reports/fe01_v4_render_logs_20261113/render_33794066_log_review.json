@@ -1,0 +1,597 @@
+{
+  "task_id": "20261113-fe01-v4-render-33794066-log-review",
+  "repository": "rular099/team_pytorch",
+  "review_branch": "handoff/fe01-on-20261108",
+  "sync_branch": "exp/fe01-on-warning-map-evaluation",
+  "review_base_commit": "dcc270fb316d13983879e798f23463f450bcfcf6",
+  "review_date": "2026-11-13 Asia/Shanghai",
+  "expected_operational_package_commit": "1cebcdc61285fb99767509cb2e513bee07aefb05",
+  "operational_identity_readback": "Operational manifest/identity JSON not supplied; existing package expected, not independently read back.",
+  "archive": {
+    "name": "render_normal_pool_33794066.tar.gz",
+    "bytes": 24548,
+    "sha256": "ba7d1d09911346d2bbf07f5b5a1039f3a95d578614c5d88c56de0c9d95ad425a",
+    "gzip_integrity": "PASS: decompression read through EOF",
+    "regular_members": 8,
+    "external_sha_sidecar": "not supplied; SHA recorded locally"
+  },
+  "source_control_logs": {
+    "runs/control_33793740.out": {
+      "bytes": 247,
+      "sha256": "f870d25c7fbb2ca28a4d3e39d3ea524cc3f1033d79ce5690c746f01a923325ae",
+      "lines": 2
+    },
+    "runs/control_33793740.err": {
+      "bytes": 54,
+      "sha256": "57588973b579d4ec57b15ec40c359e4062716f37f6eb82b24e8a097c4ad7ddf6",
+      "lines": 1
+    }
+  },
+  "source_archive_members": {
+    "render_normal_pool_33794066_0.err": {
+      "bytes": 1007036,
+      "sha256": "ef7f362437bdb31e0d387346979b03571c49a177f2f0a3540fbc70486d088a86",
+      "lines": 5101
+    },
+    "render_normal_pool_33794066_0.out": {
+      "bytes": 3062,
+      "sha256": "d9ffa8ab752d19d039b91e411a7be64c807f17af5230ee79a27de1bf77700b38",
+      "lines": 34
+    },
+    "render_normal_pool_33794066_1.err": {
+      "bytes": 915546,
+      "sha256": "9d3666c76a60d610f49a0e61381e4e82e664adc7a359a3abe502ddea03f0c82e",
+      "lines": 4637
+    },
+    "render_normal_pool_33794066_1.out": {
+      "bytes": 2801,
+      "sha256": "0fe660bbf6e167906c9012bff507c18eb287342b4509a2e4b4178a75751a84a7",
+      "lines": 31
+    },
+    "render_normal_pool_33794066_2.err": {
+      "bytes": 914270,
+      "sha256": "c93ceca01386dae88b3fdb058b53689ca410c9ab353ff1ff293b6b67258a84ad",
+      "lines": 4629
+    },
+    "render_normal_pool_33794066_2.out": {
+      "bytes": 2804,
+      "sha256": "274872219432fdbb786aa6ce1a2ae14d1f56cee5af7665981f1cbec99d92b4df",
+      "lines": 31
+    },
+    "render_normal_pool_33794066_3.err": {
+      "bytes": 914270,
+      "sha256": "a3c020913d1e5333e4172e4033bbe70d3c1b48517ca4263a93c4ec79243e1cb6",
+      "lines": 4629
+    },
+    "render_normal_pool_33794066_3.out": {
+      "bytes": 2804,
+      "sha256": "6738fc03c3195fc3ab082d3c2453267353ada69f3acce0fd3b3e8d3530aa8f76",
+      "lines": 31
+    }
+  },
+  "control": {
+    "job_id": "33793740",
+    "submission_stdout_line": 2,
+    "submitted_stage": "render_normal",
+    "submitted_array_job_id": "33794066",
+    "workers": 4,
+    "logical_tasks": 41,
+    "stderr": "One Slurm route line only"
+  },
+  "frozen_plan_sha256": "2a3549190db940055d083b9e447b31e9db9146c67f0b9678d182c0c9d0ef9373",
+  "run_id": "on_v4_20261025_inventory_fix",
+  "stage_summary": {
+    "stage": "render_normal",
+    "array_job_id": "33794066",
+    "workers": 4,
+    "logical_tasks": 41,
+    "exit_zero": 41,
+    "missing_or_failed_indices": [],
+    "planned_events": 1310,
+    "planned_event_scope": "Unique original normal cohort across successful logical blocks; actual per-event visual indexes were not supplied."
+  },
+  "workers": [
+    {
+      "scheduler_slot": 0,
+      "logical_tasks": 11,
+      "planned_events_in_these_blocks": 350,
+      "task_exits": [
+        {
+          "index": 0,
+          "exit_code": 0,
+          "begin_stdout_line": 1,
+          "start_stdout_line": 2,
+          "end_stdout_line": 3,
+          "planned_events": 32
+        },
+        {
+          "index": 4,
+          "exit_code": 0,
+          "begin_stdout_line": 4,
+          "start_stdout_line": 5,
+          "end_stdout_line": 6,
+          "planned_events": 32
+        },
+        {
+          "index": 8,
+          "exit_code": 0,
+          "begin_stdout_line": 7,
+          "start_stdout_line": 8,
+          "end_stdout_line": 9,
+          "planned_events": 32
+        },
+        {
+          "index": 12,
+          "exit_code": 0,
+          "begin_stdout_line": 10,
+          "start_stdout_line": 11,
+          "end_stdout_line": 12,
+          "planned_events": 32
+        },
+        {
+          "index": 16,
+          "exit_code": 0,
+          "begin_stdout_line": 13,
+          "start_stdout_line": 14,
+          "end_stdout_line": 15,
+          "planned_events": 32
+        },
+        {
+          "index": 20,
+          "exit_code": 0,
+          "begin_stdout_line": 16,
+          "start_stdout_line": 17,
+          "end_stdout_line": 18,
+          "planned_events": 32
+        },
+        {
+          "index": 24,
+          "exit_code": 0,
+          "begin_stdout_line": 19,
+          "start_stdout_line": 20,
+          "end_stdout_line": 21,
+          "planned_events": 32
+        },
+        {
+          "index": 28,
+          "exit_code": 0,
+          "begin_stdout_line": 22,
+          "start_stdout_line": 23,
+          "end_stdout_line": 24,
+          "planned_events": 32
+        },
+        {
+          "index": 32,
+          "exit_code": 0,
+          "begin_stdout_line": 25,
+          "start_stdout_line": 26,
+          "end_stdout_line": 27,
+          "planned_events": 32
+        },
+        {
+          "index": 36,
+          "exit_code": 0,
+          "begin_stdout_line": 28,
+          "start_stdout_line": 29,
+          "end_stdout_line": 30,
+          "planned_events": 32
+        },
+        {
+          "index": 40,
+          "exit_code": 0,
+          "begin_stdout_line": 31,
+          "start_stdout_line": 32,
+          "end_stdout_line": 33,
+          "planned_events": 30
+        }
+      ],
+      "pool_summary_relative_path": "operational_submit/pool_33794067_vzhjbqqt/worker_summary.json",
+      "stderr": {
+        "categories": {
+          "slurm_plugin_incompatible_version": 1,
+          "slurm_plugin_load_error": 1,
+          "slurm_route": 1,
+          "pandas_shadow_chunk_dtype_warning": 1001,
+          "warning_source_continuation": 2549,
+          "pandas_list_bool_future_warning": 1540,
+          "pandas_event_store_dtype_warning": 8
+        },
+        "plugin_issue_lines": [
+          1,
+          2
+        ],
+        "unclassified_lines": []
+      },
+      "source_stdout": "render_normal_pool_33794066_0.out",
+      "source_stderr": "render_normal_pool_33794066_0.err"
+    },
+    {
+      "scheduler_slot": 1,
+      "logical_tasks": 10,
+      "planned_events_in_these_blocks": 320,
+      "task_exits": [
+        {
+          "index": 1,
+          "exit_code": 0,
+          "begin_stdout_line": 1,
+          "start_stdout_line": 2,
+          "end_stdout_line": 3,
+          "planned_events": 32
+        },
+        {
+          "index": 5,
+          "exit_code": 0,
+          "begin_stdout_line": 4,
+          "start_stdout_line": 5,
+          "end_stdout_line": 6,
+          "planned_events": 32
+        },
+        {
+          "index": 9,
+          "exit_code": 0,
+          "begin_stdout_line": 7,
+          "start_stdout_line": 8,
+          "end_stdout_line": 9,
+          "planned_events": 32
+        },
+        {
+          "index": 13,
+          "exit_code": 0,
+          "begin_stdout_line": 10,
+          "start_stdout_line": 11,
+          "end_stdout_line": 12,
+          "planned_events": 32
+        },
+        {
+          "index": 17,
+          "exit_code": 0,
+          "begin_stdout_line": 13,
+          "start_stdout_line": 14,
+          "end_stdout_line": 15,
+          "planned_events": 32
+        },
+        {
+          "index": 21,
+          "exit_code": 0,
+          "begin_stdout_line": 16,
+          "start_stdout_line": 17,
+          "end_stdout_line": 18,
+          "planned_events": 32
+        },
+        {
+          "index": 25,
+          "exit_code": 0,
+          "begin_stdout_line": 19,
+          "start_stdout_line": 20,
+          "end_stdout_line": 21,
+          "planned_events": 32
+        },
+        {
+          "index": 29,
+          "exit_code": 0,
+          "begin_stdout_line": 22,
+          "start_stdout_line": 23,
+          "end_stdout_line": 24,
+          "planned_events": 32
+        },
+        {
+          "index": 33,
+          "exit_code": 0,
+          "begin_stdout_line": 25,
+          "start_stdout_line": 26,
+          "end_stdout_line": 27,
+          "planned_events": 32
+        },
+        {
+          "index": 37,
+          "exit_code": 0,
+          "begin_stdout_line": 28,
+          "start_stdout_line": 29,
+          "end_stdout_line": 30,
+          "planned_events": 32
+        }
+      ],
+      "pool_summary_relative_path": "operational_submit/pool_33794068_9f1jws_q/worker_summary.json",
+      "stderr": {
+        "categories": {
+          "slurm_route": 1,
+          "pandas_shadow_chunk_dtype_warning": 910,
+          "warning_source_continuation": 2318,
+          "pandas_list_bool_future_warning": 1400,
+          "pandas_event_store_dtype_warning": 8
+        },
+        "plugin_issue_lines": [],
+        "unclassified_lines": []
+      },
+      "source_stdout": "render_normal_pool_33794066_1.out",
+      "source_stderr": "render_normal_pool_33794066_1.err"
+    },
+    {
+      "scheduler_slot": 2,
+      "logical_tasks": 10,
+      "planned_events_in_these_blocks": 320,
+      "task_exits": [
+        {
+          "index": 2,
+          "exit_code": 0,
+          "begin_stdout_line": 1,
+          "start_stdout_line": 2,
+          "end_stdout_line": 3,
+          "planned_events": 32
+        },
+        {
+          "index": 6,
+          "exit_code": 0,
+          "begin_stdout_line": 4,
+          "start_stdout_line": 5,
+          "end_stdout_line": 6,
+          "planned_events": 32
+        },
+        {
+          "index": 10,
+          "exit_code": 0,
+          "begin_stdout_line": 7,
+          "start_stdout_line": 8,
+          "end_stdout_line": 9,
+          "planned_events": 32
+        },
+        {
+          "index": 14,
+          "exit_code": 0,
+          "begin_stdout_line": 10,
+          "start_stdout_line": 11,
+          "end_stdout_line": 12,
+          "planned_events": 32
+        },
+        {
+          "index": 18,
+          "exit_code": 0,
+          "begin_stdout_line": 13,
+          "start_stdout_line": 14,
+          "end_stdout_line": 15,
+          "planned_events": 32
+        },
+        {
+          "index": 22,
+          "exit_code": 0,
+          "begin_stdout_line": 16,
+          "start_stdout_line": 17,
+          "end_stdout_line": 18,
+          "planned_events": 32
+        },
+        {
+          "index": 26,
+          "exit_code": 0,
+          "begin_stdout_line": 19,
+          "start_stdout_line": 20,
+          "end_stdout_line": 21,
+          "planned_events": 32
+        },
+        {
+          "index": 30,
+          "exit_code": 0,
+          "begin_stdout_line": 22,
+          "start_stdout_line": 23,
+          "end_stdout_line": 24,
+          "planned_events": 32
+        },
+        {
+          "index": 34,
+          "exit_code": 0,
+          "begin_stdout_line": 25,
+          "start_stdout_line": 26,
+          "end_stdout_line": 27,
+          "planned_events": 32
+        },
+        {
+          "index": 38,
+          "exit_code": 0,
+          "begin_stdout_line": 28,
+          "start_stdout_line": 29,
+          "end_stdout_line": 30,
+          "planned_events": 32
+        }
+      ],
+      "pool_summary_relative_path": "operational_submit/pool_33794069_rtj20slc/worker_summary.json",
+      "stderr": {
+        "categories": {
+          "slurm_route": 1,
+          "pandas_shadow_chunk_dtype_warning": 910,
+          "warning_source_continuation": 2314,
+          "pandas_list_bool_future_warning": 1400,
+          "pandas_event_store_dtype_warning": 4
+        },
+        "plugin_issue_lines": [],
+        "unclassified_lines": []
+      },
+      "source_stdout": "render_normal_pool_33794066_2.out",
+      "source_stderr": "render_normal_pool_33794066_2.err"
+    },
+    {
+      "scheduler_slot": 3,
+      "logical_tasks": 10,
+      "planned_events_in_these_blocks": 320,
+      "task_exits": [
+        {
+          "index": 3,
+          "exit_code": 0,
+          "begin_stdout_line": 1,
+          "start_stdout_line": 2,
+          "end_stdout_line": 3,
+          "planned_events": 32
+        },
+        {
+          "index": 7,
+          "exit_code": 0,
+          "begin_stdout_line": 4,
+          "start_stdout_line": 5,
+          "end_stdout_line": 6,
+          "planned_events": 32
+        },
+        {
+          "index": 11,
+          "exit_code": 0,
+          "begin_stdout_line": 7,
+          "start_stdout_line": 8,
+          "end_stdout_line": 9,
+          "planned_events": 32
+        },
+        {
+          "index": 15,
+          "exit_code": 0,
+          "begin_stdout_line": 10,
+          "start_stdout_line": 11,
+          "end_stdout_line": 12,
+          "planned_events": 32
+        },
+        {
+          "index": 19,
+          "exit_code": 0,
+          "begin_stdout_line": 13,
+          "start_stdout_line": 14,
+          "end_stdout_line": 15,
+          "planned_events": 32
+        },
+        {
+          "index": 23,
+          "exit_code": 0,
+          "begin_stdout_line": 16,
+          "start_stdout_line": 17,
+          "end_stdout_line": 18,
+          "planned_events": 32
+        },
+        {
+          "index": 27,
+          "exit_code": 0,
+          "begin_stdout_line": 19,
+          "start_stdout_line": 20,
+          "end_stdout_line": 21,
+          "planned_events": 32
+        },
+        {
+          "index": 31,
+          "exit_code": 0,
+          "begin_stdout_line": 22,
+          "start_stdout_line": 23,
+          "end_stdout_line": 24,
+          "planned_events": 32
+        },
+        {
+          "index": 35,
+          "exit_code": 0,
+          "begin_stdout_line": 25,
+          "start_stdout_line": 26,
+          "end_stdout_line": 27,
+          "planned_events": 32
+        },
+        {
+          "index": 39,
+          "exit_code": 0,
+          "begin_stdout_line": 28,
+          "start_stdout_line": 29,
+          "end_stdout_line": 30,
+          "planned_events": 32
+        }
+      ],
+      "pool_summary_relative_path": "operational_submit/pool_33794066_jxhj418_/worker_summary.json",
+      "stderr": {
+        "categories": {
+          "slurm_route": 1,
+          "pandas_shadow_chunk_dtype_warning": 910,
+          "warning_source_continuation": 2314,
+          "pandas_list_bool_future_warning": 1400,
+          "pandas_event_store_dtype_warning": 4
+        },
+        "plugin_issue_lines": [],
+        "unclassified_lines": []
+      },
+      "source_stdout": "render_normal_pool_33794066_3.out",
+      "source_stderr": "render_normal_pool_33794066_3.err"
+    }
+  ],
+  "plugin_issue": {
+    "scheduler_slot": 0,
+    "stderr_lines": [
+      1,
+      2
+    ],
+    "message": "Slurm switch_generic.so incompatible plugin version (19.05.5); could not load switch/generic",
+    "classification": "Actual Slurm plugin error messages, not pandas warnings.",
+    "observed_impact": "After these messages the same slot logs all 11 assigned logical tasks exit0 and a final summary; no task failure indicated.",
+    "root_cause": "Not established beyond the printed plugin version incompatibility; no cluster environment inspected.",
+    "action": "Preserve logs and validate output seals; no replay/render resubmission or source/dependency change justified by these logs alone."
+  },
+  "verified_facts": [
+    "Control33793740 records successful submission of render pool33794066, 4 workers and 41 logical tasks.",
+    "All 41 original render indices occur exactly once in the expected slot mapping, with matching start and exit0. All four workers print their final summary paths.",
+    "Slot0 includes the two Slurm plugin error lines; every other stderr line across all workers is classified as Slurm route or pandas FutureWarning/DtypeWarning with source continuations. No Python traceback or nonzero logical-task exit is present."
+  ],
+  "inferences": [
+    "Under the existing execute/attempt implementation, exit0 supports successful sealing and publication at that time. Actual visual indexes, payloads and seals were not provided for independent verification.",
+    "Under the existing control and stage entry, reaching/rendering the requested tasks supports that the original station/analyze/normal-grid prerequisite gate passed on compute at that time."
+  ],
+  "evidence_level": "ALL_LOGICAL_TASKS_EXIT_ZERO_IN_LOGS; not independent local COMPLETE_SEAL_VERIFIED",
+  "missing_evidence": [
+    "All render_normal SEAL.json, visuals_index.json and complete image/animation payloads.",
+    "Pool operational manifest, worker summaries and live Slurm terminal states.",
+    "Current latency33441392 completion/seal state.",
+    "Analysis numeric tables and metrics."
+  ],
+  "scientific_scope": {
+    "expected_split": "validation",
+    "seed": 42,
+    "amplitude": "ON",
+    "geometry": "normal",
+    "selected_epochs": {
+      "DiTing": 12,
+      "PhaseNet": 12,
+      "EQT": 10,
+      "TEAM": 11
+    },
+    "metrics_received": false
+  },
+  "next_step": {
+    "stage": "pack",
+    "command": "bash v4_compute_submit_1cebcdc61285/scripts/fe01_v4_compute_submit/submit.sh --stage pack",
+    "request_semantics": "Only CPU control is initially submitted; pack is scheduled only after every original required seal verifies on compute.",
+    "prerequisites": [
+      "compare_existing",
+      "analyze",
+      "render_normal",
+      "latency"
+    ],
+    "latency": "Unknown from received artifacts; the pack prerequisite gate must verify all four latency seals. If incomplete, stop and return control logs; do not bypass with partial pack or blindly resubmit latency.",
+    "pack_defaults": {
+      "workers": 1,
+      "cpus": 4,
+      "memory": "64G",
+      "time_limit": "24:00:00",
+      "dcu": 0
+    },
+    "control_defaults": {
+      "cpus": 4,
+      "memory": "8G",
+      "time_limit": "04:00:00",
+      "dcu": 0
+    },
+    "resource_scope": "Worker CPU/memory/time values may be overridden by the existing private environment.",
+    "logs": [
+      "operational_submit/logs/control_JOBID.out/.err",
+      "slurm/pack_pool_ARRAYJOBID_0.out/.err"
+    ],
+    "success_downloads": [
+      "stages/pack/0/fe01_on_eval_v4_review.tar.gz",
+      "stages/pack/0/fe01_on_eval_v4_review.tar.gz.sha256"
+    ],
+    "download_scope": "Review tar contains copied analysis/latency tables, metadata-selected cases and full artifact indexes. Full rendering remains on HPC; no need to download all render files now."
+  },
+  "verification": {
+    "control_and_worker_log_parse": "PASS",
+    "stderr_line_classification": "PASS_WITH_RECORDED_SLURM_PLUGIN_ERROR",
+    "gzip_read_to_eof_and_member_read": "PASS",
+    "frozen_plan_pin_and_task_event_coverage": "PASS",
+    "execution_source_changes": "none",
+    "tests_rerun": "not run; evidence/documents only",
+    "cluster_jobs_submitted_by_review": "none"
+  }
+}

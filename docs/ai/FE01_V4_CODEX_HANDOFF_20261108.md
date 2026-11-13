@@ -1,5 +1,12 @@
 # FE01 ON V4：跨服务器 Codex 接手文档（2026-11-08）
 
+**2026-11-13当前渲染状态：** 用户提供control33793740及render_normal_pool33794066日志包，41个原逻辑任务
+全部exit0，四worker最终汇总齐全。0号有两条Slurm switch/generic插件版本不兼容报错，其后11项仍全部exit0；
+其余stderr为route/pandas警告。见[复核证据](../../reports/fe01_v4_render_logs_20261113/render_33794066_log_review.json)。
+尚未独立验证图源、visuals_index及seal，不据日志报告指标或认定具体动画格式成功。下一步手动`submit.sh --stage pack`，
+继续原1cebcdc包/50672e1程序/run；计算节点先验全部原前置seal，含当前状态未知的latency33441392，合格才提交单项CPU pack。
+失败传control日志，不partial绕过、不盲重提latency。成功下载`stages/pack/0/fe01_on_eval_v4_review.tar.gz`及`.sha256`。
+
 **2026-11-12当前分析状态：** analyze pool33717765的唯一任务0记录exit0，随后打印最终POOL_SUMMARY；
 selected/epoch12旧预测比较日志齐全，stderr仅route及两条pandas FutureWarning。
 见[分析日志复核](../../reports/fe01_v4_analyze_logs_20261112/analyze_33717765_log_review.json)。当前为日志执行成功，

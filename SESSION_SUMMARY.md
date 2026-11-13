@@ -948,3 +948,26 @@ stderr仅一条route和stages.py第174/175行的两条pandas空/all-NA concat Fu
 41逻辑块精确覆盖原1310 normal事件。默认最多4个CPU worker，每worker4CPU/64G/24h，无DCU，私有env可覆盖资源值。
 latency33441392状态仍未知，不阻塞render，pack前必须核验；保留成功项、不重提latency、不修改原程序/plan/seal、不重新封包。
 本轮仅日志和冻结plan解析、JSON/diff检查与文档同步；未重新运行模型/统计、无新增测试或真实HPC提交。
+
+## 2026-11-13 normal渲染33794066日志全覆盖与完整pack交接
+
+仓库rular099/team_pytorch，review分支handoff/fe01-on-20261108，同步exp/fe01-on-warning-map-evaluation；
+base dcc270fb316d13983879e798f23463f450bcfcf6。用户提供runs/control_33793740.out/.err及
+runs/render_normal_pool_33794066.tar.gz（24548 bytes，SHA ba7d1d09911346d2bbf07f5b5a1039f3a95d578614c5d88c56de0c9d95ad425a）。
+gzip完整读至EOF通过，8个常规成员无重复；control第2行确认render_normal job33794066 workers4 logical_tasks41。
+原冻结plan SHA与pilot记录一致，四slot的原任务步进序列完全匹配，0–40各出现一次，41项全部exit0，四个最终POOL_SUMMARY齐全。
+slot0有11项（原计划350事件），其他各10项（各320事件），共覆盖原1310 normal事件；这是成功块的计划人口，不冒称本地核验实际图库条目。
+
+0号err第1/2行确有Slurm switch_generic.so插件19.05.5版本不兼容/无法加载switch/generic报错；
+其后同slot的11项仍全部exit0。不能把它当pandas警告或宣称没有任何报错，也不能据此认定渲染失败需补跑。
+其他stderr行严格分类为route、pandas列表布尔运算FutureWarning、chunk/event读入DtypeWarning及源码续行，无未分类行或Python traceback。
+未访问集群环境，插件深层原因未知；不改冻结执行树/依赖，列类型和人口仍需实物结果复核。
+各原成员/控制日志SHA、逐任务行号、stderr分类与插件影响边界见
+reports/fe01_v4_render_logs_20261113/render_33794066_log_review.json。
+
+当前证据为ALL_LOGICAL_TASKS_EXIT_ZERO_IN_LOGS，未取得render payload/visuals_index/seal，不独立认定完整动态图格式或性能指标。
+下一步用户沿用v4_compute_submit_1cebcdc61285包、原50672e1主程序和原run，在原项目根目录手动--stage pack。
+CPU control在计算节点先完整验compare_existing/analyze/render_normal/latency seal，合格才发单项CPU pack（默认4CPU/64G/24h，无DCU）。
+latency33441392仍无新完成证据；若前置门失败，传control日志和小JSON，不绕过门或盲重提。无需额外先排独立status作业。
+完整pack成功后下载stages/pack/0/fe01_on_eval_v4_review.tar.gz及同名.sha256，另传control和pack_pool日志；全量图源留超算。
+本轮仅证据/文档同步，未修改执行代码、重新封包、重跑模型/统计或实际提交HPC作业。

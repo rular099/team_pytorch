@@ -2,12 +2,42 @@
 
 ## 2026-11-10 当前入口：登录节点只提交，所有 Python 在计算节点
 
+**2026-11-13实际渲染日志：** control33793740确认render_normal job33794066、4worker、41原任务。
+日志覆盖0–40，每项一次exit0，四个最终POOL_SUMMARY齐全，映射与冻结plan完全一致（块内共1310锁定normal事件）。
+0号stderr前两行为Slurm switch/generic插件版本不兼容报错，其后该slot全部11项exit0；其余行均为route及
+pandas FutureWarning/DtypeWarning和源码续行。不能称为完全无报错，也没有据此重跑成功任务的证据。
+见[逐任务复核](../../reports/fe01_v4_render_logs_20261113/render_33794066_log_review.json)。实际图源/索引/seal尚未本地收到，
+dtype警告不能代替下载后的列类型/人口复核；不为本次日志改原程序、依赖或输出。
+
+当前下一步：在超算原项目根目录请求完整pack，继续使用已有包：
+
+```bash
+bash v4_compute_submit_1cebcdc61285/scripts/fe01_v4_compute_submit/submit.sh --stage pack
+```
+
+登录节点仍仅shell/sbatch。先提交CPU control（默认4CPU/8G/4小时），在计算节点完整验证原
+compare_existing、analyze、render_normal及四项latency的seal；全部通过才提交一个CPU pack任务，
+默认4CPU/64G/24小时，无DCU，worker资源沿用私有env覆盖值。当前日志没有新增latency完成证据，
+因此这里只是请求门控后的pack，不能预称pack已就绪。若门不通过，传control out/err和CONTROL_EVIDENCE小JSON，
+保留原成功结果，不用partial绕过、不盲重提latency。
+
+pack成功后下载以下两份文件，无需先搬全量render目录：
+
+```text
+outputs/fe01_on_eval_v4/on_v4_20261025_inventory_fix/stages/pack/0/fe01_on_eval_v4_review.tar.gz
+outputs/fe01_on_eval_v4/on_v4_20261025_inventory_fix/stages/pack/0/fe01_on_eval_v4_review.tar.gz.sha256
+```
+
+同时传回`operational_submit/logs/control_JOBID.out/.err`及`slurm/pack_pool_ARRAYJOBID_0.out/.err`（相对原run）。
+该review包含分析/latency表、元数据预选案例和完整原始产物SHA索引；完整图库仍留在原run的render块中。
+`stages/pack/0/full_visuals_index.html`链接原图源，单独下载该HTML不能替代全量图源；后续按需要再取。
+
 **2026-11-12实际分析日志：** `analyze_pool_33717765_0.out/.err`记录analyze唯一任务0的exit0及最终
 POOL_SUMMARY，stderr仅Slurm route和两条pandas FutureWarning。selected/epoch12日志是旧预测比较/物理分层，
 不表示新回放改变checkpoint；未收到分析payload/seal，尚无可独立报告的新性能指标。
 详见[逐行复核](../../reports/fe01_v4_analyze_logs_20261112/analyze_33717765_log_review.json)。
 
-当前下一步：在超算原项目根目录手动提交normal渲染，沿用已解压的包：
+11-12渲染阶段历史命令（本次日志已覆盖全部逻辑任务）：
 
 ```bash
 bash v4_compute_submit_1cebcdc61285/scripts/fe01_v4_compute_submit/submit.sh --stage render_normal

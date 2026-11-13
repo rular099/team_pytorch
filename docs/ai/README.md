@@ -1,5 +1,13 @@
 # ChatGPT Project 与 Codex 协作约定
 
+**最新渲染日志证据（2026-11-13）：** control33793740确认提交render_normal pool33794066，四worker覆盖原41项；
+全部逻辑任务各一次exit0，四个最终POOL_SUMMARY齐全。0号stderr前两行为Slurm switch/generic插件版本不兼容报错，
+其后该slot的11项仍全部exit0；其余stderr为route及pandas FutureWarning/DtypeWarning，不能把插件报错统称为警告。
+见[渲染日志复核](../../reports/fe01_v4_render_logs_20261113/render_33794066_log_review.json)。尚未下载视觉payload/seal，
+下一步沿用1cebcdc包手动`submit.sh --stage pack`；计算节点先验证compare_existing/analyze/render_normal/latency全部原seal，
+通过才调度单项CPU pack。latency仍无新完成证据，门不通过时传control日志，不绕过门或盲目重提。
+pack成功后下载原run的`stages/pack/0/fe01_on_eval_v4_review.tar.gz`及其`.sha256`；全量图源继续保留超算。
+
 **最新分析日志证据（2026-11-12）：** `analyze_pool_33717765_0.out/.err`记录唯一analyze任务exit0及最终POOL_SUMMARY，
 两套旧预测policy（selected/epoch12）的三组比较/分层完成标记齐全；stderr仅route及两条pandas FutureWarning。
 详见[分析日志复核](../../reports/fe01_v4_analyze_logs_20261112/analyze_33717765_log_review.json)。
