@@ -1,0 +1,8 @@
+{
+  "review_manifest": "PASS",
+  "ttum_support_rows": 864,
+  "original_ttum_intervals_checked": 216,
+  "legacy_primary_intervals_checked": 6,
+  "queue_frames_verified": 104800,
+  "latency_summaries_checked": 8
+}

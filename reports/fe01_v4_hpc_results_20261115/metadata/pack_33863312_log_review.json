@@ -1,0 +1,22 @@
+{
+  "job_id": "33863312",
+  "stage": "pack",
+  "logical_task": 0,
+  "source_logs": {
+    "out": {
+      "bytes": 618,
+      "sha256": "efbd60a3d3e3ae50cd711834b2aa92b502d3584e6025ccd0638fdc124d719d2d",
+      "lines": 5
+    },
+    "err": {
+      "bytes": 1052,
+      "sha256": "a4630e051c33bce362c30fb8e6dff1d41b7b62abc1c29b12eb51e7a9ad430e78",
+      "lines": 5
+    }
+  },
+  "exit_zero_stdout_line": 4,
+  "final_pool_summary_stdout_line": 5,
+  "stderr": "Slurm route + two pandas concat FutureWarnings and their source continuations",
+  "frozen_plan_redaction_matches_initial": true,
+  "note": "REVIEW is printed inside the attempt before atomic publication. Snapshot RUNNING preceded the later exit0."
+}

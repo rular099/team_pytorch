@@ -2,6 +2,14 @@
 
 ## 2026-11-10 当前入口：登录节点只提交，所有 Python 在计算节点
 
+**2026-11-15结果已下载核验：** `runs/v4pack/fe01_on_eval_v4_review.tar.gz`及SHA文件已收到，
+pack33863312日志记录task0 exit0与最终汇总。归档声明REQUIRED_SCOPE_COMPLETE，1016条manifest验证通过。
+四latency、analyze和41项normal render的超算状态快照完整通过；快照中的pack自身RUNNING是包内过程快照，随后exit0日志已提供。
+无需再提交pack或搬回全部图库。当前阶段为结果分析，见[中立结果报告](../../reports/fe01_v4_hpc_results_20261115/README.md)
+及[ChatGPT任务](../../reports/fe01_v4_hpc_results_20261115/CHATGPT_ANALYSIS_PROMPT.md)。
+原107MB包、私有封存分析和全量原件留本地/超算；Git仅同步必要表、压缩事件记录、来源、方法和预定案例。
+继续原50672e1主程序/1cebcdc包/run；以下提交说明为历史流程，不因文档提交更新执行身份。
+
 **2026-11-13实际渲染日志：** control33793740确认render_normal job33794066、4worker、41原任务。
 日志覆盖0–40，每项一次exit0，四个最终POOL_SUMMARY齐全，映射与冻结plan完全一致（块内共1310锁定normal事件）。
 0号stderr前两行为Slurm switch/generic插件版本不兼容报错，其后该slot全部11项exit0；其余行均为route及
@@ -9,7 +17,7 @@ pandas FutureWarning/DtypeWarning和源码续行。不能称为完全无报错�
 见[逐任务复核](../../reports/fe01_v4_render_logs_20261113/render_33794066_log_review.json)。实际图源/索引/seal尚未本地收到，
 dtype警告不能代替下载后的列类型/人口复核；不为本次日志改原程序、依赖或输出。
 
-当前下一步：在超算原项目根目录请求完整pack，继续使用已有包：
+11-13请求完整pack的历史命令（本次结果已经下载）：
 
 ```bash
 bash v4_compute_submit_1cebcdc61285/scripts/fe01_v4_compute_submit/submit.sh --stage pack

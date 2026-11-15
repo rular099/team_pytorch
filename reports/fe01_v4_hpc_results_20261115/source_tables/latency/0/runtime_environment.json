@@ -1,0 +1,21 @@
+{
+  "python": "3.9.21 (main, Dec 11 2024, 16:24:11) \n[GCC 11.2.0]",
+  "versions": {
+    "numpy": "1.26.4",
+    "pandas": "2.2.3",
+    "scipy": "1.13.1",
+    "h5py": "3.13.0",
+    "matplotlib": "3.9.4",
+    "torch": "1.13.1+git55d300e.abi0.dtk2304",
+    "seisbench": "0.10.1"
+  },
+  "private_env_file_sha256": "025d48fabdad7b8e2daeff96e13d671b73a8309783d9a6d7d4b8f260205f1744",
+  "loaded_modules": "compiler/devtoolset/7.3.1:mpi/hpcx/2.11.0/gcc-7.3.1:apps/tmux/gcc-7.3.1:apps/miniconda/3:compiler/rocm/dtk-23.04",
+  "resources": {
+    "SLURM_JOB_ID": "33441396",
+    "SLURM_ARRAY_TASK_ID": "0",
+    "SLURM_CPUS_PER_TASK": "4",
+    "SLURM_MEM_PER_NODE": "65536"
+  },
+  "scientific_environment_sha256": "c16b8ad3061822017df2148b5d358ff8ba2fdc5ce340e6a028670b1e5fa7104c"
+}

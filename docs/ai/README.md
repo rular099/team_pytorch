@@ -1,5 +1,14 @@
 # ChatGPT Project 与 Codex 协作约定
 
+**最新实物结果（2026-11-15）：** 已收到并核验107210231-byte完整V4 review包，SHA以7a5c19ad82d4开头；
+1016条manifest、12案例453文件及49个主程序pin通过。四项latency、analyze与41项normal渲染在超算快照完整通过，pack随后日志exit0。
+当前入口：[中立结果报告](../../reports/fe01_v4_hpc_results_20261115/README.md)、
+[ChatGPT独立分析任务](../../reports/fe01_v4_hpc_results_20261115/CHATGPT_ANALYSIS_PROMPT.md)。
+本地复核864条TTUM支持、216个原TTUM区间、6个旧主MAE区间、104800个FIFO帧及8组latency汇总。
+旧snapshot、新固定query、共享渲染场景保持区分；全部validation/seed42，不冒称test或部署认证。
+Codex独立分析已在本地封存，仅SHA承诺入Git/中立ZIP；先让ChatGPT定稿，再披露封存正文逐项对照，当前不预填双方一致。
+本轮只读结果/提取/复算，无执行代码或HPC包更新，无新超算任务。
+
 **最新渲染日志证据（2026-11-13）：** control33793740确认提交render_normal pool33794066，四worker覆盖原41项；
 全部逻辑任务各一次exit0，四个最终POOL_SUMMARY齐全。0号stderr前两行为Slurm switch/generic插件版本不兼容报错，
 其后该slot的11项仍全部exit0；其余stderr为route及pandas FutureWarning/DtypeWarning，不能把插件报错统称为警告。

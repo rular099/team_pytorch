@@ -1,0 +1,10 @@
+{
+  "status": "MEASURED_COMPUTE_AND_SHARED_COMPARISON_RENDER_SCENARIO",
+  "compute": "actual per-event/model/grid complete-frame timings from replay_grid_normal",
+  "render": "actual four-model comparison frame render+PNG publication time, uniformly charged to each model scenario",
+  "queue": "per-event sequential FIFO; compute + shared comparison rendering on one scenario server",
+  "communication_latency": "UNKNOWN",
+  "not_deployment_measurement": true,
+  "numeric_vs_rendered": "numeric-only queue and render-inclusive queue are separate explicit scenarios; no double counting",
+  "scope": "normal only; random rendered scenario requires separately completed grid/random render stages"
+}

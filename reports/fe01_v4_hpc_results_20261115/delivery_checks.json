@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "source_and_derived_sha_records_verified": 114,
+  "ttum_event_rows": 377280,
+  "ttum_full_cohort_groups": 288,
+  "shadow_event_rows": 259520,
+  "private_analysis_hashes": "PASS; bodies excluded",
+  "source_script_hashes": "PASS",
+  "all_json_and_local_markdown_links": "PASS",
+  "no_private_cluster_absolute_paths_in_text": "PASS",
+  "compile": "3 review scripts PASS",
+  "production_changes": "none",
+  "frozen_initial_plan": "Original private plan SHA and complete redacted contents match",
+  "statistical_checks": {
+    "review_manifest": "PASS",
+    "ttum_support_rows": 864,
+    "original_ttum_intervals_checked": 216,
+    "legacy_primary_intervals_checked": 6,
+    "queue_frames_verified": 104800,
+    "latency_summaries_checked": 8
+  }
+}

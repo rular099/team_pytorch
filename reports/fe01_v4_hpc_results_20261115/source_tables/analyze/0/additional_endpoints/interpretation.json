@@ -1,0 +1,6 @@
+{
+  "definition": "q84-q16; source exact mixture quantiles",
+  "width_direction": "narrower is not automatically better; interpret with coverage and proper scores",
+  "effect": "DiTing minus comparator",
+  "uncertainty": "event clusters; fixed models, seed42 validation"
+}

@@ -1,0 +1,6 @@
+{
+  "path": "reports/fe01_a01_hpc_results_20261021/event_cells_noninput.csv.gz",
+  "sha256": "2732d307849cbc8460cac6df50b9edb9fd74afd991ef626a80f3f17d803837f2",
+  "origin": "Prior verified A01 saved ON exports; not new fixed-query replay.",
+  "crosscheck": "Both policies/4 families reproduce fresh V4 legacy noninput primary MAE; six paired MAE CIs checked below."
+}

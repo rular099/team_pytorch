@@ -1,0 +1,122 @@
+[
+  {
+    "dataset_id": "japan_2001.hdf5",
+    "event_id": "20011002211400",
+    "geometry": "normal",
+    "href": "4ed37394e714d9af4717/index.html",
+    "label": "japan_2001.hdf5/20011002211400 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "2be657c3679c3b99587b3768ecb4abf947ce79c60235e3a1b445f93995ac123c"
+  },
+  {
+    "dataset_id": "japan_2006.hdf5",
+    "event_id": "20060913043100",
+    "geometry": "normal",
+    "href": "d2d0ea4c48e2801e7319/index.html",
+    "label": "japan_2006.hdf5/20060913043100 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "db469d4c9dd2a02f92262328e0874e87f0f8c9ccc61fd17563af852ed137b93c"
+  },
+  {
+    "dataset_id": "japan_2008.hdf5",
+    "event_id": "20080906162900",
+    "geometry": "normal",
+    "href": "5bf7024ce8f99ff50ebd/index.html",
+    "label": "japan_2008.hdf5/20080906162900 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "c2f889e28457b0a55e274056071bea52666e2c9c1a38360f6d4f59d24a12ad8c"
+  },
+  {
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110827015100",
+    "geometry": "normal",
+    "href": "32f8668a90b45f9ada23/index.html",
+    "label": "japan_2011.hdf5/20110827015100 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "8f5f5ece63712e48a57d9466f0b189329345bc02b2b7ad8e82726c3682fab2e3"
+  },
+  {
+    "dataset_id": "japan_2011.hdf5",
+    "event_id": "20110918220300",
+    "geometry": "normal",
+    "href": "d97ea03b964ac3b6c5fc/index.html",
+    "label": "japan_2011.hdf5/20110918220300 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "e8716b9c0a04a4df062e002d9ee7a02197ce61c3ef045e65434dcc98d9c9a8f0"
+  },
+  {
+    "dataset_id": "japan_2013.hdf5",
+    "event_id": "20130908093000",
+    "geometry": "normal",
+    "href": "f99709f3a5890f6efc5d/index.html",
+    "label": "japan_2013.hdf5/20130908093000 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "deda5ea41cda6e31e7ff7401fa150488f807c85842fb2778cf5cfa255bbbd77e"
+  },
+  {
+    "dataset_id": "japan_2016.hdf5",
+    "event_id": "20160816002800",
+    "geometry": "normal",
+    "href": "f0bbc662a98e5ce2e449/index.html",
+    "label": "japan_2016.hdf5/20160816002800 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "1a65305a12351cd1f6fb0e2288c5b2835df5804ec3a5cf6c72cfb999516241f4"
+  },
+  {
+    "dataset_id": "japan_2016.hdf5",
+    "event_id": "20160820180100",
+    "geometry": "normal",
+    "href": "112c531f51c613fb263c/index.html",
+    "label": "japan_2016.hdf5/20160820180100 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "ba1dbe26c0f59ce7140d096d59e2502a7c38a5af4d760f50c22d8ef2d73f2064"
+  },
+  {
+    "dataset_id": "japan_2016.hdf5",
+    "event_id": "20160913191200",
+    "geometry": "normal",
+    "href": "397598f8ac8fbae04c5f/index.html",
+    "label": "japan_2016.hdf5/20160913191200 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "fbbcac93a1624346b5da66409ae8cd67a14b92b698b119841f253e08170e19f6"
+  },
+  {
+    "dataset_id": "japan_2017.hdf5",
+    "event_id": "20171001102500",
+    "geometry": "normal",
+    "href": "98cf90ab05ff456c6567/index.html",
+    "label": "japan_2017.hdf5/20171001102500 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "160dd938f82cb3e0e70acd9900cd414188ce0c0745e5d5b6ce54fd59a5917bae"
+  },
+  {
+    "dataset_id": "japan_2020.hdf5",
+    "event_id": "20200907093400",
+    "geometry": "normal",
+    "href": "96eb80ac09a103420495/index.html",
+    "label": "japan_2020.hdf5/20200907093400 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "67eadbb16661fcb8573af5cc557b888e9e098bc5e6aa2f85302c9ed521293f84"
+  },
+  {
+    "dataset_id": "japan_2020.hdf5",
+    "event_id": "20200912190400",
+    "geometry": "normal",
+    "href": "899f00fc2d65da9d27f0/index.html",
+    "label": "japan_2020.hdf5/20200912190400 normal",
+    "status": "RENDERED",
+    "grid_available": true,
+    "case_hash": "721d8333e7ae86df20a9480fd8c4f28233695a3f759e2da069cf643088f9cb78"
+  }
+]

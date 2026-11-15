@@ -971,3 +971,28 @@ CPU control在计算节点先完整验compare_existing/analyze/render_normal/lat
 latency33441392仍无新完成证据；若前置门失败，传control日志和小JSON，不绕过门或盲重提。无需额外先排独立status作业。
 完整pack成功后下载stages/pack/0/fe01_on_eval_v4_review.tar.gz及同名.sha256，另传control和pack_pool日志；全量图源留超算。
 本轮仅证据/文档同步，未修改执行代码、重新封包、重跑模型/统计或实际提交HPC作业。
+
+## 2026-11-15 V4完整结果包核验、独立分析与中立交付
+
+仓库rular099/team_pytorch，base99d9b1c4bb5c47fc26125df7eea2648917e90462，远端分支exp/fe01-on-warning-map-evaluation。
+此前/tmp接手worktree已不存在，新建review/fe01-v4-results-20261115独立worktree；原FE01工作区HEAD/status保留。
+用户提供runs/v4pack/fe01_on_eval_v4_review.tar.gz（107210231 bytes），SHA
+7a5c19ad82d45c8c3a40a00a00b29856f4fd8720634fdbdf371e350f4bc32add，与侧录一致；pack_pool33863312_0日志exit0。
+安全解包到本地artifacts/fe01_on_eval/v4pack_review_20261115/raw，保留原归档和历史输出；1062成员/1017常规文件，
+1016条review manifest全部SHA通过，12个预选案例453个payload匹配原索引SHA，49个V4主程序文件匹配HPC pin。
+原frozen_core记录96 checked/65 dtbench未本地核验的边界保留；完整79009原产物实体/权重/逐台站新预测不在本地。
+
+四latency、analyze、41项normal render等必需阶段在包内超算快照为COMPLETE_SEAL_VERIFIED。
+pack自身RUNNING是pack内部生成快照的时间点，随后stdout exit0，不据静态plan/contract模板状态否认已执行。
+旧私有JSON有脱敏，review manifest认证收到副本；不将原seal与副本字节差误判损坏。
+实际复核864条TTUM支持、预算0.20的216个已有配对区间、6个旧主MAE区间、104800个完整FIFO帧、8组warm latency汇总通过。
+从事件记录另算预算0.20渲染场景区间；所有旧/新派生和方法边界明确。历史八份ON prediction SHA与本次fresh export验证对上，
+旧ON事件表仅复算legacy主端点，不冒充新fixed-query逐台站指标。全部validation/seed42/ON，未读test或调模型/阈值。
+
+中立交付在reports/fe01_v4_hpc_results_20261115/：原始小表、完整压缩事件记录、数值阅读表、数据字典、
+四张可复现科学图、12个元数据预选案例的5/20秒图、已pin方法源码、验证脚本和ChatGPT分两阶段分析/对照任务。
+原107MB包/全量图源不入Git；本地另打中立ChatGPT ZIP及SHA。
+用户要求同时分析并供ChatGPT对照，Codex独立判断已保存于本地artifacts对应目录的CODEX_INDEPENDENT_ANALYSIS.md，
+SHA ad1a68d2526e0926e6662fa4d9b4065af8a1e7ad63d5e1cddcac5f0c05d46abb；另有私有对照行表。
+正文/判断不入Git或中立ZIP，仅CODEX_ANALYSIS_COMMITMENT入Git，保证ChatGPT先独立定稿后再披露对比；
+当前尚无ChatGPT真实结论，不预填一致/分歧。本轮无模型执行/训练/HPC新提交，不改冻结程序、配置、plan、seal或运行身份。

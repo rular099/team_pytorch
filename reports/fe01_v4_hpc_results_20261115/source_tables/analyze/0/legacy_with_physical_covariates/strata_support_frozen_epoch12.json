@@ -1,0 +1,6 @@
+{
+  "support_sha256": "1433f1f64282acd08230cc8b005ff91c61ccbd76f5a4d2b0ba96092aa82b6b21",
+  "rule": "support and bins frozen before effect calculation",
+  "exploratory": true,
+  "multiple_testing": "uncorrected; <20 events descriptive only"
+}

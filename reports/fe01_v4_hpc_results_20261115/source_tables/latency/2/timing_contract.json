@@ -1,0 +1,13 @@
+{
+  "warmup": 2,
+  "repeats": 3,
+  "cold_load_separate": true,
+  "cold_scope": "checkpoint authentication/read + construct/load, after Torch import and device initialization",
+  "synchronization": "before/after complete forward and readout",
+  "numeric": "all station + grid MDN probabilities and quantiles",
+  "renderer": "actual CPU render and PNG publish measured, separate from numerical readiness",
+  "archive": "offline stage I/O, excluded from service",
+  "queue_policy": "sequential_FIFO_shared_clocks.py",
+  "hardware_fairness": "review recorded device_name/precision/K/Q before comparing; different allocations are not proof of identical devices",
+  "deployment": "communication and true trigger latency UNKNOWN"
+}

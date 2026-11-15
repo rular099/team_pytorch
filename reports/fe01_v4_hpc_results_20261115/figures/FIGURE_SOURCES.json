@@ -1,0 +1,17 @@
+{
+  "script_sha256": "eacbf0ee299ed615f97bb0a5dbb33abdf1d9427673ae8758b46b71b242e9f296",
+  "sources": {
+    "ttum_by_20s_b020": [
+      "derived/ttum_support_recomputed.csv; normal; field_pass; budget .2; horizon20; both panels"
+    ],
+    "warm_latency": [
+      "derived/latency_recomputed.csv; P50/P95 distributions, not CIs"
+    ],
+    "legacy_point_and_coverage": [
+      "source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv; selected, noninput, primary_10cell"
+    ],
+    "queue_20th_frame": [
+      "derived/queue_quantiles.csv; cutoff_20s; render-inclusive shared FIFO scenario"
+    ]
+  }
+}

@@ -1,5 +1,13 @@
 # FE01 ON V4：跨服务器 Codex 接手文档（2026-11-08）
 
+**2026-11-15当前交接点：V4完整review已下载并进入结果分析。** pack33863312 task0日志exit0，
+107MB包及同名SHA相符，1016条review manifest通过；四latency/analyze/41项normal render的超算快照完整通过。
+当前阅读[中立结果报告](../../reports/fe01_v4_hpc_results_20261115/README.md)与
+[ChatGPT独立分析任务](../../reports/fe01_v4_hpc_results_20261115/CHATGPT_ANALYSIS_PROMPT.md)。
+864条TTUM支持、216个原区间、6个旧主MAE区间、104800帧FIFO及8组latency汇总在本地复现。
+Codex判断另行封存，Git/ZIP只含其SHA承诺；ChatGPT先独立定稿，再据同一数据逐项对照。尚无真实ChatGPT结论，不编造对照结果。
+不再用旧latency“未知”概括本包，亦不把局部下载当本地核验全部79009实体；原程序/包/run和已成功结果不变，无新任务。
+
 **2026-11-13当前渲染状态：** 用户提供control33793740及render_normal_pool33794066日志包，41个原逻辑任务
 全部exit0，四worker最终汇总齐全。0号有两条Slurm switch/generic插件版本不兼容报错，其后11项仍全部exit0；
 其余stderr为route/pandas警告。见[复核证据](../../reports/fe01_v4_render_logs_20261113/render_33794066_log_review.json)。

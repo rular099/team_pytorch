@@ -1,0 +1,9 @@
+{
+  "python": "3.13.17 | packaged by Anaconda, Inc. | (main, Oct 23 2026, 00:29:53) [GCC 14.3.0]",
+  "numpy": "2.5.4",
+  "pandas": "3.1.0",
+  "script_sha256": {
+    "review_bundle.py": "985b39a1fed7413a317949b033227fb087d002c2d1046f7827a747b44b279086",
+    "build_review.py": "df1830b0ea023d1f6e7cd27f3b6fbe064c45c3bc8059994c7acc1b8115fc7c84"
+  }
+}

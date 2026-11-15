@@ -1,0 +1,62 @@
+{
+  "status": "PASS",
+  "exports": [
+    {
+      "family": "TEAM",
+      "policy": "selected",
+      "epoch": 11,
+      "prediction_sha256": "3db1e88e6514fd89df11a653862e5f30fd668894218a1d0813190c7c29b166a9",
+      "checkpoint_sha256": "dd73663d5ce4dc19ad24c118318755c0a08c4a0831f1812b38ea2c1078a48d37"
+    },
+    {
+      "family": "TEAM",
+      "policy": "epoch12",
+      "epoch": 12,
+      "prediction_sha256": "e42bb80fdb51ed94d9215002135c8a042cc134278b45bd21baae1cf7bf06a348",
+      "checkpoint_sha256": "60cccb697afcf1f6e0ee487b38745d641811c51290ac764fec5a9e6d005d0e41"
+    },
+    {
+      "family": "PhaseNet",
+      "policy": "selected",
+      "epoch": 12,
+      "prediction_sha256": "d146db438967d056773a02930f1c6020894e004d3201a4986a88dca0fc50d156",
+      "checkpoint_sha256": "6b672a9ac2a71bf6cb2086db09ca06438f2b517e7558ad2b785e690782259089"
+    },
+    {
+      "family": "PhaseNet",
+      "policy": "epoch12",
+      "epoch": 12,
+      "prediction_sha256": "c947dd465770abdfb7dd8993f74c31b5fc1d58347a44d120f63472732a414e55",
+      "checkpoint_sha256": "1358eae21ba8972ea3dcf929b14251856d79b865adb00be5ecc59f96d73ef439"
+    },
+    {
+      "family": "EQT",
+      "policy": "selected",
+      "epoch": 10,
+      "prediction_sha256": "af120ad1bedf1987a05ab5d9c4fd17d0db2b8c3ef703169bcb8dba5cf2f9c3e0",
+      "checkpoint_sha256": "19a9e50151bfd38bb547207ea3015225bde78e857fb1f20ac664799b5bee8714"
+    },
+    {
+      "family": "EQT",
+      "policy": "epoch12",
+      "epoch": 12,
+      "prediction_sha256": "d934b586e2e9f76b4da066beb31f60b2131e2908af6bcdd4efc05edf742fc8ff",
+      "checkpoint_sha256": "1e338ef3a2acbd56cb12f82403c539a5e708fb26909265dfb36320e211bf84f5"
+    },
+    {
+      "family": "DiTing",
+      "policy": "selected",
+      "epoch": 12,
+      "prediction_sha256": "5a171f306bfcb134870bb599f16b0141db27c84770ed2b4f014eae38f5bd4ce2",
+      "checkpoint_sha256": "b00168db60c3d18aa70a963355c205e01ab68235313a74b87be4d7da2e3394ff"
+    },
+    {
+      "family": "DiTing",
+      "policy": "epoch12",
+      "epoch": 12,
+      "prediction_sha256": "99e1b1878bebf7a1d47d9200ca9e84f75ef4651ca1c7dba30079de55e8f97bf6",
+      "checkpoint_sha256": "5fccd86fb8a2e6ef7b305a952e93be3ae694715923800f69211299078f750fe6"
+    }
+  ],
+  "protocol": "legacy_snapshot_v1"
+}

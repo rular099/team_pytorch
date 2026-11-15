@@ -1,0 +1,270 @@
+[
+  {
+    "family": "DiTing",
+    "policy": "selected",
+    "run_dir": "PRIVATE_PATH/a01__diting_pretrained_frozen__on__seed42",
+    "path": "PRIVATE_PATH/best.pth",
+    "epoch": 12,
+    "checkpoint_sha256": "b00168db60c3d18aa70a963355c205e01ab68235313a74b87be4d7da2e3394ff",
+    "config_path": "PRIVATE_PATH/resolved_config.json",
+    "lock_path": "PRIVATE_PATH/protocol.lock.json",
+    "audit_dir": "PRIVATE_PATH/a01__diting_pretrained_frozen__on__seed42",
+    "status": "IDENTITY_PASS",
+    "config_sha256": "f91d8fde016d4a3075a8bf72f743f3a3af9258d54000c976e9aef1e9bbb8b320",
+    "lock_sha256": "fff19ab1e98096fb0a558d12b0125ca503f791d2a0e5b0b1eeaba8231a672eea",
+    "state_sha256": "270cc6d01785f9bcfc9aa59bdc16b06697690fe521bd76a95293a7da3c7b44fa",
+    "encoder_sha256": "2ee9bf53adec8e4ee12dfaaf5170b26c80cf0bc61ea987d380cddfd0980bccb8",
+    "encoder_policy": "frozen pretrained",
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "pretrained_dependency": {
+      "family": "diting_pretrained_frozen",
+      "pretrained_manifest_sha256": "d80ab473026112ca473fe28a82419b5ac8031b72353ad94da47dbb79fbd5b31b",
+      "encoder_assets_sha256": {
+        "weights": "c71aea36cd3b14a3dfa8da1b22104776bede4c04e208db01b443ae25c27a685b"
+      },
+      "recorded_manifest": "PRIVATE_PATH/diting_manifest.json",
+      "runtime_manifest": "PRIVATE_PATH/diting_manifest.json"
+    }
+  },
+  {
+    "family": "DiTing",
+    "policy": "epoch12",
+    "run_dir": "PRIVATE_PATH/a01__diting_pretrained_frozen__on__seed42",
+    "path": "PRIVATE_PATH/last.pth",
+    "epoch": 12,
+    "checkpoint_sha256": "5fccd86fb8a2e6ef7b305a952e93be3ae694715923800f69211299078f750fe6",
+    "config_path": "PRIVATE_PATH/resolved_config.json",
+    "lock_path": "PRIVATE_PATH/protocol.lock.json",
+    "audit_dir": "PRIVATE_PATH/a01__diting_pretrained_frozen__on__seed42",
+    "status": "IDENTITY_PASS",
+    "config_sha256": "f91d8fde016d4a3075a8bf72f743f3a3af9258d54000c976e9aef1e9bbb8b320",
+    "lock_sha256": "fff19ab1e98096fb0a558d12b0125ca503f791d2a0e5b0b1eeaba8231a672eea",
+    "state_sha256": "270cc6d01785f9bcfc9aa59bdc16b06697690fe521bd76a95293a7da3c7b44fa",
+    "encoder_sha256": "2ee9bf53adec8e4ee12dfaaf5170b26c80cf0bc61ea987d380cddfd0980bccb8",
+    "encoder_policy": "frozen pretrained",
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "pretrained_dependency": {
+      "family": "diting_pretrained_frozen",
+      "pretrained_manifest_sha256": "d80ab473026112ca473fe28a82419b5ac8031b72353ad94da47dbb79fbd5b31b",
+      "encoder_assets_sha256": {
+        "weights": "c71aea36cd3b14a3dfa8da1b22104776bede4c04e208db01b443ae25c27a685b"
+      },
+      "recorded_manifest": "PRIVATE_PATH/diting_manifest.json",
+      "runtime_manifest": "PRIVATE_PATH/diting_manifest.json"
+    }
+  },
+  {
+    "family": "PhaseNet",
+    "policy": "selected",
+    "run_dir": "PRIVATE_PATH/formal__phasenet_pretrained_frozen__seed42",
+    "path": "PRIVATE_PATH/best.pth",
+    "epoch": 12,
+    "checkpoint_sha256": "6b672a9ac2a71bf6cb2086db09ca06438f2b517e7558ad2b785e690782259089",
+    "config_path": "PRIVATE_PATH/resolved_config.json",
+    "lock_path": "PRIVATE_PATH/protocol.lock.json",
+    "audit_dir": "PRIVATE_PATH/formal__phasenet_pretrained_frozen__seed42",
+    "status": "IDENTITY_PASS",
+    "config_sha256": "49984a3dd0a67569fd4e22d6f0975f3ed9562697274a21ffdb24bf9bf1f8451f",
+    "lock_sha256": "c092c99425401ff1df85687d7eb273bf6c9a903bce9466cd331962bc826ff445",
+    "state_sha256": "0bb69dfc3d1b65b3eb210e2ec1304c4a17c13c56da2a0de1efbf979114a3f4be",
+    "encoder_sha256": "19269fdca317368492c8c1933da97ddaac287425fb78cd235dbc58a6e7e62d71",
+    "encoder_policy": "frozen pretrained",
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "pretrained_dependency": {
+      "family": "phasenet_pretrained_frozen",
+      "pretrained_manifest_sha256": "6252debf5185283f183dca9fed4b22c2a1a809746cfd0cc82dc5699a9c28609e",
+      "encoder_assets_sha256": {
+        "weights": "761c46496139e9917a7480ff56f660914124c806511ea794f0005518358b09ec",
+        "metadata": "a500dd76b8507a96da36e8cbf6b1051f29fd71fd5d5fc1be450ac9020634e00c"
+      },
+      "recorded_manifest": "PRIVATE_PATH/pretrained_manifest.json",
+      "runtime_manifest": "PRIVATE_PATH/pretrained_manifest.json"
+    }
+  },
+  {
+    "family": "PhaseNet",
+    "policy": "epoch12",
+    "run_dir": "PRIVATE_PATH/formal__phasenet_pretrained_frozen__seed42",
+    "path": "PRIVATE_PATH/last.pth",
+    "epoch": 12,
+    "checkpoint_sha256": "1358eae21ba8972ea3dcf929b14251856d79b865adb00be5ecc59f96d73ef439",
+    "config_path": "PRIVATE_PATH/resolved_config.json",
+    "lock_path": "PRIVATE_PATH/protocol.lock.json",
+    "audit_dir": "PRIVATE_PATH/formal__phasenet_pretrained_frozen__seed42",
+    "status": "IDENTITY_PASS",
+    "config_sha256": "49984a3dd0a67569fd4e22d6f0975f3ed9562697274a21ffdb24bf9bf1f8451f",
+    "lock_sha256": "c092c99425401ff1df85687d7eb273bf6c9a903bce9466cd331962bc826ff445",
+    "state_sha256": "0bb69dfc3d1b65b3eb210e2ec1304c4a17c13c56da2a0de1efbf979114a3f4be",
+    "encoder_sha256": "19269fdca317368492c8c1933da97ddaac287425fb78cd235dbc58a6e7e62d71",
+    "encoder_policy": "frozen pretrained",
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "pretrained_dependency": {
+      "family": "phasenet_pretrained_frozen",
+      "pretrained_manifest_sha256": "6252debf5185283f183dca9fed4b22c2a1a809746cfd0cc82dc5699a9c28609e",
+      "encoder_assets_sha256": {
+        "weights": "761c46496139e9917a7480ff56f660914124c806511ea794f0005518358b09ec",
+        "metadata": "a500dd76b8507a96da36e8cbf6b1051f29fd71fd5d5fc1be450ac9020634e00c"
+      },
+      "recorded_manifest": "PRIVATE_PATH/pretrained_manifest.json",
+      "runtime_manifest": "PRIVATE_PATH/pretrained_manifest.json"
+    }
+  },
+  {
+    "family": "EQT",
+    "policy": "selected",
+    "run_dir": "PRIVATE_PATH/formal__eqt_pretrained_frozen__seed42",
+    "path": "PRIVATE_PATH/best.pth",
+    "epoch": 10,
+    "checkpoint_sha256": "19a9e50151bfd38bb547207ea3015225bde78e857fb1f20ac664799b5bee8714",
+    "config_path": "PRIVATE_PATH/resolved_config.json",
+    "lock_path": "PRIVATE_PATH/protocol.lock.json",
+    "audit_dir": "PRIVATE_PATH/formal__eqt_pretrained_frozen__seed42",
+    "status": "IDENTITY_PASS",
+    "config_sha256": "1efd5305b18c82a9f84a9d53322def3c03934da9f0fcffa130aa6bf44deb07ff",
+    "lock_sha256": "6bd214104c1a98b9deb8aae41aa10c111d363ec5247db6ccaaaaf925e4ea4602",
+    "state_sha256": "4c722b8ef9b1e185ae41703432506b9aa1778054beb15f04b6d8ff4225907faf",
+    "encoder_sha256": "a1ba52617851e6bb16afd8ec57bde44a20b0f51979e90a8da2764108e308fec4",
+    "encoder_policy": "frozen pretrained",
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "pretrained_dependency": {
+      "family": "eqt_pretrained_frozen",
+      "pretrained_manifest_sha256": "6252debf5185283f183dca9fed4b22c2a1a809746cfd0cc82dc5699a9c28609e",
+      "encoder_assets_sha256": {
+        "weights": "a7c0dead4bfc07df2e316e9230c28250f356841135ef13ccd4db33ed1a15c62e",
+        "metadata": "11c8f429dc5c5714ad010389e1824b9b18a6d192db06f413d972dbaa54b3c68a"
+      },
+      "recorded_manifest": "PRIVATE_PATH/pretrained_manifest.json",
+      "runtime_manifest": "PRIVATE_PATH/pretrained_manifest.json"
+    }
+  },
+  {
+    "family": "EQT",
+    "policy": "epoch12",
+    "run_dir": "PRIVATE_PATH/formal__eqt_pretrained_frozen__seed42",
+    "path": "PRIVATE_PATH/last.pth",
+    "epoch": 12,
+    "checkpoint_sha256": "1e338ef3a2acbd56cb12f82403c539a5e708fb26909265dfb36320e211bf84f5",
+    "config_path": "PRIVATE_PATH/resolved_config.json",
+    "lock_path": "PRIVATE_PATH/protocol.lock.json",
+    "audit_dir": "PRIVATE_PATH/formal__eqt_pretrained_frozen__seed42",
+    "status": "IDENTITY_PASS",
+    "config_sha256": "1efd5305b18c82a9f84a9d53322def3c03934da9f0fcffa130aa6bf44deb07ff",
+    "lock_sha256": "6bd214104c1a98b9deb8aae41aa10c111d363ec5247db6ccaaaaf925e4ea4602",
+    "state_sha256": "895dbe2cbb10e04a95602c0d93a00a616e42a9d29f7ec3070516b49905263cee",
+    "encoder_sha256": "a1ba52617851e6bb16afd8ec57bde44a20b0f51979e90a8da2764108e308fec4",
+    "encoder_policy": "frozen pretrained",
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "pretrained_dependency": {
+      "family": "eqt_pretrained_frozen",
+      "pretrained_manifest_sha256": "6252debf5185283f183dca9fed4b22c2a1a809746cfd0cc82dc5699a9c28609e",
+      "encoder_assets_sha256": {
+        "weights": "a7c0dead4bfc07df2e316e9230c28250f356841135ef13ccd4db33ed1a15c62e",
+        "metadata": "11c8f429dc5c5714ad010389e1824b9b18a6d192db06f413d972dbaa54b3c68a"
+      },
+      "recorded_manifest": "PRIVATE_PATH/pretrained_manifest.json",
+      "runtime_manifest": "PRIVATE_PATH/pretrained_manifest.json"
+    }
+  },
+  {
+    "family": "TEAM",
+    "policy": "selected",
+    "run_dir": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+    "path": "PRIVATE_PATH/best.pth",
+    "epoch": 11,
+    "checkpoint_sha256": "dd73663d5ce4dc19ad24c118318755c0a08c4a0831f1812b38ea2c1078a48d37",
+    "config_path": "PRIVATE_PATH/resolved_config.json",
+    "lock_path": "PRIVATE_PATH/protocol.lock.json",
+    "audit_dir": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+    "status": "IDENTITY_PASS",
+    "config_sha256": "af5a0adf9126cebff847f80ef819bbb5b66b7d3528249c809c8afb121677f4d7",
+    "lock_sha256": "15143a7c0cfc4dc0aacfd35ad489805f09476c75fdc6bbaa4168e97f9f394e54",
+    "state_sha256": "2abece3f37073e4011d430f0a53c47f42f8ee3e24b3093b0fbf1c427def4ed15",
+    "encoder_sha256": "f41fcea19b08d41f61d6e24e3bea4b5edc00dd6433671f1914f1ff746ff04ad7",
+    "encoder_policy": "trained scratch",
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "pretrained_dependency": null
+  },
+  {
+    "family": "TEAM",
+    "policy": "epoch12",
+    "run_dir": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+    "path": "PRIVATE_PATH/last.pth",
+    "epoch": 12,
+    "checkpoint_sha256": "60cccb697afcf1f6e0ee487b38745d641811c51290ac764fec5a9e6d005d0e41",
+    "config_path": "PRIVATE_PATH/resolved_config.json",
+    "lock_path": "PRIVATE_PATH/protocol.lock.json",
+    "audit_dir": "PRIVATE_PATH/formal__team_original_scratch__seed42",
+    "status": "IDENTITY_PASS",
+    "config_sha256": "af5a0adf9126cebff847f80ef819bbb5b66b7d3528249c809c8afb121677f4d7",
+    "lock_sha256": "15143a7c0cfc4dc0aacfd35ad489805f09476c75fdc6bbaa4168e97f9f394e54",
+    "state_sha256": "590fa33ac46726b6040cf521025dffbb616d0ad0881be6db57cea01787312466",
+    "encoder_sha256": "471b3d114982a72abf0ccf2e365d7d7cf4261818c3b51feb95524400fb2cec8c",
+    "encoder_policy": "trained scratch",
+    "normalization": {
+      "enabled": true,
+      "mean": -1.1224620633068207,
+      "std": 0.431328951490345,
+      "unit": "log10(m/s^2)",
+      "fitted_split": "train",
+      "targets": 146299,
+      "rule": "all finite labels at permitted KNET train stations; population std"
+    },
+    "pretrained_dependency": null
+  }
+]

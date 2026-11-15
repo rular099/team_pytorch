@@ -1,0 +1,17 @@
+stage,status,size
+analyze,COMPLETE_SEAL_VERIFIED,1
+compare_existing,COMPLETE_SEAL_VERIFIED,1
+covariates,COMPLETE_SEAL_VERIFIED,41
+crossing_truth,COMPLETE_SEAL_VERIFIED,41
+inventory,COMPLETE_SEAL_VERIFIED,1
+latency,COMPLETE_SEAL_VERIFIED,4
+long_extension,NOT_SUBMITTED,328
+model_smoke,COMPLETE_SEAL_VERIFIED,4
+origin_replay,NOT_SUBMITTED,328
+pack,RUNNING,1
+render_normal,COMPLETE_SEAL_VERIFIED,41
+render_random,NOT_SUBMITTED,41
+replay_grid_normal,COMPLETE_SEAL_VERIFIED,164
+replay_grid_random,NOT_SUBMITTED,164
+replay_pilot,COMPLETE_SEAL_VERIFIED,4
+replay_stations,COMPLETE_SEAL_VERIFIED,328

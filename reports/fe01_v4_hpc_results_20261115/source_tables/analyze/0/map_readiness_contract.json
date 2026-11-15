@@ -1,0 +1,31 @@
+{
+  "interpretation": "retrospective_station_supported_research_only",
+  "engineering_acceptance": null,
+  "budgets_dex": [
+    0.15,
+    0.2,
+    0.25
+  ],
+  "minimum_fixed_targets": 5,
+  "station_gate": {
+    "mae_max": "b",
+    "absolute_bias_max": "b/2",
+    "absolute_error_threshold": "2*b",
+    "required_fraction_within": 0.9
+  },
+  "field_additional_gate": {
+    "centered_rmse_max": "b",
+    "range_absolute_error_max": "b",
+    "range_definition": "P95_minus_P05"
+  },
+  "stability_consecutive_frames": 3,
+  "update_period_seconds": 1,
+  "report_times": [
+    "first_observed_pass",
+    "stable_onset_retrospective",
+    "stable_confirmation"
+  ],
+  "nonattainment": "retain_not_reached_by_horizon",
+  "missing_frames": "Unknown_and_break_stability",
+  "single_event_coverage": "descriptive_not_95percent_acceptance_gate"
+}

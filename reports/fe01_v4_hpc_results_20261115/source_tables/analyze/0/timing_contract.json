@@ -1,0 +1,14 @@
+{
+  "modes": [
+    "ideal_cutoff_replay",
+    "measured_compute_replay"
+  ],
+  "queue_policy": "sequential_FIFO",
+  "communication_latency": "UNKNOWN_unless_measured_or_declared_scenario",
+  "boundaries": [
+    "numeric_station_ready",
+    "numeric_map_ready",
+    "rendered_map_ready"
+  ],
+  "prohibit_query_amortized_time_as_frame_time": true
+}

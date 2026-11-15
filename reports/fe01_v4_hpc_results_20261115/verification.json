@@ -1,0 +1,185 @@
+{
+  "repository": "rular099/team_pytorch",
+  "review_base_commit": "99d9b1c4bb5c47fc26125df7eea2648917e90462",
+  "review_branch": "review/fe01-v4-results-20261115",
+  "sync_branch": "exp/fe01-on-warning-map-evaluation",
+  "archive": {
+    "name": "fe01_on_eval_v4_review.tar.gz",
+    "bytes": 107210231,
+    "sha256": "7a5c19ad82d45c8c3a40a00a00b29856f4fd8720634fdbdf371e350f4bc32add",
+    "sha_sidecar": "PASS",
+    "gzip": "PASS",
+    "members": 1062,
+    "regular_files": 1017,
+    "manifest_payloads_verified": 1016
+  },
+  "completion_scope": "REQUIRED_SCOPE_COMPLETE",
+  "main_source_commit": "50672e131d876a604432b283162d5b0189d40cf0",
+  "execution_sha256": "b9dd0368adc7041bb0c1e36a6899d49014ac9545ae7f44850274099bab6dc15c",
+  "original_index_records": 79009,
+  "copied_original_payload_sha_matches": 536,
+  "copied_redacted_json_differences": [
+    "compare_existing/0/REUSE_PROVENANCE/receipt.json",
+    "inventory/0/checkpoint_inventory.json"
+  ],
+  "selected_case_payloads_sha_verified": 453,
+  "stage_snapshot": {
+    "inventory": {
+      "COMPLETE_SEAL_VERIFIED": 1
+    },
+    "compare_existing": {
+      "COMPLETE_SEAL_VERIFIED": 1
+    },
+    "analyze": {
+      "COMPLETE_SEAL_VERIFIED": 1
+    },
+    "pack": {
+      "RUNNING": 1
+    },
+    "covariates": {
+      "COMPLETE_SEAL_VERIFIED": 41
+    },
+    "crossing_truth": {
+      "COMPLETE_SEAL_VERIFIED": 41
+    },
+    "model_smoke": {
+      "COMPLETE_SEAL_VERIFIED": 4
+    },
+    "replay_pilot": {
+      "COMPLETE_SEAL_VERIFIED": 4
+    },
+    "latency": {
+      "COMPLETE_SEAL_VERIFIED": 4
+    },
+    "replay_stations": {
+      "COMPLETE_SEAL_VERIFIED": 328
+    },
+    "origin_replay": {
+      "NOT_SUBMITTED": 328
+    },
+    "long_extension": {
+      "NOT_SUBMITTED": 328
+    },
+    "replay_grid_normal": {
+      "COMPLETE_SEAL_VERIFIED": 164
+    },
+    "render_normal": {
+      "COMPLETE_SEAL_VERIFIED": 41
+    },
+    "replay_grid_random": {
+      "NOT_SUBMITTED": 164
+    },
+    "render_random": {
+      "NOT_SUBMITTED": 41
+    }
+  },
+  "copied_seal_summary": {
+    "analyze/0/SEAL.json": {
+      "status": "COMPLETE",
+      "stage": "analyze",
+      "task": 0,
+      "included_payload_sha_matches": 37,
+      "declared_payloads": 43
+    },
+    "compare_existing/0/SEAL.json": {
+      "status": "COMPLETE",
+      "stage": "compare_existing",
+      "task": 0,
+      "included_payload_sha_matches": 44,
+      "declared_payloads": 47
+    },
+    "inventory/0/SEAL.json": {
+      "status": "COMPLETE",
+      "stage": "inventory",
+      "task": 0,
+      "included_payload_sha_matches": 3,
+      "declared_payloads": 4
+    },
+    "latency/0/SEAL.json": {
+      "status": "COMPLETE",
+      "stage": "latency",
+      "task": 0,
+      "included_payload_sha_matches": 113,
+      "declared_payloads": 113
+    },
+    "latency/1/SEAL.json": {
+      "status": "COMPLETE",
+      "stage": "latency",
+      "task": 1,
+      "included_payload_sha_matches": 113,
+      "declared_payloads": 113
+    },
+    "latency/2/SEAL.json": {
+      "status": "COMPLETE",
+      "stage": "latency",
+      "task": 2,
+      "included_payload_sha_matches": 113,
+      "declared_payloads": 113
+    },
+    "latency/3/SEAL.json": {
+      "status": "COMPLETE",
+      "stage": "latency",
+      "task": 3,
+      "included_payload_sha_matches": 113,
+      "declared_payloads": 113
+    }
+  },
+  "source_files_sha_verified": [
+    "configs/fe01_a01_compare/DITING_ON_INTEGRATED_EVALUATION_HANDOFF_V4_20261021.md",
+    "configs/fe01_a01_compare/DITING_ON_V4_RESEARCH_CONTRACT.json",
+    "configs/fe01_a01_compare/HANDOFF_SOURCES.json",
+    "configs/fe01_a01_compare/cluster.env.example",
+    "configs/fe01_a01_compare/production_definition_sources.json",
+    "configs/fe01_a01_compare/source_pins.json",
+    "fe01_a01_compare/__init__.py",
+    "fe01_a01_compare/additional_endpoints.py",
+    "fe01_a01_compare/cli.py",
+    "fe01_a01_compare/clocks.py",
+    "fe01_a01_compare/comparison.py",
+    "fe01_a01_compare/contracts.py",
+    "fe01_a01_compare/covariates.py",
+    "fe01_a01_compare/crossings.py",
+    "fe01_a01_compare/delivery_analysis.py",
+    "fe01_a01_compare/event_statistics.py",
+    "fe01_a01_compare/interactions.py",
+    "fe01_a01_compare/io.py",
+    "fe01_a01_compare/latency.py",
+    "fe01_a01_compare/map_readiness.py",
+    "fe01_a01_compare/orchestration.py",
+    "fe01_a01_compare/packaging.py",
+    "fe01_a01_compare/plotting.py",
+    "fe01_a01_compare/quality.py",
+    "fe01_a01_compare/query_grid.py",
+    "fe01_a01_compare/recovery.py",
+    "fe01_a01_compare/replay.py",
+    "fe01_a01_compare/report_plots.py",
+    "fe01_a01_compare/selection.py",
+    "fe01_a01_compare/shadow.py",
+    "fe01_a01_compare/sources.py",
+    "fe01_a01_compare/spatial_statistics.py",
+    "fe01_a01_compare/stages.py",
+    "fe01_a01_compare/statistics.py",
+    "fe01_a01_compare/stratification.py",
+    "fe01_a01_compare/synthetic.py",
+    "scripts/fe01_a01_compare/build_bundle.sh",
+    "scripts/fe01_a01_compare/compute_env.sh",
+    "scripts/fe01_a01_compare/dispatch.sh",
+    "scripts/fe01_a01_compare/jobs/cpu_stage.sbatch",
+    "scripts/fe01_a01_compare/jobs/inference_array.sbatch",
+    "scripts/fe01_a01_compare/jobs/render_array.sbatch",
+    "scripts/fe01_a01_compare/prepare.sh",
+    "scripts/fe01_a01_compare/recover_inventory.sh",
+    "scripts/fe01_a01_compare/resume_failed.sh",
+    "scripts/fe01_a01_compare/status.sh",
+    "scripts/fe01_a01_compare/submit_stage.sh",
+    "scripts/fe01_a01_compare/verify_local.sh",
+    "scripts/fe01_a01_compare/worker_dcu.sh"
+  ],
+  "source_files_unavailable": [],
+  "limitations": [
+    "The review manifest verifies actual received bytes; original private JSON seals may differ after redaction.",
+    "Full replay/render payloads and model weights remain on HPC. Full index/status are HPC evidence, not local full-payload verification.",
+    "Pack RUNNING in its own status snapshot was captured inside packaging; supplied pack stdout subsequently reports exit0.",
+    "No models, training, HPC jobs or held-out test were run during this review."
+  ]
+}
