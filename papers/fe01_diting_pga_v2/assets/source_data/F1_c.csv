@@ -1,0 +1,5 @@
+family,station_context,pga_readout,readout_layers,event_context,native_samples,sampling_rate,scale_dimensions
+DiTing,off,target_cross_attention,4,False,10000,100,11
+PhaseNet,off,target_cross_attention,4,False,3001,100,11
+EQT,off,target_cross_attention,4,False,6000,100,11
+TEAM,off,target_cross_attention,4,False,10000,100,11

@@ -1,0 +1,5 @@
+family,geometry_protocol,panel,budget_dex,gate,scene,events,any_degradation_after_first,stable_confirmed,post_confirmation_known_nonpassing_events
+DiTing,normal,fixed_never_input_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,207,77,88,34
+EQT,normal,fixed_never_input_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,207,64,51,31
+PhaseNet,normal,fixed_never_input_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,207,87,73,47
+TEAM,normal,fixed_never_input_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,207,72,66,39

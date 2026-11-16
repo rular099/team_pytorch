@@ -1,0 +1,32 @@
+[
+  {
+    "factor":"magnitude",
+    "stratum":"4<M<=5",
+    "events":476,
+    "stations":837,
+    "requests":74860,
+    "decisions":4226,
+    "supported_cells":10,
+    "fields":3297,
+    "missing_metadata_fraction":0.0,
+    "descriptive_only":false,
+    "mask_sha256":"0f95c4d8520ff0b2c16ffe01a62652b3f826f2d4059654050550526670fad730",
+    "cohort_rule":"shared before model effect; fixed bins; Unknown retained",
+    "checkpoint_policy":"selected"
+  },
+  {
+    "factor":"magnitude",
+    "stratum":"5<M<=6",
+    "events":88,
+    "stations":584,
+    "requests":20564,
+    "decisions":833,
+    "supported_cells":10,
+    "fields":644,
+    "missing_metadata_fraction":0.0,
+    "descriptive_only":false,
+    "mask_sha256":"1929ccc1341355da3cbc2688ba22d59d93b250c2306dd2b6b847e9319ff4328e",
+    "cohort_rule":"shared before model effect; fixed bins; Unknown retained",
+    "checkpoint_policy":"selected"
+  }
+]

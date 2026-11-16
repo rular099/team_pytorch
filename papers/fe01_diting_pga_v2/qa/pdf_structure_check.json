@@ -1,0 +1,59 @@
+{
+  "paper_review.pdf": {
+    "pages": 27,
+    "sha256": "ad924c0384a14e05f82bac994146d21ea96fb7410f18538042035055960d31aa",
+    "pdfinfo": "Title:           基于 DiTing 的早期 PGA 概率预测\nCreator:         Firefox\nProducer:        Skia/PDF m149\nCreationDate:    Mon Nov 16 14:28:11 2026 CST\nModDate:         Mon Nov 16 14:28:11 2026 CST\nCustom Metadata: no\nMetadata Stream: no\nTagged:          yes\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           27\nEncrypted:       no\nPage size:       596 x 842 pts (A4)\nPage rot:        0\nFile size:       2934286 bytes\nOptimized:       no\nPDF version:     1.4\n",
+    "figure_pages": {
+      "F1": [
+        {
+          "page": 5,
+          "title_and_caption_occurrences": 2
+        }
+      ],
+      "F2": [
+        {
+          "page": 15,
+          "title_and_caption_occurrences": 2
+        }
+      ],
+      "F3": [
+        {
+          "page": 17,
+          "title_and_caption_occurrences": 2
+        }
+      ],
+      "F4": [
+        {
+          "page": 19,
+          "title_and_caption_occurrences": 2
+        }
+      ],
+      "F5": [
+        {
+          "page": 21,
+          "title_and_caption_occurrences": 2
+        }
+      ],
+      "F6": [
+        {
+          "page": 22,
+          "title_and_caption_occurrences": 2
+        }
+      ],
+      "F7": [
+        {
+          "page": 23,
+          "title_and_caption_occurrences": 2
+        }
+      ]
+    }
+  },
+  "supplement_review.pdf": {
+    "pages": 4,
+    "sha256": "bdce5ac41ffad069e8e8a5bb97d106a2a1ad386d0d43b9dc75e99c97f61bad52",
+    "pdfinfo": "Title:           补充材料\nCreator:         Firefox\nProducer:        Skia/PDF m149\nCreationDate:    Mon Nov 16 14:28:18 2026 CST\nModDate:         Mon Nov 16 14:28:18 2026 CST\nCustom Metadata: no\nMetadata Stream: no\nTagged:          yes\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           4\nEncrypted:       no\nPage size:       596 x 842 pts (A4)\nPage rot:        0\nFile size:       724658 bytes\nOptimized:       no\nPDF version:     1.4\n",
+    "raw_formula_same_page": [
+      2
+    ]
+  }
+}

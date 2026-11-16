@@ -1,0 +1,13 @@
+family,geometry_protocol,panel,budget_dex,gate,scene,horizon,events,total_cohort_events,ineligible_fewer_than_5,achieved,unknown,fraction_lower,fraction_upper
+DiTing,normal,fixed_all_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,20,1057,1310,253,676,27,0.63954588457899719,0.66508987701040678
+DiTing,normal,fixed_all_targets,0.20000000000000001,field_pass,measured_compute_replay,20,1057,1310,253,455,27,0.43046357615894038,0.45600756859035002
+DiTing,normal,fixed_all_targets,0.20000000000000001,field_pass,measured_rendered_map_replay,20,1057,1310,253,78,27,0.073793755912961209,0.099337748344370855
+EQT,normal,fixed_all_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,20,1057,1310,253,597,40,0.56480605487228008,0.60264900662251653
+EQT,normal,fixed_all_targets,0.20000000000000001,field_pass,measured_compute_replay,20,1057,1310,253,568,40,0.53736991485335861,0.57521286660359505
+EQT,normal,fixed_all_targets,0.20000000000000001,field_pass,measured_rendered_map_replay,20,1057,1310,253,88,40,0.083254493850520347,0.12109744560075686
+PhaseNet,normal,fixed_all_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,20,1057,1310,253,804,37,0.76064333017975405,0.79564806054872284
+PhaseNet,normal,fixed_all_targets,0.20000000000000001,field_pass,measured_compute_replay,20,1057,1310,253,783,37,0.74077578051087989,0.77578051087984867
+PhaseNet,normal,fixed_all_targets,0.20000000000000001,field_pass,measured_rendered_map_replay,20,1057,1310,253,125,37,0.11825922421948912,0.1532639545884579
+TEAM,normal,fixed_all_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,20,1057,1310,253,491,8,0.46452223273415327,0.47209082308420058
+TEAM,normal,fixed_all_targets,0.20000000000000001,field_pass,measured_compute_replay,20,1057,1310,253,473,8,0.44749290444654682,0.45506149479659413
+TEAM,normal,fixed_all_targets,0.20000000000000001,field_pass,measured_rendered_map_replay,20,1057,1310,253,97,8,0.091769157994323558,0.099337748344370855

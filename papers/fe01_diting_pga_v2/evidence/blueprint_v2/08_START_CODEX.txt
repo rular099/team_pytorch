@@ -1,0 +1,23 @@
+请按随附 v2 实施包修订 FE01 论文素材和完整首稿，不要继续沿用 v1 的标题和幅值消融安排。
+
+题目采用《基于 DiTing 的早期 PGA 概率预测》。正文为“1 引言、2 数据与方法、3 结果、4 讨论、5 结论”，所有论文节标题和图表短标题不使用冒号或长副标题。
+
+ON/OFF消融从正文、摘要、结论及补充材料中移除，取消原图5和C06结论；原图6/7/8前移为新图5/6/7，最终为7组正文图、3表。不要改成把消融藏进附录。
+
+仍需如实说明完整模型使用的物理幅值、有效时长和归一化。删去消融叙事不等于关掉输入、换checkpoint或删除历史实验；A01来源仅在核对本文完整模型训练身份时只读使用。
+
+先读00_README.md、01_PAPER_OUTLINE_CN.md、02_CODEX_TASK.md、09_REVISION_NOTES.md，按03_ASSET_SPEC.json生成素材，用04_CLAIM_REGISTER.json和05_EVIDENCE_INDEX.json追溯结论。
+
+仓库 rular099/team_pytorch；来源分支 exp/fe01-on-warning-map-evaluation。
+建议论文基点 560a29d8c82ba634549ed886840b2a2a539e0114。
+固定中立结果 b366434d2cceb55d188576ce1084f571e09da097。
+建议独立论文分支 paper/fe01-diting-pga-manuscript-v2。
+已有v1论文工作区时先保护并安全修订，禁止reset/clean/覆盖用户改动；实际路径和分支如实报告，不强制重建。
+
+主线为早期非输入台站PGA点/概率预测、空间质量和交付边界。不要声称独立test、多seed DiTing、纯预训练机制或实时部署认证。
+
+只允许已有结果读取、CPU素材和文稿制作；不改模型/配置/lock/seal，不重训、重推理、访问test或提交超算。严格隔离FE02。远端发布仍只沿用明确授权，否则交本地commit和审阅包。
+
+完成连续中文正文、补充材料、图注、真实文献核验、7图3表的实际状态、source_data与manifest、脚本和QA、GAPS、预览、HANDOFF_FOR_CHATGPT.md和审阅ZIP。没有新回放MDN时如实标缺，不拿旧snapshot替填。不利结果、支持不足、欠覆盖和时延代价仍须保留。
+
+按任务书CODEX-RESULT收尾，报告真实base/result SHA、变更、实际检查和缺项。后续由ChatGPT审阅和润色，本轮不是再写一份计划。

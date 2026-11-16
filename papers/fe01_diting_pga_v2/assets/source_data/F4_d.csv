@@ -1,0 +1,5 @@
+comparator,checkpoint_policy,target_group,metric,estimate,ci_low,ci_high,events,fields,supported_cells,missing_cells,draws,effective_replicates,empty_cell_fraction,weighting,status
+PhaseNet,selected,all,shape_mse,0.0018736177337365569,0.001326207622391321,0.0024587012158347145,1057,9250,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+PhaseNet,selected,all,field_mse,0.00027794161712070927,-0.0008076015767618667,0.0013824642851766136,1057,9250,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+PhaseNet,selected,noninput,shape_mse,0.00016114863453581979,-0.00055182266398451059,0.00089501669419180723,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+PhaseNet,selected,noninput,field_mse,-0.0010747225259912969,-0.0024770037577608816,0.00035237414712437857,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT

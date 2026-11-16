@@ -1,0 +1,34 @@
+[
+  {
+    "dataset_id":"japan_2000.hdf5",
+    "event_id":"20000922074300",
+    "family":"TEAM",
+    "checkpoint_policy":"selected",
+    "epoch":11,
+    "geometry_protocol":"normal",
+    "elapsed_time":1,
+    "targets":16,
+    "abs_error_sum":2.746177249,
+    "squared_error_sum":0.654273067,
+    "nll_sum":1.336497621,
+    "crps_sum":2.0685668843,
+    "brier_sum":2.429861562,
+    "covered95_sum":15
+  },
+  {
+    "dataset_id":"japan_2000.hdf5",
+    "event_id":"20000922074300",
+    "family":"TEAM",
+    "checkpoint_policy":"selected",
+    "epoch":11,
+    "geometry_protocol":"random",
+    "elapsed_time":1,
+    "targets":16,
+    "abs_error_sum":2.7461771993,
+    "squared_error_sum":0.6542730876,
+    "nll_sum":1.3364967943,
+    "crps_sum":2.068566851,
+    "brier_sum":2.4298615538,
+    "covered95_sum":15
+  }
+]

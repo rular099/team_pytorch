@@ -1,0 +1,1981 @@
+{
+  "fe01/model.py": [
+    {
+      "name": "state_fingerprint",
+      "line": 16,
+      "end_line": 24
+    },
+    {
+      "name": "common_state",
+      "line": 27,
+      "end_line": 28
+    },
+    {
+      "name": "shape_and_scale",
+      "line": 31,
+      "end_line": 54
+    },
+    {
+      "name": "FE01FullModel",
+      "line": 57,
+      "end_line": 110
+    },
+    {
+      "name": "build_model",
+      "line": 113,
+      "end_line": 157
+    },
+    {
+      "name": "model_audit",
+      "line": 160,
+      "end_line": 169
+    },
+    {
+      "name": "same_cutoff_query_cache",
+      "line": 59,
+      "end_line": 68
+    },
+    {
+      "name": "forward",
+      "line": 70,
+      "end_line": 75
+    },
+    {
+      "name": "_normalize",
+      "line": 77,
+      "end_line": 80
+    },
+    {
+      "name": "_extract_scale_features",
+      "line": 82,
+      "end_line": 85
+    },
+    {
+      "name": "_encode_station_waveform",
+      "line": 87,
+      "end_line": 110
+    }
+  ],
+  "fe01/data.py": [
+    {
+      "name": "strings",
+      "line": 17,
+      "end_line": 18
+    },
+    {
+      "name": "jst_timestamp",
+      "line": 21,
+      "end_line": 25
+    },
+    {
+      "name": "split_catalog",
+      "line": 28,
+      "end_line": 60
+    },
+    {
+      "name": "read_event",
+      "line": 63,
+      "end_line": 146
+    },
+    {
+      "name": "geometry",
+      "line": 149,
+      "end_line": 173
+    },
+    {
+      "name": "balanced_targets",
+      "line": 176,
+      "end_line": 188
+    },
+    {
+      "name": "prepare_sample",
+      "line": 191,
+      "end_line": 243
+    },
+    {
+      "name": "TrainingDataset",
+      "line": 246,
+      "end_line": 269
+    },
+    {
+      "name": "collate",
+      "line": 272,
+      "end_line": 275
+    },
+    {
+      "name": "source",
+      "line": 45,
+      "end_line": 52
+    },
+    {
+      "name": "__init__",
+      "line": 247,
+      "end_line": 254
+    },
+    {
+      "name": "__len__",
+      "line": 256,
+      "end_line": 257
+    },
+    {
+      "name": "__getitem__",
+      "line": 259,
+      "end_line": 269
+    }
+  ],
+  "fe01/windows.py": [
+    {
+      "name": "Capability",
+      "line": 9,
+      "end_line": 25
+    },
+    {
+      "name": "floor_samples",
+      "line": 39,
+      "end_line": 40
+    },
+    {
+      "name": "clock",
+      "line": 43,
+      "end_line": 46
+    },
+    {
+      "name": "build_window",
+      "line": 49,
+      "end_line": 106
+    },
+    {
+      "name": "max_elapsed_sample",
+      "line": 17,
+      "end_line": 18
+    },
+    {
+      "name": "manifest",
+      "line": 20,
+      "end_line": 25
+    }
+  ],
+  "fe01/extractors.py": [
+    {
+      "name": "checked_asset",
+      "line": 15,
+      "end_line": 29
+    },
+    {
+      "name": "load_seisbench",
+      "line": 32,
+      "end_line": 47
+    },
+    {
+      "name": "PhaseNetBottleneck",
+      "line": 50,
+      "end_line": 71
+    },
+    {
+      "name": "EQTSharedTrunk",
+      "line": 74,
+      "end_line": 88
+    },
+    {
+      "name": "OriginalTEAM",
+      "line": 91,
+      "end_line": 128
+    },
+    {
+      "name": "masked_mean",
+      "line": 131,
+      "end_line": 135
+    },
+    {
+      "name": "StationFrontend",
+      "line": 138,
+      "end_line": 174
+    },
+    {
+      "name": "__init__",
+      "line": 53,
+      "end_line": 56
+    },
+    {
+      "name": "forward",
+      "line": 58,
+      "end_line": 71
+    },
+    {
+      "name": "__init__",
+      "line": 77,
+      "end_line": 79
+    },
+    {
+      "name": "forward",
+      "line": 81,
+      "end_line": 88
+    },
+    {
+      "name": "__init__",
+      "line": 100,
+      "end_line": 116
+    },
+    {
+      "name": "convolve",
+      "line": 118,
+      "end_line": 121
+    },
+    {
+      "name": "forward",
+      "line": 123,
+      "end_line": 128
+    },
+    {
+      "name": "__init__",
+      "line": 139,
+      "end_line": 151
+    },
+    {
+      "name": "train",
+      "line": 153,
+      "end_line": 157
+    },
+    {
+      "name": "forward",
+      "line": 159,
+      "end_line": 174
+    }
+  ],
+  "fe01/sampling.py": [
+    {
+      "name": "stable_rng",
+      "line": 11,
+      "end_line": 13
+    },
+    {
+      "name": "TimeSampler",
+      "line": 16,
+      "end_line": 65
+    },
+    {
+      "name": "__init__",
+      "line": 17,
+      "end_line": 42
+    },
+    {
+      "name": "sample",
+      "line": 44,
+      "end_line": 47
+    },
+    {
+      "name": "audit",
+      "line": 49,
+      "end_line": 65
+    }
+  ],
+  "fe01/engine.py": [
+    {
+      "name": "runtime",
+      "line": 33,
+      "end_line": 52
+    },
+    {
+      "name": "distributed_device",
+      "line": 55,
+      "end_line": 64
+    },
+    {
+      "name": "synchronize",
+      "line": 67,
+      "end_line": 69
+    },
+    {
+      "name": "inputs_to",
+      "line": 72,
+      "end_line": 73
+    },
+    {
+      "name": "evaluation_rows",
+      "line": 76,
+      "end_line": 140
+    },
+    {
+      "name": "evaluate",
+      "line": 143,
+      "end_line": 162
+    },
+    {
+      "name": "causal_audit",
+      "line": 165,
+      "end_line": 200
+    },
+    {
+      "name": "query_audit",
+      "line": 203,
+      "end_line": 221
+    },
+    {
+      "name": "data_identity",
+      "line": 224,
+      "end_line": 236
+    },
+    {
+      "name": "audit_population",
+      "line": 239,
+      "end_line": 310
+    },
+    {
+      "name": "code_identity",
+      "line": 313,
+      "end_line": 320
+    },
+    {
+      "name": "audit",
+      "line": 323,
+      "end_line": 374
+    },
+    {
+      "name": "check_audit",
+      "line": 377,
+      "end_line": 392
+    },
+    {
+      "name": "loss",
+      "line": 395,
+      "end_line": 404
+    },
+    {
+      "name": "train",
+      "line": 407,
+      "end_line": 570
+    },
+    {
+      "name": "load_checkpoint",
+      "line": 573,
+      "end_line": 582
+    },
+    {
+      "name": "export_evaluation",
+      "line": 585,
+      "end_line": 619
+    },
+    {
+      "name": "shapes",
+      "line": 178,
+      "end_line": 182
+    },
+    {
+      "name": "payload",
+      "line": 452,
+      "end_line": 460
+    }
+  ],
+  "fe01/metrics.py": [
+    {
+      "name": "decode",
+      "line": 7,
+      "end_line": 12
+    },
+    {
+      "name": "mixture_cdf",
+      "line": 15,
+      "end_line": 16
+    },
+    {
+      "name": "quantile",
+      "line": 19,
+      "end_line": 29
+    },
+    {
+      "name": "normal_absolute",
+      "line": 32,
+      "end_line": 34
+    },
+    {
+      "name": "score_rows",
+      "line": 37,
+      "end_line": 60
+    },
+    {
+      "name": "summarize",
+      "line": 63,
+      "end_line": 84
+    },
+    {
+      "name": "grouped_metrics",
+      "line": 87,
+      "end_line": 95
+    },
+    {
+      "name": "checkpoint_selection",
+      "line": 98,
+      "end_line": 107
+    },
+    {
+      "name": "paired_bootstrap",
+      "line": 110,
+      "end_line": 146
+    }
+  ],
+  "fe01_a01/model.py": [
+    {
+      "name": "apply_policy",
+      "line": 11,
+      "end_line": 16
+    },
+    {
+      "name": "A01FullModel",
+      "line": 19,
+      "end_line": 21
+    },
+    {
+      "name": "build_model",
+      "line": 24,
+      "end_line": 69
+    },
+    {
+      "name": "_extract_scale_features",
+      "line": 20,
+      "end_line": 21
+    }
+  ],
+  "gemini_models.py": [
+    {
+      "name": "gelu",
+      "line": 26,
+      "end_line": 28
+    },
+    {
+      "name": "normalize",
+      "line": 30,
+      "end_line": 31
+    },
+    {
+      "name": "_canonical_token_weight_mode",
+      "line": 34,
+      "end_line": 58
+    },
+    {
+      "name": "_token_weight_uses_dpk",
+      "line": 61,
+      "end_line": 63
+    },
+    {
+      "name": "_token_weight_uses_cache",
+      "line": 66,
+      "end_line": 67
+    },
+    {
+      "name": "_token_weight_is_active",
+      "line": 70,
+      "end_line": 71
+    },
+    {
+      "name": "get_activation",
+      "line": 73,
+      "end_line": 89
+    },
+    {
+      "name": "_rope_rotate_pairs",
+      "line": 92,
+      "end_line": 100
+    },
+    {
+      "name": "_rope_center",
+      "line": 103,
+      "end_line": 110
+    },
+    {
+      "name": "_rope_relative_xy",
+      "line": 113,
+      "end_line": 129
+    },
+    {
+      "name": "_apply_continuous_rope_qk",
+      "line": 132,
+      "end_line": 174
+    },
+    {
+      "name": "_cross_attention_with_rope",
+      "line": 177,
+      "end_line": 232
+    },
+    {
+      "name": "MLP",
+      "line": 253,
+      "end_line": 329
+    },
+    {
+      "name": "MixtureOutput",
+      "line": 331,
+      "end_line": 369
+    },
+    {
+      "name": "PointOutput",
+      "line": 373,
+      "end_line": 390
+    },
+    {
+      "name": "NormalizedScaleEmbedding",
+      "line": 393,
+      "end_line": 441
+    },
+    {
+      "name": "Transformer",
+      "line": 444,
+      "end_line": 460
+    },
+    {
+      "name": "TransformerBlock",
+      "line": 463,
+      "end_line": 500
+    },
+    {
+      "name": "GatedTransformerBlock",
+      "line": 503,
+      "end_line": 539
+    },
+    {
+      "name": "StationContextEncoder",
+      "line": 542,
+      "end_line": 577
+    },
+    {
+      "name": "CrossAttentionRefinementBlock",
+      "line": 580,
+      "end_line": 697
+    },
+    {
+      "name": "CrossAttentionReadout",
+      "line": 700,
+      "end_line": 843
+    },
+    {
+      "name": "StationDeltaBlock",
+      "line": 846,
+      "end_line": 887
+    },
+    {
+      "name": "TargetConditionedTemporalPool",
+      "line": 890,
+      "end_line": 1050
+    },
+    {
+      "name": "StationDistinctiveTokenAdapter",
+      "line": 1053,
+      "end_line": 1191
+    },
+    {
+      "name": "PGATemporalResidualHead",
+      "line": 1194,
+      "end_line": 1433
+    },
+    {
+      "name": "AnchorTransferSetBlock",
+      "line": 1436,
+      "end_line": 1471
+    },
+    {
+      "name": "PGAAnchorTransferHead",
+      "line": 1474,
+      "end_line": 1656
+    },
+    {
+      "name": "RT59LocalResidualHead",
+      "line": 1659,
+      "end_line": 1699
+    },
+    {
+      "name": "RT61WaveGeometryAdapter",
+      "line": 1702,
+      "end_line": 1736
+    },
+    {
+      "name": "RT59ResidualTransportHead",
+      "line": 1739,
+      "end_line": 2059
+    },
+    {
+      "name": "PGAAnchorResidualTransportHead",
+      "line": 2062,
+      "end_line": 2162
+    },
+    {
+      "name": "FrozenPGAContext",
+      "line": 2166,
+      "end_line": 2179
+    },
+    {
+      "name": "LayerwiseStationTargetReadout",
+      "line": 2182,
+      "end_line": 2324
+    },
+    {
+      "name": "SynchronousStationTargetReadout",
+      "line": 2327,
+      "end_line": 2452
+    },
+    {
+      "name": "PositionEmbedding",
+      "line": 2458,
+      "end_line": 2566
+    },
+    {
+      "name": "MultiHeadSelfAttention",
+      "line": 2569,
+      "end_line": 2698
+    },
+    {
+      "name": "PointwiseFeedForward",
+      "line": 2701,
+      "end_line": 2728
+    },
+    {
+      "name": "LayerNormalization",
+      "line": 2731,
+      "end_line": 2752
+    },
+    {
+      "name": "AddEventToken",
+      "line": 2755,
+      "end_line": 2779
+    },
+    {
+      "name": "AddConstantToMixture",
+      "line": 2781,
+      "end_line": 2795
+    },
+    {
+      "name": "Masking_nd",
+      "line": 2798,
+      "end_line": 2819
+    },
+    {
+      "name": "StripMask",
+      "line": 2822,
+      "end_line": 2827
+    },
+    {
+      "name": "AttentionPool1d",
+      "line": 2831,
+      "end_line": 2955
+    },
+    {
+      "name": "_masked_temporal_mean_std",
+      "line": 2958,
+      "end_line": 2973
+    },
+    {
+      "name": "MaskedDepthwiseSeparableBlock1d",
+      "line": 2976,
+      "end_line": 3024
+    },
+    {
+      "name": "LatentCrossAttentionPool1d",
+      "line": 3027,
+      "end_line": 3121
+    },
+    {
+      "name": "WaveformScaleEmbedding",
+      "line": 3124,
+      "end_line": 3141
+    },
+    {
+      "name": "extract_waveform_scale_features",
+      "line": 3144,
+      "end_line": 3169
+    },
+    {
+      "name": "AuxiliaryMagnitudeHead",
+      "line": 3172,
+      "end_line": 3193
+    },
+    {
+      "name": "SingleStationRegressionHead",
+      "line": 3196,
+      "end_line": 3215
+    },
+    {
+      "name": "SingleStationMultiTaskModel",
+      "line": 3218,
+      "end_line": 3319
+    },
+    {
+      "name": "DitingStationAdapter",
+      "line": 3322,
+      "end_line": 3590
+    },
+    {
+      "name": "NativeScaleLateFusionAdapter",
+      "line": 3593,
+      "end_line": 3776
+    },
+    {
+      "name": "BackboneAttentionPoolAdapter",
+      "line": 3779,
+      "end_line": 3873
+    },
+    {
+      "name": "GlobalMaxPooling1DMasked",
+      "line": 3876,
+      "end_line": 3883
+    },
+    {
+      "name": "mixture_density_loss",
+      "line": 3886,
+      "end_line": 3915
+    },
+    {
+      "name": "select_loss_components",
+      "line": 3917,
+      "end_line": 3949
+    },
+    {
+      "name": "mixture_mean_outputs",
+      "line": 3952,
+      "end_line": 3965
+    },
+    {
+      "name": "mixture_density_loss_full",
+      "line": 3968,
+      "end_line": 4020
+    },
+    {
+      "name": "_point_target_for_loss",
+      "line": 4023,
+      "end_line": 4028
+    },
+    {
+      "name": "_pga_loss_weight_tensor",
+      "line": 4031,
+      "end_line": 4063
+    },
+    {
+      "name": "point_regression_loss_full",
+      "line": 4066,
+      "end_line": 4113
+    },
+    {
+      "name": "station_embedding_decorrelation_loss",
+      "line": 4116,
+      "end_line": 4118
+    },
+    {
+      "name": "station_feature_decorrelation_loss",
+      "line": 4121,
+      "end_line": 4138
+    },
+    {
+      "name": "clip_magnitude_mixture",
+      "line": 4141,
+      "end_line": 4148
+    },
+    {
+      "name": "_make_dpk_args",
+      "line": 4151,
+      "end_line": 4191
+    },
+    {
+      "name": "_create_dpk_model",
+      "line": 4194,
+      "end_line": 4209
+    },
+    {
+      "name": "_load_dpk_model_from_checkpoint",
+      "line": 4212,
+      "end_line": 4241
+    },
+    {
+      "name": "_compare_state_dicts_exact",
+      "line": 4244,
+      "end_line": 4284
+    },
+    {
+      "name": "time_distributed_loss",
+      "line": 4286,
+      "end_line": 4300
+    },
+    {
+      "name": "FullModel",
+      "line": 4302,
+      "end_line": 6759
+    },
+    {
+      "name": "get_diting_model",
+      "line": 6761,
+      "end_line": 6879
+    },
+    {
+      "name": "build_single_station_model",
+      "line": 6882,
+      "end_line": 6946
+    },
+    {
+      "name": "build_transformer_model",
+      "line": 6949,
+      "end_line": 7556
+    },
+    {
+      "name": "EnsembleEvaluateModel",
+      "line": 7559,
+      "end_line": 7657
+    },
+    {
+      "name": "__init__",
+      "line": 264,
+      "end_line": 320
+    },
+    {
+      "name": "forward",
+      "line": 322,
+      "end_line": 329
+    },
+    {
+      "name": "__init__",
+      "line": 332,
+      "end_line": 358
+    },
+    {
+      "name": "forward",
+      "line": 360,
+      "end_line": 369
+    },
+    {
+      "name": "__init__",
+      "line": 376,
+      "end_line": 384
+    },
+    {
+      "name": "forward",
+      "line": 386,
+      "end_line": 390
+    },
+    {
+      "name": "__init__",
+      "line": 394,
+      "end_line": 413
+    },
+    {
+      "name": "forward",
+      "line": 415,
+      "end_line": 441
+    },
+    {
+      "name": "__init__",
+      "line": 445,
+      "end_line": 450
+    },
+    {
+      "name": "forward",
+      "line": 452,
+      "end_line": 460
+    },
+    {
+      "name": "__init__",
+      "line": 464,
+      "end_line": 491
+    },
+    {
+      "name": "forward",
+      "line": 493,
+      "end_line": 500
+    },
+    {
+      "name": "__init__",
+      "line": 506,
+      "end_line": 531
+    },
+    {
+      "name": "forward",
+      "line": 533,
+      "end_line": 539
+    },
+    {
+      "name": "__init__",
+      "line": 545,
+      "end_line": 564
+    },
+    {
+      "name": "forward",
+      "line": 566,
+      "end_line": 577
+    },
+    {
+      "name": "__init__",
+      "line": 583,
+      "end_line": 642
+    },
+    {
+      "name": "_distance_attn_mask",
+      "line": 644,
+      "end_line": 653
+    },
+    {
+      "name": "_cross_attention",
+      "line": 655,
+      "end_line": 678
+    },
+    {
+      "name": "forward",
+      "line": 680,
+      "end_line": 697
+    },
+    {
+      "name": "__init__",
+      "line": 708,
+      "end_line": 776
+    },
+    {
+      "name": "_distance_attn_mask",
+      "line": 778,
+      "end_line": 787
+    },
+    {
+      "name": "_cross_attention",
+      "line": 789,
+      "end_line": 812
+    },
+    {
+      "name": "forward",
+      "line": 814,
+      "end_line": 843
+    },
+    {
+      "name": "__init__",
+      "line": 849,
+      "end_line": 875
+    },
+    {
+      "name": "forward",
+      "line": 877,
+      "end_line": 887
+    },
+    {
+      "name": "__init__",
+      "line": 893,
+      "end_line": 937
+    },
+    {
+      "name": "compress_tokens",
+      "line": 939,
+      "end_line": 952
+    },
+    {
+      "name": "_time_features",
+      "line": 954,
+      "end_line": 958
+    },
+    {
+      "name": "_geometry_features",
+      "line": 961,
+      "end_line": 966
+    },
+    {
+      "name": "_coerce_station_token_weight",
+      "line": 969,
+      "end_line": 981
+    },
+    {
+      "name": "forward",
+      "line": 983,
+      "end_line": 1050
+    },
+    {
+      "name": "__init__",
+      "line": 1056,
+      "end_line": 1109
+    },
+    {
+      "name": "_station_token_mask",
+      "line": 1112,
+      "end_line": 1122
+    },
+    {
+      "name": "forward",
+      "line": 1124,
+      "end_line": 1191
+    },
+    {
+      "name": "__init__",
+      "line": 1197,
+      "end_line": 1284
+    },
+    {
+      "name": "compress_tokens",
+      "line": 1286,
+      "end_line": 1287
+    },
+    {
+      "name": "forward",
+      "line": 1289,
+      "end_line": 1433
+    },
+    {
+      "name": "__init__",
+      "line": 1439,
+      "end_line": 1453
+    },
+    {
+      "name": "forward",
+      "line": 1455,
+      "end_line": 1471
+    },
+    {
+      "name": "__init__",
+      "line": 1477,
+      "end_line": 1539
+    },
+    {
+      "name": "compute_anchor",
+      "line": 1541,
+      "end_line": 1549
+    },
+    {
+      "name": "forward",
+      "line": 1551,
+      "end_line": 1656
+    },
+    {
+      "name": "__init__",
+      "line": 1662,
+      "end_line": 1675
+    },
+    {
+      "name": "forward",
+      "line": 1677,
+      "end_line": 1699
+    },
+    {
+      "name": "__init__",
+      "line": 1711,
+      "end_line": 1728
+    },
+    {
+      "name": "forward",
+      "line": 1730,
+      "end_line": 1736
+    },
+    {
+      "name": "__init__",
+      "line": 1742,
+      "end_line": 1799
+    },
+    {
+      "name": "_rt60_reference_keys",
+      "line": 1802,
+      "end_line": 1805
+    },
+    {
+      "name": "set_rt60_reference_state",
+      "line": 1807,
+      "end_line": 1829
+    },
+    {
+      "name": "export_rt60_reference_state",
+      "line": 1831,
+      "end_line": 1835
+    },
+    {
+      "name": "_rt60_reference_residual",
+      "line": 1837,
+      "end_line": 1853
+    },
+    {
+      "name": "forward",
+      "line": 1855,
+      "end_line": 2059
+    },
+    {
+      "name": "__init__",
+      "line": 2065,
+      "end_line": 2086
+    },
+    {
+      "name": "forward",
+      "line": 2088,
+      "end_line": 2162
+    },
+    {
+      "name": "__init__",
+      "line": 2185,
+      "end_line": 2266
+    },
+    {
+      "name": "forward",
+      "line": 2268,
+      "end_line": 2324
+    },
+    {
+      "name": "__init__",
+      "line": 2330,
+      "end_line": 2404
+    },
+    {
+      "name": "forward",
+      "line": 2406,
+      "end_line": 2452
+    },
+    {
+      "name": "__init__",
+      "line": 2459,
+      "end_line": 2515
+    },
+    {
+      "name": "forward",
+      "line": 2517,
+      "end_line": 2566
+    },
+    {
+      "name": "__init__",
+      "line": 2570,
+      "end_line": 2587
+    },
+    {
+      "name": "_rotate_pairs",
+      "line": 2590,
+      "end_line": 2598
+    },
+    {
+      "name": "_relative_xy_for_rope",
+      "line": 2600,
+      "end_line": 2623
+    },
+    {
+      "name": "_apply_team_rope",
+      "line": 2625,
+      "end_line": 2647
+    },
+    {
+      "name": "forward",
+      "line": 2649,
+      "end_line": 2698
+    },
+    {
+      "name": "__init__",
+      "line": 2702,
+      "end_line": 2708
+    },
+    {
+      "name": "build",
+      "line": 2710,
+      "end_line": 2720
+    },
+    {
+      "name": "forward",
+      "line": 2722,
+      "end_line": 2728
+    },
+    {
+      "name": "__init__",
+      "line": 2732,
+      "end_line": 2736
+    },
+    {
+      "name": "build",
+      "line": 2738,
+      "end_line": 2740
+    },
+    {
+      "name": "forward",
+      "line": 2742,
+      "end_line": 2752
+    },
+    {
+      "name": "__init__",
+      "line": 2756,
+      "end_line": 2760
+    },
+    {
+      "name": "build",
+      "line": 2762,
+      "end_line": 2769
+    },
+    {
+      "name": "forward",
+      "line": 2771,
+      "end_line": 2779
+    },
+    {
+      "name": "__init__",
+      "line": 2782,
+      "end_line": 2783
+    },
+    {
+      "name": "forward",
+      "line": 2785,
+      "end_line": 2795
+    },
+    {
+      "name": "__init__",
+      "line": 2799,
+      "end_line": 2804
+    },
+    {
+      "name": "forward",
+      "line": 2806,
+      "end_line": 2812
+    },
+    {
+      "name": "compute_mask",
+      "line": 2814,
+      "end_line": 2819
+    },
+    {
+      "name": "__init__",
+      "line": 2823,
+      "end_line": 2824
+    },
+    {
+      "name": "forward",
+      "line": 2826,
+      "end_line": 2827
+    },
+    {
+      "name": "__init__",
+      "line": 2834,
+      "end_line": 2852
+    },
+    {
+      "name": "reset_parameters",
+      "line": 2854,
+      "end_line": 2859
+    },
+    {
+      "name": "_coerce_token_weight",
+      "line": 2862,
+      "end_line": 2879
+    },
+    {
+      "name": "_coerce_token_mask",
+      "line": 2882,
+      "end_line": 2900
+    },
+    {
+      "name": "forward",
+      "line": 2902,
+      "end_line": 2955
+    },
+    {
+      "name": "__init__",
+      "line": 2979,
+      "end_line": 2999
+    },
+    {
+      "name": "reset_parameters",
+      "line": 3001,
+      "end_line": 3007
+    },
+    {
+      "name": "forward",
+      "line": 3009,
+      "end_line": 3024
+    },
+    {
+      "name": "__init__",
+      "line": 3030,
+      "end_line": 3065
+    },
+    {
+      "name": "reset_parameters",
+      "line": 3067,
+      "end_line": 3082
+    },
+    {
+      "name": "forward",
+      "line": 3084,
+      "end_line": 3121
+    },
+    {
+      "name": "__init__",
+      "line": 3127,
+      "end_line": 3138
+    },
+    {
+      "name": "forward",
+      "line": 3140,
+      "end_line": 3141
+    },
+    {
+      "name": "__init__",
+      "line": 3175,
+      "end_line": 3184
+    },
+    {
+      "name": "forward",
+      "line": 3186,
+      "end_line": 3193
+    },
+    {
+      "name": "__init__",
+      "line": 3199,
+      "end_line": 3210
+    },
+    {
+      "name": "forward",
+      "line": 3212,
+      "end_line": 3215
+    },
+    {
+      "name": "__init__",
+      "line": 3221,
+      "end_line": 3260
+    },
+    {
+      "name": "_normalize",
+      "line": 3262,
+      "end_line": 3274
+    },
+    {
+      "name": "_mean_token_norm",
+      "line": 3277,
+      "end_line": 3278
+    },
+    {
+      "name": "encode_station",
+      "line": 3280,
+      "end_line": 3312
+    },
+    {
+      "name": "forward",
+      "line": 3314,
+      "end_line": 3319
+    },
+    {
+      "name": "__init__",
+      "line": 3324,
+      "end_line": 3399
+    },
+    {
+      "name": "uses_station_metadata",
+      "line": 3402,
+      "end_line": 3403
+    },
+    {
+      "name": "_init_preserving_path",
+      "line": 3405,
+      "end_line": 3416
+    },
+    {
+      "name": "reset_parameters",
+      "line": 3418,
+      "end_line": 3442
+    },
+    {
+      "name": "_metadata_outputs",
+      "line": 3444,
+      "end_line": 3464
+    },
+    {
+      "name": "_apply_film_channel_first",
+      "line": 3467,
+      "end_line": 3468
+    },
+    {
+      "name": "_apply_film_token_last",
+      "line": 3471,
+      "end_line": 3472
+    },
+    {
+      "name": "_token_weight",
+      "line": 3475,
+      "end_line": 3486
+    },
+    {
+      "name": "_pool_diag",
+      "line": 3489,
+      "end_line": 3509
+    },
+    {
+      "name": "forward",
+      "line": 3511,
+      "end_line": 3580
+    },
+    {
+      "name": "temporal_tokens",
+      "line": 3582,
+      "end_line": 3590
+    },
+    {
+      "name": "__init__",
+      "line": 3596,
+      "end_line": 3680
+    },
+    {
+      "name": "uses_station_metadata",
+      "line": 3683,
+      "end_line": 3684
+    },
+    {
+      "name": "reset_parameters",
+      "line": 3686,
+      "end_line": 3700
+    },
+    {
+      "name": "_mask_feature",
+      "line": 3703,
+      "end_line": 3707
+    },
+    {
+      "name": "_summary_with_stats",
+      "line": 3710,
+      "end_line": 3713
+    },
+    {
+      "name": "_side_summary",
+      "line": 3715,
+      "end_line": 3718
+    },
+    {
+      "name": "forward",
+      "line": 3720,
+      "end_line": 3766
+    },
+    {
+      "name": "temporal_tokens",
+      "line": 3768,
+      "end_line": 3776
+    },
+    {
+      "name": "__init__",
+      "line": 3782,
+      "end_line": 3800
+    },
+    {
+      "name": "_init_preserving_path",
+      "line": 3802,
+      "end_line": 3807
+    },
+    {
+      "name": "reset_parameters",
+      "line": 3809,
+      "end_line": 3815
+    },
+    {
+      "name": "_masked_attention_weights",
+      "line": 3817,
+      "end_line": 3824
+    },
+    {
+      "name": "forward",
+      "line": 3826,
+      "end_line": 3864
+    },
+    {
+      "name": "temporal_tokens",
+      "line": 3866,
+      "end_line": 3873
+    },
+    {
+      "name": "forward",
+      "line": 3877,
+      "end_line": 3883
+    },
+    {
+      "name": "__init__",
+      "line": 4303,
+      "end_line": 4807
+    },
+    {
+      "name": "_mean_token_norm",
+      "line": 4810,
+      "end_line": 4811
+    },
+    {
+      "name": "_masked_pairwise_cosine_between",
+      "line": 4814,
+      "end_line": 4825
+    },
+    {
+      "name": "_masked_pairwise_cosine_mean",
+      "line": 4828,
+      "end_line": 4841
+    },
+    {
+      "name": "_masked_station_effective_rank",
+      "line": 4844,
+      "end_line": 4864
+    },
+    {
+      "name": "_masked_event_residual",
+      "line": 4867,
+      "end_line": 4871
+    },
+    {
+      "name": "_init_dpk_weight_model",
+      "line": 4873,
+      "end_line": 4917
+    },
+    {
+      "name": "_module_device",
+      "line": 4920,
+      "end_line": 4926
+    },
+    {
+      "name": "_ensure_unregistered_module_device",
+      "line": 4928,
+      "end_line": 4934
+    },
+    {
+      "name": "_feature_token_length",
+      "line": 4937,
+      "end_line": 4942
+    },
+    {
+      "name": "_feature_token_lengths",
+      "line": 4944,
+      "end_line": 4949
+    },
+    {
+      "name": "_resample_token_signal",
+      "line": 4951,
+      "end_line": 4962
+    },
+    {
+      "name": "_normalize_token_signal",
+      "line": 4964,
+      "end_line": 4967
+    },
+    {
+      "name": "_dpk_outputs",
+      "line": 4969,
+      "end_line": 4979
+    },
+    {
+      "name": "_dpk_signal",
+      "line": 4981,
+      "end_line": 5004
+    },
+    {
+      "name": "_base_token_signal",
+      "line": 5006,
+      "end_line": 5017
+    },
+    {
+      "name": "_token_weights_for_lengths",
+      "line": 5019,
+      "end_line": 5029
+    },
+    {
+      "name": "_cached_token_weights_for_lengths",
+      "line": 5031,
+      "end_line": 5067
+    },
+    {
+      "name": "_record_dpk_diag",
+      "line": 5069,
+      "end_line": 5094
+    },
+    {
+      "name": "_normalize",
+      "line": 5096,
+      "end_line": 5138
+    },
+    {
+      "name": "_masked_coord_center",
+      "line": 5141,
+      "end_line": 5144
+    },
+    {
+      "name": "_make_relative_coords",
+      "line": 5146,
+      "end_line": 5149
+    },
+    {
+      "name": "_station_coord_features",
+      "line": 5151,
+      "end_line": 5165
+    },
+    {
+      "name": "_pga_coord_embedding",
+      "line": 5167,
+      "end_line": 5176
+    },
+    {
+      "name": "_direct_station_pga_embedding",
+      "line": 5178,
+      "end_line": 5182
+    },
+    {
+      "name": "_looks_like_dataset_tensor",
+      "line": 5185,
+      "end_line": 5188
+    },
+    {
+      "name": "_parse_extra_inputs",
+      "line": 5190,
+      "end_line": 5227
+    },
+    {
+      "name": "_vs30_feature_tensor",
+      "line": 5229,
+      "end_line": 5245
+    },
+    {
+      "name": "_add_station_vs30_embedding",
+      "line": 5247,
+      "end_line": 5253
+    },
+    {
+      "name": "_add_target_vs30_embedding",
+      "line": 5255,
+      "end_line": 5261
+    },
+    {
+      "name": "_apply_pga_vs30_site_affine",
+      "line": 5263,
+      "end_line": 5312
+    },
+    {
+      "name": "_record_station_context_diag",
+      "line": 5314,
+      "end_line": 5327
+    },
+    {
+      "name": "_station_memory_for_readout",
+      "line": 5329,
+      "end_line": 5378
+    },
+    {
+      "name": "_record_pga_mask_diag",
+      "line": 5380,
+      "end_line": 5426
+    },
+    {
+      "name": "_record_pga_attention_diag",
+      "line": 5428,
+      "end_line": 5447
+    },
+    {
+      "name": "_record_cross_attention_diag",
+      "line": 5449,
+      "end_line": 5461
+    },
+    {
+      "name": "_record_readout_gate_diag",
+      "line": 5463,
+      "end_line": 5512
+    },
+    {
+      "name": "_extract_scale_features",
+      "line": 5515,
+      "end_line": 5518
+    },
+    {
+      "name": "_waveform_duration_features",
+      "line": 5521,
+      "end_line": 5531
+    },
+    {
+      "name": "_compress_station_temporal_tokens",
+      "line": 5533,
+      "end_line": 5539
+    },
+    {
+      "name": "_control_pga_temporal_tokens",
+      "line": 5541,
+      "end_line": 5557
+    },
+    {
+      "name": "_encode_station_waveform",
+      "line": 5559,
+      "end_line": 5644
+    },
+    {
+      "name": "_apply_point_pga_head",
+      "line": 5646,
+      "end_line": 5649
+    },
+    {
+      "name": "_pga_point_mean_from_output",
+      "line": 5651,
+      "end_line": 5657
+    },
+    {
+      "name": "_shift_pga_output_by_delta",
+      "line": 5659,
+      "end_line": 5665
+    },
+    {
+      "name": "_pga_predictive_sigma_from_output",
+      "line": 5667,
+      "end_line": 5678
+    },
+    {
+      "name": "_rt59_snapshot_query_diagnostics",
+      "line": 5681,
+      "end_line": 5698
+    },
+    {
+      "name": "_rt59_restore_query_diagnostics",
+      "line": 5701,
+      "end_line": 5708
+    },
+    {
+      "name": "_decode_rt59_queries",
+      "line": 5710,
+      "end_line": 5802
+    },
+    {
+      "name": "_decode_rt59_queries_without_public_side_effects",
+      "line": 5804,
+      "end_line": 5811
+    },
+    {
+      "name": "_rt59_roll_valid_station_features",
+      "line": 5814,
+      "end_line": 5826
+    },
+    {
+      "name": "_apply_layerwise_pga_refinement",
+      "line": 5828,
+      "end_line": 5856
+    },
+    {
+      "name": "forward",
+      "line": 5858,
+      "end_line": 6759
+    },
+    {
+      "name": "build_model_pair",
+      "line": 6775,
+      "end_line": 6848
+    },
+    {
+      "name": "__init__",
+      "line": 7560,
+      "end_line": 7579
+    },
+    {
+      "name": "predict_generator",
+      "line": 7581,
+      "end_line": 7586
+    },
+    {
+      "name": "predict",
+      "line": 7588,
+      "end_line": 7600
+    },
+    {
+      "name": "merge_preds",
+      "line": 7603,
+      "end_line": 7628
+    },
+    {
+      "name": "load_weights",
+      "line": 7630,
+      "end_line": 7657
+    },
+    {
+      "name": "tensor",
+      "line": 1843,
+      "end_line": 1844
+    },
+    {
+      "name": "apply_one",
+      "line": 2641,
+      "end_line": 2645
+    },
+    {
+      "name": "scalar",
+      "line": 5073,
+      "end_line": 5079
+    },
+    {
+      "name": "add_scalar",
+      "line": 5469,
+      "end_line": 5473
+    }
+  ],
+  "fe01_a01_compare/latency.py": [
+    {
+      "name": "benchmark",
+      "line": 10,
+      "end_line": 83
+    }
+  ],
+  "fe01_a01_compare/map_readiness.py": [
+    {
+      "name": "frame_metrics",
+      "line": 7,
+      "end_line": 27
+    },
+    {
+      "name": "gate",
+      "line": 30,
+      "end_line": 40
+    },
+    {
+      "name": "times_to_ready",
+      "line": 43,
+      "end_line": 77
+    },
+    {
+      "name": "evaluate",
+      "line": 80,
+      "end_line": 120
+    },
+    {
+      "name": "population_summary",
+      "line": 123,
+      "end_line": 144
+    },
+    {
+      "name": "pair_events",
+      "line": 147,
+      "end_line": 162
+    }
+  ],
+  "fe01_a01_compare/shadow.py": [
+    {
+      "name": "probabilities",
+      "line": 9,
+      "end_line": 24
+    },
+    {
+      "name": "classify",
+      "line": 27,
+      "end_line": 69
+    },
+    {
+      "name": "evaluate",
+      "line": 72,
+      "end_line": 135
+    }
+  ],
+  "fe01_a01_compare/clocks.py": [
+    {
+      "name": "jst_utc",
+      "line": 6,
+      "end_line": 11
+    },
+    {
+      "name": "audit_clock",
+      "line": 14,
+      "end_line": 29
+    },
+    {
+      "name": "fifo",
+      "line": 32,
+      "end_line": 48
+    }
+  ],
+  "fe01_a01_compare/event_statistics.py": [
+    {
+      "name": "scalar_interval",
+      "line": 6,
+      "end_line": 21
+    },
+    {
+      "name": "ttum_summary",
+      "line": 24,
+      "end_line": 43
+    },
+    {
+      "name": "shadow_summary",
+      "line": 46,
+      "end_line": 53
+    }
+  ],
+  "fe01_a01_compare/delivery_analysis.py": [
+    {
+      "name": "analyze_rendered",
+      "line": 10,
+      "end_line": 68
+    }
+  ],
+  "fe01_a01_compare/statistics.py": [
+    {
+      "name": "paired",
+      "line": 12,
+      "end_line": 18
+    },
+    {
+      "name": "groups",
+      "line": 21,
+      "end_line": 26
+    },
+    {
+      "name": "values",
+      "line": 29,
+      "end_line": 34
+    },
+    {
+      "name": "summarize",
+      "line": 37,
+      "end_line": 56
+    },
+    {
+      "name": "arrays",
+      "line": 59,
+      "end_line": 68
+    },
+    {
+      "name": "bootstrap_pair",
+      "line": 71,
+      "end_line": 109
+    },
+    {
+      "name": "robustness",
+      "line": 112,
+      "end_line": 140
+    },
+    {
+      "name": "bootstrap_mae",
+      "line": 143,
+      "end_line": 168
+    }
+  ],
+  "fe01_a01_compare/replay.py": [
+    {
+      "name": "load_model",
+      "line": 15,
+      "end_line": 39
+    },
+    {
+      "name": "Forward",
+      "line": 42,
+      "end_line": 131
+    },
+    {
+      "name": "sidecars",
+      "line": 134,
+      "end_line": 145
+    },
+    {
+      "name": "runner_task",
+      "line": 148,
+      "end_line": 295
+    },
+    {
+      "name": "extension_requests",
+      "line": 298,
+      "end_line": 323
+    },
+    {
+      "name": "verify_smoke",
+      "line": 326,
+      "end_line": 414
+    },
+    {
+      "name": "__init__",
+      "line": 43,
+      "end_line": 48
+    },
+    {
+      "name": "token",
+      "line": 50,
+      "end_line": 52
+    },
+    {
+      "name": "cutoff",
+      "line": 55,
+      "end_line": 65
+    },
+    {
+      "name": "predict",
+      "line": 67,
+      "end_line": 131
+    },
+    {
+      "name": "delta",
+      "line": 334,
+      "end_line": 342
+    }
+  ]
+}

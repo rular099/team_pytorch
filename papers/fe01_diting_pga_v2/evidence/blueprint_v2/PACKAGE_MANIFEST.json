@@ -1,0 +1,69 @@
+{
+  "package": "FE01_Paper_Blueprint_Codex_20261116_v2",
+  "version": "v2",
+  "created_date": "2026-11-16",
+  "kind": "revised_outline_and_instruction_pack_not_manuscript_or_figures",
+  "supersedes": {
+    "package": "FE01_Paper_Blueprint_Codex_20261116",
+    "version": "v1",
+    "previous_zip_sha256": "c467d082b7c976f74e36b9e5044f9b6e0643252c96e7ea02d1929df7df57df5c"
+  },
+  "paper_title": "基于 DiTing 的早期 PGA 概率预测",
+  "repository_modified": false,
+  "hpc_submitted": false,
+  "test_accessed": false,
+  "new_remote_or_literature_verification": false,
+  "checks": {
+    "json_parse": "PASS",
+    "figure_count": 7,
+    "table_count": 3,
+    "claim_count": 11,
+    "source_ids_resolve": "PASS",
+    "no_ablation_asset": "PASS",
+    "markdown_headings_without_colons": "PASS",
+    "code_fences_balanced": "PASS",
+    "figure_section_links": "PASS"
+  },
+  "files": {
+    "00_README.md": {
+      "bytes": 2362,
+      "sha256": "35ae72d3d6fc9b5672ac366e5dc8e6aa7341ac2ccf0b696d180d95e228952130"
+    },
+    "01_PAPER_OUTLINE_CN.md": {
+      "bytes": 14151,
+      "sha256": "8cc41c5cfa3e938a3d93f1f26320226def5fae0d39f47af4035b42f5b30846fd"
+    },
+    "02_CODEX_TASK.md": {
+      "bytes": 17981,
+      "sha256": "36c66bfabcfec0f9cc10b7fdfe1af6ff9b72afd19876fc9bf3af910456e205c7"
+    },
+    "03_ASSET_SPEC.json": {
+      "bytes": 18988,
+      "sha256": "b49c52621d2f4666d40dd16b46388b622f321365d91f51626deb6dd46e0172f1"
+    },
+    "04_CLAIM_REGISTER.json": {
+      "bytes": 6989,
+      "sha256": "e514bf8de44dd1dcfa0cc8c6cdbb07ae96fc6e08cbab72be605a47292e4c9908"
+    },
+    "05_EVIDENCE_INDEX.json": {
+      "bytes": 21148,
+      "sha256": "dba0b9d667d008c73bdef82ed5e1038aa765e89aab5d2a2aeba61a6e11adccce"
+    },
+    "06_REFERENCE_SEEDS.json": {
+      "bytes": 4431,
+      "sha256": "a7ce2923eaa1e9726e23725dc37d4bffaaa745dc8013da91f5692b4f60e5aca0"
+    },
+    "07_REVIEW_CHECKLIST.md": {
+      "bytes": 3783,
+      "sha256": "6e6597af57ee44ff8df738c13604a20dee972143ca457a36941c96731ea4bd54"
+    },
+    "08_START_CODEX.txt": {
+      "bytes": 2270,
+      "sha256": "050c47229540aa615052cdf4ef13bed7eb0d3875deb3c09241c2a8d3b3046f41"
+    },
+    "09_REVISION_NOTES.md": {
+      "bytes": 2296,
+      "sha256": "60056b69ae613da59de30f442fb6715a5afd6cb90b06fed8ea9bd776fc21c403"
+    }
+  }
+}

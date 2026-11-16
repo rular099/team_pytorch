@@ -1,0 +1,7 @@
+comparator,panel,threshold_logpga,p_alarm,tau,metric,estimate,ci_low,ci_high,events,known_events,effective_replicates
+PhaseNet,fixed_never_input_targets,-1.2,0.5,3,delta_shadow_lower_bound,-0.05517446365130086,-0.097192741470502816,-0.015182206564729499,312,214,2000
+PhaseNet,fixed_never_input_targets,-1.2,0.5,3,delta_shadow_upper_bound,0.04299416521190208,0.0028427866554877356,0.082498717882450209,312,214,2000
+EQT,fixed_never_input_targets,-1.2,0.5,3,delta_shadow_lower_bound,-0.015587126841151787,-0.053006681882443535,0.020762755790066461,312,214,2000
+EQT,fixed_never_input_targets,-1.2,0.5,3,delta_shadow_upper_bound,0.069734167572875025,0.038238625855920881,0.10440527961135229,312,214,2000
+TEAM,fixed_never_input_targets,-1.2,0.5,3,delta_shadow_lower_bound,-0.085136122170012665,-0.13304668728116831,-0.040820003480371195,312,214,2000
+TEAM,fixed_never_input_targets,-1.2,0.5,3,delta_shadow_upper_bound,0.02975701542171507,-0.0085555751562562156,0.071415565474263407,312,214,2000

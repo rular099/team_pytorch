@@ -1,0 +1,15 @@
+test_claims_are_rows_not_blueprint_numbers (test_paper.PaperEvidenceTests.test_claims_are_rows_not_blueprint_numbers) ... ok
+test_epochs_and_active_model_path (test_paper.PaperEvidenceTests.test_epochs_and_active_model_path) ... ok
+test_main_assets_and_dpi (test_paper.PaperEvidenceTests.test_main_assets_and_dpi) ... ok
+test_materials_scope_and_length (test_paper.PaperEvidenceTests.test_materials_scope_and_length) ... ok
+test_population_is_not_interchangeable (test_paper.PaperEvidenceTests.test_population_is_not_interchangeable) ... ok
+test_rounded_anchors_are_consistent (test_paper.PaperEvidenceTests.test_rounded_anchors_are_consistent) ... ok
+test_scripts_compile_and_do_not_import_scientific_models (test_paper.PaperEvidenceTests.test_scripts_compile_and_do_not_import_scientific_models) ... ok
+test_unfavorable_population_and_epoch_policy_survive (test_paper.PaperEvidenceTests.test_unfavorable_population_and_epoch_policy_survive) ... ok
+test_unique_row_failure_is_closed (test_paper.PaperEvidenceTests.test_unique_row_failure_is_closed) ... ok
+test_unknown_bounds_and_numerical_arithmetic (test_paper.PaperEvidenceTests.test_unknown_bounds_and_numerical_arithmetic) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.280s
+
+OK

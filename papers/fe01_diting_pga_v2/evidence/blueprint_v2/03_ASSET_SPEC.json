@@ -1,0 +1,657 @@
+{
+  "schema_version": "2.0",
+  "task_id": "20261116-fe01-paper-materials-and-first-draft-v2",
+  "state": "SPECIFICATION_ONLY_NOT_GENERATED_FIGURES",
+  "common_scope": {
+    "split": "validation",
+    "seed": 42,
+    "mode": "ON",
+    "policy": "selected",
+    "epochs": {
+      "DiTing": 12,
+      "PhaseNet": 12,
+      "EQT": 10,
+      "TEAM": 11
+    },
+    "uncertainty": "existing fixed-model paired event-cluster 2000 draws; no training-seed or selection uncertainty; exploratory multiplicity uncorrected",
+    "new_experiments_authorized": false
+  },
+  "figures": [
+    {
+      "id": "F1",
+      "title": "预测任务与模型流程",
+      "placement": "main",
+      "sections": [
+        "2"
+      ],
+      "source_ids": [
+        "E01",
+        "E29",
+        "E31",
+        "E32",
+        "E33"
+      ],
+      "panels": [
+        "同一事件截止下received waveform/mask与未到达样本",
+        "冻结前端/可训练接口/幅值时长/输入及查询坐标/实际readout/MDN",
+        "动态noninput与固定never-input、三种交付时钟"
+      ],
+      "filters": {
+        "action": "trace actual config/source; no inferred module activation"
+      },
+      "estimand": "schematic only; not measured curves",
+      "interpretation_limits": [
+        "Do not draw inactive station self-attention as active PGA path.",
+        "Catalog/hypocenter/final PGA are retrospective metadata or supervision, not forward inputs unless proven.",
+        "All invented example traces explicitly SCHEMATIC; no real-event claim."
+      ],
+      "input_state_at_planning": "REQUIRES_SOURCE_AND_CONFIG_TRACE",
+      "output_stem": "f1",
+      "outputs": [
+        "independent panel SVG",
+        "assembled vector PDF",
+        "PNG preview",
+        "actual source_data CSV",
+        "caption and provenance JSON"
+      ],
+      "acceptance_checks": [
+        "executed_model_path.md exists",
+        "all arrows supported by source/config",
+        "frozen and trained parameters distinguished"
+      ]
+    },
+    {
+      "id": "F2",
+      "title": "非输入目标预测精度",
+      "placement": "main",
+      "sections": [
+        "3.1",
+        "3.2"
+      ],
+      "source_ids": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E07",
+        "E09"
+      ],
+      "panels": [
+        "四模型noninput primary与first_second/early点估计，all-target并列或明确侧panel",
+        "DiTing对三个对照的primary和first_second配对效应CI",
+        "全部五时刻DiTing−PhaseNet效应；normal/random分开支持表"
+      ],
+      "filters": {
+        "checkpoint_policy": "selected",
+        "target_group": [
+          "noninput",
+          "all"
+        ],
+        "endpoint": [
+          "primary_10cell",
+          "first_second_2cell",
+          "early_6cell"
+        ],
+        "metric": [
+          "mae",
+          "rmse"
+        ],
+        "time": [
+          1,
+          3,
+          5,
+          10,
+          20
+        ]
+      },
+      "estimand": "within-cell targets equal then cells equal; delta DiTing-comparator; MAE/RMSE dex",
+      "interpretation_limits": [
+        "First-second cutoff is not delivery time.",
+        "No fabricated absolute CI; use saved paired CI.",
+        "Five points not dense replay; no smoothing.",
+        "All-target point rank is not significance."
+      ],
+      "input_state_at_planning": "READY_FROM_TABLE",
+      "output_stem": "f2",
+      "outputs": [
+        "independent panel SVG",
+        "assembled vector PDF",
+        "PNG preview",
+        "actual source_data CSV",
+        "caption and provenance JSON"
+      ],
+      "acceptance_checks": [
+        "1310 events and primary noninput139440/all194265",
+        "first-second noninput38795",
+        "noninput primary 10 cells",
+        "source has all comparator rows including unfavorable results"
+      ]
+    },
+    {
+      "id": "F3",
+      "title": "概率预测质量",
+      "placement": "main",
+      "sections": [
+        "3.3"
+      ],
+      "source_ids": [
+        "E03",
+        "E04",
+        "E07"
+      ],
+      "panels": [
+        "NLL/CRPS/Brier配对效应，各指标独立轴",
+        "68/95覆盖与名义值，同页给95宽度/预测sigma",
+        "primary与first_second并列，避免跨条件解释"
+      ],
+      "filters": {
+        "checkpoint_policy": "selected",
+        "target_group": "noninput",
+        "endpoint": [
+          "primary_10cell",
+          "first_second_2cell"
+        ],
+        "metric": [
+          "nll",
+          "crps",
+          "brier",
+          "covered68",
+          "covered95",
+          "width95",
+          "predictive_sigma"
+        ]
+      },
+      "estimand": "cell-equal saved scores and paired CI; Brier threshold log-PGA=-1.2",
+      "interpretation_limits": [
+        "Better proper scores not complete calibration.",
+        "NLL can be negative; do not report arbitrary percentage reduction.",
+        "Coverage alone not rank quality.",
+        "No PIT/reliability curves from aggregate coverage only."
+      ],
+      "input_state_at_planning": "READY_FROM_TABLE",
+      "output_stem": "f3",
+      "outputs": [
+        "independent panel SVG",
+        "assembled vector PDF",
+        "PNG preview",
+        "actual source_data CSV",
+        "caption and provenance JSON"
+      ],
+      "acceptance_checks": [
+        "same population across score panels",
+        "width/sigma units dex",
+        "68 width only from real additional endpoints if added"
+      ]
+    },
+    {
+      "id": "F4",
+      "title": "空间预测能力",
+      "placement": "main",
+      "sections": [
+        "3.4"
+      ],
+      "source_ids": [
+        "E08",
+        "E07",
+        "E01"
+      ],
+      "panels": [
+        "level/shape/field MSE配对效应（dex²）",
+        "range与近等距离站对误差（dex）",
+        "all/noninput与K1/Kmulti支持情况; all adverse counterexample retained"
+      ],
+      "filters": {
+        "checkpoint_policy": "selected",
+        "target_group": [
+          "noninput",
+          "all"
+        ],
+        "comparator": [
+          "PhaseNet",
+          "EQT",
+          "TEAM"
+        ],
+        "metric": [
+          "level_mse",
+          "shape_mse",
+          "field_mse",
+          "range_error",
+          "equal_distance_delta_mae"
+        ]
+      },
+      "estimand": "eligible fields equal within cell, cells equal; same field cohort per paired metric",
+      "interpretation_limits": [
+        "Range recovery not spatial arrangement recovery.",
+        "Pooled slope not per-event shape.",
+        "PhaseNet noninput shape/pair CI crossing zero must remain.",
+        "K1 field bootstrap unstable: show if used, not headline."
+      ],
+      "input_state_at_planning": "READY_FROM_TABLE",
+      "output_stem": "f4",
+      "outputs": [
+        "independent panel SVG",
+        "assembled vector PDF",
+        "PNG preview",
+        "actual source_data CSV",
+        "caption and provenance JSON"
+      ],
+      "acceptance_checks": [
+        "noninput field rows944events/6789fields where applicable",
+        "near-equal-distance928events/6644fields",
+        "units separated",
+        "all-target PhaseNet adverse shape not hidden"
+      ]
+    },
+    {
+      "id": "F5",
+      "title": "场质量确认与交付时钟",
+      "placement": "main",
+      "sections": [
+        "3.5"
+      ],
+      "source_ids": [
+        "E10",
+        "E11",
+        "E12",
+        "E13",
+        "E28"
+      ],
+      "panels": [
+        "normal all/never-input at5,10,20s; ideal,numeric,rendered side by side",
+        "random ideal-only comparison labeled NOT_MEASURED for other clocks",
+        "post-confirmation known failure counts conditional on each model confirmations"
+      ],
+      "filters": {
+        "budget_dex": 0.2,
+        "gate": [
+          "field_pass",
+          "station_pass"
+        ],
+        "geometry_protocol": [
+          "normal",
+          "random"
+        ],
+        "panel": [
+          "fixed_all_targets",
+          "fixed_never_input_targets"
+        ],
+        "horizon": [
+          5,
+          10,
+          20
+        ]
+      },
+      "estimand": "all eligible fixed events denominator; confirmation clock, not retrospective onset; unknown bounds separate from CI",
+      "interpretation_limits": [
+        "Full budget .15/.20/.25 supplement mandatory; .20 not optimized.",
+        "Confirmation not permanent stability.",
+        "Normal eligible207 never/all1057; random never539 out of1310.",
+        "Do not extrapolate to unseen training stations.",
+        "A conditional both-confirmed time difference is not cohort mean."
+      ],
+      "input_state_at_planning": "READY_FROM_TABLE",
+      "output_stem": "f5",
+      "outputs": [
+        "independent panel SVG",
+        "assembled vector PDF",
+        "PNG preview",
+        "actual source_data CSV",
+        "caption and provenance JSON"
+      ],
+      "acceptance_checks": [
+        "eligibility ledger",
+        "unknown separate from known nonreached",
+        "normal0.2 field20 DiTing/PhaseNet88/73 ideal49/69numeric15/16rendered",
+        "random no invented real clocks"
+      ],
+      "previous_v1_id": "F6"
+    },
+    {
+      "id": "F6",
+      "title": "计算时延与交付成本",
+      "placement": "main",
+      "sections": [
+        "3.5"
+      ],
+      "source_ids": [
+        "E14",
+        "E15",
+        "E16"
+      ],
+      "panels": [
+        "station-only/whole-map warm P50,P95; 1s reference line; cold separate",
+        "full normal service summaries versus six-event benchmark distinguished",
+        "20th-cutoff frame delivery clocks including shared render, not TTUM"
+      ],
+      "filters": {
+        "scope": [
+          "station_only",
+          "whole_map"
+        ],
+        "queue_cohort": [
+          "all_frames",
+          "cutoff_20s"
+        ]
+      },
+      "estimand": "runtime distribution quantiles, not confidence intervals; units seconds; per-event/model FIFO",
+      "interpretation_limits": [
+        "108 repeats per scope are six events, not108 earthquakes.",
+        "Same device name not strict paired allocation.",
+        "Shared four-model CPU rendering not single-model deployment.",
+        "Numeric_ready within rendered queue already includes earlier render blocking.",
+        "No optimized asynchronous pipeline prediction."
+      ],
+      "input_state_at_planning": "READY_FROM_TABLE",
+      "output_stem": "f6",
+      "outputs": [
+        "independent panel SVG",
+        "assembled vector PDF",
+        "PNG preview",
+        "actual source_data CSV",
+        "caption and provenance JSON"
+      ],
+      "acceptance_checks": [
+        "events6/conditions36/repeats108",
+        "K1-25 stationQ3-80 gridQ1-281 (verify)",
+        "104800 total normal frames",
+        "separate cold/warm/IO/render/communicationUnknown"
+      ],
+      "previous_v1_id": "F7"
+    },
+    {
+      "id": "F7",
+      "title": "预警失败与误报",
+      "placement": "main",
+      "sections": [
+        "3.5"
+      ],
+      "source_ids": [
+        "E17",
+        "E18",
+        "E19",
+        "E35"
+      ],
+      "panels": [
+        "rendered normal all/never panels; both PGA thresholds; all five alarm probabilities at lead3s",
+        "failure lower/upper versus complete-negative false-positive rate; probability labels",
+        "event-equal matched-bound example as distinct panel/table, not mixed with target-weighted curves"
+      ],
+      "filters": {
+        "scene": "measured_rendered_map_replay",
+        "geometry_protocol": "normal",
+        "panel": [
+          "fixed_all_targets",
+          "fixed_never_input_targets"
+        ],
+        "threshold_logpga": [
+          -1.2,
+          0.0
+        ],
+        "p_alarm": [
+          0.1,
+          0.3,
+          0.5,
+          0.7,
+          0.9
+        ],
+        "tau": 3
+      },
+      "estimand": "pooled target-weighted or event-equal plotted separately; unknown identification bounds not CI; full lead grid in supplement",
+      "interpretation_limits": [
+        "No best threshold chosen.",
+        "Not daily false alarm rate or continuous blind-zone area.",
+        "No affected targets means undefined, not zero.",
+        "Never-input shadow312/214 affected-event sets differ fromTTUM207.",
+        "Negative denominator complete observations only.",
+        "Do not merge ideal/numeric pairwise with rendered pooled."
+      ],
+      "input_state_at_planning": "READY_FROM_TABLE",
+      "output_stem": "f7",
+      "outputs": [
+        "independent panel SVG",
+        "assembled vector PDF",
+        "PNG preview",
+        "actual source_data CSV",
+        "caption and provenance JSON"
+      ],
+      "acceptance_checks": [
+        "timely+failure+unknown=affected",
+        "all1310 events/1193affected/11111targets at -1.2",
+        "never312events/214affected/2336targets at -1.2",
+        "high-PGA population separately reported"
+      ],
+      "previous_v1_id": "F8"
+    }
+  ],
+  "tables": [
+    {
+      "id": "T1",
+      "title": "模型与实验设置",
+      "sources": [
+        "E24",
+        "E31",
+        "E32",
+        "E33",
+        "E29"
+      ],
+      "columns": [
+        "family",
+        "actual_pretrained_asset",
+        "pretraining_identity_and_overlap_knownness",
+        "frozen_trainable_boundary",
+        "native_samples",
+        "actual_training_time_support",
+        "adapter",
+        "common_readout_config",
+        "seed",
+        "selected_epoch",
+        "train_budget",
+        "parameters_if_audited"
+      ],
+      "limits": [
+        "Unverified parameters/provenance marked UNKNOWN.",
+        "TEAM scratch not frozen random.",
+        "Window capacity not long-time performance.",
+        "Keep actual amplitude inputs in the method; do not include ON/OFF experimental matrix."
+      ],
+      "source_scope_notes": {
+        "E24": "only the complete-model training/checkpoint identity; no OFF comparison"
+      }
+    },
+    {
+      "id": "T2",
+      "title": "主要预测结果",
+      "sources": [
+        "E03",
+        "E04",
+        "E07"
+      ],
+      "columns": [
+        "family",
+        "policy",
+        "epoch",
+        "group",
+        "endpoint",
+        "events",
+        "requests",
+        "supported_cells",
+        "MAE",
+        "RMSE",
+        "NLL",
+        "CRPS",
+        "Brier",
+        "coverage68",
+        "coverage95",
+        "width95"
+      ],
+      "limits": [
+        "split broad table into clear panels, not tiny font.",
+        "CI belongs to paired effect unless valid absolute CI exists.",
+        "pooledR2/slope supplementary columns explicitly labeled."
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "评价人口与支持范围",
+      "sources": [
+        "E00",
+        "E01",
+        "E02",
+        "E10",
+        "E17",
+        "E32"
+      ],
+      "columns": [
+        "protocol",
+        "group_or_panel",
+        "cohort_events",
+        "eligible_events",
+        "ineligible_events",
+        "requests_or_fields",
+        "unknown_definition",
+        "clock",
+        "execution_status",
+        "missing_scope"
+      ],
+      "limits": [
+        "Never pool differing populations.",
+        "Required scope complete not all optional stages complete."
+      ]
+    }
+  ],
+  "supplement": [
+    {
+      "id": "S1",
+      "theme": "数据过滤/原生能力/采样与暴露",
+      "sources": [
+        "E29",
+        "E31",
+        "E32",
+        "E33"
+      ],
+      "requirements": "actual audit; no nominal historical counts or station holdout claim"
+    },
+    {
+      "id": "S2",
+      "theme": "所有分层、支持和既有交互",
+      "sources": [
+        "E05",
+        "E06",
+        "E07"
+      ],
+      "requirements": "include favorable/unfavorable/Unknown, all bins; no new subgroup search"
+    },
+    {
+      "id": "S3",
+      "theme": "概率诊断扩展",
+      "sources": [
+        "E03",
+        "E04"
+      ],
+      "requirements": "PIT/reliability needs bins or full MDN; otherwise BLOCKED, not fabricated"
+    },
+    {
+      "id": "S4",
+      "theme": "epoch12、LOO与独立呈现的历史三seed",
+      "sources": [
+        "E03",
+        "E04",
+        "E09"
+      ],
+      "requirements": "separate seed42/three-seed and repeated exports; no pooled DiTing three-seed claim; no ON/OFF appendix"
+    },
+    {
+      "id": "S5",
+      "theme": "TTUM完整预算/门/人口/时钟和后续退化",
+      "sources": [
+        "E10",
+        "E11",
+        "E12",
+        "E13"
+      ],
+      "requirements": "all .15/.2/.25; available clocks only; published CIs else no CI"
+    },
+    {
+      "id": "S6",
+      "theme": "Shadow完整阈值网格",
+      "sources": [
+        "E17",
+        "E18",
+        "E19",
+        "E35"
+      ],
+      "requirements": "two thresholds*five p*four lead; event/pooled and FPR separate"
+    },
+    {
+      "id": "S7",
+      "theme": "全部12个预选案例",
+      "sources": [
+        "E20",
+        "E22",
+        "E23"
+      ],
+      "requirements": "retain metadata ordering,5/20s; fixed scales, annotate inputs/retrospective truth/unsupported; no best-case selection"
+    },
+    {
+      "id": "S8",
+      "theme": "复算和审计资料",
+      "sources": [
+        "E02",
+        "E21",
+        "E22",
+        "E23",
+        "E34"
+      ],
+      "requirements": "file hashes, scripts, actual checks, missing raw prediction scope"
+    }
+  ],
+  "per_panel_manifest_required": [
+    "asset_id",
+    "panel_id",
+    "claim_ids",
+    "source_repo",
+    "source_commit",
+    "source_path",
+    "actual_sha256",
+    "row_key_filters",
+    "row_counts_before_after",
+    "cohort",
+    "population",
+    "checkpoint_policy",
+    "epoch",
+    "seed",
+    "unit",
+    "weighting",
+    "uncertainty_type",
+    "effective_replicates",
+    "unknown_policy",
+    "script_path",
+    "script_sha256",
+    "environment",
+    "source_data_path",
+    "output_path",
+    "output_sha256",
+    "rendered_visual_check",
+    "gaps"
+  ],
+  "caption_template": "图号与简短标题（不用冒号副标题）；protocol、validation、seed、model/policy/epoch；group/panel、事件数及request/field/target数；weighting与单位；差值方向；CI或识别界及有效重采样；scene与解释边界。",
+  "paper_title": "基于 DiTing 的早期 PGA 概率预测",
+  "revision_scope": {
+    "manuscript_heading_style": "short standalone headings; no colon subtitles",
+    "main_section_count": 5,
+    "main_figure_count": 7,
+    "main_table_count": 3,
+    "exclude_from_main_and_supplement": [
+      "ON/OFF amplitude ablation",
+      "OFF condition metrics",
+      "cross-family amplitude-interaction claims"
+    ],
+    "retain_in_methods": [
+      "actual physical amplitude inputs",
+      "duration",
+      "normalization and masks",
+      "truthful complete-model provenance"
+    ],
+    "source_mode_note": "ON remains an internal identity label for existing full-model results; not a planned comparison condition"
+  }
+}

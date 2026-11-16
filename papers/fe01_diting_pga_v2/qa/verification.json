@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "commands": [
+    {
+      "command": [
+        "/home/zhangb/programs/miniconda3/envs/general/bin/python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "/tmp/team_pytorch_fe01_paper_v2_20261116/papers/fe01_diting_pga_v2/tests",
+        "-v"
+      ],
+      "started_utc": "2026-11-16T06:31:37.426525+00:00",
+      "returncode": 0,
+      "log": "qa/focused_tests.log"
+    }
+  ],
+  "source_files_rehashed": 196,
+  "production_diff_paths": [],
+  "manuscript_han": 9090,
+  "abstract_han": 455,
+  "test_set_accessed": false,
+  "hpc_jobs_submitted": false,
+  "inference_run": false,
+  "new_bootstrap_run": false
+}

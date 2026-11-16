@@ -1,0 +1,38 @@
+[
+  {
+    "comparator":"PhaseNet",
+    "checkpoint_policy":"selected",
+    "target_group":"all",
+    "metric":"level_mse",
+    "estimate":-0.0015956761,
+    "ci_low":-0.0025086864,
+    "ci_high":-0.0006480346,
+    "events":1057,
+    "fields":9250,
+    "supported_cells":10,
+    "missing_cells":0,
+    "draws":2000,
+    "effective_replicates":2000,
+    "empty_cell_fraction":0.0,
+    "weighting":"eligible field equal within cell; supported cells equal",
+    "status":"FULL_SUPPORT"
+  },
+  {
+    "comparator":"PhaseNet",
+    "checkpoint_policy":"selected",
+    "target_group":"all",
+    "metric":"shape_mse",
+    "estimate":0.0018736177,
+    "ci_low":0.0013262076,
+    "ci_high":0.0024587012,
+    "events":1057,
+    "fields":9250,
+    "supported_cells":10,
+    "missing_cells":0,
+    "draws":2000,
+    "effective_replicates":2000,
+    "empty_cell_fraction":0.0,
+    "weighting":"eligible field equal within cell; supported cells equal",
+    "status":"FULL_SUPPORT"
+  }
+]

@@ -1,0 +1,88 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "check": "all original 12 cases with 5/20 second frames",
+      "passed": true,
+      "frames": 24
+    },
+    {
+      "check": "legacy primary MAE DiTing",
+      "passed": true,
+      "value": 0.2228594702090994,
+      "source_value": 0.22285947020909944
+    },
+    {
+      "check": "legacy primary RMSE DiTing",
+      "passed": true,
+      "value": 0.29649983986799994
+    },
+    {
+      "check": "legacy primary MAE PhaseNet",
+      "passed": true,
+      "value": 0.22569710545016455,
+      "source_value": 0.22569710545016455
+    },
+    {
+      "check": "legacy primary RMSE PhaseNet",
+      "passed": true,
+      "value": 0.3003717099119137
+    },
+    {
+      "check": "legacy primary MAE EQT",
+      "passed": true,
+      "value": 0.23640727025810598,
+      "source_value": 0.23640727025810593
+    },
+    {
+      "check": "legacy primary RMSE EQT",
+      "passed": true,
+      "value": 0.31203306240046225
+    },
+    {
+      "check": "legacy primary MAE TEAM",
+      "passed": true,
+      "value": 0.24515873154019913,
+      "source_value": 0.24515873154019913
+    },
+    {
+      "check": "legacy primary RMSE TEAM",
+      "passed": true,
+      "value": 0.3237995559394785
+    },
+    {
+      "check": "shadow target outcome conservation",
+      "passed": true
+    },
+    {
+      "check": "shadow complete negative FPR arithmetic",
+      "passed": true
+    },
+    {
+      "check": "TTUM eligibility ledger",
+      "passed": true
+    },
+    {
+      "check": "TTUM lower arithmetic",
+      "passed": true
+    },
+    {
+      "check": "normal queue complete frame count",
+      "passed": true,
+      "frames": 104800
+    },
+    {
+      "check": "legacy event source only five saved times",
+      "passed": true
+    }
+  ],
+  "environment": {
+    "python": "3.13.17",
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "matplotlib": "3.11.2",
+    "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+    "cpu_threads": 1
+  },
+  "new_inference": false
+}

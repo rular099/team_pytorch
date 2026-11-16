@@ -1,0 +1,26 @@
+[
+  {
+    "family":"DiTing",
+    "geometry_protocol":"normal",
+    "panel":"fixed_all_targets",
+    "budget_dex":0.15,
+    "gate":"field_pass",
+    "scene":"ideal_cutoff_replay",
+    "events":1057,
+    "any_degradation_after_first":334,
+    "stable_confirmed":381,
+    "post_confirmation_known_nonpassing_events":128
+  },
+  {
+    "family":"DiTing",
+    "geometry_protocol":"normal",
+    "panel":"fixed_all_targets",
+    "budget_dex":0.15,
+    "gate":"field_pass",
+    "scene":"measured_compute_replay",
+    "events":1057,
+    "any_degradation_after_first":334,
+    "stable_confirmed":381,
+    "post_confirmation_known_nonpassing_events":128
+  }
+]

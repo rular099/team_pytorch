@@ -1,0 +1,42 @@
+[
+  {
+    "comparator":"PhaseNet",
+    "geometry_protocol":"normal",
+    "panel":"fixed_all_targets",
+    "budget_dex":0.2,
+    "gate":"field_pass",
+    "scene":"ideal_cutoff_replay",
+    "metric":"conditional_both_confirmed_delta_seconds",
+    "total_cohort_events":1310,
+    "ineligible_events":253,
+    "outcome_counts":"{\"both_confirmed\": 618, \"neither_or_unknown\": 195, \"only_DiTing_confirmed\": 58, \"only_comparator_confirmed\": 186}",
+    "draws":2000,
+    "rng_seed":20261007,
+    "estimate":-0.0501618123,
+    "ci_low":-0.3704508857,
+    "ci_high":0.2702560111,
+    "events":1057,
+    "known_events":618,
+    "effective_replicates":2000
+  },
+  {
+    "comparator":"PhaseNet",
+    "geometry_protocol":"normal",
+    "panel":"fixed_all_targets",
+    "budget_dex":0.2,
+    "gate":"field_pass",
+    "scene":"ideal_cutoff_replay",
+    "metric":"stable_confirmed_fraction_difference_by_5",
+    "total_cohort_events":1310,
+    "ineligible_events":253,
+    "outcome_counts":"{\"both_confirmed\": 618, \"neither_or_unknown\": 195, \"only_DiTing_confirmed\": 58, \"only_comparator_confirmed\": 186}",
+    "draws":2000,
+    "rng_seed":20261007,
+    "estimate":0.0122989593,
+    "ci_low":-0.0085146641,
+    "ci_high":0.0340823084,
+    "events":1057,
+    "known_events":1057,
+    "effective_replicates":2000
+  }
+]

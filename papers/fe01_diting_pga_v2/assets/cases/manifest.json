@@ -1,0 +1,146 @@
+[
+  {
+    "path": "assets/cases/4ed37394e714d9af4717/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/4ed37394e714d9af4717/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "a3d947250a7b7ede7be8c2841832051ed7029c2031441a75c64a5788eefaceca"
+  },
+  {
+    "path": "assets/cases/4ed37394e714d9af4717/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/4ed37394e714d9af4717/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "82668d18646792eff87eaf8361f56f9e6f37c10c07256552d16775f2a62f9e3f"
+  },
+  {
+    "path": "assets/cases/d2d0ea4c48e2801e7319/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/d2d0ea4c48e2801e7319/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "ec0597fbe24ff0a3286c490b419385b8e1fdfd71556f0cdaac37b0c426d101cd"
+  },
+  {
+    "path": "assets/cases/d2d0ea4c48e2801e7319/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/d2d0ea4c48e2801e7319/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "f64168c7abfd34d9a1cb90117d371160810556ccbb9c7c8cdb8a47989301f1ca"
+  },
+  {
+    "path": "assets/cases/5bf7024ce8f99ff50ebd/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/5bf7024ce8f99ff50ebd/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "37deb067873b47b35e72855bd32682fdaf2edf042cf61874917d54115137668b"
+  },
+  {
+    "path": "assets/cases/5bf7024ce8f99ff50ebd/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/5bf7024ce8f99ff50ebd/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "92344e8a1c705acc81e13d02ec8e2840f03de14b88573bebdda6b3bd58e053cc"
+  },
+  {
+    "path": "assets/cases/32f8668a90b45f9ada23/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/32f8668a90b45f9ada23/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "1ce3a0b8eabe71d3cb848b5cde7186af5167616605f8888b98c9c39a34897ec8"
+  },
+  {
+    "path": "assets/cases/32f8668a90b45f9ada23/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/32f8668a90b45f9ada23/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "72623213f3abd690ad0d3a095d70ec51b9f3a61a65e1cee41d5ef8c979ddd3b9"
+  },
+  {
+    "path": "assets/cases/d97ea03b964ac3b6c5fc/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/d97ea03b964ac3b6c5fc/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "d4810b56a6c82c0a5dfbc332f3a045d2603cc8be7cda844877094f3cfa19b9e8"
+  },
+  {
+    "path": "assets/cases/d97ea03b964ac3b6c5fc/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/d97ea03b964ac3b6c5fc/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "48e308004865204caa56fb3f391258d5c4faa68d1069f4c872136985afda986d"
+  },
+  {
+    "path": "assets/cases/f99709f3a5890f6efc5d/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/f99709f3a5890f6efc5d/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "67d77070354ed0bce398c765ca5e40fd0f8260faa87dd69ad01eb80ce5adb3d3"
+  },
+  {
+    "path": "assets/cases/f99709f3a5890f6efc5d/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/f99709f3a5890f6efc5d/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "cb2f25f17e0402796b6e54c44a5fec772dce04cc31d3f7d294294927a17021e3"
+  },
+  {
+    "path": "assets/cases/f0bbc662a98e5ce2e449/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/f0bbc662a98e5ce2e449/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "8df27247e43adcf887277472182c181aeb3703ff0153cca3342c7d7ec8a27302"
+  },
+  {
+    "path": "assets/cases/f0bbc662a98e5ce2e449/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/f0bbc662a98e5ce2e449/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "da3f315b7f90e2de2c4ef06d1ea16d2c0d2bc5bfcd838a8c894c867cd125bca7"
+  },
+  {
+    "path": "assets/cases/112c531f51c613fb263c/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/112c531f51c613fb263c/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "3d871ef84a0fefeb5e10e97882e53408b406abef0ba3b44be93fa64a5a606987"
+  },
+  {
+    "path": "assets/cases/112c531f51c613fb263c/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/112c531f51c613fb263c/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "d0a261b36d7fb85323ddfc34e93961b16d5bb9869d61217e2730c1513773844a"
+  },
+  {
+    "path": "assets/cases/397598f8ac8fbae04c5f/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/397598f8ac8fbae04c5f/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "95d6ffff12130ef5e7bb7b8aaf332ae0516d4e9bc32f25f7500e8f159081e445"
+  },
+  {
+    "path": "assets/cases/397598f8ac8fbae04c5f/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/397598f8ac8fbae04c5f/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "daa0546210cf6b4e5709f807810055c76295ff1c6567d13f0651bb95607717d1"
+  },
+  {
+    "path": "assets/cases/98cf90ab05ff456c6567/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/98cf90ab05ff456c6567/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "c1361c387f4615ce6b50dec8151697f9cd2f2342744a3027af1804d8766e8f4b"
+  },
+  {
+    "path": "assets/cases/98cf90ab05ff456c6567/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/98cf90ab05ff456c6567/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "596486f626a10328913fa01d746c052f1ec2105ff24f30f7ba699542fb857ebd"
+  },
+  {
+    "path": "assets/cases/96eb80ac09a103420495/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/96eb80ac09a103420495/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "5efe0f98a25def87d6dc1e2f8df02ddbb9c3761982d8fff880b1696dca3ba72e"
+  },
+  {
+    "path": "assets/cases/96eb80ac09a103420495/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/96eb80ac09a103420495/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "fe8353e122230319ce40c6b5c35a2e878d0709556f752593d99db428c32601ef"
+  },
+  {
+    "path": "assets/cases/899f00fc2d65da9d27f0/keyframe_05.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/899f00fc2d65da9d27f0/keyframe_05.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "4c9ac55f4665be3e0513d5459a93254f79edcbdb15e0ff65d38abecac8da0975"
+  },
+  {
+    "path": "assets/cases/899f00fc2d65da9d27f0/keyframe_20.png",
+    "source_path": "reports/fe01_v4_hpc_results_20261115/cases/899f00fc2d65da9d27f0/keyframe_20.png",
+    "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+    "sha256": "411bf99c9b7a48118f66739c682e555117770c285f3171008256970b1dee5c9b"
+  }
+]

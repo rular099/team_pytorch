@@ -1,0 +1,64 @@
+{
+  "status": "PASS",
+  "local_only": true,
+  "log": [
+    {
+      "method": "session.new",
+      "status": "success"
+    },
+    {
+      "method": "browsingContext.getTree",
+      "status": "success"
+    },
+    {
+      "method": "browsingContext.setViewport",
+      "status": "success"
+    },
+    {
+      "method": "browsingContext.navigate",
+      "status": "success"
+    },
+    {
+      "method": "script.evaluate",
+      "status": "success"
+    },
+    {
+      "method": "browsingContext.captureScreenshot",
+      "status": "success"
+    },
+    {
+      "method": "browsingContext.print",
+      "status": "success"
+    },
+    {
+      "output": "paper_review.pdf",
+      "bytes": 2934286,
+      "sha256": "ad924c0384a14e05f82bac994146d21ea96fb7410f18538042035055960d31aa"
+    },
+    {
+      "method": "browsingContext.navigate",
+      "status": "success"
+    },
+    {
+      "method": "script.evaluate",
+      "status": "success"
+    },
+    {
+      "method": "browsingContext.captureScreenshot",
+      "status": "success"
+    },
+    {
+      "method": "browsingContext.print",
+      "status": "success"
+    },
+    {
+      "output": "supplement_review.pdf",
+      "bytes": 724658,
+      "sha256": "bdce5ac41ffad069e8e8a5bb97d106a2a1ad386d0d43b9dc75e99c97f61bad52"
+    },
+    {
+      "method": "session.end",
+      "status": "success"
+    }
+  ]
+}

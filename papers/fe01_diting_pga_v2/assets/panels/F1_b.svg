@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="271.19952pt" height="206.39952pt" viewBox="0 0 271.19952 206.39952" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 206.39952
+L 271.19952 206.39952
+L 271.19952 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="text_1">
+    <g id="patch_2">
+     <path d="M 75.809526 56.906947
+L 195.389994 56.906947
+Q 199.439994 56.906947 199.439994 52.856947
+L 199.439994 33.686947
+Q 199.439994 29.636947 195.389994 29.636947
+L 75.809526 29.636947
+Q 71.759526 29.636947 71.759526 33.686947
+L 71.759526 52.856947
+Q 71.759526 56.906947 75.809526 56.906947
+z
+" style="fill: #eef4fa; stroke: #999999; stroke-width: 0.7; stroke-linejoin: miter"/>
+    </g>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(75.809526 41.606947)">冻结 DiTing / PhaseNet / EQT</text>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(94.469057 51.776947)">或可训练 TEAM CNN</text>
+   </g>
+   <g id="patch_3">
+    <path d="M 135.59976 57.533
+Q 135.59976 61.667575 135.59976 64.684116
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+    <path d="M 137.39976 61.084116
+L 135.59976 64.684116
+L 133.79976 61.084116
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+   </g>
+   <g id="text_2">
+    <g id="patch_4">
+     <path d="M 72.571635 93.627128
+L 198.627885 93.627128
+Q 202.677885 93.627128 202.677885 89.577128
+L 202.677885 70.550565
+Q 202.677885 66.500565 198.627885 66.500565
+L 72.571635 66.500565
+Q 68.521635 66.500565 68.521635 70.550565
+L 68.521635 89.577128
+Q 68.521635 93.627128 72.571635 93.627128
+z
+" style="fill: #f2f2f2; stroke: #999999; stroke-width: 0.7; stroke-linejoin: miter"/>
+    </g>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(72.571635 78.470565)">可训练适配器 + 尺度 + 输入坐标</text>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(79.808901 87.470565)">台站 memory 直接进入读出</text>
+   </g>
+   <g id="patch_5">
+    <path d="M 135.59976 94.324899
+Q 135.59976 98.459474 135.59976 101.476015
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+    <path d="M 137.39976 97.876015
+L 135.59976 101.476015
+L 133.79976 97.876015
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+   </g>
+   <g id="text_3">
+    <g id="patch_6">
+     <path d="M 81.269994 131.004027
+L 189.929526 131.004027
+Q 193.979526 131.004027 193.979526 126.954027
+L 193.979526 106.757464
+Q 193.979526 102.707464 189.929526 102.707464
+L 81.269994 102.707464
+Q 77.219994 102.707464 77.219994 106.757464
+L 77.219994 126.954027
+Q 77.219994 131.004027 81.269994 131.004027
+z
+" style="fill: #f2f2f2; stroke: #999999; stroke-width: 0.7; stroke-linejoin: miter"/>
+    </g>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(86.859135 114.677464)">目标坐标与 query token</text>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(81.269994 124.704027)">4 层 target cross-attention</text>
+   </g>
+   <g id="patch_7">
+    <path d="M 135.59976 131.116798
+Q 135.59976 135.251373 135.59976 138.267914
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+    <path d="M 137.39976 134.667914
+L 135.59976 138.267914
+L 133.79976 134.667914
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+   </g>
+   <g id="text_4">
+    <g id="patch_8">
+     <path d="M 95.378197 167.282645
+L 175.821323 167.282645
+Q 179.871322 167.282645 179.871322 163.232645
+L 179.871322 144.062645
+Q 179.871322 140.012645 175.821323 140.012645
+L 95.378197 140.012645
+Q 91.328198 140.012645 91.328198 144.062645
+L 91.328198 163.232645
+Q 91.328198 167.282645 95.378197 167.282645
+z
+" style="fill: #fff4dd; stroke: #999999; stroke-width: 0.7; stroke-linejoin: miter"/>
+    </g>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(105.093979 151.982645)">3 分量高斯混合</text>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(95.378197 160.982645)">log10 PGA 概率分布</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 10px; font-family: 'Noto Sans CJK JP'; text-anchor: start" x="7.2" y="16" transform="rotate(-0 7.2 16)">(b) 实际 PGA 路径</text>
+   </g>
+  </g>
+ </g>
+</svg>

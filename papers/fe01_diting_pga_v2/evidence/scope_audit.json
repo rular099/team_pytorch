@@ -1,0 +1,29 @@
+{
+  "blueprint": "v2; all 10 declared input hashes verified",
+  "paper_base": "560a29d8c82ba634549ed886840b2a2a539e0114",
+  "result_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+  "source_main": "50672e131d876a604432b283162d5b0189d40cf0",
+  "split": "validation",
+  "seed": 42,
+  "mode_internal": "ON",
+  "selected_epochs": {
+    "DiTing": 12,
+    "PhaseNet": 12,
+    "EQT": 10,
+    "TEAM": 11
+  },
+  "active_START_HERE": "ABSENT at base; fixed historical fallback read without deployment",
+  "no_preexisting_paper_worktree": true,
+  "protection_snapshot": "worktree_protection_before.json",
+  "production_files_modified": false,
+  "FE02_used": false,
+  "new_HPC_commands": false,
+  "new_model_inference": false,
+  "held_out_test_accessed": false,
+  "publication_authorization": "LOCAL_COMMIT_AND_REVIEW_BUNDLE_ONLY for this paper task",
+  "actual_counts_from_archived_audit": {},
+  "boundaries": [
+    "No excluded-condition comparisons in manuscript/supplement",
+    "Same common downstream does not imply same native windows/time exposure/pretraining."
+  ]
+}

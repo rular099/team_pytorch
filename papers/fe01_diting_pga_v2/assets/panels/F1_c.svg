@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="271.19952pt" height="206.39952pt" viewBox="0 0 271.19952 206.39952" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 206.39952
+L 271.19952 206.39952
+L 271.19952 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="text_1">
+    <g id="patch_2">
+     <path d="M 75.506479 57.07851
+L 195.693041 57.07851
+Q 199.743041 57.07851 199.743041 53.02851
+L 199.743041 33.515385
+Q 199.743041 29.465385 195.693041 29.465385
+L 75.506479 29.465385
+Q 71.456479 29.465385 71.456479 33.515385
+L 71.456479 53.02851
+Q 71.456479 57.07851 75.506479 57.07851
+z
+" style="fill: #eef4fa; stroke: #999999; stroke-width: 0.7; stroke-linejoin: miter"/>
+    </g>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(75.506479 41.435385)">旧 5 时点 × normal / random</text>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(91.112338 50.966947)">non-input 随时点变化</text>
+   </g>
+   <g id="patch_3">
+    <path d="M 135.59976 57.533
+Q 135.59976 61.667575 135.59976 64.684116
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+    <path d="M 137.39976 61.084116
+L 135.59976 64.684116
+L 133.79976 61.084116
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+   </g>
+   <g id="text_2">
+    <g id="patch_4">
+     <path d="M 78.624838 94.117909
+L 192.574682 94.117909
+Q 196.624682 94.117909 196.624682 90.067909
+L 196.624682 70.059784
+Q 196.624682 66.009784 192.574682 66.009784
+L 78.624838 66.009784
+Q 74.574838 66.009784 74.574838 70.059784
+L 74.574838 90.067909
+Q 74.574838 94.117909 78.624838 94.117909
+z
+" style="fill: #f2f2f2; stroke: #999999; stroke-width: 0.7; stroke-linejoin: miter"/>
+    </g>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(92.434916 77.979784)">新固定 query 1–20 秒</text>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(78.624838 88.006346)">never-input 全时段排除输入</text>
+   </g>
+   <g id="patch_5">
+    <path d="M 135.59976 94.324899
+Q 135.59976 98.459474 135.59976 101.476015
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+    <path d="M 137.39976 97.876015
+L 135.59976 101.476015
+L 133.79976 97.876015
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+   </g>
+   <g id="text_3">
+    <g id="patch_6">
+     <path d="M 71.121088 129.905746
+L 200.078432 129.905746
+Q 204.128432 129.905746 204.128432 125.855746
+L 204.128432 107.855746
+Q 204.128432 103.805746 200.078432 103.805746
+L 71.121088 103.805746
+Q 67.071088 103.805746 67.071088 107.855746
+L 67.071088 125.855746
+Q 67.071088 129.905746 71.121088 129.905746
+z
+" style="fill: #f2f2f2; stroke: #999999; stroke-width: 0.7; stroke-linejoin: miter"/>
+    </g>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(71.121088 115.775746)">cutoff → 数值 FIFO → 渲染 FIFO</text>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(99.59976 124.775746)">三个时钟分别报告</text>
+   </g>
+   <g id="patch_7">
+    <path d="M 135.59976 131.116798
+Q 135.59976 135.251373 135.59976 138.267914
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+    <path d="M 137.39976 134.667914
+L 135.59976 138.267914
+L 133.79976 134.667914
+" style="fill: none; stroke: #666666; stroke-linecap: round"/>
+   </g>
+   <g id="text_4">
+    <g id="patch_8">
+     <path d="M 86.09976 166.697645
+L 185.09976 166.697645
+Q 189.14976 166.697645 189.14976 162.647645
+L 189.14976 144.647645
+Q 189.14976 140.597645 185.09976 140.597645
+L 86.09976 140.597645
+Q 82.04976 140.597645 82.04976 144.647645
+L 82.04976 162.647645
+Q 82.04976 166.697645 86.09976 166.697645
+z
+" style="fill: #fff4dd; stroke: #999999; stroke-width: 0.7; stroke-linejoin: miter"/>
+    </g>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(86.09976 152.567645)">三帧通过的第三帧才确认</text>
+    <text style="font-size: 9px; font-family: 'Noto Sans CJK JP'" transform="translate(90.59976 161.567645)">之后仍可能再次不通过</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 10px; font-family: 'Noto Sans CJK JP'; text-anchor: start" x="7.2" y="16" transform="rotate(-0 7.2 16)">(c) 人口与交付</text>
+   </g>
+  </g>
+ </g>
+</svg>

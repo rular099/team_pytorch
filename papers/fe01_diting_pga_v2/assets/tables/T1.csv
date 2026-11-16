@@ -1,0 +1,5 @@
+model,pretraining,encoder,native_samples,post_P_capacity_seconds,readout,total_parameters,trainable_parameters,encoder_parameters,epochs_trained,epoch_selected,seed,global_batch,microbatch,lr,optimizer,scheduler,amplitude_duration_dims,count_provenance
+DiTing,MAE 1200M; corpus/license unresolved,frozen,10000,94.99,4-layer target cross-attention; 3-Gaussian MDN,1280055495,46012591,1234042904,12,12,42,128,8,0.001,Adam,cosine_fixed_updates,11,archived interface audit; no weight loading in paper run
+PhaseNet,STEAD v2,frozen,3001,25.0,4-layer target cross-attention; 3-Gaussian MDN,42818657,42550214,268443,12,12,42,128,8,0.001,Adam,cosine_fixed_updates,11,archived interface audit; no weight loading in paper run
+EQT,STEAD v2,frozen,6000,54.99,4-layer target cross-attention; 3-Gaussian MDN,42815149,42438214,376935,12,10,42,128,8,0.001,Adam,cosine_fixed_updates,11,archived interface audit; no weight loading in paper run
+TEAM,scratch,trainable,10000,94.99,4-layer target cross-attention; 3-Gaussian MDN,48307702,48307702,5886488,12,11,42,128,8,0.001,Adam,cosine_fixed_updates,11,archived interface audit; no weight loading in paper run

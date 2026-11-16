@@ -1,0 +1,209 @@
+{
+  "state": "planned_claims_to_verify_not_manuscript_evidence",
+  "anchor_policy": "Rounded QA anchors only; read source tables for plots and text. Do not hard-code these into outputs.",
+  "claims": [
+    {
+      "claim_id": "C01",
+      "statement": "旧snapshot非输入主人口中DiTing取得较低主MAE",
+      "strength": "strong_within_fixed_models",
+      "source_ids": [
+        "E03",
+        "E04"
+      ],
+      "scope": "1310events/139440requests,10cell equal",
+      "limitations": "不是独立test、多seed定论或所有目标普遍最优",
+      "rounded_QA_anchors": {
+        "DiTing": 0.222859,
+        "PhaseNet": 0.225697,
+        "EQT": 0.236407,
+        "TEAM": 0.245159
+      }
+    },
+    {
+      "claim_id": "C02",
+      "statement": "首P后1秒的非输入精度和分布评分收益较突出",
+      "strength": "strong_within_fixed_models",
+      "source_ids": [
+        "E03",
+        "E04",
+        "E05"
+      ],
+      "scope": "1310events/38795requests,2cell equal",
+      "limitations": "1秒cutoff不等于1秒送达；不宣称纯P波或单输入优势",
+      "rounded_QA_anchors": {
+        "DiTing_mae": 0.254466,
+        "PhaseNet_mae": 0.264456,
+        "delta_mae": -0.00999,
+        "ci_low": -0.015231,
+        "ci_high": -0.004792
+      }
+    },
+    {
+      "claim_id": "C03",
+      "statement": "概率评分改善与欠覆盖并存",
+      "strength": "strong_within_fixed_models",
+      "source_ids": [
+        "E03",
+        "E04"
+      ],
+      "scope": "primary noninput10cell",
+      "limitations": "不能只用coverage或near-zero bias认证校准；总体与首秒宽度不同",
+      "rounded_QA_anchors": {
+        "DiTing_coverage95": 0.914884,
+        "PhaseNet_coverage95": 0.913038,
+        "DiTing_nll": 0.11577,
+        "PhaseNet_nll": 0.150267
+      }
+    },
+    {
+      "claim_id": "C04",
+      "statement": "实际Kmulti非输入子组中点/概率收益一致",
+      "strength": "conditional_exploratory",
+      "source_ids": [
+        "E04",
+        "E06",
+        "E07"
+      ],
+      "scope": "1219events/110905requests",
+      "limitations": "不是K增加的因果效应或单调趋势；K1无一致优势",
+      "rounded_QA_anchors": {
+        "delta_mae": -0.003491,
+        "ci_low": -0.006011,
+        "ci_high": -0.000854
+      }
+    },
+    {
+      "claim_id": "C05",
+      "statement": "空间收益依赖对照：较EQT/TEAM全面，较PhaseNet主要在noninput range",
+      "strength": "conditional_spatial",
+      "source_ids": [
+        "E08"
+      ],
+      "scope": "944events/6789fields;near-distance928/6644",
+      "limitations": "range不等于位置安排正确；PhaseNet shape差跨零；all-target有反例",
+      "rounded_QA_anchors": {
+        "PhaseNet_noninput_delta_range": -0.01213,
+        "ci_low": -0.016226,
+        "ci_high": -0.007759
+      }
+    },
+    {
+      "claim_id": "C07",
+      "statement": "normal固定never-input的局部理想field确认收益在计算时钟反向",
+      "strength": "conditional_joint_quality",
+      "source_ids": [
+        "E10",
+        "E11"
+      ],
+      "scope": "207eligible/1310cohort,b=.20,field,20s",
+      "limitations": "不能只报理想或只报成功者；.15/.25与random敏感性保留",
+      "rounded_QA_anchors": {
+        "ideal_D": 88,
+        "ideal_P": 73,
+        "numeric_D": 49,
+        "numeric_P": 69,
+        "rendered_D": 15,
+        "rendered_P": 16
+      }
+    },
+    {
+      "claim_id": "C08",
+      "statement": "首次三帧确认不保证此后一直通过",
+      "strength": "descriptive",
+      "source_ids": [
+        "E13",
+        "E28"
+      ],
+      "scope": "normal never-input,b=.20,field; conditional confirmed sets",
+      "limitations": "34/88与47/73不是同一条件人口上的因果比较",
+      "rounded_QA_anchors": {
+        "DiTing_failed_after": 34,
+        "DiTing_confirmed": 88,
+        "PhaseNet_failed_after": 47,
+        "PhaseNet_confirmed": 73
+      }
+    },
+    {
+      "claim_id": "C09",
+      "statement": "计算代价与共享绘图积压均影响交付",
+      "strength": "measured_specific_scenarios",
+      "source_ids": [
+        "E14",
+        "E15",
+        "E16"
+      ],
+      "scope": "benchmark6events/108repeats per scope;normal104800frames",
+      "limitations": "不认证1Hz，不泛化到任何硬件；不把shared-render当部署",
+      "rounded_QA_anchors": {
+        "whole_map_p95_D": 4.500733,
+        "whole_map_p95_P": 1.278129
+      }
+    },
+    {
+      "claim_id": "C10",
+      "statement": "Shadow没有统一DiTing优势，须并列误报和Unknown",
+      "strength": "conditional_warning",
+      "source_ids": [
+        "E17",
+        "E18",
+        "E19"
+      ],
+      "scope": "normal threshold-1.2,p=.5,lead3 example/fullgrid supplement",
+      "limitations": "识别界不是CI；不推每日误报/连续盲区面积",
+      "rounded_QA_anchors": {}
+    },
+    {
+      "claim_id": "C11",
+      "statement": "高PGA分层可能有较大点误差收益",
+      "strength": "exploratory_only",
+      "source_ids": [
+        "E05",
+        "E06",
+        "E07"
+      ],
+      "scope": "y>0:73events/1777requests",
+      "limitations": "不等于大震、近场、低SNR或及时警报优势；保留完整分层",
+      "rounded_QA_anchors": {
+        "delta_mae": -0.042282,
+        "ci_low": -0.071133,
+        "ci_high": -0.004417
+      }
+    },
+    {
+      "claim_id": "C12",
+      "statement": "收益在单事件删除和epoch12检查中有部分稳健性",
+      "strength": "robustness_not_replication",
+      "source_ids": [
+        "E09",
+        "E04"
+      ],
+      "scope": "primary noninput, selected vs fixed epoch12 separated",
+      "limitations": "不是多seed重复，不把54.8%事件胜率叫压倒性",
+      "rounded_QA_anchors": {
+        "LOO_min": -0.003139,
+        "LOO_max": -0.00247,
+        "event_win_rate": 0.548092
+      }
+    }
+  ],
+  "forbidden_claims": [
+    "DiTing is universally best",
+    "pure pretraining causality demonstrated",
+    "unseen-station or unseen-region generalization certified",
+    "real-time deployment/1Hz certified",
+    "stable_confirmation means permanent stability",
+    "continuous blind-zone area or daily false alarms measured",
+    "16 exports equal16 independent trainings",
+    "legacy snapshot and dense replay scores interchangeable",
+    "full fixed-query MDN independently recomputed without its bytes",
+    "three-seed DiTing result from mixed single-seed comparisons",
+    "amplitude ON/OFF results as a contribution of this manuscript",
+    "family-specific amplitude synergy or amplitude-contribution conclusions without the excluded experiments"
+  ],
+  "version": "20261116-v2",
+  "paper_title": "基于 DiTing 的早期 PGA 概率预测",
+  "excluded_claim_ids": [
+    "C06"
+  ],
+  "scope_change": "C06 amplitude-ablation claim is excluded from this manuscript and supplement by user scope choice; historical experiment is not deleted or invalidated."
+}

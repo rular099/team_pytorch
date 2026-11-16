@@ -1,0 +1,42 @@
+{
+  "status": "PASS_FOR_REVIEW_DRAFT",
+  "reviewed_on": "2026-11-16",
+  "main_groups": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7"
+  ],
+  "main_panels_visible_in_groups": 37,
+  "manual_scope": [
+    "all seven assembled PNGs in contact sheet",
+    "all 27 paper PDF pages in contact sheet",
+    "all 4 supplement PDF pages in contact sheet",
+    "paper figure pages 15,19,23 opened separately",
+    "all 24 original case frames in contact sheet"
+  ],
+  "automated_scope": [
+    "all SVG/PDF/PNG outputs exist and match manifest hashes",
+    "PNG nominal 300 dpi",
+    "main figure title and caption on same page",
+    "24 case bytes match pinned input"
+  ],
+  "corrected": [
+    "missing superscript/subscript glyphs replaced with supported notation",
+    "point plot legend spacing",
+    "overlong field labels",
+    "crowded repeated probability annotations",
+    "initial SVG figure pagination splitting across pages",
+    "raw formula code block pagination"
+  ],
+  "limitations": [
+    "not a journal template final proof",
+    "source TeX not compiled; browser PDF actually generated",
+    "independent SVG/PDF panels were not each separately opened",
+    "case contact sheet is overview; original pixels preserved for zoom",
+    "no peer review or external deployment certification"
+  ]
+}

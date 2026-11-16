@@ -1,0 +1,24 @@
+{
+  "search": [
+    {
+      "directory": "runs/v4pack",
+      "mode": "file-name enumeration only; no model/weights opened",
+      "candidate_count": 0,
+      "examples": []
+    },
+    {
+      "directory": "artifacts/fe01_on_eval/v4pack_review_20261115/raw",
+      "mode": "file-name enumeration only; no model/weights opened",
+      "candidate_count": 0,
+      "examples": []
+    },
+    {
+      "directory": "artifacts/fe01_on_eval/pilot_review_20261109T113132/raw",
+      "mode": "file-name enumeration only; no model/weights opened",
+      "candidate_count": 0,
+      "examples": []
+    }
+  ],
+  "full_fixed_query_MDN": "BLOCKED_MISSING_SOURCE",
+  "note": "Only explicitly supplied local artifact directories enumerated. Set FE01_ARTIFACT_ROOT to repeat. Full-stage indexed HPC paths are not local entities. No SSH/HPC access used."
+}

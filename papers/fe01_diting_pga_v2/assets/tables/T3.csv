@@ -1,0 +1,9 @@
+protocol,population,total_events,eligible_events,ineligible_events,requests_or_fields,clock,unknown
+legacy 5 times × 2 geometries,all,1310,1310,0.0,194265.0,cutoff,not silently excluded; source metric status retained
+legacy 5 times × 2 geometries,noninput,1310,1310,0.0,139440.0,cutoff,not silently excluded; source metric status retained
+fixed query normal,fixed_all_targets,1310,1057,253.0,,ideal; normal also numeric/rendered,27
+fixed query normal,fixed_never_input_targets,1310,207,1103.0,,ideal; normal also numeric/rendered,6
+fixed query random,fixed_all_targets,1310,1057,253.0,,ideal; normal also numeric/rendered,15
+fixed query random,fixed_never_input_targets,1310,539,771.0,,ideal; normal also numeric/rendered,3
+shadow normal rendered −1.2 p.5 tau3,fixed_all_targets,1310,1193,,11111.0,rendered,83
+shadow normal rendered −1.2 p.5 tau3,fixed_never_input_targets,312,214,,2336.0,rendered,49

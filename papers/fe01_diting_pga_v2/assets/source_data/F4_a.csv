@@ -1,0 +1,10 @@
+comparator,checkpoint_policy,target_group,metric,estimate,ci_low,ci_high,events,fields,supported_cells,missing_cells,draws,effective_replicates,empty_cell_fraction,weighting,status
+PhaseNet,selected,noninput,level_mse,-0.0012358711605271158,-0.0025299245098842371,-2.9490316864437026e-06,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+PhaseNet,selected,noninput,shape_mse,0.00016114863453581979,-0.00055182266398451059,0.00089501669419180723,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+PhaseNet,selected,noninput,field_mse,-0.0010747225259912969,-0.0024770037577608816,0.00035237414712437857,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+EQT,selected,noninput,level_mse,-0.003801921388219681,-0.0054360476903987584,-0.0023721314772810805,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+EQT,selected,noninput,shape_mse,-0.0035961567254442781,-0.0045877662727531786,-0.0025348032197026675,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+EQT,selected,noninput,field_mse,-0.00739807811366396,-0.0093597835381232682,-0.005575977769816237,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+TEAM,selected,noninput,level_mse,-0.011035338831000722,-0.013762167608315824,-0.0088137573801518425,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+TEAM,selected,noninput,shape_mse,-0.0020222083058435937,-0.0027899612348705576,-0.0012849756997681792,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+TEAM,selected,noninput,field_mse,-0.013057547136844316,-0.015899711006009714,-0.010706016082409113,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT

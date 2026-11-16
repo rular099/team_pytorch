@@ -1,0 +1,34 @@
+[
+  {
+    "family":"DiTing",
+    "geometry_protocol":"normal",
+    "panel":"fixed_all_targets",
+    "budget_dex":0.15,
+    "gate":"field_pass",
+    "scene":"ideal_cutoff_replay",
+    "horizon":5,
+    "events":1057,
+    "total_cohort_events":1310,
+    "ineligible_fewer_than_5":253,
+    "achieved":29,
+    "unknown":47,
+    "fraction_lower":0.02743614,
+    "fraction_upper":0.0719016083
+  },
+  {
+    "family":"DiTing",
+    "geometry_protocol":"normal",
+    "panel":"fixed_all_targets",
+    "budget_dex":0.15,
+    "gate":"field_pass",
+    "scene":"ideal_cutoff_replay",
+    "horizon":10,
+    "events":1057,
+    "total_cohort_events":1310,
+    "ineligible_fewer_than_5":253,
+    "achieved":153,
+    "unknown":47,
+    "fraction_lower":0.1447492904,
+    "fraction_upper":0.1892147588
+  }
+]

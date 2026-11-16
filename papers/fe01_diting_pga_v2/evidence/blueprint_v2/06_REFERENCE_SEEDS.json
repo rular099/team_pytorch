@@ -1,0 +1,83 @@
+{
+  "role": "bibliography starting points, not complete literature review and not ready-to-publish BibTeX",
+  "references": [
+    {
+      "id": "R_TEAM",
+      "title": "The transformer earthquake alerting model: a new versatile approach to earthquake early warning",
+      "year": 2021,
+      "lead_author": "Jannes Münchmeyer",
+      "doi": "10.1093/gji/ggaa609",
+      "primary_source": "https://academic.oup.com/gji/article/225/1/646/6047414",
+      "use": "原任务/模型路线背景，不等于FE01逐实现复现",
+      "status": "title_year_DOI_entry_checked_against_primary_search_result_20261116; full bibliographic fields and claim passage must be checked by Codex"
+    },
+    {
+      "id": "R_PHASENET",
+      "title": "PhaseNet: a deep-neural-network-based seismic arrival-time picking method",
+      "year": 2019,
+      "lead_author": "Weiqiang Zhu",
+      "doi": "10.1093/gji/ggy423",
+      "primary_source": "https://academic.oup.com/gji/article/216/1/261/5129142",
+      "use": "前端架构原文；本项目实际STEAD v2权重另核",
+      "status": "title_year_DOI_entry_checked_against_primary_search_result_20261116; full bibliographic fields and claim passage must be checked by Codex"
+    },
+    {
+      "id": "R_EQT",
+      "title": "Earthquake transformer—an attentive deep-learning model for simultaneous earthquake detection and phase picking",
+      "year": 2020,
+      "lead_author": "S. Mostafa Mousavi",
+      "doi": "10.1038/s41467-020-17591-w",
+      "primary_source": "https://www.nature.com/articles/s41467-020-17591-w",
+      "use": "前端架构原文；不可把原拾取任务性能混入PGA比较",
+      "status": "title_year_DOI_entry_checked_against_primary_search_result_20261116; full bibliographic fields and claim passage must be checked by Codex"
+    },
+    {
+      "id": "R_SEISBENCH",
+      "title": "SeisBench—A Toolbox for Machine Learning in Seismology",
+      "year": 2022,
+      "lead_author": "Jack Woollam",
+      "doi": "10.1785/0220210324",
+      "primary_source": "https://pubs.geoscienceworld.org/ssa/srl/article-abstract/93/3/1695/612498/SeisBench-A-Toolbox-for-Machine-Learning-in",
+      "use": "工具与权重来源；软件版本按实际执行锁不是当前latest",
+      "status": "title_year_DOI_entry_checked_against_primary_search_result_20261116; full bibliographic fields and claim passage must be checked by Codex"
+    },
+    {
+      "id": "R_PROPER",
+      "title": "Strictly Proper Scoring Rules, Prediction, and Estimation",
+      "year": 2007,
+      "lead_author": "Tilmann Gneiting",
+      "doi": "10.1198/016214506000001437",
+      "primary_source": "https://www.tandfonline.com/doi/abs/10.1198/016214506000001437",
+      "use": "概率评分方法依据；不要把网站2012上线日期替代2007发表年",
+      "status": "title_year_DOI_entry_checked_against_primary_search_result_20261116; full bibliographic fields and claim passage must be checked by Codex"
+    },
+    {
+      "id": "R_NIED",
+      "title": "NIED K-NET, KiK-net",
+      "year": 2019,
+      "lead_author": "National Research Institute for Earth Science and Disaster Resilience",
+      "doi": "10.17598/NIED.0004",
+      "primary_source": "https://www.kyoshin.bosai.go.jp/en/about_pubdata/",
+      "use": "数据引用；本研究K-NET-only不因数据集名称变成两网混用",
+      "status": "title_year_DOI_entry_checked_against_primary_search_result_20261116; full bibliographic fields and claim passage must be checked by Codex"
+    },
+    {
+      "id": "R_DITING_REQUIRED",
+      "title": null,
+      "year": null,
+      "lead_author": null,
+      "doi": null,
+      "primary_source": null,
+      "use": "必须核验实际1200M MAE checkpoint的原始来源/语料/许可；不可用DiTingMotion或同名picker替代",
+      "status": "UNRESOLVED_MODEL_SPECIFIC_PROVENANCE"
+    }
+  ],
+  "additional_literature_tasks": [
+    "核验实际DiTing预训练资产来源",
+    "核验实际PhaseNet/EQT预训练权重metadata/语料/版本",
+    "检索同任务近期原论文并记录协议差异，不拼跨论文排行榜",
+    "原始MDN和事件cluster bootstrap方法引用须核验原始文献",
+    "不在没有系统核验时使用首次/SOTA/最先进等断言"
+  ],
+  "revision_note": "Reference seeds retained from v1. This v2 editorial revision did not re-browse or newly verify the external references; Codex must perform the listed checks."
+}

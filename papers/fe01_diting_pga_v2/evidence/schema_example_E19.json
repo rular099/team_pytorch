@@ -1,0 +1,40 @@
+[
+  {
+    "comparator":"EQT",
+    "geometry_protocol":"normal",
+    "panel":"fixed_all_targets",
+    "threshold_logpga":-1.2,
+    "p_alarm":0.1,
+    "tau":0,
+    "scene":"ideal_cutoff_replay",
+    "metric":"delta_shadow_lower_bound",
+    "estimate":0.0011394627,
+    "ci_low":-0.0005491818,
+    "ci_high":0.0034219281,
+    "events":1310,
+    "known_events":1193,
+    "effective_replicates":2000,
+    "draws":2000,
+    "conditioning":"reported available event subset; all outcomes\/unknown counts retained",
+    "interval":"fixed model event cluster; exploratory uncorrected"
+  },
+  {
+    "comparator":"EQT",
+    "geometry_protocol":"normal",
+    "panel":"fixed_all_targets",
+    "threshold_logpga":-1.2,
+    "p_alarm":0.1,
+    "tau":0,
+    "scene":"ideal_cutoff_replay",
+    "metric":"delta_shadow_upper_bound",
+    "estimate":0.0021740471,
+    "ci_low":-0.0001046401,
+    "ci_high":0.0052474894,
+    "events":1310,
+    "known_events":1193,
+    "effective_replicates":2000,
+    "draws":2000,
+    "conditioning":"reported available event subset; all outcomes\/unknown counts retained",
+    "interval":"fixed model event cluster; exploratory uncorrected"
+  }
+]

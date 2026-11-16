@@ -1,0 +1,8 @@
+{
+  "python": "3.13.17",
+  "numpy": "2.5.4",
+  "pandas": "3.1.0",
+  "matplotlib": "3.11.2",
+  "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+  "cpu_threads": 1
+}

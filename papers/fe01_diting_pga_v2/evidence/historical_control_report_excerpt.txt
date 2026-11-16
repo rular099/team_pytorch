@@ -1,0 +1,25 @@
+选中CSV路径及原文件SHA在run_summary中；全部轮次见[training_curves.csv](training_curves.csv)。
+`train_loss_rank0`只是rank0损失，不是跨rank平均训练损失。
+
+## 2. 比较人口与审计
+
+九组使用相同9084个train事件、1310个validation事件的审计后cohort；
+训练目标标准化只由train的146299个允许KNET标签拟合，mean=-1.1224620633068207、std=0.431328951490345。
+cohort排除规则为没有KNET支持或1秒时没有因果输入/查询，保存audit计数为616个排除事件；
+不能把历史RT55原始validation事件数直接当作本轮1310事件的等价比较。
+
+每组选中预测文件有194265个目标记录，全部supported且主要评分有限：
+
+| 人口 | 每run目标记录数 |
+| --- | --- |
+[validation_noninput_event_cells.csv](validation_noninput_event_cells.csv) 可用于复核cell平均和差值。
+该表没有逐站点预测，也没有逐目标MDN，因此不能据它重新计算所有站点/分布分析。
+
+## 5. 训练预算、实际时间采样和成本
+
+九组均记录12轮，每轮212个optimizer updates，总2544 updates；global batch128、microbatch8。
+每轮计划27252条（9084事件×3 draws），实际27136条，每轮按等预算丢弃116条。
+每run收到192份journal（12轮×16 ranks），325632条；九组共2930688条。
+全部可用日志为train/supported，保存的排他cutoff与历史/已接收样本边界检查通过。
+
+没有checkpoint可读取 `committed_journals`，因此下表严格标作**可用journal的曝光统计**。

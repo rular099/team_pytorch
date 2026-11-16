@@ -1,0 +1,30 @@
+[
+  {
+    "comparator":"PhaseNet",
+    "panel":"fixed_all_targets",
+    "threshold_logpga":-1.2,
+    "p_alarm":0.5,
+    "tau":3,
+    "metric":"delta_shadow_lower_bound",
+    "estimate":0.023191802,
+    "ci_low":0.0105001368,
+    "ci_high":0.0362912189,
+    "events":1310,
+    "known_events":1193,
+    "effective_replicates":2000
+  },
+  {
+    "comparator":"PhaseNet",
+    "panel":"fixed_all_targets",
+    "threshold_logpga":-1.2,
+    "p_alarm":0.5,
+    "tau":3,
+    "metric":"delta_shadow_upper_bound",
+    "estimate":0.0384556874,
+    "ci_low":0.0256594734,
+    "ci_high":0.0517689335,
+    "events":1310,
+    "known_events":1193,
+    "effective_replicates":2000
+  }
+]

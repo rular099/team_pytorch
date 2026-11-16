@@ -1,0 +1,400 @@
+{
+  "version": "20261116-v2",
+  "role": "revised planning provenance index; no new measurements or new remote verification",
+  "evidence": [
+    {
+      "id": "E00",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/README.md",
+      "purpose": "执行范围及版本、轻量包缺项",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "a35e13d114571a461ae479d0ac404fd4fa626754",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E01",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/DATA_DICTIONARY.md",
+      "purpose": "估计量、人口、时钟和统计定义",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "422f8ace60b749f37a16a512be83b03e59bdf5e7",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E02",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/verification.json",
+      "purpose": "来源及已完成阶段；已归档核验不等于本轮独立重验",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E03",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+      "purpose": "四模型点/概率/coverage/宽度；policy/group/endpoint键",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "0459ab58948c90eafeaf9f52e4751f08f79f159c",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E04",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/paired_effects.csv",
+      "purpose": "DiTing减对照的原配对效应与CI",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "71d48940565b9c122de87b2b7de0eed0d87b9fe3",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E05",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/stratified_effects.csv",
+      "purpose": "完整分层和五时刻效应",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "b97b14f463000c9eb5122e1e1776720e5c7d0ac0",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E06",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/strata_support.csv",
+      "purpose": "分层实际人数、未知和支持",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E07",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+      "purpose": "有效重复、空cell与稀疏支持",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "b8b5a6939d59af65a27eab2005335b583497dcf9",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E08",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/spatial_paired_effects.csv",
+      "purpose": "level/shape/range/近等距站对，field权重",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "9a0b19a05243787be83f7c1cbd7b6c1514afae8e",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E09",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/event_robustness.csv",
+      "purpose": "事件胜率、LOO和贡献集中度",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "07d32a1f14a1a702c8867628a7bf3ba336534ccb",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E10",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_support_recomputed.csv",
+      "purpose": "TTUM全部现有支持量与Unknown界",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "0882e22e7dcff898e49ca84681a30132f53a8dff",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E11",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_paired_b020_recomputed.csv",
+      "purpose": "0.20预算所有panel/gate/scene的配对区间",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "4337fa887b0435f0c4c9d754abd1eb5b764a5047",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E12",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_event_records.csv.gz",
+      "purpose": "完整TTUM事件记录；可确定性画确认阶梯",
+      "observed_availability": "listed_in_result_dictionary; actual compressed bytes must be obtained and checked",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E13",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/post_first_pass_degradation.csv",
+      "purpose": "原确认后的已知不通过事件数",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "bdf12881a5a3fc1a08e47fcc552bb4e46c0c8254",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E14",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/latency_recomputed.csv",
+      "purpose": "六事件benchmark与cold/warm分布",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "2d958077dec8cf654e8e9840d81178bea727e097",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E15",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/queue_quantiles.csv",
+      "purpose": "normal全量service及shared-render FIFO",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "7d792ede0209ed50b906201142a10dd03e14527e",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E16",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/queue_event_frames.csv.gz",
+      "purpose": "104800帧队列记录；不是优化后部署记录",
+      "observed_availability": "listed_remote_binary; actual compressed bytes must be obtained and checked",
+      "git_blob_sha": "f17ca90a29185dd33d8d3c4960fd70536e63c23b",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E17",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_summary.csv",
+      "purpose": "全部rendered阈值网格及event/pooled统计",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "3dac0f43631ed7b6547006ae18727c04df19353c",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E18",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_example_pairwise.csv",
+      "purpose": "固定示例rendered事件等权边界的配对区间",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "3b60ccde926083c704c9dda2ae25819aaf9aeddf",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E19",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/shadow_paired_summary.csv",
+      "purpose": "ideal/numeric的事件等权配对界，不能与pooled混用",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "51f75b95d35c010597011b74eab3293915dcc8fb",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E20",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/CASE_INDEX.md",
+      "purpose": "全部12个原元数据预选案例",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "c1759501497b80edf72cb9e1037bb79dd59cd0fa",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E21",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/figures/FIGURE_SOURCES.json",
+      "purpose": "原图源追溯，不要求原样沿用样式",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "8af64bb54b322db244dc130dbc7e4c76d8820d5b",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E22",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/SOURCE_MANIFEST.json",
+      "purpose": "原件及派生表来源清单",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E23",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/DELIVERY_MANIFEST.json",
+      "purpose": "中立公开目录实际字节清单",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E24",
+      "repository": "rular099/team_pytorch",
+      "commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+      "path": "reports/fe01_a01_hpc_results_20261021/README.md",
+      "purpose": "仅核对本文实际使用的完整模型训练与checkpoint来源；不提取ON/OFF结果",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "aa7c035f136c9d9649877c7f918f32ca90cdf70f",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack",
+      "use_restriction": "provenance_only; exclude OFF metrics, ablation tables and mechanism conclusions"
+    },
+    {
+      "id": "E27",
+      "repository": "rular099/team_pytorch",
+      "commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+      "path": "reports/fe01_a01_hpc_results_20261021/evidence_checks.json",
+      "purpose": "按需核对完整模型来源的历史校验范围，不作为本篇幅值对照证据",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack",
+      "use_restriction": "complete-model provenance checks only; historical PASS is not this revision execution"
+    },
+    {
+      "id": "E28",
+      "repository": "rular099/team_pytorch",
+      "commit": "50672e131d876a604432b283162d5b0189d40cf0",
+      "path": "fe01_a01_compare/map_readiness.py",
+      "purpose": "实际TTUM方法，trace对应method_sources",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "93e9fff4098ec9e63be8cea270973d7ef40eb703",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E29",
+      "repository": "rular099/team_pytorch",
+      "commit": "577a0cec43643597a61209209a770aeecf5fefa0",
+      "path": "FE01_GEOMETRY_AMPLITUDE_HANDOFF_20261007.md",
+      "purpose": "实际PGA路径历史审计；仍须核当前resolved配置",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E30",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/legacy_on_event_cells.csv.gz",
+      "purpose": "旧ON逐事件cell汇总，不是新逐秒MDN",
+      "observed_availability": "listed_remote_binary; actual compressed bytes must be obtained and checked",
+      "git_blob_sha": "7c54b6bf60220e47e144b85b39df12efba5b005f",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E31",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/metadata/checkpoint_inventory.json",
+      "purpose": "内部epoch/权重身份；不等于本轮重读权重",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E32",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/metadata/run_identity.json",
+      "purpose": "运行协议、source与任务范围",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E33",
+      "repository": "rular099/team_pytorch",
+      "commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+      "path": "docs/ai/FE01_PROTOCOL.md",
+      "purpose": "原生窗口/训练协议，历史待办不可当当前结果",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": "755e618dfe99e1773bf29cc570ff0aa2dbb78e0e",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E34",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/local_numerical_checks.json",
+      "purpose": "已归档复算记录，不当本轮执行回执",
+      "observed_availability": "remote_text_or_archive_verified_by_prior_review",
+      "git_blob_sha": null,
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    },
+    {
+      "id": "E35",
+      "repository": "rular099/team_pytorch",
+      "commit": "b366434d2cceb55d188576ce1084f571e09da097",
+      "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_events.csv.gz",
+      "purpose": "rendered完整事件汇总，非逐目标MDN",
+      "observed_availability": "listed_remote_binary; actual compressed bytes must be obtained and checked",
+      "git_blob_sha": "c582d41a2b6678b1b4fdc3c950b1eaed7447c25f",
+      "local_sha256": null,
+      "local_byte_verification": "Codex must compute on actual received files; not asserted by this planning pack"
+    }
+  ],
+  "missing_by_known_bundle_scope": [
+    "full fixed_query_replay_v4 station-level predictions and MDN",
+    "full fixed-query frame metrics",
+    "independent continuous-grid ground truth",
+    "random measured full-grid/render clocks",
+    "origin replay and long-extension execution results"
+  ],
+  "observed_notes": [
+    "Active FE01_ON commit lacks docs/ai/START_HERE.md; maintenance fallback was read at fixed 7445a22e.",
+    "A source path being listed is not a claim its bytes were independently downloaded here."
+  ],
+  "active_head_observed_in_v1": "560a29d8c82ba634549ed886840b2a2a539e0114",
+  "scope_notes": [
+    "E25 and E26 are omitted from this manuscript evidence index because amplitude ablation is out of scope.",
+    "A01 archive files retained in the index are identity/provenance sources only, not an invitation to include its OFF comparisons.",
+    "No remote data, code, checkpoints or historical archives were modified by this planning revision.",
+    "Physical amplitude features remain part of the complete models and must be described truthfully."
+  ]
+}

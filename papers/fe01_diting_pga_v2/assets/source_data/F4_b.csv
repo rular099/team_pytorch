@@ -1,0 +1,4 @@
+comparator,checkpoint_policy,target_group,metric,estimate,ci_low,ci_high,events,fields,supported_cells,missing_cells,draws,effective_replicates,empty_cell_fraction,weighting,status
+PhaseNet,selected,noninput,range_error,-0.012130486256912746,-0.016225990570489377,-0.0077594572207057037,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+EQT,selected,noninput,range_error,-0.051696672145686608,-0.056629006313508735,-0.04655051897530859,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT
+TEAM,selected,noninput,range_error,-0.021497904470423712,-0.025662474885398596,-0.017399598695720237,944,6789,10,0,2000,2000,0,eligible field equal within cell; supported cells equal,FULL_SUPPORT

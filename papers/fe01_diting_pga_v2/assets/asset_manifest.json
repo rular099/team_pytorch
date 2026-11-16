@@ -1,0 +1,3817 @@
+{
+  "assets": [
+    {
+      "asset_id": "S2",
+      "panel_id": "S2_E05",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E05",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/stratified_effects.csv",
+          "sha256": "a33226c122b7459f7d4168654c235d739662cb95ae38c71e1d2f67f0478fc1a6",
+          "rows_before": 378
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 378,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": [
+        1212,
+        1254,
+        1257,
+        1471,
+        1722,
+        1734,
+        1740,
+        1856,
+        1883,
+        1895,
+        1958,
+        1961,
+        1968,
+        1970,
+        1985,
+        1986,
+        1987,
+        1988,
+        1997,
+        1999,
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S2_E05.csv",
+      "source_data_sha256": "4dc5c4e845e101b0b72c8017392c5c7ffc98bb8fea342056a238fd3e06f92857",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S2",
+      "panel_id": "S2_E06",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E06",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/strata_support.csv",
+          "sha256": "ceefaf036953faf6039ae4090c7e362a439a22fa7e4a9ea8262c656d28ac2c64",
+          "rows_before": 294
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 294,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S2_E06.csv",
+      "source_data_sha256": "0911e3d343caa2c2e2d8b2212b1d07b44a94819bc3629e0e141aa6ee2c0ef869",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S2",
+      "panel_id": "S2_E07",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 1188,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": [
+        1999,
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S2_E07.csv",
+      "source_data_sha256": "72614f9ba9caf1e3c546e2856a966f1b2c5d6a3a766a72df2e74714802e63965",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S3",
+      "panel_id": "S3_E03",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 144,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S3_E03.csv",
+      "source_data_sha256": "a5675766c9b8a73bc544459cd3025095270b068f6535f7d572432cc0a4ee5af7",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S3",
+      "panel_id": "S3_E04",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E04",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/paired_effects.csv",
+          "sha256": "6dcd11c5bd1d24751b2d1ec4e5d2bd757f9419003c1afd70c8159435e672dd71",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 1188,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": [
+        1999,
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S3_E04.csv",
+      "source_data_sha256": "04b2f106e8283267a100df3700bd4130cbff92785cb9ecbb3c06888fc3131e34",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S4",
+      "panel_id": "S4_E09",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E09",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/event_robustness.csv",
+          "sha256": "b40e7552638121ccfb2708acbd3b350211d90c2390b559dbf53dbeaf5f4ae2fc",
+          "rows_before": 36
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 36,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S4_E09.csv",
+      "source_data_sha256": "1695dccf64a5f16ce4c31b3a87b47f95d76139a7d9dd55efa75fd85d8a530fa1",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S5",
+      "panel_id": "S5_E10",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E10",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_support_recomputed.csv",
+          "sha256": "368a80914a246cf8480030064adb81b8a4b5d37c9779665f9857f9a9de26ee3c",
+          "rows_before": 864
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 864,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S5_E10.csv",
+      "source_data_sha256": "368a80914a246cf8480030064adb81b8a4b5d37c9779665f9857f9a9de26ee3c",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S5",
+      "panel_id": "S5_E11",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E11",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_paired_b020_recomputed.csv",
+          "sha256": "35e48eae900ac30295a4ef428b4ad300e22491dd0736166c6e85c8d6de7d35c1",
+          "rows_before": 288
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 288,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S5_E11.csv",
+      "source_data_sha256": "35e48eae900ac30295a4ef428b4ad300e22491dd0736166c6e85c8d6de7d35c1",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S5",
+      "panel_id": "S5_E13",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E13",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/post_first_pass_degradation.csv",
+          "sha256": "aad7292184d73e3501bb488d5eda9b880b231b83ee56186177403ecc50c13f86",
+          "rows_before": 288
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 288,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S5_E13.csv",
+      "source_data_sha256": "aad7292184d73e3501bb488d5eda9b880b231b83ee56186177403ecc50c13f86",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S6",
+      "panel_id": "S6_E17",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E17",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_summary.csv",
+          "sha256": "f2b2c281a847e898a14cf9337d0721fdd55f7bc8298b9d57144cba4a13dbbe18",
+          "rows_before": 320
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 320,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S6_E17.csv",
+      "source_data_sha256": "f2b2c281a847e898a14cf9337d0721fdd55f7bc8298b9d57144cba4a13dbbe18",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S6",
+      "panel_id": "S6_E18",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E18",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_example_pairwise.csv",
+          "sha256": "a3da21d3a9520779be05a211451cfc1d60a1411f4f114d62189b4f6c0fc23916",
+          "rows_before": 12
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S6_E18.csv",
+      "source_data_sha256": "a3da21d3a9520779be05a211451cfc1d60a1411f4f114d62189b4f6c0fc23916",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "S6",
+      "panel_id": "S6_E19",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E19",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/shadow_paired_summary.csv",
+          "sha256": "4392720e54d156b1e0db4548f3a629c6bd8fbbbc2dafc65bd93b862720b2a18e",
+          "rows_before": 1440
+        }
+      ],
+      "filter": "all archived rows",
+      "rows_after": 1440,
+      "cohort": "validation; original event partition",
+      "population": "all archived strata/policies/populations",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "see column dictionary",
+      "weighting": "unchanged archived estimand",
+      "uncertainty_type": "original archived event-cluster intervals where present",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/S6_E19.csv",
+      "source_data_sha256": "4ab1f53e3d71766c586197fa3143c7e99f11a5b83c3736f7559d94ea4e007837",
+      "visual_check": "SOURCE_INTEGRITY_CHECKED; not every supplemental row manually reviewed",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F1",
+      "panel_id": "F1_a",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E01",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/DATA_DICTIONARY.md",
+          "sha256": "f905eae95ac509903aea5998e4949fd0ce9ce071a49ac1f7f50bc7042245720f",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E31",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/metadata/checkpoint_inventory.json",
+          "sha256": "860a6b0413b57fe7db8eec78900f44da57ec33861390c439376716530a147112",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E32",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/metadata/run_identity.json",
+          "sha256": "0d4f5f0daeb70550bdadbe386a2024799127e15d294936c7ad6552c4de0970cb",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E33",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "docs/ai/FE01_PROTOCOL.md",
+          "sha256": "c66255f26d58721e4f3e0f38508d7593519d5928d5a8f984409ae469908e8fd2",
+          "rows_before": null
+        }
+      ],
+      "filter": "有效波形掩码与物理量",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "actual complete models",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "schematic / samples",
+      "weighting": "not a metric",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F1_a.csv",
+      "source_data_sha256": "5a6375c6e422242951fc54aa6292b1645ed49ddab7c87fbc8e06c1d0ce436b01",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "Schematic only; source trace in executed_model_path.md; inactive station self-attention excluded; additional generated values F1_schematic.csv; deterministic synthetic sinusoids, NOT observations",
+      "outputs": [
+        {
+          "path": "assets/panels/F1_a.svg",
+          "sha256": "48a0e1a19a52f2898d40da3564f6faf71d8039eb044609b290088561d8375c97"
+        },
+        {
+          "path": "assets/panels/F1_a.pdf",
+          "sha256": "0dcb24b511f8dc77d4a85b4f9677426a99fc91a4128528fc9194fd5f22569246"
+        },
+        {
+          "path": "assets/panels/F1_a.png",
+          "sha256": "116549278860a3e8547ebc4cd07a03f7e7c61a41f37175cf23eb47fb98ecae04"
+        }
+      ],
+      "method_config_inputs": [
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__team_original_scratch__seed42.json",
+          "sha256": "3a7f8bd4e13446bf1b68daf10c1e365533ab70689a52d53e341c3e8c227b613a",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__phasenet_pretrained_frozen__seed42.json",
+          "sha256": "e2ab8542f75370ce38bdea9f7663f5962949372309881d598160f1ce97173123",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__eqt_pretrained_frozen__seed42.json",
+          "sha256": "9158d0d4cd026021707afc55e006c26c48db6ccde281d090a589ff6c468af5d7",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+          "path": "reports/fe01_a01_hpc_results_20261021/source_metadata/training/index3/model_interface_audit.json",
+          "sha256": "cedece8ad63c05864db2d5ce68a3314ca93b9821db19a5414ffe905b2d222f55",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+          "path": "reports/fe01_a01_hpc_results_20261021/source_metadata/training/index3/resolved_config.json",
+          "sha256": "a10757c8564ae4fd5c36541782de8065d4d2fd9ef4f470cdd67a73ae7104ea18",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        }
+      ],
+      "additional_source_data": [
+        {
+          "path": "assets/source_data/F1_schematic.csv",
+          "sha256": "b630d91b0e64abb4551e8993edaa844714462074070abc9661ef70b632c2bd7e",
+          "kind": "explicit synthetic schematic samples, not event observations"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F1",
+      "panel_id": "F1_b",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E01",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/DATA_DICTIONARY.md",
+          "sha256": "f905eae95ac509903aea5998e4949fd0ce9ce071a49ac1f7f50bc7042245720f",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E31",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/metadata/checkpoint_inventory.json",
+          "sha256": "860a6b0413b57fe7db8eec78900f44da57ec33861390c439376716530a147112",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E32",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/metadata/run_identity.json",
+          "sha256": "0d4f5f0daeb70550bdadbe386a2024799127e15d294936c7ad6552c4de0970cb",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E33",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "docs/ai/FE01_PROTOCOL.md",
+          "sha256": "c66255f26d58721e4f3e0f38508d7593519d5928d5a8f984409ae469908e8fd2",
+          "rows_before": null
+        }
+      ],
+      "filter": "实际 PGA 前向路径",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "actual complete models",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "schematic / samples",
+      "weighting": "not a metric",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F1_b.csv",
+      "source_data_sha256": "5a6375c6e422242951fc54aa6292b1645ed49ddab7c87fbc8e06c1d0ce436b01",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "Schematic only; source trace in executed_model_path.md; inactive station self-attention excluded",
+      "outputs": [
+        {
+          "path": "assets/panels/F1_b.svg",
+          "sha256": "ddc7574b2ab49d7b45c4ef5906a859df2142fd34d81922c782b609401ba2a11f"
+        },
+        {
+          "path": "assets/panels/F1_b.pdf",
+          "sha256": "f980d22f7a61c0c49ba49939138c0da318c353cf3a47fd7bbc2a6bc42b17b2e6"
+        },
+        {
+          "path": "assets/panels/F1_b.png",
+          "sha256": "d122b2981a4f8eb3bcff0ab2f6f29e59c36bf3eb2377321b3a32f90ef0c9e481"
+        }
+      ],
+      "method_config_inputs": [
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__team_original_scratch__seed42.json",
+          "sha256": "3a7f8bd4e13446bf1b68daf10c1e365533ab70689a52d53e341c3e8c227b613a",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__phasenet_pretrained_frozen__seed42.json",
+          "sha256": "e2ab8542f75370ce38bdea9f7663f5962949372309881d598160f1ce97173123",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__eqt_pretrained_frozen__seed42.json",
+          "sha256": "9158d0d4cd026021707afc55e006c26c48db6ccde281d090a589ff6c468af5d7",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+          "path": "reports/fe01_a01_hpc_results_20261021/source_metadata/training/index3/model_interface_audit.json",
+          "sha256": "cedece8ad63c05864db2d5ce68a3314ca93b9821db19a5414ffe905b2d222f55",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+          "path": "reports/fe01_a01_hpc_results_20261021/source_metadata/training/index3/resolved_config.json",
+          "sha256": "a10757c8564ae4fd5c36541782de8065d4d2fd9ef4f470cdd67a73ae7104ea18",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F1",
+      "panel_id": "F1_c",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E01",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/DATA_DICTIONARY.md",
+          "sha256": "f905eae95ac509903aea5998e4949fd0ce9ce071a49ac1f7f50bc7042245720f",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E31",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/metadata/checkpoint_inventory.json",
+          "sha256": "860a6b0413b57fe7db8eec78900f44da57ec33861390c439376716530a147112",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E32",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/metadata/run_identity.json",
+          "sha256": "0d4f5f0daeb70550bdadbe386a2024799127e15d294936c7ad6552c4de0970cb",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E33",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "docs/ai/FE01_PROTOCOL.md",
+          "sha256": "c66255f26d58721e4f3e0f38508d7593519d5928d5a8f984409ae469908e8fd2",
+          "rows_before": null
+        }
+      ],
+      "filter": "人口定义与三种时钟",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "actual complete models",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "schematic / samples",
+      "weighting": "not a metric",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F1_c.csv",
+      "source_data_sha256": "5a6375c6e422242951fc54aa6292b1645ed49ddab7c87fbc8e06c1d0ce436b01",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "Schematic only; source trace in executed_model_path.md; inactive station self-attention excluded",
+      "outputs": [
+        {
+          "path": "assets/panels/F1_c.svg",
+          "sha256": "5e4628e0d3b08d4a7a1a4879c3cca7bee507fb83e2521de81f2584f9149e04d4"
+        },
+        {
+          "path": "assets/panels/F1_c.pdf",
+          "sha256": "15cc00add98402f54729bad10037c126d65e3cc38c563384446916186acf60e0"
+        },
+        {
+          "path": "assets/panels/F1_c.png",
+          "sha256": "d064b91c30a665d9fe9a466b51f25e13af2b75287dc5bd40a8b89554f0e7b4a2"
+        }
+      ],
+      "method_config_inputs": [
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__team_original_scratch__seed42.json",
+          "sha256": "3a7f8bd4e13446bf1b68daf10c1e365533ab70689a52d53e341c3e8c227b613a",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__phasenet_pretrained_frozen__seed42.json",
+          "sha256": "e2ab8542f75370ce38bdea9f7663f5962949372309881d598160f1ce97173123",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__eqt_pretrained_frozen__seed42.json",
+          "sha256": "9158d0d4cd026021707afc55e006c26c48db6ccde281d090a589ff6c468af5d7",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+          "path": "reports/fe01_a01_hpc_results_20261021/source_metadata/training/index3/model_interface_audit.json",
+          "sha256": "cedece8ad63c05864db2d5ce68a3314ca93b9821db19a5414ffe905b2d222f55",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+          "path": "reports/fe01_a01_hpc_results_20261021/source_metadata/training/index3/resolved_config.json",
+          "sha256": "a10757c8564ae4fd5c36541782de8065d4d2fd9ef4f470cdd67a73ae7104ea18",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F1",
+      "panel_id": "assembled",
+      "source_panels": [
+        "F1_a",
+        "F1_b",
+        "F1_c"
+      ],
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "outputs": [
+        {
+          "path": "assets/figures/F1.svg",
+          "sha256": "b3ef81f3c5cead9029590b2da96f29354c2c7101c8a5f54c45ffe2e886f4459a"
+        },
+        {
+          "path": "assets/figures/F1.pdf",
+          "sha256": "6efd5e22ea57cbe35b7c1529a2a574d8fed3810ffb85a4b0510c6851257aea1f"
+        },
+        {
+          "path": "assets/figures/F1.png",
+          "sha256": "348e486b5a836f74de4d97f9d86a08ea6fd071a3a054465746a901b8b4e9c1e3"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F2",
+      "panel_id": "F2_a",
+      "claim_ids": [
+        "C01",
+        "C02"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "selected/noninput/three endpoints",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "targets within cell; cells equal",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F2_a.csv",
+      "source_data_sha256": "14bd5a06c208caaf68e8e9b31036ee7ce6fc49a47e9daae5eec643eb8dce30c8",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F2_a.svg",
+          "sha256": "a44466eeba8b6da1e6d649882779f883206dca5f746c2b0f271c74cdbf5e4d89"
+        },
+        {
+          "path": "assets/panels/F2_a.pdf",
+          "sha256": "3117289b6b48e1c9b28d3808420ba4e80fb21e916a94cf0f63ded6f7c4e8f5e9"
+        },
+        {
+          "path": "assets/panels/F2_a.png",
+          "sha256": "b54b37d06be8d119842f7239d30877e9d472e8829612997701139e1155292def"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F2",
+      "panel_id": "F2_b",
+      "claim_ids": [
+        "C01"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "selected/all/three endpoints",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "all targets including input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "targets within cell; cells equal",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F2_b.csv",
+      "source_data_sha256": "d79860e3eb4ff7b42746b2215feb96546d1f893c11141e47cd575d6ce930bb79",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F2_b.svg",
+          "sha256": "b4602d38ed1707e9790bd3102289bfdea767f50f38ab55d971dc1f34bf1eccb5"
+        },
+        {
+          "path": "assets/panels/F2_b.pdf",
+          "sha256": "46dd5efdc0cc40828da2686cc0d069d43c0532813d07c95df59182bdd65df9fd"
+        },
+        {
+          "path": "assets/panels/F2_b.png",
+          "sha256": "ea0d879faac82b78a97f071cd82e4029d14f5d267a7a9385e544b219167e7d75"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F2",
+      "panel_id": "F2_c",
+      "claim_ids": [
+        "C01",
+        "C02"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E04",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/paired_effects.csv",
+          "sha256": "6dcd11c5bd1d24751b2d1ec4e5d2bd757f9419003c1afd70c8159435e672dd71",
+          "rows_before": 1188
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "selected/noninput/MAE primary and first second",
+      "rows_after": 6,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "paired equal-cell",
+      "uncertainty_type": "95% archived event-cluster percentile bootstrap; 2000 draws",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F2_c.csv",
+      "source_data_sha256": "8834e7ee82b038386aedc7e8038dc1ca19a3f860ce9ff39b1807f99e1e572096",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F2_c.svg",
+          "sha256": "d511cd828cfcdedbb92860ee2887eb5bc4e6ffd32f8aa2777ff8794317921645"
+        },
+        {
+          "path": "assets/panels/F2_c.pdf",
+          "sha256": "aff4f499c1c8e2af7482191d63b5353581845650258de893fc7615978c3fe7d0"
+        },
+        {
+          "path": "assets/panels/F2_c.png",
+          "sha256": "61a55e3ba033f4640dc610348560b5c24b0b5e79636d5a6f086c27755acd0bf5"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F2",
+      "panel_id": "F2_d",
+      "claim_ids": [
+        "C02"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E05",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/stratified_effects.csv",
+          "sha256": "a33226c122b7459f7d4168654c235d739662cb95ae38c71e1d2f67f0478fc1a6",
+          "rows_before": 378
+        },
+        {
+          "evidence_id": "E06",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/strata_support.csv",
+          "sha256": "ceefaf036953faf6039ae4090c7e362a439a22fa7e4a9ea8262c656d28ac2c64",
+          "rows_before": 294
+        }
+      ],
+      "filter": "selected/PhaseNet/factor=time",
+      "rows_after": 5,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "targets within geometry cell; geometry cells equal",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F2_d.csv",
+      "source_data_sha256": "12d9015872677039d9084226fe007520e11ead38fc34264fa983ee5ff6461812",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F2_d.svg",
+          "sha256": "c3523911622ed771d2f886df1ab3107498ec4c0fde3d3b16442b8233083e3c5b"
+        },
+        {
+          "path": "assets/panels/F2_d.pdf",
+          "sha256": "1b8a93354aa9e058a8c5e475883cd868493090417c7eecb08f508abeb543f8a0"
+        },
+        {
+          "path": "assets/panels/F2_d.png",
+          "sha256": "9fc124761beec40390c2d016e23f906d762df20862f0ca23def44fdd7d281ef0"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F2",
+      "panel_id": "F2_e",
+      "claim_ids": [
+        "C01",
+        "C02"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "selected/noninput/RMSE/three endpoints",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "root of equal-cell MSE",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F2_e.csv",
+      "source_data_sha256": "14bd5a06c208caaf68e8e9b31036ee7ce6fc49a47e9daae5eec643eb8dce30c8",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F2_e.svg",
+          "sha256": "254655732e6e820b9893ff12d2316ea07e84519280ab65f7fee77c416a9f2298"
+        },
+        {
+          "path": "assets/panels/F2_e.pdf",
+          "sha256": "c9a5d9e5d66803ea6c107224a7efd190cb2b05b2221c81b73c79945b736b5aa3"
+        },
+        {
+          "path": "assets/panels/F2_e.png",
+          "sha256": "7a510429ba979ff907950defcd5c412d9d2bc4ebd55f9dc76c666b2bca504bd4"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F2",
+      "panel_id": "F2_f",
+      "claim_ids": [
+        "C01"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "selected/all/RMSE/three endpoints",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "all targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "root of equal-cell MSE",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F2_f.csv",
+      "source_data_sha256": "d79860e3eb4ff7b42746b2215feb96546d1f893c11141e47cd575d6ce930bb79",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F2_f.svg",
+          "sha256": "5c429b7aee734191d4cd7a7ec3dacc7609ded74a6cd8d869b0b7911899e8b631"
+        },
+        {
+          "path": "assets/panels/F2_f.pdf",
+          "sha256": "d84f8934792f6cadcb86f7402632d9c2561c0021ad166c1fae08a26ee629c50a"
+        },
+        {
+          "path": "assets/panels/F2_f.png",
+          "sha256": "3fd5bde079a4e77fb458add31824867deaa6e9385dbe40f16719f39ff8dc7f13"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F2",
+      "panel_id": "assembled",
+      "source_panels": [
+        "F2_a",
+        "F2_b",
+        "F2_c",
+        "F2_d",
+        "F2_e",
+        "F2_f"
+      ],
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "outputs": [
+        {
+          "path": "assets/figures/F2.svg",
+          "sha256": "41efaa5aac19dde5b7233ec0c470f112e2a65d9e4e7f9396161f2b5d833809bf"
+        },
+        {
+          "path": "assets/figures/F2.pdf",
+          "sha256": "a4254f73a7f6313f549e181e1f960e4d9b90061aefc5dff4197c7020e9f2ef68"
+        },
+        {
+          "path": "assets/figures/F2.png",
+          "sha256": "6fb50f753207ef8c99458c6e5cbc6497c4aefe2ab1ab8a7285b74bf382f45730"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F3",
+      "panel_id": "F3_a",
+      "claim_ids": [
+        "C03"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E04",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/paired_effects.csv",
+          "sha256": "6dcd11c5bd1d24751b2d1ec4e5d2bd757f9419003c1afd70c8159435e672dd71",
+          "rows_before": 1188
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "selected/noninput/nll/primary+first second",
+      "rows_after": 6,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "log-density score",
+      "weighting": "paired equal-cell",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F3_a.csv",
+      "source_data_sha256": "37c14ccf4c7e01e7b51d7de765bb69413a5dc6409eb00989a83deec78f094754",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F3_a.svg",
+          "sha256": "ccfa8884872d58f4fb5f19ca5cc2d8ca60fd73613f81c95adb618f15e42f5eff"
+        },
+        {
+          "path": "assets/panels/F3_a.pdf",
+          "sha256": "00d4d5ad137e624e9c8f5031e9ceccb42aa42bddb20814d7ec769953610c22c3"
+        },
+        {
+          "path": "assets/panels/F3_a.png",
+          "sha256": "439fe8039c7cf623be2eb7d068a15fcd7ed45a20f2e82fda250ea0237ccf1c7a"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F3",
+      "panel_id": "F3_b",
+      "claim_ids": [
+        "C03"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E04",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/paired_effects.csv",
+          "sha256": "6dcd11c5bd1d24751b2d1ec4e5d2bd757f9419003c1afd70c8159435e672dd71",
+          "rows_before": 1188
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "selected/noninput/crps/primary+first second",
+      "rows_after": 6,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "paired equal-cell",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F3_b.csv",
+      "source_data_sha256": "2a756496a9aa177d0ad271027d0dff0ae1d1297efd4ed6c6b19d6ddd6e0c9a4b",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F3_b.svg",
+          "sha256": "955aa65bae221c0be7e26806d8289ac6121c7caab55aa8c6715e4f66e1507a0c"
+        },
+        {
+          "path": "assets/panels/F3_b.pdf",
+          "sha256": "446e02711febfd91ec15f36fbf522309c2f964cbdfdbfe3e4c32573a8f170c1b"
+        },
+        {
+          "path": "assets/panels/F3_b.png",
+          "sha256": "efd2c0eff3de08c949c4df4225042dfc1c479952ce800b52df1040155ca10b77"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F3",
+      "panel_id": "F3_c",
+      "claim_ids": [
+        "C03"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E04",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/paired_effects.csv",
+          "sha256": "6dcd11c5bd1d24751b2d1ec4e5d2bd757f9419003c1afd70c8159435e672dd71",
+          "rows_before": 1188
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "selected/noninput/brier/primary+first second",
+      "rows_after": 6,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "probability²",
+      "weighting": "paired equal-cell",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F3_c.csv",
+      "source_data_sha256": "78436b37a718da48892d797303767639e0dc21a216155704c0353d428592afe0",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F3_c.svg",
+          "sha256": "2b713336dabfb68e0d4bc29d34ded4ef9b4beec0af78f9281037078b5c6064c9"
+        },
+        {
+          "path": "assets/panels/F3_c.pdf",
+          "sha256": "2455a043b7b06e9e0177513398f1ee4e9aa7970c5bde4474c9cefc58f1c25d25"
+        },
+        {
+          "path": "assets/panels/F3_c.png",
+          "sha256": "783fe7d2605ca38a59a6a58d25c4494bc9653ee5d1cae3441f06e2e262ee052b"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F3",
+      "panel_id": "F3_d",
+      "claim_ids": [
+        "C03"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "selected/noninput/primary+first second",
+      "rows_after": 8,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "equal-cell",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F3_d.csv",
+      "source_data_sha256": "69733c6b7dfb0e93f70a8a6bc0be22c37ebf69dc9a3c54acb0083a125713fc2c",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F3_d.svg",
+          "sha256": "ff568ea12cb6633bb54bcb2b6eccf8a17aa024e945443951ca0a7eb1bf63447c"
+        },
+        {
+          "path": "assets/panels/F3_d.pdf",
+          "sha256": "4cbd0c393f9015a22dc56bcce1001062769b04fc160b82593b256520f1706209"
+        },
+        {
+          "path": "assets/panels/F3_d.png",
+          "sha256": "4dba94b60b4e73663d4e749cd91f6ff7b999323d22bce4230cb63d4c516459df"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F3",
+      "panel_id": "F3_e",
+      "claim_ids": [
+        "C03"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "selected/noninput/primary+first second",
+      "rows_after": 8,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "equal-cell",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F3_e.csv",
+      "source_data_sha256": "69733c6b7dfb0e93f70a8a6bc0be22c37ebf69dc9a3c54acb0083a125713fc2c",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F3_e.svg",
+          "sha256": "4a71a14fd3d3982aef1d680e5b2c22698731d7aae7bf4b2d12d2b7f59fb3d0e4"
+        },
+        {
+          "path": "assets/panels/F3_e.pdf",
+          "sha256": "27bec9d174e670527c1f232f1a47b962770b9367cad5232518fcf2c61c77cbe8"
+        },
+        {
+          "path": "assets/panels/F3_e.png",
+          "sha256": "026de008083bcc983a921bead5d65f5782ee77330cb3ae877ee7e6108b89dcff"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F3",
+      "panel_id": "F3_f",
+      "claim_ids": [
+        "C03"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "selected/noninput/primary+first second",
+      "rows_after": 8,
+      "cohort": "validation; original event partition",
+      "population": "dynamic non-input",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "equal-cell",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F3_f.csv",
+      "source_data_sha256": "69733c6b7dfb0e93f70a8a6bc0be22c37ebf69dc9a3c54acb0083a125713fc2c",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F3_f.svg",
+          "sha256": "49391180c27df0c2109a6d14f2c2e1c7406fc18b7885fca7bb275381d0e09465"
+        },
+        {
+          "path": "assets/panels/F3_f.pdf",
+          "sha256": "f05048c09a3735942b3f1384d4b84370314dfd9a399d3ae3c2935b9631140da7"
+        },
+        {
+          "path": "assets/panels/F3_f.png",
+          "sha256": "25bb07e82364dcde45c1e85fddf1f84cbf983f1d6b32822e934e50fc07c73957"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F3",
+      "panel_id": "assembled",
+      "source_panels": [
+        "F3_a",
+        "F3_b",
+        "F3_c",
+        "F3_d",
+        "F3_e",
+        "F3_f"
+      ],
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "outputs": [
+        {
+          "path": "assets/figures/F3.svg",
+          "sha256": "cefa40b09499b8032880c04cda7e086366ef30852e61e2235bfd7a6279a79b90"
+        },
+        {
+          "path": "assets/figures/F3.pdf",
+          "sha256": "210d10a96ac3658d9bf3a26580f15df2efcd6c63f76e2fbdf8e98a00ae3ee9c6"
+        },
+        {
+          "path": "assets/figures/F3.png",
+          "sha256": "4867cb1dde447404e96bc0414395c01f9494178c26dd9ecf1acb7e044ae59dc7"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F4",
+      "panel_id": "F4_a",
+      "claim_ids": [
+        "C05"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E08",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/spatial_paired_effects.csv",
+          "sha256": "8a8d0f05785ae7edc3b455a892dc1651fb873eddc3ad741369cae53ddfd50329",
+          "rows_before": 180
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "{'checkpoint_policy': 'selected', 'target_group': 'noninput', 'metric': ['level_mse', 'shape_mse', 'field_mse']}",
+      "rows_after": 9,
+      "cohort": "validation; original event partition",
+      "population": "eligible fields; population specified per row",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex²",
+      "weighting": "eligible fields equal within cell; cells equal",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F4_a.csv",
+      "source_data_sha256": "4fcca99c19be85c55c7a852d04bf3b9eb87cb1d419ee4b831db3f98a8eebec72",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F4_a.svg",
+          "sha256": "155d83dbafc5cd3423f656e479034eb5041684fe3367eaecb8245287bc393597"
+        },
+        {
+          "path": "assets/panels/F4_a.pdf",
+          "sha256": "46445cf65976cb394926f41ad8def1633bcecc34782bf5e457d7dc854c590e41"
+        },
+        {
+          "path": "assets/panels/F4_a.png",
+          "sha256": "fba2958631c1d72f12726d79809ff7573d5e4ac95687ac5c8f0ff4287b833b6a"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F4",
+      "panel_id": "F4_b",
+      "claim_ids": [
+        "C05"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E08",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/spatial_paired_effects.csv",
+          "sha256": "8a8d0f05785ae7edc3b455a892dc1651fb873eddc3ad741369cae53ddfd50329",
+          "rows_before": 180
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "{'checkpoint_policy': 'selected', 'target_group': 'noninput', 'metric': ['range_error']}",
+      "rows_after": 3,
+      "cohort": "validation; original event partition",
+      "population": "eligible fields; population specified per row",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "eligible fields equal within cell; cells equal",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F4_b.csv",
+      "source_data_sha256": "88bddfa6c3a17e87bb39cd61833aee99eb133bce4de754982a8bb5acc3852628",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F4_b.svg",
+          "sha256": "13631e14ca2cbcc5cff90223bdeebb4318ecd5a4b5b53a338c8f800357085934"
+        },
+        {
+          "path": "assets/panels/F4_b.pdf",
+          "sha256": "b4d270a3e37a321ffec0e703dd3eed9daa0b25e5b22e1c76e5f9301b08531370"
+        },
+        {
+          "path": "assets/panels/F4_b.png",
+          "sha256": "4c8bd509a01542596e72ede554089a59792ee670eee331077ab279343da2fd93"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F4",
+      "panel_id": "F4_c",
+      "claim_ids": [
+        "C05"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E08",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/spatial_paired_effects.csv",
+          "sha256": "8a8d0f05785ae7edc3b455a892dc1651fb873eddc3ad741369cae53ddfd50329",
+          "rows_before": 180
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "{'checkpoint_policy': 'selected', 'target_group': 'noninput', 'metric': ['equal_distance_delta_mae']}",
+      "rows_after": 3,
+      "cohort": "validation; original event partition",
+      "population": "eligible fields; population specified per row",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "eligible fields equal within cell; cells equal",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F4_c.csv",
+      "source_data_sha256": "b4855d4a1d75f51c825d707d9633c3839b836520c4a43b462df952a1869db885",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F4_c.svg",
+          "sha256": "78fe55c2d3e97738aecfafa2a906f635fcd9c7f15fd1293108a870cc546610e7"
+        },
+        {
+          "path": "assets/panels/F4_c.pdf",
+          "sha256": "375246cc12059ecf6e25aae8bd56bd19920629a68813634e5fe1c563e9985374"
+        },
+        {
+          "path": "assets/panels/F4_c.png",
+          "sha256": "11f2ecbcf81dfda2d29b9761cba5059b63cbb72b24b8bfbe12abb9f75ad66383"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F4",
+      "panel_id": "F4_d",
+      "claim_ids": [
+        "C05"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E08",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/spatial_paired_effects.csv",
+          "sha256": "8a8d0f05785ae7edc3b455a892dc1651fb873eddc3ad741369cae53ddfd50329",
+          "rows_before": 180
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "{'checkpoint_policy': 'selected', 'target_group': ['all', 'noninput'], 'metric': ['shape_mse', 'field_mse'], 'comparator': 'PhaseNet'}",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "eligible fields; population specified per row",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex²",
+      "weighting": "eligible fields equal within cell; cells equal",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F4_d.csv",
+      "source_data_sha256": "14f5f0f860851949f8e7f6e63b9365ccd83054521961b013d2cd73786b842045",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F4_d.svg",
+          "sha256": "aa7f68e75516c8d05c3f141c5717e54922269a76eea97e38ebf6aa8c1bd5284f"
+        },
+        {
+          "path": "assets/panels/F4_d.pdf",
+          "sha256": "a427aad297c467273afe4b7f86fca107329766f9c4621a87c959e5ad88ea08ef"
+        },
+        {
+          "path": "assets/panels/F4_d.png",
+          "sha256": "6cb68b894f14e2d6d47ea82e303ef77079d65e6fa67d076687e63904eb31da88"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F4",
+      "panel_id": "F4_e",
+      "claim_ids": [
+        "C05"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E08",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/spatial_paired_effects.csv",
+          "sha256": "8a8d0f05785ae7edc3b455a892dc1651fb873eddc3ad741369cae53ddfd50329",
+          "rows_before": 180
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "{'checkpoint_policy': 'selected', 'target_group': 'all', 'metric': ['level_mse', 'shape_mse', 'field_mse']}",
+      "rows_after": 9,
+      "cohort": "validation; original event partition",
+      "population": "eligible fields; population specified per row",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex²",
+      "weighting": "eligible fields equal within cell; cells equal",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F4_e.csv",
+      "source_data_sha256": "47a8c8c5461438574d6e7cebbe075bc2ad9d82b850548ebaa87313d4dbb8bae6",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F4_e.svg",
+          "sha256": "f5247584dad2e377680d47046bab16bd2c23ee4ee9d7261afbb63a43424ccf5e"
+        },
+        {
+          "path": "assets/panels/F4_e.pdf",
+          "sha256": "c53b0529bcbaf8bcbab58b4c8961c763b69a3147b73ddb463472c479870cbc77"
+        },
+        {
+          "path": "assets/panels/F4_e.png",
+          "sha256": "0a672d1620be9f395e81ddcdd60a799ef74e4494994ff5c3928ed2717ed796de"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F4",
+      "panel_id": "F4_f",
+      "claim_ids": [
+        "C05"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E08",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/spatial_paired_effects.csv",
+          "sha256": "8a8d0f05785ae7edc3b455a892dc1651fb873eddc3ad741369cae53ddfd50329",
+          "rows_before": 180
+        },
+        {
+          "evidence_id": "E07",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/bootstrap_support.csv",
+          "sha256": "0ed259e0ff4da3122974571f6617202d7ecd678277b3ee34820db8364039fd81",
+          "rows_before": 1188
+        }
+      ],
+      "filter": "{'checkpoint_policy': 'selected', 'target_group': 'all', 'metric': ['range_error', 'equal_distance_delta_mae']}",
+      "rows_after": 6,
+      "cohort": "validation; original event partition",
+      "population": "eligible fields; population specified per row",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex",
+      "weighting": "eligible fields equal within cell; cells equal",
+      "uncertainty_type": "95% archived event-cluster bootstrap",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F4_f.csv",
+      "source_data_sha256": "8c507ce8ba2a52fd7e10888ed5850374af4711a54ca46d0e04d217e2d7c34511",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F4_f.svg",
+          "sha256": "50345462c8eefe09928d547cb3772edf4c1def116ccb1257f2d00fbc2475644d"
+        },
+        {
+          "path": "assets/panels/F4_f.pdf",
+          "sha256": "e55d52ea2f07f63609d7b0dae0b80cd211ada6ba70bbdea403e7d6845f9c401e"
+        },
+        {
+          "path": "assets/panels/F4_f.png",
+          "sha256": "809b33851dc4d013b2a99ff905348ad71b623638837448c39eef42367b986b3d"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F4",
+      "panel_id": "assembled",
+      "source_panels": [
+        "F4_a",
+        "F4_b",
+        "F4_c",
+        "F4_d",
+        "F4_e",
+        "F4_f"
+      ],
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "outputs": [
+        {
+          "path": "assets/figures/F4.svg",
+          "sha256": "b63282be6f67a9b869176fc4b8f9605ed75e4de4cad8100e44dda9fae80d3407"
+        },
+        {
+          "path": "assets/figures/F4.pdf",
+          "sha256": "443f4a3e4295016dcacb8950063471409490bc6fe65d30905ca1e760439731db"
+        },
+        {
+          "path": "assets/figures/F4.png",
+          "sha256": "fae69e23807aadb2579c7698a9c6bc87885397fb737b419b0e1e05cdf4fb64d1"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F5",
+      "panel_id": "F5_a",
+      "claim_ids": [
+        "C07"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E10",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_support_recomputed.csv",
+          "sha256": "368a80914a246cf8480030064adb81b8a4b5d37c9779665f9857f9a9de26ee3c",
+          "rows_before": 864
+        },
+        {
+          "evidence_id": "E12",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_event_records.csv.gz",
+          "sha256": "19b9ac7922aa095337ca8521958fff3e9d51979785fa7d7b533eb8f65f96ff6c",
+          "rows_before": 377280
+        }
+      ],
+      "filter": "normal/never/field/0.20/ideal_cutoff_replay",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "fixed never-input; normal; >=5 targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "eligible events equal",
+      "uncertainty_type": "unknown lower/upper bounds, NOT confidence intervals",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F5_a.csv",
+      "source_data_sha256": "dc8b48c9c16c31100d1c4645dec61eaecf6178f35e7b892f77307d4d30ae3522",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F5_a.svg",
+          "sha256": "158c1556046c4844dab98cc03934c6a6dd8148e163495135d84f14147828a48d"
+        },
+        {
+          "path": "assets/panels/F5_a.pdf",
+          "sha256": "2625fc89da08e80b9982a00db9f4d96b6de0d467ab31745a51457c97d2e49841"
+        },
+        {
+          "path": "assets/panels/F5_a.png",
+          "sha256": "a3bdde325d2a97dbb508cb091ecc13716568f1aa1ac070551e92b0ca79fbd3c0"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F5",
+      "panel_id": "F5_b",
+      "claim_ids": [
+        "C07"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E10",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_support_recomputed.csv",
+          "sha256": "368a80914a246cf8480030064adb81b8a4b5d37c9779665f9857f9a9de26ee3c",
+          "rows_before": 864
+        },
+        {
+          "evidence_id": "E12",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_event_records.csv.gz",
+          "sha256": "19b9ac7922aa095337ca8521958fff3e9d51979785fa7d7b533eb8f65f96ff6c",
+          "rows_before": 377280
+        }
+      ],
+      "filter": "normal/never/field/0.20/measured_compute_replay",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "fixed never-input; normal; >=5 targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "eligible events equal",
+      "uncertainty_type": "unknown lower/upper bounds, NOT confidence intervals",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F5_b.csv",
+      "source_data_sha256": "9df76d22e133684e729b56cb2ffeb2fd351260e15913199fdc3102253ceca729",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F5_b.svg",
+          "sha256": "02ebc46dafa777e3c1ec3916e9e3476e2aad0977ee08b89313d57b352bed8f9b"
+        },
+        {
+          "path": "assets/panels/F5_b.pdf",
+          "sha256": "cce352f36615dcc81131815b03285a0a7b97a56afa2ee90324625f7f79f7ed13"
+        },
+        {
+          "path": "assets/panels/F5_b.png",
+          "sha256": "00f6933a491b795855f6a4076d312bb1707e3e15e6d6ca14b2e094c83380f3d6"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F5",
+      "panel_id": "F5_c",
+      "claim_ids": [
+        "C07"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E10",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_support_recomputed.csv",
+          "sha256": "368a80914a246cf8480030064adb81b8a4b5d37c9779665f9857f9a9de26ee3c",
+          "rows_before": 864
+        },
+        {
+          "evidence_id": "E12",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_event_records.csv.gz",
+          "sha256": "19b9ac7922aa095337ca8521958fff3e9d51979785fa7d7b533eb8f65f96ff6c",
+          "rows_before": 377280
+        }
+      ],
+      "filter": "normal/never/field/0.20/measured_rendered_map_replay",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "fixed never-input; normal; >=5 targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "eligible events equal",
+      "uncertainty_type": "unknown lower/upper bounds, NOT confidence intervals",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F5_c.csv",
+      "source_data_sha256": "95ec52a0395c0d910613c34a6e870e79a5f85457835db8b6a57c5929b20588de",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F5_c.svg",
+          "sha256": "38115c8c7195c49fe943f81c82a18090c373aaab6f8efe5a2f5a4c067b65a9cd"
+        },
+        {
+          "path": "assets/panels/F5_c.pdf",
+          "sha256": "98682fcb344938ffe5a6829566d70529c85fab598008a54bc447bdccefa78d50"
+        },
+        {
+          "path": "assets/panels/F5_c.png",
+          "sha256": "d0ab99b4fb17f320e93c59193ef1c38c3c03dcb584af3d320d53f4a42a483722"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F5",
+      "panel_id": "F5_d",
+      "claim_ids": [
+        "C07"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E10",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_support_recomputed.csv",
+          "sha256": "368a80914a246cf8480030064adb81b8a4b5d37c9779665f9857f9a9de26ee3c",
+          "rows_before": 864
+        }
+      ],
+      "filter": "normal/fixed_all_targets/field/0.20/20s",
+      "rows_after": 12,
+      "cohort": "validation; original event partition",
+      "population": "fixed_all_targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "eligible events equal",
+      "uncertainty_type": "unknown bounds",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F5_d.csv",
+      "source_data_sha256": "6d3c1cc0311d7d7dfd9ec5ef0486021d21c36b24a3e83ffc3f7e085d0632a695",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F5_d.svg",
+          "sha256": "8f8dcd36317f02c11c3b59974d9cc9f1aafa8b73ddd3559cda9f7c9f23c551e1"
+        },
+        {
+          "path": "assets/panels/F5_d.pdf",
+          "sha256": "e2a98f593cf1e679110764c4d58d7c1ed81abf4a41887716428541562135aa49"
+        },
+        {
+          "path": "assets/panels/F5_d.png",
+          "sha256": "69b18272fe560f722cc20dbe16f4e3bcd655d780dea6fa6f42072e89690d9d57"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F5",
+      "panel_id": "F5_e",
+      "claim_ids": [
+        "C07"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E10",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_support_recomputed.csv",
+          "sha256": "368a80914a246cf8480030064adb81b8a4b5d37c9779665f9857f9a9de26ee3c",
+          "rows_before": 864
+        }
+      ],
+      "filter": "random/fixed_never_input_targets/field/0.20/20s",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "fixed_never_input_targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "eligible events equal",
+      "uncertainty_type": "unknown bounds",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F5_e.csv",
+      "source_data_sha256": "e320931a05665118d6982060cd7457471e8267e334021f62a50f5f1894e44d11",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F5_e.svg",
+          "sha256": "5205fc59c265487d319f8956cc279fd8ada10b8567ee988be4fa3b7c1aabd81c"
+        },
+        {
+          "path": "assets/panels/F5_e.pdf",
+          "sha256": "333e665337fe51af04370aef943e560b42d211150ee701e3332c015c5df509ef"
+        },
+        {
+          "path": "assets/panels/F5_e.png",
+          "sha256": "91f85211bbd7c74115e72ebd1874867edf5ef786ad180e6057ce2101605f6145"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F5",
+      "panel_id": "F5_f",
+      "claim_ids": [
+        "C08"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E13",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/post_first_pass_degradation.csv",
+          "sha256": "aad7292184d73e3501bb488d5eda9b880b231b83ee56186177403ecc50c13f86",
+          "rows_before": 288
+        }
+      ],
+      "filter": "normal/never/field/0.20/ideal",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "model-specific confirmed subsets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "events / confirmed events",
+      "weighting": "each model conditional confirmed set",
+      "uncertainty_type": "descriptive counts; no paired causal interpretation",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F5_f.csv",
+      "source_data_sha256": "5e9e3d00c8e2132963e7ca4767480b54229faa8c8ede3d5492de3abd320008da",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F5_f.svg",
+          "sha256": "5c90348ea9d0cb75a37f55f3cb95b701a001f1375ff5aa27b0ccb692b8d33b53"
+        },
+        {
+          "path": "assets/panels/F5_f.pdf",
+          "sha256": "6b766548ef213104e09a990bea76a0626b5a334464d9dc7fd19d8181f6dfb113"
+        },
+        {
+          "path": "assets/panels/F5_f.png",
+          "sha256": "67ec8d9b8408ff3d55ad09b4afaa1edd04554e8465437f70bd07e0f660df497d"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F5",
+      "panel_id": "assembled",
+      "source_panels": [
+        "F5_a",
+        "F5_b",
+        "F5_c",
+        "F5_d",
+        "F5_e",
+        "F5_f"
+      ],
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "outputs": [
+        {
+          "path": "assets/figures/F5.svg",
+          "sha256": "f65ed47888e099f6c3c1e5a99c2ed24c1938f8137c824380a2674ccf8c9574db"
+        },
+        {
+          "path": "assets/figures/F5.pdf",
+          "sha256": "c04bcb45987dd1706867788d2d59c2db7a65697fa4cfcad0f1733e3eab65b96e"
+        },
+        {
+          "path": "assets/figures/F5.png",
+          "sha256": "044395aa10b6b0ffefda2b08ee6b6ec453243dac442cc35a97d368162483b5d1"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F6",
+      "panel_id": "F6_a",
+      "claim_ids": [
+        "C09"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E14",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/latency_recomputed.csv",
+          "sha256": "b1f0f10f79a8b0692f44526e8d488db80eff4be5a9a95c151ee374d6300f8410",
+          "rows_before": 8
+        }
+      ],
+      "filter": "warm/cold kept separate; all scopes; 6 events; 108 measured repeats/scope",
+      "rows_after": 8,
+      "cohort": "validation; original event partition",
+      "population": "6-event pilot",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "s",
+      "weighting": "empirical quantiles; not confidence intervals",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F6_a.csv",
+      "source_data_sha256": "b1f0f10f79a8b0692f44526e8d488db80eff4be5a9a95c151ee374d6300f8410",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F6_a.svg",
+          "sha256": "ec7cc940cb5867838d1304345e3a89541e376860d20e7eea5a5242bbb33c3910"
+        },
+        {
+          "path": "assets/panels/F6_a.pdf",
+          "sha256": "08c5aca85f7c3a6cbaa919fc729b2a6897be32e2aa77b27b477689544eccd9e6"
+        },
+        {
+          "path": "assets/panels/F6_a.png",
+          "sha256": "e229aa9ce14f9bfffaa46d0d1092bef7984530be971a8e615196b88f81f8a168"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F6",
+      "panel_id": "F6_b",
+      "claim_ids": [
+        "C09"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E14",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/latency_recomputed.csv",
+          "sha256": "b1f0f10f79a8b0692f44526e8d488db80eff4be5a9a95c151ee374d6300f8410",
+          "rows_before": 8
+        }
+      ],
+      "filter": "warm/cold kept separate; whole_map/cold load single record",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "one cold worker/model",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "s",
+      "weighting": "empirical quantiles; not confidence intervals",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F6_b.csv",
+      "source_data_sha256": "ad6be00bb4162b0d4c210136f0506b84eafecdc89c3b68da60936122be2f31f0",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F6_b.svg",
+          "sha256": "a498119385db615fa6ada0a48f5b7da85d319a91dfd187eefe9ba0c9e1533427"
+        },
+        {
+          "path": "assets/panels/F6_b.pdf",
+          "sha256": "359a34a8dd1c07525d13ded89d6c7a076c729c0f8525f30788a5ab2ceb14e149"
+        },
+        {
+          "path": "assets/panels/F6_b.png",
+          "sha256": "0f4910908e9b06fe9b98e9e4c99224602c2806dbd3efd327cb7a67de3b10d7da"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F6",
+      "panel_id": "F6_c",
+      "claim_ids": [
+        "C09"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E15",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/queue_quantiles.csv",
+          "sha256": "c180cb1781e8bdf9be1fdceb61a0eb4c41c1de98349556ac00a38b26b4559452",
+          "rows_before": 40
+        }
+      ],
+      "filter": "warm/cold kept separate; full normal replay",
+      "rows_after": 8,
+      "cohort": "validation; original event partition",
+      "population": "104800 frames; 1310 events × 4 models × 20",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "s",
+      "weighting": "empirical quantiles; not confidence intervals",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F6_c.csv",
+      "source_data_sha256": "dd64c58625add7b4090cff7da98e29394319f2372301a178b4d1376e5854f5d9",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F6_c.svg",
+          "sha256": "44d2dc269e85434396bc30cedaaa3214f0952a26d774b492ec1be12c73fba7d6"
+        },
+        {
+          "path": "assets/panels/F6_c.pdf",
+          "sha256": "f5e78b1762e7579e36b34377527b856366e572a3d150816ad54111f3f9513fc6"
+        },
+        {
+          "path": "assets/panels/F6_c.png",
+          "sha256": "9ba254d07d83cec05997a0650fe86bbcbb2fb6d2a28a74dfae9e2fe8fd081c18"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F6",
+      "panel_id": "F6_d",
+      "claim_ids": [
+        "C09"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E15",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/queue_quantiles.csv",
+          "sha256": "c180cb1781e8bdf9be1fdceb61a0eb4c41c1de98349556ac00a38b26b4559452",
+          "rows_before": 40
+        }
+      ],
+      "filter": "warm/cold kept separate; 20th frame rendered-ready",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "1310 events/model",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "s after first P",
+      "weighting": "empirical quantiles; not confidence intervals",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F6_d.csv",
+      "source_data_sha256": "c2a19bf24625df86441fd475533a94ab4dfb160653dc7aa75a45d306efd7523b",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F6_d.svg",
+          "sha256": "8721034737c63770be455604a4b5654214af2059fc6f8f2e716dbc1816661f7b"
+        },
+        {
+          "path": "assets/panels/F6_d.pdf",
+          "sha256": "09d9a9cbe5d1d6b19b569734dc2cb2a4172917edf7adcd85ae74419bb78c252b"
+        },
+        {
+          "path": "assets/panels/F6_d.png",
+          "sha256": "14fdc9658878b76af2f369aa6fecc13746cac6f4edc32a8479e4c08567651d54"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F6",
+      "panel_id": "assembled",
+      "source_panels": [
+        "F6_a",
+        "F6_b",
+        "F6_c",
+        "F6_d"
+      ],
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "outputs": [
+        {
+          "path": "assets/figures/F6.svg",
+          "sha256": "36e4265cef2a2031c010a360c09e31de763c3de66fab0197141859e70e066513"
+        },
+        {
+          "path": "assets/figures/F6.pdf",
+          "sha256": "f64d8947c45bd5a06b1b4a92868b190058aee5e499bf958bc4e245539e471133"
+        },
+        {
+          "path": "assets/figures/F6.png",
+          "sha256": "82fcdeddb69f93dd4796e70accee4ff0968cf4f0658f2bb19ba2ab3a3656bbb7"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F7",
+      "panel_id": "F7_a",
+      "claim_ids": [
+        "C10"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E17",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_summary.csv",
+          "sha256": "f2b2c281a847e898a14cf9337d0721fdd55f7bc8298b9d57144cba4a13dbbe18",
+          "rows_before": 320
+        },
+        {
+          "evidence_id": "E35",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_events.csv.gz",
+          "sha256": "35e935dea1f3156422be2561c490f7b56bdab4ec56669e13ecb77ad0d9a9442a",
+          "rows_before": 259520
+        }
+      ],
+      "filter": "normal/rendered/fixed_all_targets/threshold=-1.2/tau3; all p_alarm",
+      "rows_after": 20,
+      "cohort": "validation; original event partition",
+      "population": "fixed_all_targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "pooled affected targets; complete negative FPR",
+      "uncertainty_type": "unknown failure bounds; not statistical CI",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F7_a.csv",
+      "source_data_sha256": "0066f3d249d6248b775c4a7ccf88f2927cd63a342a17d0cc13d2f0903d476964",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F7_a.svg",
+          "sha256": "f617ceee2314f6da48d629fcab7ed4197b9d5c0b42f90bc5d8a9222de2ea0032"
+        },
+        {
+          "path": "assets/panels/F7_a.pdf",
+          "sha256": "ed90c412ee7d173c3e60a880591ef7d507f55a2f5eb79df182cd8fd6e0807535"
+        },
+        {
+          "path": "assets/panels/F7_a.png",
+          "sha256": "d12e23b7a0e3686291f434ad3e413abc591d309e6da87ac22ebf27603a54abb2"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F7",
+      "panel_id": "F7_b",
+      "claim_ids": [
+        "C10"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E17",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_summary.csv",
+          "sha256": "f2b2c281a847e898a14cf9337d0721fdd55f7bc8298b9d57144cba4a13dbbe18",
+          "rows_before": 320
+        },
+        {
+          "evidence_id": "E35",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_events.csv.gz",
+          "sha256": "35e935dea1f3156422be2561c490f7b56bdab4ec56669e13ecb77ad0d9a9442a",
+          "rows_before": 259520
+        }
+      ],
+      "filter": "normal/rendered/fixed_never_input_targets/threshold=-1.2/tau3; all p_alarm",
+      "rows_after": 20,
+      "cohort": "validation; original event partition",
+      "population": "fixed_never_input_targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "pooled affected targets; complete negative FPR",
+      "uncertainty_type": "unknown failure bounds; not statistical CI",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F7_b.csv",
+      "source_data_sha256": "0dba10fae182a9808ac1a9d731c15c30ce45d18c2c3045c1d051fe7bf32e7f14",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F7_b.svg",
+          "sha256": "00e999fa13c20ceb835b3a9a0208101fabba383e967e58d7365ce80e5ef8ce0b"
+        },
+        {
+          "path": "assets/panels/F7_b.pdf",
+          "sha256": "1d340a02e689092f506e3838b3f5dd81647b88cffb0a6f0c593aa01adedf0385"
+        },
+        {
+          "path": "assets/panels/F7_b.png",
+          "sha256": "5bf380cef93526888f273d2317442c9c7b4d1a2cdc43caa2927750e34ddc2409"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F7",
+      "panel_id": "F7_c",
+      "claim_ids": [
+        "C10"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E17",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_summary.csv",
+          "sha256": "f2b2c281a847e898a14cf9337d0721fdd55f7bc8298b9d57144cba4a13dbbe18",
+          "rows_before": 320
+        },
+        {
+          "evidence_id": "E35",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_events.csv.gz",
+          "sha256": "35e935dea1f3156422be2561c490f7b56bdab4ec56669e13ecb77ad0d9a9442a",
+          "rows_before": 259520
+        }
+      ],
+      "filter": "normal/rendered/fixed_all_targets/threshold=0.0/tau3; all p_alarm",
+      "rows_after": 20,
+      "cohort": "validation; original event partition",
+      "population": "fixed_all_targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "pooled affected targets; complete negative FPR",
+      "uncertainty_type": "unknown failure bounds; not statistical CI",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F7_c.csv",
+      "source_data_sha256": "58e322a56f9b546d0d63bba2f92cbb8b4c931a8490bc5b4e3707a3a2d939e2a5",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F7_c.svg",
+          "sha256": "1651e69133db47b16c19a04c7629ea4b98fe9fbd48b5328fd1cc436a0299ae28"
+        },
+        {
+          "path": "assets/panels/F7_c.pdf",
+          "sha256": "1c779d82e68f70cc189280f526d8a570999aebb3110b19c35bd8816cb60e85ac"
+        },
+        {
+          "path": "assets/panels/F7_c.png",
+          "sha256": "b55bfd825976baf9a038f546a93dbccd69466991cec2a9119f2b17bddbb708f2"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F7",
+      "panel_id": "F7_d",
+      "claim_ids": [
+        "C10"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E17",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_summary.csv",
+          "sha256": "f2b2c281a847e898a14cf9337d0721fdd55f7bc8298b9d57144cba4a13dbbe18",
+          "rows_before": 320
+        },
+        {
+          "evidence_id": "E35",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_events.csv.gz",
+          "sha256": "35e935dea1f3156422be2561c490f7b56bdab4ec56669e13ecb77ad0d9a9442a",
+          "rows_before": 259520
+        }
+      ],
+      "filter": "normal/rendered/fixed_never_input_targets/threshold=0.0/tau3; all p_alarm",
+      "rows_after": 20,
+      "cohort": "validation; original event partition",
+      "population": "fixed_never_input_targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "pooled affected targets; complete negative FPR",
+      "uncertainty_type": "unknown failure bounds; not statistical CI",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F7_d.csv",
+      "source_data_sha256": "f36d17dffbb632913d74a1c6bc93dce2376eb7e4808776b43786546c65144e46",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F7_d.svg",
+          "sha256": "a3ed81abe1cbaffd5cc7539ef849ec2f2251cdf4e5c72d74f549ded6c1779993"
+        },
+        {
+          "path": "assets/panels/F7_d.pdf",
+          "sha256": "f54ab9dc73d7828f91cd8ce822730b9567887275e8aa5149c62c28a6d4c93377"
+        },
+        {
+          "path": "assets/panels/F7_d.png",
+          "sha256": "2bce58d8b149d02d1fb3bdc03d8fbe5f92c6d6d113962f50986772d2809bbe6f"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F7",
+      "panel_id": "F7_e",
+      "claim_ids": [
+        "C10"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E18",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_example_pairwise.csv",
+          "sha256": "a3da21d3a9520779be05a211451cfc1d60a1411f4f114d62189b4f6c0fc23916",
+          "rows_before": 12
+        }
+      ],
+      "filter": "rendered/normal/threshold−1.2/p0.5/tau3; archived examples",
+      "rows_after": 6,
+      "cohort": "validation; original event partition",
+      "population": "fixed_all_targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "events equal; DiTing lower−comparator upper and vice versa",
+      "uncertainty_type": "two separately bootstrapped bound intervals; not one effect CI",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F7_e.csv",
+      "source_data_sha256": "de2748a5cf91bb63b407da4c8b5e227d11d19c8ca905494b355aca7d934489ba",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F7_e.svg",
+          "sha256": "855d8ddb43db0d88c48dbb4227cdf2b4c13deaadbffb4cb0dc4c1188166d56b3"
+        },
+        {
+          "path": "assets/panels/F7_e.pdf",
+          "sha256": "8ae6bfc9d566323283cbbcd85c04c91fd1ec0e0c3bc78c5f99c3f36466e99d2f"
+        },
+        {
+          "path": "assets/panels/F7_e.png",
+          "sha256": "5133c94c0e89e7f7cc804e4f8b9c6e7259ba5efae73102c0693448cc9529e736"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F7",
+      "panel_id": "F7_f",
+      "claim_ids": [
+        "C10"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E18",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_example_pairwise.csv",
+          "sha256": "a3da21d3a9520779be05a211451cfc1d60a1411f4f114d62189b4f6c0fc23916",
+          "rows_before": 12
+        }
+      ],
+      "filter": "rendered/normal/threshold−1.2/p0.5/tau3; archived examples",
+      "rows_after": 6,
+      "cohort": "validation; original event partition",
+      "population": "fixed_never_input_targets",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "fraction",
+      "weighting": "events equal; DiTing lower−comparator upper and vice versa",
+      "uncertainty_type": "two separately bootstrapped bound intervals; not one effect CI",
+      "effective_replicates": [
+        2000
+      ],
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/F7_f.csv",
+      "source_data_sha256": "ad879cb0ae7b221b65eb72b45cbdbb8a02845bc48f13f17c010bb3c6676305d2",
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "notes": "",
+      "outputs": [
+        {
+          "path": "assets/panels/F7_f.svg",
+          "sha256": "3510b85698b0089e182efc0e02edaa14f18f0669b3ed8c1af60c86cecb3c3093"
+        },
+        {
+          "path": "assets/panels/F7_f.pdf",
+          "sha256": "db30633bc72df26aa4774c94de9d508e6b65860d32a961b90f463d7df275200d"
+        },
+        {
+          "path": "assets/panels/F7_f.png",
+          "sha256": "0f85830c6362439c6db09599de1eb58497cf5d04536d817bc462f3d3cfecd3b0"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "F7",
+      "panel_id": "assembled",
+      "source_panels": [
+        "F7_a",
+        "F7_b",
+        "F7_c",
+        "F7_d",
+        "F7_e",
+        "F7_f"
+      ],
+      "visual_check": "REVIEWED assembled PNG contact sheet and local HTML/PDF; independent panel content checked within assembly",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "outputs": [
+        {
+          "path": "assets/figures/F7.svg",
+          "sha256": "1d31ed7bf71bbc2e7588b1b75f11213c00316f43f44166125b4e8c906ce6d7b1"
+        },
+        {
+          "path": "assets/figures/F7.pdf",
+          "sha256": "d6ac25886a5c2c51a6e407c1237d88fdc2d0c40201f392ae9b42ba8ee12e1c3a"
+        },
+        {
+          "path": "assets/figures/F7.png",
+          "sha256": "9f34d22528bb18d160d40c9307f546322c166fe2992eba1ba5f912674e80060c"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "T1",
+      "panel_id": "T1",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E31",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/metadata/checkpoint_inventory.json",
+          "sha256": "860a6b0413b57fe7db8eec78900f44da57ec33861390c439376716530a147112",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E32",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/metadata/run_identity.json",
+          "sha256": "0d4f5f0daeb70550bdadbe386a2024799127e15d294936c7ad6552c4de0970cb",
+          "rows_before": null
+        },
+        {
+          "evidence_id": "E33",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "docs/ai/FE01_PROTOCOL.md",
+          "sha256": "c66255f26d58721e4f3e0f38508d7593519d5928d5a8f984409ae469908e8fd2",
+          "rows_before": null
+        }
+      ],
+      "filter": "archived resolved config + interface audit",
+      "rows_after": 4,
+      "cohort": "validation; original event partition",
+      "population": "complete models",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "parameters / samples / seconds",
+      "weighting": "descriptive",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/T1.csv",
+      "source_data_sha256": "3f1bbfc992c3d23999a207acf1d09afc33acc2f69a725c40fee0b4e6e285c62a",
+      "visual_check": "REVIEWED integrated PDF table groups; numerical source identity checked",
+      "notes": "",
+      "outputs": [],
+      "method_config_inputs": [
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__team_original_scratch__seed42.json",
+          "sha256": "3a7f8bd4e13446bf1b68daf10c1e365533ab70689a52d53e341c3e8c227b613a",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__phasenet_pretrained_frozen__seed42.json",
+          "sha256": "e2ab8542f75370ce38bdea9f7663f5962949372309881d598160f1ce97173123",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+          "path": "reports/fe01_hpc_results_20261004/metadata/formal__eqt_pretrained_frozen__seed42.json",
+          "sha256": "9158d0d4cd026021707afc55e006c26c48db6ccde281d090a589ff6c468af5d7",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+          "path": "reports/fe01_a01_hpc_results_20261021/source_metadata/training/index3/model_interface_audit.json",
+          "sha256": "cedece8ad63c05864db2d5ce68a3314ca93b9821db19a5414ffe905b2d222f55",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        },
+        {
+          "repository": "rular099/team_pytorch",
+          "full_commit": "29ffb20ba0effc0c345a0329ba3f8c658dc8cef0",
+          "path": "reports/fe01_a01_hpc_results_20261021/source_metadata/training/index3/resolved_config.json",
+          "sha256": "a10757c8564ae4fd5c36541782de8065d4d2fd9ef4f470cdd67a73ae7104ea18",
+          "rows_before": null,
+          "role": "resolved configuration and archived parameter audit"
+        }
+      ],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "T2",
+      "panel_id": "T2",
+      "claim_ids": [
+        "C01",
+        "C02",
+        "C03"
+      ],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        }
+      ],
+      "filter": "selected; all and noninput; primary/first second/early",
+      "rows_after": 24,
+      "cohort": "validation; original event partition",
+      "population": "dynamic all/noninput",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "dex; dimensionless scores; NLL log density",
+      "weighting": "equal-cell; explicitly pooled R2/slope companion",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/T2.csv",
+      "source_data_sha256": "6f3cac4ba2f10138ca4e80f2c5446a91056d68b2fe262b6b689b570bd063b87c",
+      "visual_check": "REVIEWED integrated PDF table groups; numerical source identity checked",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    },
+    {
+      "asset_id": "T3",
+      "panel_id": "T3",
+      "claim_ids": [],
+      "sources": [
+        {
+          "evidence_id": "E03",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/source_tables/analyze/0/legacy_with_physical_covariates/cross_encoder_metrics.csv",
+          "sha256": "06baf6e1cf46202344f69f5344081bb31ae838316fb9f0d7c6f818d2810432a4",
+          "rows_before": 144
+        },
+        {
+          "evidence_id": "E10",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/ttum_support_recomputed.csv",
+          "sha256": "368a80914a246cf8480030064adb81b8a4b5d37c9779665f9857f9a9de26ee3c",
+          "rows_before": 864
+        },
+        {
+          "evidence_id": "E17",
+          "repository": "rular099/team_pytorch",
+          "full_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+          "path": "reports/fe01_v4_hpc_results_20261115/derived/shadow_rendered_summary.csv",
+          "sha256": "f2b2c281a847e898a14cf9337d0721fdd55f7bc8298b9d57144cba4a13dbbe18",
+          "rows_before": 320
+        }
+      ],
+      "filter": "population ledger; do not merge different eligibility rules",
+      "rows_after": 8,
+      "cohort": "validation; original event partition",
+      "population": "different populations explicitly separated",
+      "policy": "selected unless explicitly labeled epoch12",
+      "checkpoint_epochs": {
+        "DiTing": 12,
+        "PhaseNet": 12,
+        "EQT": 10,
+        "TEAM": 11
+      },
+      "seed": 42,
+      "unit": "events / requests / targets",
+      "weighting": "see protocol",
+      "uncertainty_type": "none",
+      "effective_replicates": null,
+      "unknown_policy": "preserved; never replaced with success/zero; bounds are not confidence intervals",
+      "script": "scripts/build_assets.py",
+      "script_sha256": "58812b34026ce2efaeb06f936bc8d4a8dce104a276689d25eb2f968349c95675",
+      "environment": {
+        "python": "3.13.17",
+        "numpy": "2.5.4",
+        "pandas": "3.1.0",
+        "matplotlib": "3.11.2",
+        "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+        "cpu_threads": 1
+      },
+      "source_data_path": "assets/source_data/T3.csv",
+      "source_data_sha256": "de1a4cf44f488ede616e068f9e4061edd5ceb233b2b1a463ab71d3351ab5b48e",
+      "visual_check": "REVIEWED integrated PDF table groups; numerical source identity checked",
+      "notes": "",
+      "outputs": [],
+      "finalizer_script": "scripts/finalize_manifest.py",
+      "finalizer_sha256": "ad1443cefd7951a11a5883b76ebe8c70a1e3ad5fc708e1ff580a2c8414d0cf04"
+    }
+  ],
+  "environment": {
+    "python": "3.13.17",
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "matplotlib": "3.11.2",
+    "platform": "Linux-7.3.4-arch1-1-x86_64-with-glibc2.44",
+    "cpu_threads": 1
+  },
+  "style": "4 fixed colors plus shape; units separate; no smoothed sparse curves",
+  "missing": [
+    "PIT",
+    "new fixed-query MDN reliability bins"
+  ],
+  "manual_review_record": "qa/visual_review.json"
+}

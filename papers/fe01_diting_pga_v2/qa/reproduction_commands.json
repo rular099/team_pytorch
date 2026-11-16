@@ -1,0 +1,66 @@
+{
+  "commands": [
+    {
+      "command": [
+        "/home/zhangb/programs/miniconda3/envs/general/bin/python",
+        "-B",
+        "/tmp/team_pytorch_fe01_paper_v2_20261116/papers/fe01_diting_pga_v2/scripts/audit_inputs.py"
+      ],
+      "started_utc": "2026-11-16T06:12:52.562328+00:00",
+      "returncode": 0,
+      "log": "qa/reproduce_audit_inputs.log"
+    },
+    {
+      "command": [
+        "/home/zhangb/programs/miniconda3/envs/general/bin/python",
+        "-B",
+        "/tmp/team_pytorch_fe01_paper_v2_20261116/papers/fe01_diting_pga_v2/scripts/build_assets.py"
+      ],
+      "started_utc": "2026-11-16T06:12:54.158330+00:00",
+      "returncode": 0,
+      "log": "qa/reproduce_build_assets.log"
+    },
+    {
+      "command": [
+        "/home/zhangb/programs/miniconda3/envs/general/bin/python",
+        "-B",
+        "/tmp/team_pytorch_fe01_paper_v2_20261116/papers/fe01_diting_pga_v2/scripts/claim_trace.py"
+      ],
+      "started_utc": "2026-11-16T06:13:58.620500+00:00",
+      "returncode": 0,
+      "log": "qa/reproduce_claim_trace.log"
+    },
+    {
+      "command": [
+        "/home/zhangb/programs/miniconda3/envs/general/bin/python",
+        "-B",
+        "/tmp/team_pytorch_fe01_paper_v2_20261116/papers/fe01_diting_pga_v2/scripts/finalize_manifest.py"
+      ],
+      "started_utc": "2026-11-16T06:13:59.052218+00:00",
+      "returncode": 0,
+      "log": "qa/reproduce_finalize_manifest.log"
+    },
+    {
+      "command": [
+        "/home/zhangb/programs/miniconda3/envs/general/bin/python",
+        "-B",
+        "/tmp/team_pytorch_fe01_paper_v2_20261116/papers/fe01_diting_pga_v2/scripts/compose.py"
+      ],
+      "started_utc": "2026-11-16T06:13:59.372664+00:00",
+      "returncode": 0,
+      "log": "qa/reproduce_compose.log"
+    },
+    {
+      "command": [
+        "/home/zhangb/programs/miniconda3/envs/general/bin/python",
+        "-B",
+        "/tmp/team_pytorch_fe01_paper_v2_20261116/papers/fe01_diting_pga_v2/scripts/verify.py"
+      ],
+      "started_utc": "2026-11-16T06:13:59.756254+00:00",
+      "returncode": 0,
+      "log": "qa/reproduce_verify.log"
+    }
+  ],
+  "status": "PASS",
+  "browser_pdf": "separate explicit step"
+}

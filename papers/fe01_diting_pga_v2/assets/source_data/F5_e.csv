@@ -1,0 +1,5 @@
+family,geometry_protocol,panel,budget_dex,gate,scene,horizon,events,total_cohort_events,ineligible_fewer_than_5,achieved,unknown,fraction_lower,fraction_upper
+DiTing,random,fixed_never_input_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,20,539,1310,771,114,3,0.21150278293135436,0.21706864564007422
+EQT,random,fixed_never_input_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,20,539,1310,771,81,5,0.150278293135436,0.15955473098330242
+PhaseNet,random,fixed_never_input_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,20,539,1310,771,106,5,0.19666048237476808,0.20593692022263452
+TEAM,random,fixed_never_input_targets,0.20000000000000001,field_pass,ideal_cutoff_replay,20,539,1310,771,80,3,0.14842300556586271,0.15398886827458255
