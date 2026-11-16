@@ -25,3 +25,5 @@ numerical_checks.json包含15项通过的检查，覆盖四模型旧十单元MAE
 生产代码、配置、lock/seal与全局会话文件零修改，未访问其他研究方向结果。四个受保护科学工作树的HEAD、分支、tracked/staged diff、简要状态与既有未跟踪路径保持，见worktree_protection_after.json；不声称启动时对所有未跟踪内容做过完整字节散列。RT55源码未改，未额外运行RT55权重回归。
 
 没有SSH、Slurm、训练、推理、GPU或held-out test行为。未推送论文分支。DiTing预训练精确来源/许可和新回放概率诊断仍在GAPS中，模型性能解释保留单种子、验证选轮、欠覆盖、稀疏支持与交付工作流限制。
+
+以上是初稿制备阶段的检查快照。2026-11-16用户随后授权GitHub发布，已有交付提交1903bdf34d227034a181f19936ca3428204f362e已推送并核对远端SHA，GitHub连接器也确认论文分支存在。该发布经GitHub SSH 443传输，发布记录见上级目录publication_record.json；正文、图表、数值及科学代码沿用原交付版本。

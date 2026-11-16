@@ -11,7 +11,7 @@
 执行源 `50672e131d876a604432b283162d5b0189d40cf0`。
 DiTing完整模型身份只读追溯 `29ffb20ba0effc0c345a0329ba3f8c658dc8cef0`，历史路径核验 `577a0cec43643597a61209209a770aeecf5fefa0`。
 
-本文件及material_commit_receipt在后续交接提交中加入，正文和图表不变。最终result_commit在审阅ZIP根目录REVIEW_IDENTITY.json及终端CODEX-RESULT给出；不在提交内伪造自身SHA。本轮仅本地提交，**未推送GitHub**。GitHub连接器目前不能凭该本地分支读取新稿，应使用用户上传的ZIP。
+本文件及material_commit_receipt在材料提交后的交接提交中加入。2026-11-16用户明确要求推送后，已将完整交付提交 `1903bdf34d227034a181f19936ca3428204f362e` 推送至GitHub并核对远端SHA。GitHub连接器已确认本论文分支存在，可直接读取。发布核验见 [publication_record.json](publication_record.json)；审阅ZIP根目录REVIEW_IDENTITY.json记录的是原交付快照，当前分支的后续更新为发布文档。
 
 ## 实际交付
 
@@ -36,7 +36,7 @@ DiTing完整模型身份只读追溯 `29ffb20ba0effc0c345a0329ba3f8c658dc8cef0`�
 
 已查看7组图、27页主稿、4页补充、24个原关键帧的总览，并放大图2/4/7所在PDF页。7个标题和图注均同页，公式源码保持同页。独立面板格式与摘要自动验证，没有宣称逐个打开所有SVG/PDF。最后git diff --check通过；生成稿尾部空行已修复。源码修改仅论文目录。
 
-四个科学工作树的HEAD/分支/tracked与staged diff及既有未跟踪路径保持。RT55生产代码、配置、lock/seal和全局会话未修改；没有运行RT55模型回归。没有新训练、推理、GPU、超算、SSH或held-out test访问。
+四个科学工作树的HEAD/分支/tracked与staged diff及既有未跟踪路径保持。RT55生产代码、配置、lock/seal和全局会话未修改；没有运行RT55模型回归。制稿阶段没有新训练、推理、GPU、超算、SSH或held-out test访问。随后授权的发布通过GitHub SSH 443端口传输已有Git对象。
 
 ## 推断与待决问题
 

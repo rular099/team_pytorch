@@ -1,0 +1,23 @@
+{
+  "repository": "rular099/team_pytorch",
+  "branch": "paper/fe01-diting-pga-manuscript-v2",
+  "authorization": "User explicitly requested GitHub push after local manuscript delivery.",
+  "verified_at_utc": "2026-11-16T06:57:32.255313+00:00",
+  "first_published_delivery_commit": "1903bdf34d227034a181f19936ca3428204f362e",
+  "manuscript_and_assets_commit": "7dddbee6a0c8b546af08857429a5f05ba2a65334",
+  "paper_base_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+  "fixed_result_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+  "publication_status": "PUSH_SUCCEEDED_REMOTE_HEAD_VERIFIED",
+  "remote_ref": "refs/heads/paper/fe01-diting-pga-manuscript-v2",
+  "verification": [
+    "git push -u origin HEAD:refs/heads/paper/fe01-diting-pga-manuscript-v2 returned exit0 with new-branch receipt",
+    "git ls-remote returned 1903bdf34d227034a181f19936ca3428204f362e for the exact paper ref",
+    "GitHub connector search_branches confirmed the exact branch exists"
+  ],
+  "transport": "Git SSH over port443; strict host-key checking; temporary known_hosts verified against official GitHub Ed25519 fingerprint",
+  "host_key_reference": "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints",
+  "documentation_followup": "This record and publication notices are added after the verified delivery push; subsequent branch HEAD is a documentation-only commit.",
+  "scientific_artifacts_changed": false,
+  "hpc_jobs_submitted": false,
+  "held_out_test_accessed": false
+}

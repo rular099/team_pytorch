@@ -2,6 +2,8 @@
 
 中文连续首稿 v2，主文五节，7组正文图、3组正文表，补充材料S1–S8。所有新图由固定结果表驱动；没有训练、模型推理、GPU、超算或测试集访问。
 
+2026-11-16 用户授权后，论文分支已推送到 GitHub。首次远端核验提交为 `1903bdf34d227034a181f19936ca3428204f362e`，包含完整初稿及素材；后续发布说明见 [publication_record.json](publication_record.json)。可从本分支直接审阅，原审阅 ZIP 保留制稿完成时的快照。
+
 阅读入口为 [整合预览](preview.html)、[论文PDF](paper_review.pdf)、[正文源稿](manuscript.md)、[补充材料](supplement.md) 与 [交接说明](HANDOFF_FOR_CHATGPT.md)。PDF由本地Firefox打印HTML生成，不是LaTeX编译产物；paper.tex是另行提供的可编辑源，未声称编译通过。
 
 ## 证据版本
@@ -39,4 +41,4 @@ audit_inputs默认重读固定Git证据与已封存的本地搜索记录。若�
 
 完整模型保留物理幅值与有效时长。本文只讨论已有模型组合比较与交付边界，不据名称推断DiTing语料，也不把验证选轮、单种子bootstrap或示意网格视为独立测试。精确预训练论文/语料/许可、新固定查询MDN诊断、作者署名和资助等仍待补齐。对照与所有不利结果、Unknown、资格不足和未执行组合均保留。
 
-原科学代码、配置、lock/seal和其他工作树不改；最终交付为独立论文分支的本地提交与ZIP，远端发布未执行。
+原科学代码、配置、lock/seal和其他工作树不改。初稿以独立论文分支、审阅ZIP和PDF交付，并在用户随后授权后推送到GitHub。归档QA中的本地交付状态对应制稿阶段，当前发布状态以publication_record.json和远端分支为准。
