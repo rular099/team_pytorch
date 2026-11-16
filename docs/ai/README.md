@@ -1,5 +1,9 @@
 # ChatGPT Project 与 Codex 协作约定
 
+**最新对照入口（2026-11-16）：** 用户明确要求将Codex分析正文同步GitHub，现已原样提取到
+[单独比较目录](../../reports/fe01_v4_codex_comparison_20261116/README.md)。正文和逐项表均与11-15已提交SHA承诺匹配，
+中立数据及原ZIP保持原样。ChatGPT可读取该目录执行逐项对照；当前尚未收到其实际结论，不预填双方一致或分歧。
+
 **最新实物结果（2026-11-15）：** 已收到并核验107210231-byte完整V4 review包，SHA以7a5c19ad82d4开头；
 1016条manifest、12案例453文件及49个主程序pin通过。四项latency、analyze与41项normal渲染在超算快照完整通过，pack随后日志exit0。
 当前入口：[中立结果报告](../../reports/fe01_v4_hpc_results_20261115/README.md)、

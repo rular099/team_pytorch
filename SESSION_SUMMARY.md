@@ -996,3 +996,14 @@ pack自身RUNNING是pack内部生成快照的时间点，随后stdout exit0，�
 SHA ad1a68d2526e0926e6662fa4d9b4065af8a1e7ad63d5e1cddcac5f0c05d46abb；另有私有对照行表。
 正文/判断不入Git或中立ZIP，仅CODEX_ANALYSIS_COMMITMENT入Git，保证ChatGPT先独立定稿后再披露对比；
 当前尚无ChatGPT真实结论，不预填一致/分歧。本轮无模型执行/训练/HPC新提交，不改冻结程序、配置、plan、seal或运行身份。
+
+## 2026-11-16 按用户要求公开Codex封存分析供对照
+
+仓库rular099/team_pytorch，base b366434d2cceb55d188576ce1084f571e09da097；本地review/fe01-v4-results-20261115，
+同步exp/fe01-on-warning-map-evaluation。用户明确要求把分析正文也同步GitHub，取代此前仅本地保存的披露安排。
+两份原件按字节复制到reports/fe01_v4_codex_comparison_20261116/：
+CODEX_INDEPENDENT_ANALYSIS.md为10916 bytes、SHA ad1a68d2526e0926e6662fa4d9b4065af8a1e7ad63d5e1cddcac5f0c05d46abb；
+CODEX_COMPARISON_ROWS.csv为2137 bytes、SHA 66cf80a1775ecb6b287561ad15d107313337ffbedd581e9425a05cf61c405852。
+均与b366434中11-15的CODEX_ANALYSIS_COMMITMENT一致，不修改原分析观点或补写ChatGPT结论。
+新README说明ChatGPT如何读取原文、核对SHA并按原模板逐项比较；DISCLOSURE.json记录授权、来源和原字节身份。
+原中立报告目录/DELIVERY_MANIFEST/ZIP保持不变，本轮仅公开既有分析及更新对照入口；无新统计、模型/配置修改或HPC作业。

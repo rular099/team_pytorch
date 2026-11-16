@@ -1,0 +1,27 @@
+{
+  "task_id": "20261116-fe01-v4-disclose-codex-analysis",
+  "repository": "rular099/team_pytorch",
+  "branch": "exp/fe01-on-warning-map-evaluation",
+  "base_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+  "disclosed_on": "2026-11-16 Asia/Shanghai",
+  "authorization": "User explicitly requested publishing the Codex analysis body to GitHub for ChatGPT comparison.",
+  "original_analysis_date": "2026-11-15 Asia/Shanghai",
+  "original_commitment_path": "reports/fe01_v4_hpc_results_20261115/CODEX_ANALYSIS_COMMITMENT.json",
+  "original_commitment_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+  "files": {
+    "CODEX_INDEPENDENT_ANALYSIS.md": {
+      "bytes": 10916,
+      "sha256": "ad1a68d2526e0926e6662fa4d9b4065af8a1e7ad63d5e1cddcac5f0c05d46abb"
+    },
+    "CODEX_COMPARISON_ROWS.csv": {
+      "bytes": 2137,
+      "sha256": "66cf80a1775ecb6b287561ad15d107313337ffbedd581e9425a05cf61c405852"
+    }
+  },
+  "verification": "Both copied files are byte-identical to their original committed SHA256/size commitments.",
+  "neutral_data_commit": "b366434d2cceb55d188576ce1084f571e09da097",
+  "comparison_status": "ChatGPT result not supplied in this session; no agreement/disagreement fabricated.",
+  "changes_to_analysis": "none",
+  "changes_to_neutral_bundle": "none",
+  "hpc_submissions": "none"
+}

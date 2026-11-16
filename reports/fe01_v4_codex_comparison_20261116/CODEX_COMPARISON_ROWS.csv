@@ -1,0 +1,11 @@
+topic,codex_statement,source_keys,evidence_type,limitation
+旧主端点,旧协议noninput MAE的DiTing优势较小但相对三个对照区间均为负；all-target不支持普遍优势,legacy_primary_pairwise_recheck; paired_effects selected primary,固定模型事件区间,单seed与选轮不确定性未覆盖
+条件差异,早期和Kmulti收益较明确，K1与untriggered主端点不支持相同结论,paired_effects selected mae,探索性分层,人口与可用cell不同，多重比较未校正
+概率质量,平均误差/概率分数收益与欠覆盖并存，不能认定空间退化已解决,cross_encoder_metrics selected noninput primary,实际保存指标,equal-cell与pooled权重必须分开
+TTUM人口,never-input normal仅207适格事件，不可代替1310事件全人口,ttum_support_recomputed,资格计数复现,固定never-input不同于逐请求noninput
+TTUM三时钟,normal never-input理想CDF收益在实测数值时钟反向，渲染差异未定,ttum_paired_b020_recomputed field_pass horizon20,预定预算例子,全预算表仍需一起读；非部署认证
+稳定定义,三个连续通过后的确认时点不保证后续一直通过,post_first_pass_degradation normal never_input field .2,描述性敏感性,不改写原端点，不作工程稳态结论
+时延,该批运行DiTing数值代价较高，共享绘图FIFO明显阻塞，但不是单模型部署测试,latency_recomputed; queue_quantiles,重复/场景边界明确,六pilot事件，硬件分配并非严格配对
+shadow,never-input识别界重叠；某些all-target设置支持DiTing失败比例更高，误报需共同报告,shadow_rendered_summary; shadow_rendered_example_pairwise,固定阈值示例,事件等权/目标加权及完整网格不能混用
+图与空间,预选图和稀疏支持不能认证任意连续空间或盲区面积,CASE_INDEX; shadow_area_support,可见图层/元数据,缺高程与共同连续真值，面积NA
+机制与下一步,先补齐保存预测可核验导出和匹配硬件/渲染对照，不据此归因encoder机制,方法与数据缺口,提议，未实施,不重选checkpoint、放宽门或用test调参

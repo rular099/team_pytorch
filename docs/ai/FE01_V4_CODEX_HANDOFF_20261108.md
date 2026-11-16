@@ -1,5 +1,10 @@
 # FE01 ON V4：跨服务器 Codex 接手文档（2026-11-08）
 
+**2026-11-16对照更新：** 用户要求公开此前封存分析，正文及10主题逐项表已按原字节放入
+[独立比较目录](../../reports/fe01_v4_codex_comparison_20261116/README.md)，两份SHA均匹配11-15已提交承诺。
+ChatGPT按该目录说明读取并与其独立结论对照；当前没有收到实际ChatGPT结论，未生成比较判断。
+原中立目录/manifest/ZIP不改，无新数值计算或HPC提交。
+
 **2026-11-15当前交接点：V4完整review已下载并进入结果分析。** pack33863312 task0日志exit0，
 107MB包及同名SHA相符，1016条review manifest通过；四latency/analyze/41项normal render的超算快照完整通过。
 当前阅读[中立结果报告](../../reports/fe01_v4_hpc_results_20261115/README.md)与

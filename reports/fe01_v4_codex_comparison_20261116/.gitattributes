@@ -1,0 +1,2 @@
+# Preserve the original sealed CSV's CRLF bytes and retain whitespace checks.
+CODEX_COMPARISON_ROWS.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
