@@ -1,0 +1,10 @@
+{
+  "repository": "rular099/team_pytorch",
+  "branch": "paper/fe01-diting-pga-manuscript-v2",
+  "base_commit": "560a29d8c82ba634549ed886840b2a2a539e0114",
+  "manuscript_and_assets_commit": "7dddbee6a0c8b546af08857429a5f05ba2a65334",
+  "tree": "d9a54b2e6bed0495b89649eca9b63bc4d7a68c7b",
+  "working_tree_after_material_commit": "",
+  "publication": "LOCAL_ONLY_NOT_PUSHED",
+  "receipt_note": "Handoff-only commit follows; final branch HEAD supplied by external review bundle REVIEW_IDENTITY.json and final CODEX-RESULT."
+}
