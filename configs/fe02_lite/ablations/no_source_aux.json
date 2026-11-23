@@ -1,0 +1,4 @@
+{
+  "extends": "../knet.json",
+  "variant": "no_source_aux"
+}

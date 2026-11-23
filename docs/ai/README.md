@@ -1,5 +1,12 @@
 # ChatGPT Project 与 Codex 协作约定
 
+当前独立实现（2026-11-23）：[FE02-Lite 交接](../../HANDOFF_FOR_CHATGPT.md)、
+[实现与数据语义](FE02_LITE_IMPLEMENTATION.md)、[超算手册](FE02_LITE_RUNBOOK.md)、
+[产物schema](FE02_LITE_ARTIFACTS.md)。基点618661f，新分支
+`exp/fe02-lite-event-spatial`；任务参数740,592，三数据视图分别训练，当前
+**NOT_SUBMITTED**，真实三视图计数/DiTing/DCU检查由计算节点门执行。
+旧FE02结果及下文历史保持原义，不作为FE02-Lite成绩。
+
 当前结果（2026-11-04）：[FE02 真实结果与 Codex 分析](../../reports/fe02_hpc_results_20261104/README.md)、
 [ChatGPT 独立复核任务](../../reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md)、
 [本轮交接](CODEX_RESULT_20261104_FE02_RESULTS.md)。五组 seed42 已提供完整12轮记录和

@@ -1,5 +1,20 @@
 # TEAM PyTorch 项目交接文档
 
+## FE02-Lite 独立实现（2026-11-23）
+
+当前分支 `exp/fe02-lite-event-spatial`，新worktree `team_pytorch_fe02_lite`，
+基点 `618661f99afb67f5c23c9f1a3fd713a0a156e7b5`。完整交接见
+[HANDOFF_FOR_CHATGPT.md](HANDOFF_FOR_CHATGPT.md)；[运行手册](docs/ai/FE02_LITE_RUNBOOK.md)。
+独立命名空间实现740,592参数任务网络、三个严格sensor-row视图、训练/评价/诊断/
+分析/任务头恢复、源/config快照Slurm入口。默认只三个main_d128/seed42任务，并发1。
+旧FE01/FE02/RT55 Python、配置、加载行为和输出未改变；原FE02未跟踪交接文件保留。
+本轮没有正式sbatch、真实DiTing或三视图生产数据审计、ROCm恢复或科学成绩；真实检查
+由计算节点审计门完成，**NOT_SUBMITTED**。本地测试是synthetic/mock证据，具体日志和
+未运行项见 `reports/fe02_lite_local_20261123/verification.json`。
+
+井深缺失时使用明确的station-height代理；不创造物理深度。未覆盖的EVENT不随机
+新分split，明确排除并导出。绝对截止时刻不同的相对首P样本不作严格跨视图配对。
+
 ## 当前结果入口：FE02（2026-11-04）
 
 独立worktree/分支不变，分析base `42b3d5405d9fe9672f0a0925275ca4f7e9e6a9e7`。

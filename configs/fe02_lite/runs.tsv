@@ -1,0 +1,4 @@
+index	dataset_view	variant	seed	stage
+0	knet	main_d128	42	formal
+1	kiknet_borehole	main_d128	42	formal
+2	kiknet_surface	main_d128	42	formal

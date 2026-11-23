@@ -1,0 +1,170 @@
+{
+  "task_id": "20261123-fe02-lite-event-spatial",
+  "status": "PASS",
+  "evidence": "LOCAL SYNTHETIC / MOCK ONLY; no real Japan/DiTing/ROCm performance",
+  "source_commit_at_check": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+  "source_code_sha256": "19c13e16a01716f3b3cd073c1927a99d908a0d430a2840cd4e69ab3bf091912d",
+  "source_may_be_uncommitted": true,
+  "python": "3.14.9",
+  "torch": "2.15.0+cpu",
+  "checks": [
+    {
+      "command": [
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/.venv/bin/python",
+        "-m",
+        "compileall",
+        "-q",
+        "fe02_lite",
+        "scripts/fe02_lite"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_00.txt"
+    },
+    {
+      "command": [
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_fe02_lite.py",
+        "tests/test_fe01_native_windows.py",
+        "tests/test_fe01_time_sampling.py",
+        "tests/test_fe01_statistics.py",
+        "tests/test_fe02_analysis.py",
+        "tests/test_fe02_simple_submit.py",
+        "tests/test_fe02_cluster_env.py"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_01.txt"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_02.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/env.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_03.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/eval_only.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_04.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/pack_source.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_05.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/resume.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_06.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/submit.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_07.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/submit_all.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_08.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/submit_kiknet_borehole.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_09.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/submit_kiknet_surface.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_10.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/submit_knet.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_11.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite/scripts/fe02_lite/worker.sh"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_12.txt"
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "fe02_lite_cluster.env.example"
+      ],
+      "status": "PASS",
+      "exit_code": 0,
+      "log": "check_13.txt"
+    }
+  ],
+  "legacy_source_unchanged_from_base": true,
+  "real_data_view_audits": "NOT_RUN; compute worker audit gate",
+  "real_diting_forward": "NOT_RUN; compute worker gate",
+  "rocm_rng_restore": "NOT_RUN on hardware; explicit CPU state conversion implemented and CPU replay tested",
+  "hpc_training": "NOT_SUBMITTED",
+  "held_out_test": "NOT_RUN",
+  "timestamp": "2026-11-23T07:15:02.176878+00:00"
+}

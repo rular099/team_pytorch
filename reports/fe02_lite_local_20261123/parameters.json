@@ -1,0 +1,477 @@
+{
+  "task_parameters": {
+    "registered": 740592,
+    "trainable": 740592,
+    "modules": {
+      "pool_queries": {
+        "registered": 256,
+        "trainable": 256
+      },
+      "projection": {
+        "registered": 215160,
+        "trainable": 215160
+      },
+      "amplitude": {
+        "registered": 1208,
+        "trainable": 1208
+      },
+      "pool_key_norm": {
+        "registered": 256,
+        "trainable": 256
+      },
+      "coordinates": {
+        "registered": 17024,
+        "trainable": 17024
+      },
+      "joint": {
+        "registered": 98688,
+        "trainable": 98688
+      },
+      "event": {
+        "registered": 132864,
+        "trainable": 132864
+      },
+      "location": {
+        "registered": 4821,
+        "trainable": 4821
+      },
+      "magnitude": {
+        "registered": 4194,
+        "trainable": 4194
+      },
+      "spatial": {
+        "registered": 98688,
+        "trainable": 98688
+      },
+      "target_query_norm": {
+        "registered": 256,
+        "trainable": 256
+      },
+      "target_key_norm": {
+        "registered": 256,
+        "trainable": 256
+      },
+      "target_attention": {
+        "registered": 66048,
+        "trainable": 66048
+      },
+      "pga": {
+        "registered": 100873,
+        "trainable": 100873
+      }
+    },
+    "optimizer_parameters": [
+      {
+        "name": "pool_queries",
+        "shape": [
+          2,
+          128
+        ],
+        "numel": 256
+      },
+      {
+        "name": "projection.weight",
+        "shape": [
+          120,
+          1792
+        ],
+        "numel": 215040
+      },
+      {
+        "name": "projection.bias",
+        "shape": [
+          120
+        ],
+        "numel": 120
+      },
+      {
+        "name": "amplitude.weight",
+        "shape": [
+          8,
+          3,
+          50
+        ],
+        "numel": 1200
+      },
+      {
+        "name": "amplitude.bias",
+        "shape": [
+          8
+        ],
+        "numel": 8
+      },
+      {
+        "name": "pool_key_norm.weight",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "pool_key_norm.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "coordinates.0.weight",
+        "shape": [
+          128,
+          3
+        ],
+        "numel": 384
+      },
+      {
+        "name": "coordinates.0.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "coordinates.2.weight",
+        "shape": [
+          128,
+          128
+        ],
+        "numel": 16384
+      },
+      {
+        "name": "coordinates.2.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "joint.0.weight",
+        "shape": [
+          256,
+          256
+        ],
+        "numel": 65536
+      },
+      {
+        "name": "joint.0.bias",
+        "shape": [
+          256
+        ],
+        "numel": 256
+      },
+      {
+        "name": "joint.2.weight",
+        "shape": [
+          128,
+          256
+        ],
+        "numel": 32768
+      },
+      {
+        "name": "joint.2.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.query",
+        "shape": [
+          1,
+          1,
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.query_norm.weight",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.query_norm.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.memory_norm.weight",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.memory_norm.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.attention.in_proj_weight",
+        "shape": [
+          384,
+          128
+        ],
+        "numel": 49152
+      },
+      {
+        "name": "event.attention.in_proj_bias",
+        "shape": [
+          384
+        ],
+        "numel": 384
+      },
+      {
+        "name": "event.attention.out_proj.weight",
+        "shape": [
+          128,
+          128
+        ],
+        "numel": 16384
+      },
+      {
+        "name": "event.attention.out_proj.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.ffn_norm.weight",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.ffn_norm.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "event.ffn.0.weight",
+        "shape": [
+          256,
+          128
+        ],
+        "numel": 32768
+      },
+      {
+        "name": "event.ffn.0.bias",
+        "shape": [
+          256
+        ],
+        "numel": 256
+      },
+      {
+        "name": "event.ffn.2.weight",
+        "shape": [
+          128,
+          256
+        ],
+        "numel": 32768
+      },
+      {
+        "name": "event.ffn.2.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "location.0.weight",
+        "shape": [
+          32,
+          128
+        ],
+        "numel": 4096
+      },
+      {
+        "name": "location.0.bias",
+        "shape": [
+          32
+        ],
+        "numel": 32
+      },
+      {
+        "name": "location.2.weight",
+        "shape": [
+          21,
+          32
+        ],
+        "numel": 672
+      },
+      {
+        "name": "location.2.bias",
+        "shape": [
+          21
+        ],
+        "numel": 21
+      },
+      {
+        "name": "magnitude.0.weight",
+        "shape": [
+          32,
+          128
+        ],
+        "numel": 4096
+      },
+      {
+        "name": "magnitude.0.bias",
+        "shape": [
+          32
+        ],
+        "numel": 32
+      },
+      {
+        "name": "magnitude.2.weight",
+        "shape": [
+          2,
+          32
+        ],
+        "numel": 64
+      },
+      {
+        "name": "magnitude.2.bias",
+        "shape": [
+          2
+        ],
+        "numel": 2
+      },
+      {
+        "name": "spatial.0.weight",
+        "shape": [
+          256,
+          256
+        ],
+        "numel": 65536
+      },
+      {
+        "name": "spatial.0.bias",
+        "shape": [
+          256
+        ],
+        "numel": 256
+      },
+      {
+        "name": "spatial.2.weight",
+        "shape": [
+          128,
+          256
+        ],
+        "numel": 32768
+      },
+      {
+        "name": "spatial.2.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "target_query_norm.weight",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "target_query_norm.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "target_key_norm.weight",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "target_key_norm.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "target_attention.in_proj_weight",
+        "shape": [
+          384,
+          128
+        ],
+        "numel": 49152
+      },
+      {
+        "name": "target_attention.in_proj_bias",
+        "shape": [
+          384
+        ],
+        "numel": 384
+      },
+      {
+        "name": "target_attention.out_proj.weight",
+        "shape": [
+          128,
+          128
+        ],
+        "numel": 16384
+      },
+      {
+        "name": "target_attention.out_proj.bias",
+        "shape": [
+          128
+        ],
+        "numel": 128
+      },
+      {
+        "name": "pga.0.weight",
+        "shape": [
+          256,
+          384
+        ],
+        "numel": 98304
+      },
+      {
+        "name": "pga.0.bias",
+        "shape": [
+          256
+        ],
+        "numel": 256
+      },
+      {
+        "name": "pga.2.weight",
+        "shape": [
+          9,
+          256
+        ],
+        "numel": 2304
+      },
+      {
+        "name": "pga.2.bias",
+        "shape": [
+          9
+        ],
+        "numel": 9
+      }
+    ]
+  },
+  "variant_counts": {
+    "main_d128": 740592,
+    "d64": 237168,
+    "amp16": 727456,
+    "amp32": 701184,
+    "pool4": 740848,
+    "no_source_aux": 740592
+  },
+  "encoder": "NOT_LOADED; real registered/total count is a compute-node gate"
+}

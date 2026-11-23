@@ -5,6 +5,9 @@ __pycache__/
 /offline_weights/
 /artifacts/fe01/
 /artifacts/fe02/
+/artifacts/fe02_lite/
+/fe02_lite_runs/
+/.venv/
 /vendor/
 
 # Notebook cache

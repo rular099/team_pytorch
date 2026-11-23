@@ -1,0 +1,13 @@
+{
+  "repository": "rular099/team_pytorch",
+  "branch": "exp/fe02-lite-event-spatial",
+  "base_commit": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+  "worktree": "/data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite",
+  "upstream_fe02_head_verified": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
+  "upstream_evidence": "GitHub connector GET git/refs/heads/exp/fe02-event-fusion-readout, 2026-11-23; same as local",
+  "source_worktree_untracked_file_preserved": "../team_pytorch_fe02/FE02_jieshou_2026-11-03.md",
+  "legacy_source_diff": "",
+  "worktrees": "worktree /data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch\nHEAD 579e1d920ea3f1e224f747e36d7332cb53926ce1\nbranch refs/heads/zhangb/native-scale-adapter-scaling\n\nworktree /data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe01\nHEAD 577a0cec43643597a61209209a770aeecf5fefa0\nbranch refs/heads/exp/fe01-feature-extractor-site-effects\n\nworktree /data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe01_a01\nHEAD 236f72797ef4ccdec584cfbba952987e64a26437\nbranch refs/heads/exp/fe01-a01-absolute-amplitude-ablation\n\nworktree /data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02\nHEAD 618661f99afb67f5c23c9f1a3fd713a0a156e7b5\nbranch refs/heads/exp/fe02-event-fusion-readout\n\nworktree /data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_fe02_lite\nHEAD 618661f99afb67f5c23c9f1a3fd713a0a156e7b5\nbranch refs/heads/exp/fe02-lite-event-spatial\n\nworktree /data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_memory\nHEAD 826acaadc89979d6ad324d014123def8353a429c\nbranch refs/heads/chore/project-memory-bootstrap\n\nworktree /data/home/zhangb/data/work/zhangbei/team_claude/team_pytorch_query_geometry_diagnostics\nHEAD 555ed0d20e049c0a88f45e7c36888dd64fdfcc95\nbranch refs/heads/exp/v01-velocity-prep-padding-control\n\nworktree /tmp/team_pytorch_ai_handoff_20261104\nHEAD 7445a22e6c9fef3e623e73b21f03bbeb5bf58ec0\nbranch refs/heads/chore/persistent-ai-handoff\nprunable gitdir file points to non-existent location\n\nworktree /tmp/team_pytorch_fe01_on_handoff_20261108\nHEAD 99d9b1c4bb5c47fc26125df7eea2648917e90462\nbranch refs/heads/handoff/fe01-on-20261108\nprunable gitdir file points to non-existent location\n\nworktree /tmp/team_pytorch_fe01_paper_v2_20261116\nHEAD 0c1fe21ff00e897e6aa841289c401eff9833f452\nbranch refs/heads/paper/fe01-diting-pga-manuscript-v2\n\nworktree /tmp/team_pytorch_fe01_v4_review_20261115\nHEAD 560a29d8c82ba634549ed886840b2a2a539e0114\nbranch refs/heads/review/fe01-v4-results-20261115\n\n",
+  "hpc_status": "NOT_SUBMITTED",
+  "production_counts": "NOT_RUN; compute-node audit required"
+}

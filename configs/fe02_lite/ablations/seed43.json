@@ -1,0 +1,4 @@
+{
+  "extends": "../knet.json",
+  "seed": 43
+}

@@ -1,5 +1,12 @@
 # RT55 / RT56 项目上下文快照
 
+> **FE02-Lite 新实现（2026-11-23）**：基于618661f，独立worktree
+> `team_pytorch_fe02_lite` / 分支 `exp/fe02-lite-event-spatial`。
+> [当前交接](../../HANDOFF_FOR_CHATGPT.md)，[运行手册](FE02_LITE_RUNBOOK.md)。
+> 冻结DiTing，任务参数740,592；KNET/KiK井下/KiK地表三个独立主任务。
+> 代码/本地合成验证已交付，真实数据与DiTing核验待计算节点门；**NOT_SUBMITTED**。
+> 下方既有FE02性能仅属于原大型读出，不是新轻量网络结果。
+
 > **FE02 当前结果（2026-11-04）**：用户提供的真实结果已整理为
 > [证据与独立分析](../../reports/fe02_hpc_results_20261104/README.md) 和
 > [ChatGPT 复核任务](../../reports/fe02_hpc_results_20261104/CHATGPT_ANALYSIS_PROMPT.md)。

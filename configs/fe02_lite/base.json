@@ -1,0 +1,161 @@
+{
+  "experiment": "FE02-Lite",
+  "dataset_view": "knet",
+  "variant": "main_d128",
+  "seed": 42,
+  "stage": "formal",
+  "sampling_seed": 42,
+  "output_root": "${FE02_LITE_OUTPUT_ROOT}",
+  "pretrained_manifest": "${FE02_LITE_OUTPUT_ROOT}/offline_weights/pretrained_manifest.json",
+  "diting_config": "diting/config/diting_1200m_backbone_attnpool.yml",
+  "amplitude_fixed_scale": 1.0,
+  "data": {
+    "shard_identity_manifest": "",
+    "root": "${FE02_LITE_DATA_ROOT}",
+    "split_manifest": "${FE02_LITE_SPLIT_MANIFEST}",
+    "sampling_rate": 100,
+    "units": "m/s^2",
+    "schema": "Japan sensor rows, time x NEZ; builder NS,EW,UD; suffix 1 borehole, 2 surface"
+  },
+  "coordinates": {
+    "version": "fe02-lite-absolute-v1",
+    "origin": [
+      37,
+      140,
+      0
+    ],
+    "scale": [
+      5,
+      5,
+      100
+    ],
+    "input_units": [
+      "latitude degrees",
+      "longitude degrees",
+      "station height km positive up"
+    ],
+    "source_units": [
+      "latitude degrees",
+      "longitude degrees",
+      "catalog depth km positive down"
+    ],
+    "rule": "fixed global affine; source depth negated to positive-up before affine; no event centering",
+    "borehole_depth": "unavailable: retain source station height as explicit proxy; no invented depth"
+  },
+  "window": {
+    "protocol": "native_prefix_v2",
+    "pre_p_seconds": 5,
+    "strict_causal": true,
+    "rolling_trained": false
+  },
+  "realtime": {
+    "bins": [
+      [
+        1,
+        3
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        10,
+        20
+      ],
+      [
+        20,
+        40
+      ],
+      [
+        40,
+        90
+      ]
+    ],
+    "probabilities": [
+      0.2,
+      0.2,
+      0.2,
+      0.15,
+      0.15,
+      0.1
+    ],
+    "draws_per_event": 3,
+    "fixed_times": [
+      1,
+      3,
+      5,
+      10,
+      20,
+      40,
+      90
+    ],
+    "common_times": [
+      1,
+      3,
+      5,
+      10,
+      20
+    ]
+  },
+  "geometry": {
+    "random_station_counts": [
+      1,
+      3,
+      5,
+      8,
+      12,
+      16
+    ],
+    "train_random_probability": 0.5
+  },
+  "sampling": {
+    "max_stations": 25,
+    "targets_per_instance": 15,
+    "query_chunk_size": 15,
+    "encoder_batch": 8
+  },
+  "training": {
+    "epochs": 12,
+    "max_updates": null,
+    "global_batch": 128,
+    "microbatch": 8,
+    "lr": 0.001,
+    "weight_decay": 0,
+    "gradient_clip": 5,
+    "workers": 0,
+    "precision": "fp32",
+    "scheduler": "cosine_fixed_updates",
+    "early_stopping": false
+  },
+  "loss": {
+    "pga_nll": 1.0,
+    "source_weight": 0.02,
+    "location": 0.02,
+    "magnitude": 0.02,
+    "mean_huber": 0.1,
+    "huber_delta": 1.0,
+    "definition": "legacy normalized task NLL weights + 0.1 weighted distribution-mean smooth L1; PGA train-standardized"
+  },
+  "selection": {
+    "rule": "equal normal/random x 1/3/5/10/20s noninput MAE; ties earlier epoch",
+    "threshold_log10_pga": -1.2
+  },
+  "diagnostics": {
+    "enabled": true,
+    "max_events": 32,
+    "seed": 20261123,
+    "max_bytes": 2147483648,
+    "native_feature_debug": false
+  },
+  "logging": {
+    "module_frequency": 25
+  },
+  "holdouts": {
+    "station_manifest": null,
+    "source_region_manifest": null
+  }
+}
