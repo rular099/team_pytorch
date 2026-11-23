@@ -452,3 +452,53 @@ def test_submit_snapshot_and_fake_sbatch_only(tmp_path,monkeypatch):
     failure=subprocess.run(['bash',str(ROOT/'scripts/fe02_lite/worker.sh'),str(launch/'launch.env'),'wrong','wrong'],
         env=dict(os.environ,SLURM_JOB_ID='99123'),capture_output=True,text=True)
     assert failure.returncode!=0 and 'environment changed' in failure.stderr
+
+
+def test_two_cpu_ranks_startup_and_checkpoint(cfg,dataset,tmp_path):
+    """Real two-process Gloo/DDP, synthetic encoder/data; no GPU/HPC claim."""
+    cfg['diagnostics']['enabled']=False
+    cfg['training'].update(epochs=1,global_batch=2,microbatch=1,max_updates=None,distributed_timeout_seconds=120)
+    cfg['realtime']['draws_per_event']=1
+    audit_dir=tmp_path/'ddp_protocol'
+    data=audit_data(cfg,audit_dir/'data')
+    effective_cfg=copy.deepcopy(cfg);effective_cfg.update(data['effective_config'])
+    model=make_model(effective_cfg)
+    lock=dict(status='AUDIT_PASS',config_sha256=fingerprint(cfg),code_sha256=code_identity(),
+        data=data,encoder_identity=model.encoder_identity,task_initial_sha256=state_digest(model.task_state()),
+        effective_config=data['effective_config'])
+    write_json(audit_dir/'protocol.lock.json',lock)
+    config_file=tmp_path/'ddp_config.json';write_json(config_file,cfg)
+    helper=tmp_path/'ddp_worker.py'
+    helper.write_text('''import importlib.util,json,os,sys,time
+from pathlib import Path
+root=Path(sys.argv[1]);sys.path.insert(0,str(root))
+spec=importlib.util.spec_from_file_location('lite_fixtures',root/'tests/test_fe02_lite.py')
+fixture=importlib.util.module_from_spec(spec);spec.loader.exec_module(fixture)
+from fe02_lite import engine
+import pandas as pd
+cfg=json.loads(Path(sys.argv[2]).read_text());audit_dir=Path(sys.argv[3])
+lock=json.loads((audit_dir/'protocol.lock.json').read_text())
+engine.check_lock=lambda *_:lock
+planned=pd.read_csv(audit_dir/'data/validation_population.csv.gz',dtype={'event_id':str,'station_id':str})
+def fixed_validation(model,cfg,directory,*args,**kwargs):
+    Path(directory).mkdir(parents=True,exist_ok=False)
+    return 0.0,planned.copy()
+engine.evaluate=fixed_validation
+real_initializer=engine.initialize_run_directory
+def delayed_initializer(output,resume,rank,world):
+    if rank==1: time.sleep(.3)
+    return real_initializer(output,resume,rank,world)
+engine.initialize_run_directory=delayed_initializer
+engine.train(cfg,audit_dir,model_factory=fixture.make_model)
+''')
+    env=dict(os.environ,OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
+    result=subprocess.run([os.sys.executable,'-m','torch.distributed.run','--standalone','--nnodes=1',
+        '--nproc-per-node=2',str(helper),str(ROOT),str(config_file),str(audit_dir)],
+        env=env,capture_output=True,text=True,timeout=90)
+    assert result.returncode==0,result.stdout+'\n'+result.stderr
+    output=Path(cfg['output_root'])/cfg['run_id']
+    checkpoint=torch.load(output/'last.pth',map_location='cpu',weights_only=False)
+    assert checkpoint['epoch']==1 and checkpoint['step']==1
+    assert len(checkpoint['rank_rng'])==2
+    assert len([f for f in checkpoint['committed_files'] if 'sample_journals' in f['path']])==2
+    assert len(list(output.glob('runtime_*.json')))==1

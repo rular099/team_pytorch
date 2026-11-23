@@ -119,6 +119,7 @@
     "encoder_batch": 8
   },
   "training": {
+    "distributed_timeout_seconds": 86400,
     "epochs": 12,
     "max_updates": null,
     "global_batch": 128,

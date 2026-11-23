@@ -2,8 +2,8 @@
   "task_id": "20261123-fe02-lite-event-spatial",
   "status": "PASS",
   "evidence": "LOCAL SYNTHETIC / MOCK ONLY; no real Japan/DiTing/ROCm performance",
-  "source_commit_at_check": "618661f99afb67f5c23c9f1a3fd713a0a156e7b5",
-  "source_code_sha256": "19c13e16a01716f3b3cd073c1927a99d908a0d430a2840cd4e69ab3bf091912d",
+  "source_commit_at_check": "4c7fe4e09269334ea08bb11de0311e27417d910d",
+  "source_code_sha256": "6cd74702048a14f9acd9ed6670135016ad7879710b0d7842e18fb0fc8475ddf4",
   "source_may_be_uncommitted": true,
   "python": "3.14.9",
   "torch": "2.15.0+cpu",
@@ -166,5 +166,5 @@
   "rocm_rng_restore": "NOT_RUN on hardware; explicit CPU state conversion implemented and CPU replay tested",
   "hpc_training": "NOT_SUBMITTED",
   "held_out_test": "NOT_RUN",
-  "timestamp": "2026-11-23T07:15:02.176878+00:00"
+  "timestamp": "2026-11-23T07:24:00.777000+00:00"
 }

@@ -106,3 +106,6 @@ load，并对所有device RNG ByteTensor显式.cpu()，保留既有ROCm修复语
 
 正式run身份锁包含config、代码/依赖、数据/划分/cohort、DiTing、world size、累积与
 更新预算。冻结权重不反复保存。完成run禁止训练覆盖；评价写入新的独立目录。
+fresh目录初始化只在rank 0执行并广播检查结果，已经用延迟另一rank的真实双进程
+CPU/Gloo合成训练回归。进程组timeout配置化，默认86400秒，避免合法的rank-0全量
+validation/诊断触发库的短默认超时；硬件ROCm/NCCL仍待超算核验。

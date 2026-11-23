@@ -6,13 +6,13 @@
 
 ## 环境与代码包
 
-上传交付的 `fe02_lite_source_20261123.tar.gz` 和 sha256 到全新目录，校验后解压。
+上传交付的 `fe02_lite_source_20261123_v2.tar.gz` 和 sha256 到全新目录，校验后解压。
 源码包包含所用 dtbench Python源与LICENSE，不含数据/大权重。
 
 ```bash
-sha256sum -c fe02_lite_source_20261123.tar.gz.sha256
+sha256sum -c fe02_lite_source_20261123_v2.tar.gz.sha256
 mkdir team_pytorch_fe02_lite
-tar -xzf fe02_lite_source_20261123.tar.gz -C team_pytorch_fe02_lite
+tar -xzf fe02_lite_source_20261123_v2.tar.gz -C team_pytorch_fe02_lite
 cd team_pytorch_fe02_lite
 
 # 可选：先载入已经验证可用的旧FE02参数；只复用路径和环境。
@@ -38,6 +38,9 @@ module purge后漏载MPI。Conda bootstrap显式关闭继承nounset、设置PS1�
 默认4nodes×4devices、每rank microbatch8、有效batch128、23:50h、不写内存申请。
 `NODES/DEVICES_PER_NODE/CPUS_PER_TASK/GRES_KIND/MEMORY/WALLTIME/ACCOUNT/QOS/PARTITION`
 均以 `FE02_LITE_` 前缀配置。world×microbatch必须整除有效batch。默认concurrency1。
+run目录只由rank 0检查/创建，再广播成功/失败，避免其他rank误判成已有目录。
+training.distributed_timeout_seconds默认86400秒，以容许rank 0全量validation/诊断；
+它不是额外训练预算，Slurm walltime与srun失败退出仍然生效。
 
 默认fresh计算所有年度shard SHA，可能需要较长顺序读取。已有可信 FE01/FE02
 `data_split_audit.json` 可显式设 `FE02_LITE_SHARD_IDENTITY_MANIFEST=/actual/file.json`；

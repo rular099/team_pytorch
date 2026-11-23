@@ -141,14 +141,38 @@ def check_lock(cfg, directory):
     return lock
 
 
-def distributed_device():
+def distributed_device(timeout_seconds=86400):
     world,rank,local = (int(os.environ.get(k,d)) for k,d in [('WORLD_SIZE','1'),('RANK','0'),('LOCAL_RANK','0')])
     device = torch.device('cuda',local) if torch.cuda.is_available() else torch.device('cpu')
     if device.type == 'cuda':
         torch.cuda.set_device(device)
     if world>1:
-        dist.init_process_group('nccl' if device.type=='cuda' else 'gloo',init_method='env://')
+        # Rank zero performs the frozen, full-population validation/diagnostics.
+        # Their legitimate duration can exceed the library's short default timeout.
+        dist.init_process_group('nccl' if device.type=='cuda' else 'gloo',init_method='env://',
+                                timeout=datetime.timedelta(seconds=timeout_seconds))
     return device,rank,world
+
+
+def initialize_run_directory(output, resume, rank, world):
+    """Only rank zero checks/creates the directory; publish the result to peers."""
+    error = [None]
+    if rank==0:
+        try:
+            if (output/'COMPLETED.json').exists():
+                raise FileExistsError('Completed run is immutable; evaluation has a separate entry')
+            if output.exists() and not resume:
+                raise FileExistsError('Preserving existing run; use explicit resume from last')
+            if resume and not (output/'last.pth').is_file():
+                raise FileNotFoundError('Resume requires last.pth; never best')
+            output.mkdir(parents=True,exist_ok=resume)
+        except (FileExistsError,FileNotFoundError,OSError) as exc:
+            error[0] = dict(kind=type(exc).__name__,message=str(exc))
+    if world>1:
+        dist.broadcast_object_list(error,src=0)
+    if error[0]:
+        kind = {'FileExistsError':FileExistsError,'FileNotFoundError':FileNotFoundError}.get(error[0]['kind'],OSError)
+        raise kind(error[0]['message'])
 
 
 def train(cfg, audit_dir, resume=False, model_factory=build_model):
@@ -156,17 +180,9 @@ def train(cfg, audit_dir, resume=False, model_factory=build_model):
     lock = check_lock(cfg,audit_dir)
     cfg = copy.deepcopy(cfg)
     cfg.update(lock['effective_config'])
-    device,rank,world = distributed_device()
+    device,rank,world = distributed_device(cfg['training'].get('distributed_timeout_seconds',86400))
     output = Path(cfg['output_root'])/cfg['run_id']
-    if (output/'COMPLETED.json').exists():
-        raise FileExistsError('Completed run is immutable; evaluation has a separate entry')
-    if output.exists() and not resume:
-        raise FileExistsError('Preserving existing run; use explicit resume from last')
-    if resume and not (output/'last.pth').is_file():
-        raise FileNotFoundError('Resume requires last.pth; never best')
-    if rank==0:
-        output.mkdir(parents=True,exist_ok=resume)
-    if world>1: dist.barrier()
+    initialize_run_directory(output,resume,rank,world)
     random.seed(cfg['seed']+rank)
     np.random.seed(cfg['seed']+rank)
     torch.manual_seed(cfg['seed']+rank)
