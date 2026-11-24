@@ -2,6 +2,11 @@
 
 task_id: `20261123-fe02-lite-event-spatial`
 
+批量恢复补充：三个数据视图共用同一worker，当前小补丁使用
+`fe02_lite_bash_fix_all_20261124.tar.gz`，执行`bash repair_fe02_lite_bash.sh --all`。
+会从三个单独提交或原批次中找齐视图，跳过已经重提的KNET，补齐两个KiK-net，
+保留并发链和原审计身份。先前单JobID重提范围不足，已扩展；本轮未代提交作业。
+
 2026-11-24修复：用户报告Job35455202在srun参数展开处因空数组/nounset退出。
 主worker现用始终非空的train数组；[小补丁及重提说明](compat/fe02_lite_bash_20261124/README.md)
 保持原v2源码/审计锁不变，只替换新提交作业的外部launcher。新任务完整包使用

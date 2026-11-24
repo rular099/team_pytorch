@@ -1,0 +1,30 @@
+{
+  "task_id": "20261124-fe02-lite-three-view-recovery",
+  "base_commit": "6a96ae0c567c3b3d6b689a8c6bf89f44dcc673e4",
+  "branch": "exp/fe02-lite-event-spatial",
+  "status": "PASS",
+  "evidence": "local fake Slurm/model commands; no real submissions",
+  "verification": {
+    "pytest": "62 passed, 5 subtests passed",
+    "focused": "16 passed under Bash 4.3 and 5.3",
+    "python_39_grammar": "PASS; AST check only",
+    "shell_syntax": "PASS",
+    "cases": [
+      "three separate original submissions",
+      "single submit_all original snapshot",
+      "previous KNET repair skipped, two KiK-net views submitted",
+      "dependencies preserve concurrency including active KNET",
+      "missing view rejects whole batch before sbatch",
+      "changed last-view source rejects whole batch before sbatch",
+      "completed run preserved",
+      "repeat --all is idempotent",
+      "original source/env/audit bytes unchanged"
+    ]
+  },
+  "scientific_source_config_and_worker_unchanged": true,
+  "hpc_status": "NO_NEW_JOB_SUBMITTED_BY_AGENT",
+  "checksums": {
+    "compat/fe02_lite_bash_20261124/recover.py": "f3bf61d63976eaa6b273a32522bdcd7995c1965242e2276b0faabe89b31872de",
+    "tests/test_fe02_lite_bash_worker.py": "0a0efd167990c4fccaa5a32cd1f89d0e1341107a2cbc3b504d632f60f1009fa4"
+  }
+}

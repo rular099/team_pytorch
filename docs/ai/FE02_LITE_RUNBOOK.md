@@ -2,6 +2,8 @@
 
 2026-11-24：用户报告Job35455202空数组启动错误，见
 [保持原audit身份的修复/重提入口](../../compat/fe02_lite_bash_20261124/README.md)。
+现有v2三视图恢复使用新版小补丁后执行`bash repair_fe02_lite_bash.sh --all`，已重提
+KNET会被跳过，只补提两个KiK-net；保留原并发限制，不需要手工提供另外两个JobID。
 代理未代提交新任务。以下命令由用户在超算执行。登录节点只解析配置、复制
 代码快照和 sbatch；真实数据扫描、权重加载、forward/update审计、训练、validation、
 汇总全部在计算节点。无需升级 PyTorch 或重装集群环境。

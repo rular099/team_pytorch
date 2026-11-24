@@ -2,6 +2,11 @@
 
 ## FE02-Lite Bash启动修复（2026-11-24）
 
+用户进一步指出三个视图使用同一worker，恢复不能只处理KNET。当前提供新版
+`repair_fe02_lite_bash.sh --all`，跨原submit_all或三个单独提交的快照找齐三视图。
+已重提KNET时跳过它并补提两个KiK-net；默认并发1还等待已有活动修复job。
+只凭回执判断已提交，不伪称正在运行或成功。模型/配置/审计锁保持不变，未代用户sbatch。
+
 基点d53c3e82184d9bb3d8f85b1907d73af2ccfcf08c，分支和独立worktree保持不变。
 用户报告Job35455202在`train_args[@]`展开时触发nounset，未到srun调用。
 用非空train argv修复；本地Bash4.3复现旧错误，4.3及5.3完成worker模拟回归。
