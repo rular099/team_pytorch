@@ -1,5 +1,8 @@
 # ChatGPT Project 与 Codex 协作约定
 
+2026-11-24 FE02-Lite启动修复：[空数组/nounset说明与保留audit锁的重提入口](../../compat/fe02_lite_bash_20261124/README.md)。
+用户报告Job35455202在srun参数展开前退出；已提供新worker及兼容小补丁，未由代理重提作业。
+
 当前独立实现（2026-11-23）：[FE02-Lite 交接](../../HANDOFF_FOR_CHATGPT.md)、
 [实现与数据语义](FE02_LITE_IMPLEMENTATION.md)、[超算手册](FE02_LITE_RUNBOOK.md)、
 [产物schema](FE02_LITE_ARTIFACTS.md)。基点618661f，新分支

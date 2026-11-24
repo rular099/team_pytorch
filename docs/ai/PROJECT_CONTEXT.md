@@ -1,5 +1,9 @@
 # RT55 / RT56 项目上下文快照
 
+> **FE02-Lite启动修复（2026-11-24）**：用户报告Job35455202的空数组/nounset错误。
+> [修复/重提说明](../../compat/fe02_lite_bash_20261124/README.md)。保留原源码、audit锁、
+> checkpoint与日志，新的外部worker避免空数组展开。代理没有重提HPC作业或取得后续训练结果。
+
 > **FE02-Lite 新实现（2026-11-23）**：基于618661f，独立worktree
 > `team_pytorch_fe02_lite` / 分支 `exp/fe02-lite-event-spatial`。
 > [当前交接](../../HANDOFF_FOR_CHATGPT.md)，[运行手册](FE02_LITE_RUNBOOK.md)。

@@ -37,14 +37,16 @@ if [[ "$FE02_LITE_ACTION" != eval ]]; then
     ) 8>"$FE02_LITE_OUTPUT_ROOT/offline_weights/register.lock"
     unset RANK WORLD_SIZE LOCAL_RANK
     "$FE02_LITE_PYTHON" scripts/fe02_lite/run.py audit "${args[@]}" --device cuda
-    train_args=()
+    # Bash <=4.3 treats an empty array as unset under nounset. Keep the complete
+    # command in this array so both a fresh run and resume expand a nonempty argv.
+    train_args=(train "${args[@]}")
     [[ "$FE02_LITE_ACTION" != resume ]] || train_args+=(--resume)
     export MASTER_ADDR=$(scontrol show hostnames "${SLURM_JOB_NODELIST:?}" | head -n 1)
     export MASTER_PORT=$((20000 + SLURM_JOB_ID % 20000))
     unset SLURM_STEP_GRES
     srun --kill-on-bad-exit=1 --ntasks="${SLURM_NTASKS:?}" --ntasks-per-node="$FE02_LITE_DEVICES_PER_NODE" \
         bash -c 'export RANK="${SLURM_PROCID:?}" WORLD_SIZE="${SLURM_NTASKS:?}" LOCAL_RANK="${SLURM_LOCALID:?}"; exec "$@"' \
-        fe02-lite-rank "$FE02_LITE_PYTHON" scripts/fe02_lite/run.py train "${args[@]}" "${train_args[@]}"
+        fe02-lite-rank "$FE02_LITE_PYTHON" scripts/fe02_lite/run.py "${train_args[@]}"
 fi
 unset RANK WORLD_SIZE LOCAL_RANK
 for checkpoint in best last; do

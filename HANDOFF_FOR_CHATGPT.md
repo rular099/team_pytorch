@@ -2,18 +2,23 @@
 
 task_id: `20261123-fe02-lite-event-spatial`
 
+2026-11-24修复：用户报告Job35455202在srun参数展开处因空数组/nounset退出。
+主worker现用始终非空的train数组；[小补丁及重提说明](compat/fe02_lite_bash_20261124/README.md)
+保持原v2源码/审计锁不变，只替换新提交作业的外部launcher。新任务完整包使用
+`fe02_lite_source_20261124_v3.tar.gz`；已有v2失败任务使用小补丁。本轮代理没有重提正式作业。
+
 仓库 `rular099/team_pytorch`，新分支 `exp/fe02-lite-event-spatial`，独立 worktree
 `team_pytorch_fe02_lite`。实际基点 `618661f99afb67f5c23c9f1a3fd713a0a156e7b5`；
 本地与 GitHub FE02 ref 均确认是该基点，无需叠加后续改动。结果 commit 由最终
 CODEX-RESULT 与代码包 SOURCE_IDENTITY.json 标明，避免在自身 commit 中嵌入循环 SHA。
 原 FE02 worktree 的未跟踪 `FE02_jieshou_2026-11-03.md` 保留。
 
-最终交付使用 `fe02_lite_source_20261123_v2.tar.gz`。v2补充只有rank 0检查/创建run目录、
+2026-11-23交付使用 `fe02_lite_source_20261123_v2.tar.gz`。v2补充只有rank 0检查/创建run目录、
 向其余rank广播结果，避免fresh DDP目录创建竞争；加入真实双进程CPU/Gloo训练和checkpoint
 回归。长时间rank-0 validation/诊断使用可配置distributed timeout（默认86400秒），
 实际失败仍由srun --kill-on-bad-exit退出。旧4c7fe4e包不作为最终启动包。
 
-实现已落地，HPC 正式任务 **NOT_SUBMITTED**。没有日本三视图真实数据计数、真实
+2026-11-23交付时实现已落地，代理未提交HPC正式任务。本地没有日本三视图真实数据计数、真实
 DiTing forward、ROCm 恢复、训练性能或科学结果；这些检查由计算节点启动器执行，
 失败即退出。不能把本地 synthetic/mock 的 PASS 写成真实 DiTing 或集群 PASS。
 

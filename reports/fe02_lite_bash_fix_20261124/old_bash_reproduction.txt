@@ -1,0 +1,1 @@
+/tmp/fe02-lite-bash43/bash-4.3/bash: train_args[@]: unbound variable

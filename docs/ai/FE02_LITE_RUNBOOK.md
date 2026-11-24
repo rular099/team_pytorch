@@ -1,18 +1,20 @@
 # FE02-Lite 超算运行手册
 
-状态：本轮 **NOT_SUBMITTED**。以下命令由用户在超算执行。登录节点只解析配置、复制
+2026-11-24：用户报告Job35455202空数组启动错误，见
+[保持原audit身份的修复/重提入口](../../compat/fe02_lite_bash_20261124/README.md)。
+代理未代提交新任务。以下命令由用户在超算执行。登录节点只解析配置、复制
 代码快照和 sbatch；真实数据扫描、权重加载、forward/update审计、训练、validation、
 汇总全部在计算节点。无需升级 PyTorch 或重装集群环境。
 
 ## 环境与代码包
 
-上传交付的 `fe02_lite_source_20261123_v2.tar.gz` 和 sha256 到全新目录，校验后解压。
+全新目录上传 `fe02_lite_source_20261124_v3.tar.gz` 和 sha256，校验后解压。
 源码包包含所用 dtbench Python源与LICENSE，不含数据/大权重。
 
 ```bash
-sha256sum -c fe02_lite_source_20261123_v2.tar.gz.sha256
+sha256sum -c fe02_lite_source_20261124_v3.tar.gz.sha256
 mkdir team_pytorch_fe02_lite
-tar -xzf fe02_lite_source_20261123_v2.tar.gz -C team_pytorch_fe02_lite
+tar -xzf fe02_lite_source_20261124_v3.tar.gz -C team_pytorch_fe02_lite
 cd team_pytorch_fe02_lite
 
 # 可选：先载入已经验证可用的旧FE02参数；只复用路径和环境。

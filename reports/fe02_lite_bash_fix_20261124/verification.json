@@ -1,0 +1,39 @@
+{
+  "task_id": "20261124-fe02-lite-bash-nounset-fix",
+  "base_commit": "d53c3e82184d9bb3d8f85b1907d73af2ccfcf08c",
+  "branch": "exp/fe02-lite-event-spatial",
+  "reported_job": "35455202",
+  "reported_failure": "train_args[@]: unbound variable, before srun",
+  "root_cause": "empty array under old Bash nounset; reproduced with Bash 4.3.0",
+  "verification": {
+    "pytest": "57 passed, 5 subtests passed",
+    "new_focused_tests": "11 passed with Bash 4.3 and 5.3",
+    "old_bash": "GNU bash, version 4.3.0(1)-release (x86_64-unknown-linux-gnu)",
+    "system_bash": "GNU bash, version 5.3.20(1)-release (x86_64-pc-linux-gnu)",
+    "grammar": "compile/import and Python 3.9 AST check PASS; not an actual Python 3.9 runtime test",
+    "shell_syntax": "Bash 4.3 and 5.3 bash -n PASS",
+    "stages": [
+      "fresh",
+      "resume",
+      "eval-only",
+      "audit failure stops before srun"
+    ],
+    "recovery": [
+      "old source/env/audit bytes preserved",
+      "fixed worker matches production patch",
+      "exact JobID mapping",
+      "dry-run writes nothing",
+      "completed-run and missing-last rejection",
+      "changed source rejection"
+    ]
+  },
+  "scientific_source_and_configs_unchanged": true,
+  "checksums": {
+    "scripts/fe02_lite/worker.sh": "641fd24d6f306746fe758b0b48a278029e5348d7474bed75bb6349f384990073",
+    "compat/fe02_lite_bash_20261124/recover.py": "1548e0d9403dcc97c36913d44e4c3c60ae7e13a2bdf3b8ee9cb9d00a74a961f4",
+    "repair_fe02_lite_bash.sh": "5d0359d1e7388d52ef12a420f3d1273514e703652ab2aa61200df1918207cf1c",
+    "tests/test_fe02_lite_bash_worker.py": "cd06bd57b8329faec272e3518ba5d5375b01e2c0c8199630c8d17255cbcfc4d3"
+  },
+  "hpc_status": "USER_REPORTED_STARTUP_ERROR; NO_NEW_JOB_SUBMITTED_BY_AGENT; post-fix cluster execution NOT_RUN",
+  "actual_data_and_model_assets": "not accessed by local shell tests; fake Slurm/model commands only"
+}

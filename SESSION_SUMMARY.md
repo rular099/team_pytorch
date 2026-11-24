@@ -1,5 +1,15 @@
 # TEAM PyTorch 项目交接文档
 
+## FE02-Lite Bash启动修复（2026-11-24）
+
+基点d53c3e82184d9bb3d8f85b1907d73af2ccfcf08c，分支和独立worktree保持不变。
+用户报告Job35455202在`train_args[@]`展开时触发nounset，未到srun调用。
+用非空train argv修复；本地Bash4.3复现旧错误，4.3及5.3完成worker模拟回归。
+`repair_fe02_lite_bash.sh --job-id 35455202`从原提交快照生成外部fixed worker并只重提
+该任务，原源码/manifest/audit锁不改，单独记录launcher修复身份。详见
+[补丁说明](compat/fe02_lite_bash_20261124/README.md)。模型、配置、数据、checkpoint和
+原FE01/FE02/RT55默认行为均未修改。代理本轮没有sbatch；真实重提后状态待用户确认。
+
 ## FE02-Lite 独立实现（2026-11-23）
 
 当前分支 `exp/fe02-lite-event-spatial`，新worktree `team_pytorch_fe02_lite`，
